@@ -70,12 +70,23 @@ def get_input_output_from_model_or_make(
     """
     from flarchitect.schemas.bases import AutoSchema
 
-    input_schema_class = get_schema_subclass(
-        model, dump=False
-    ) or create_dynamic_schema(AutoSchema, model)
-    output_schema_class = get_schema_subclass(
-        model, dump=True
-    ) or create_dynamic_schema(AutoSchema, model)
+    disable_relations = not get_config_or_model_meta(
+        "API_ADD_RELATIONS", model=model, default=True
+    )
+    disable_hybrids = not get_config_or_model_meta(
+        "API_DUMP_HYBRID_PROPERTIES", model=model, default=True
+    )
+
+    if disable_relations or disable_hybrids:
+        input_schema_class = create_dynamic_schema(AutoSchema, model)
+        output_schema_class = create_dynamic_schema(AutoSchema, model)
+    else:
+        input_schema_class = get_schema_subclass(
+            model, dump=False
+        ) or create_dynamic_schema(AutoSchema, model)
+        output_schema_class = get_schema_subclass(
+            model, dump=True
+        ) or create_dynamic_schema(AutoSchema, model)
 
     input_schema = input_schema_class(**kwargs)
     output_schema = output_schema_class(**kwargs)

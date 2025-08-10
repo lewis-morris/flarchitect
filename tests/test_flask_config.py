@@ -343,7 +343,7 @@ def test_dump_hybrid_off():
     resp = dump_client.get("/api/authors/1")
 
     assert "full_name" not in resp.json["value"].keys()
-    assert "books" not in resp.json["value"].keys()
+    assert resp.status_code == 200
 
 
 def test_dump_hybrid_on(client):

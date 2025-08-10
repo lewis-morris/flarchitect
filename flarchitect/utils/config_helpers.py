@@ -67,11 +67,10 @@ def get_config_or_model_meta(
                 upper_key = key.upper()
                 prefixed_key = f"API_{upper_key}"
 
-                # Try to fetch either the key itself or the API-prefixed version
-                conf_val = app.config.get(upper_key) or app.config.get(prefixed_key)
-
-                if conf_val is not None:
-                    return conf_val  # Return immediately if a match is found
+                if upper_key in app.config:
+                    return app.config[upper_key]
+                if prefixed_key in app.config:
+                    return app.config[prefixed_key]
 
             return None
 

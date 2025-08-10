@@ -3,14 +3,9 @@ from collections.abc import Callable
 from typing import Any
 
 from flask import request
-from sqlalchemy import Column, and_, desc, inspect
+from sqlalchemy import Column, and_, inspect
 from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Query,
-    Session,
-    object_session,
-)
+from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from flarchitect.core.utils import get_primary_key_info
@@ -125,7 +120,7 @@ def apply_sorting_to_query(
     Returns:
         Query: Query with applied order_by conditions.
     """
-    order_by = args_dict.get("orderby")
+    order_by = args_dict.get("order_by") or args_dict.get("orderby")
     if not order_by:
         return query
 
@@ -137,10 +132,11 @@ def apply_sorting_to_query(
     for order_key in order_by:
         descending = order_key.startswith("-")
         order_key = order_key.lstrip("-")
-        column = get_table_and_column(order_key, base_model)
+        table_name, column_name = get_table_and_column(order_key, base_model)
+        column_attr = getattr(base_model, column_name, None)
 
-        if column:
-            sorts.append(desc(order_key) if descending else order_key)
+        if column_attr:
+            sorts.append(column_attr.desc() if descending else column_attr)
 
     if sorts:
         query = query.order_by(*sorts)
@@ -466,9 +462,11 @@ class CrudService:
             self.session.rollback()
             raise CustomHTTPException(422, str(e.orig))
 
-    def delete_object(self, lookup_val: int | str, *args, **kwargs) -> None:
+    def delete_object(
+        self, lookup_val: int | str, *args, **kwargs
+    ) -> None:
         """
-        Deletes an object from the database, along with related and dependent models based on cascade_delete flag.
+        Deletes an object from the database.
 
         Args:
             lookup_val (Union[int, str]): Value to lookup the object by primary key.
@@ -504,7 +502,7 @@ class CrudService:
                     or request.args.get("cascade_delete") != "1"
                 ):
                     self.session.commit()
-                    return 204
+                    return None, 200
 
                 # Perform recursive delete based on cascade_delete flag
 
@@ -522,7 +520,7 @@ class CrudService:
 
                 raise CustomHTTPException(409, error_msg)
 
-        return 204
+        return None, 200
 
 
 def recursive_delete(

@@ -11,6 +11,7 @@ try:
 except:
     from numpy import iterable
 
+import sqlalchemy_utils
 from sqlalchemy import (
     TIMESTAMP,
     UUID,
@@ -34,7 +35,7 @@ from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, class_mapper
 from sqlalchemy_utils.types.email import EmailType
-import sqlalchemy_utils
+
 from flarchitect.logging import logger
 from flarchitect.schemas.utils import get_input_output_from_model_or_make
 from flarchitect.schemas.validators import validate_by_type
@@ -244,6 +245,8 @@ class AutoSchema(Base):
         mapper_property: RelationshipProperty,
     ):
         """Handle adding a relationship field to the schema."""
+        if not get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True):
+            return
         try:
             if request.args.get("dump_relationships") in ["false", "False", "0"]:
                 return
@@ -478,7 +481,7 @@ class AutoSchema(Base):
                     field_args["validate"].append(validate_by_type("card"))
                 elif format_name == "country_code":
                     field_args["validate"].append(validate_by_type("country_code"))
-            except Exception as e:
+            except Exception:
                 pass
 
         return field_args
@@ -559,18 +562,22 @@ class AutoSchema(Base):
                 if relationship_prop.uselist:
                     # Serialize as a list of URLs
                     self.add_to_fields(
-                        original_attribute,
+                        attribute,
                         fields.Function(
-                            lambda obj: self.get_many_url(obj, attribute, input_schema),
+                            lambda obj: self.get_many_url(
+                                obj, original_attribute, input_schema
+                            ),
                             **field_args,
                         ),
                     )
                 else:
                     # Serialize as a single URL
                     self.add_to_fields(
-                        original_attribute,
+                        attribute,
                         fields.Function(
-                            lambda obj: self.get_url(obj, attribute, input_schema),
+                            lambda obj: self.get_url(
+                                obj, original_attribute, input_schema
+                            ),
                             **field_args,
                         ),
                     )
@@ -656,7 +663,7 @@ class AutoSchema(Base):
                         fields.Nested(output_schema, **field_args),
                     )
 
-        self._update_field_metadata(original_attribute)
+        self._update_field_metadata(attribute)
 
     def _update_field_metadata(self, attribute: str):
         """Update metadata for the generated field."""
