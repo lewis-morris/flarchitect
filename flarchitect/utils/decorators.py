@@ -228,7 +228,7 @@ def standardize_response(func: Callable) -> Callable:
 
         except HTTPException as e:
             had_error = True
-            out_resp = _handle_exception(e, e.code, print_exc=True)
+            out_resp = _handle_exception(e.description, e.code, e.name, print_exc=True)
         except ProgrammingError as e:
             had_error = True
             text = str(e).split(")")[1].split("\n")[0].strip().capitalize()
@@ -270,6 +270,9 @@ def fields(model_schema: type["AutoSchema"], many: bool = False) -> Callable:
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: dict[str, Any]) -> Any:
+            if request.method == "DELETE":
+                return func(*args, **kwargs)
+
             select_fields = request.args.get("fields")
             if select_fields and get_config_or_model_meta(
                 "API_ALLOW_SELECT_FIELDS", model_schema.Meta.model, default=True
