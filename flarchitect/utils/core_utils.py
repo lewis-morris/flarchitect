@@ -1,3 +1,5 @@
+"""Core utility helpers for data manipulation."""
+
 import re
 from typing import Any
 
@@ -11,7 +13,8 @@ def convert_case(s: str, target_case: str) -> str:
     Args:
         s (str): The input string.
         target_case (str):
-            The target case format (camel, pascal, snake, screaming_snake, kebab, screaming_kebab).
+            The target case format (camel, pascal, snake,
+            screaming_snake, kebab, screaming_kebab).
 
     Returns:
         str: The converted string.
@@ -63,10 +66,16 @@ def convert_kebab_to_snake(kebab_str: str) -> str:
 
 
 def dict_to_xml(input_dict: dict) -> str:
-    # Convert dict to XML bytes
-    xml_bytes = dicttoxml(input_dict, custom_root="root", attr_type=False)
+    """Convert a dictionary to an XML string.
 
-    # Pretty print the XML string
+    Args:
+        input_dict: Dictionary to be converted.
+
+    Returns:
+        str: XML representation of ``input_dict``.
+    """
+
+    xml_bytes = dicttoxml(input_dict, custom_root="root", attr_type=False)
     return xml_bytes.decode()
 
 
