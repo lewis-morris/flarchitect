@@ -1,0 +1,21 @@
+Grouping fieldstogether allows for more advanced data manipulation and aggregation, similar to the SQL `GROUP BY` clause. This comes in handy when you want to summarise data in a unique way.
+
+### Syntax
+
+To utilise grouping, include the `groupby` query parameter. You can specify just the field name, or use the resource name and field name separated by a dot.
+
+- **Example Single Grouping**: `groupby=field`
+- **Example Multiple Grouping with Fields**: `groupby=field1,field2`
+- **Example Multiple Grouping with Table and Fields**: `groupby=resource1.field1,resource2.field2`
+
+### Usage
+
+Imagine you are calling an API endpoint, and you want to group by the `{{ base_fields[1] }}` and `{{ base_fields[0] }}` field in the `{{ base_resource }}`
+
+- Your API request would look like this: `&groupby={{ base_resource }}.{{ base_fields[0] }},{{ base_resource }}.{{ base_fields[1] }}`
+
+Or if you have joined `{{ relationship_resource }}` with `{{ base_resource }}`, and you want to group a field from each resource:
+
+- Your API call might be: `&groupby={{ relationship_table }}.{{ relationship_fields[0] }},{{ base_table }}.{{ base_fields[1] }}`
+
+By employing the `groupby` query parameter, you can engage in more sophisticated data analytics, enhancing your ability to understand your dataset.

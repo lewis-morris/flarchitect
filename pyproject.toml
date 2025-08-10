@@ -1,0 +1,97 @@
+# pyproject.toml
+
+[build-system]
+requires = ["hatchling>=1.27.0", "packaging>=24.0"]  # packaging gives twine/uv 2.4 awareness
+build-backend = "hatchling.build"
+
+[project]
+name = "flarchitect"
+version = "0.0.9.4"
+description = "Automatic RESTful API generator with redoc"
+readme = "README.md"
+requires-python = ">=3.10"
+license-expression = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "arched.dev (Lewis Morris)", email = "hello@arched.dev" }
+]
+dependencies = [
+    "apispec>=6.3.1",
+    "beautifulsoup4>=4.13.4",
+    "colorama>=0.4.6",
+    "dicttoxml>=1.7.16",
+    "flask>=2.2.5",
+    "flask-jwt-extended>=4.6.0",
+    "flask-limiter>=3.5.0",
+    "flask-login>=0.6.3",
+    "flask-sqlalchemy>=3.0.5",
+    "inflect>=7.5.0",
+    "marshmallow-sqlalchemy>=0.29.0",
+    "numpy>=1.21.6",
+    "pymongo>=4.7.3",
+    "pytz>=2025.2",
+    "redis>=5.0.8",
+    "requests>=2.31.0",
+    "sqlalchemy-utils>=0.41.2",
+    "validators>=0.20.0",
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Intended Audience :: Developers"
+]
+
+# include your static HTML assets in the wheel
+[tool.hatch.build.targets.wheel]
+core-metadata-version = "2.4"
+
+[tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
+
+# (Optional) if you want a “dev” env for testing, linting, etc.
+[tool.hatch.env.dev]
+dependencies = [
+
+]
+
+[dependency-groups]
+dev = [
+    "hatchling>=1.27.0",
+    "packaging>=24",
+    "pytest>=7.4.4",
+    "twine>=4.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff",
+  "isort"
+]
+[tool.ruff]
+exclude = ["./tests", ".bzr", ".direnv", ".eggs", ".git", "./frontend/*", ".git-rewrite", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out", "dist", "node_modules", ".venv"]
+fix = true
+target-version = "py310"
+
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"

@@ -1,0 +1,30 @@
+Flask Method Config Globals
+==============================
+
+    Global < **Global Method** < Model < Model Method
+
+:bdg-dark-line:`Global Method`
+
+These values are defined in the `Flask`_ config, but are constrained to specific http methods.
+
+-  They should always be uppercase
+-  They should always start with ``API_{method}_``
+
+Values defined here will apply globally per method unless a more specific value is defined, they overwrite the global
+value if they are defined.
+
+Will be overridden by value types;  :bdg-dark-line:`Global Method`, :bdg-dark-line:`Model`, :bdg-dark-line:`Model Method`.
+
+Overrides :bdg-dark-line:`Global`
+
+
+Example
+--------------
+
+.. code:: python
+
+    class Config():
+
+        API_POST_RATE_LIMIT = "1 per minute"
+        API_GET_RATE_LIMIT = "2 per minute"
+        API_PUT_RATE_LIMIT = "3 per minute"

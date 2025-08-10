@@ -1,0 +1,15 @@
+The `orderby` query parameter allows you to sort the API results based on one or multiple fields. You can sort in ascending or descending order.
+
+### Syntax
+
+- **Ascending Order**: `orderby=field`
+- **Descending Order**: `orderby=-field`
+- **With Table Name**: `orderby=resource.field` or `orderby=-resource.field`
+
+>
+> ### Example
+>
+> `{{ base_fields[0] }}` in ascending order: `?orderby={{ base_fields[0] }}`
+>
+> `{{ base_resource }}` on `{{ base_fields[1] }}` in descending order: `?orderby=-{{ base_resource }}.{{ base_fields[1] }}`
+>

@@ -1,0 +1,29 @@
+Filters can be applied to most `GET` requests as query parameters. To apply a filter, use the following format:
+
+- For fields in the default resource: `{field}__{operator}={value}`
+- For fields in a specific resource: `{resource}.{field}__{operator}={value1}`
+
+**Note**: Fields are mandatory, resource names are conditionally required.
+
+### Operators
+
+All filters require an operator, which should follow the field name, separated by a double underscore `__`. For example: `{field}__{operator}`.
+
+Here is a list of supported operators:
+
+- `__eq`: Equal To (`=`)
+- `__ne`: Not Equal To (`!=`)
+- `__lt`: Less Than (`<`)
+- `__le`: Less Than or Equal To (`<=`)
+- `__gt`: Greater Than (`>`)
+- `__ge`: Greater Than or Equal To (`>=`)
+- `__in`: In `in`
+- `__nin`: Not In `not in`
+- `__like`: Like `like`
+- `__ilike`: Case Insensitive Like `(case insensitive like)`
+
+>
+> ### Example
+> `?{{ examples[0] }}`.
+>
+> `?{{ examples[1] }}`.

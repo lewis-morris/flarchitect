@@ -1,0 +1,22 @@
+When using `groupby`, it's common to also use aggregate functions to summarise data.
+
+#### Available Functions
+
+- **Sum**: `__sum`
+- **Count**: `__count`
+- **Average**: `__avg`
+- **Minimum**: `__min`
+- **Maximum**: `__max`
+
+#### Syntax
+
+Aggregate functions are appended to field names with a pipe. After the pipe you should have your label and __ (double underscore) and then the aggregate function.
+
+#### Example
+
+- `?field|label__aggregate`
+- `?{{ base_fields[0] }}|{{ base_fields[0] }}_count__count`
+- `?{{ base_resource }}.{{ base_fields[0] }}|{{ base_fields[0] }}_count__count?{{ relationship_resource }}.{{ relationship_fields[1] }}|{{ relationship_fields[1] }}_sum__sum`
+
+Aggregation functions do not inherently exist in our database, so you'll need to specify a label for each aggregation.
+This label will be the key of the object returned for that particular aggregation.

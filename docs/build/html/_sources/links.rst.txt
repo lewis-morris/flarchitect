@@ -1,0 +1,12 @@
+External Links
+===============
+
+Release Files
+-------------
+
+- `Latest Release <https://example.com/latest-release.zip>`_
+
+GitHub Repository
+-----------------
+
+- `Project GitHub <https://github.com/yourusername/yourproject>`_

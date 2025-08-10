@@ -1,0 +1,494 @@
+<!doctype html>
+<html class="no-js" data-content_root="./" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1" name="viewport"/>
+    <meta content="light dark" name="color-scheme">
+    <meta content="Docutils 0.19: https://docutils.sourceforge.io/" name="generator"/>
+    <meta content="flarchitect" property="og:title"/>
+    <meta content="website" property="og:type"/>
+    <meta content="index.html" property="og:url"/>
+    <meta content="flarchitect" property="og:site_name"/>
+    <meta content="keema-architect == bread, flarchitect.architect == api Coverage Report GitHub License PyPI - Downloads GitHub Repo flarchitect automatically creates rapid, prototype or production ready API’s directly fr..."
+          property="og:description"/>
+    <meta content="1146" property="og:image:width"/>
+    <meta content="600" property="og:image:height"/>
+    <meta content="/None" property="og:image"/>
+    <meta content="keema-architect == bread, flarchitect.architect == api Coverage Report GitHub License PyPI - Downloads GitHub Repo flarchitect automatically creates rapid, prototy..."
+          property="og:image:alt"/>
+    <meta content="keema-architect == bread, flarchitect.architect == api Coverage Report GitHub License PyPI - Downloads GitHub Repo flarchitect automatically creates rapid, prototype or production ready API’s directly fr..."
+          name="description"/>
+    <meta content="summary_large_image" name="twitter:card"/>
+    <link href="genindex.html" rel="index" title="Index"/>
+    <link href="search.html" rel="search" title="Search"/>
+    <link href="installation.html" rel="next" title="Installation"/>
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+    <title>flarchitect</title>
+    <link href="_static/pygments.css?v=85e76eac" rel="stylesheet" type="text/css"/>
+    <link href="_static/styles/furo.css?v=135e06be" rel="stylesheet" type="text/css"/>
+    <link href="_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
+    <link href="_static/design-style.4045f2051d55cab465a707391d5b2007.min.css?v=6ad1a40c" rel="stylesheet"
+          type="text/css"/>
+    <link href="_static/styles/furo-extensions.css?v=36a5483c" rel="stylesheet" type="text/css"/>
+    <link href="_static/colours.css?v=c0a5cac4" rel="stylesheet" type="text/css"/>
+    <link href="_static/custom.css?v=2f422ba6" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"
+          type="text/css"/>
+
+
+    <style>
+        body {
+            --color-code-background: #fbf1c7;
+            --color-code-foreground: black;
+            --font-stack: JetBrains Mono, sans-serif;
+            --font-stack--monospace: JetBrains Mono, monospace;
+            --color-brand-primary: #8f3f71;
+            --color-brand-content: #076678;
+
+        }
+
+        @media not print {
+            body[data-theme="dark"] {
+                --color-code-background: #282828;
+                --color-code-foreground: #dddddd;
+                --color-brand-primary: #b16286;
+                --color-brand-content: #458588;
+                --color-background-primary: #3c3836;
+                --color-background-secondary: #282828;
+                --color-foreground-primary: #fbf1c7;
+                --color-foreground-secondary: #ebdbb2;
+                --color-highlighted-background: #d79921;
+                --color-highlight-on-target: #504945;
+
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body:not([data-theme="light"]) {
+                    --color-code-background: #282828;
+                    --color-code-foreground: #dddddd;
+                    --color-brand-primary: #b16286;
+                    --color-brand-content: #458588;
+                    --color-background-primary: #3c3836;
+                    --color-background-secondary: #282828;
+                    --color-foreground-primary: #fbf1c7;
+                    --color-foreground-secondary: #ebdbb2;
+                    --color-highlighted-background: #d79921;
+                    --color-highlight-on-target: #504945;
+
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+</script>
+
+
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="svg-toc" viewBox="0 0 24 24">
+        <title>Contents</title>
+        <svg fill="currentColor" stroke="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+            <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+        <title>Menu</title>
+        <svg class="feather-menu" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="3" x2="21" y1="12" y2="12"></line>
+            <line x1="3" x2="21" y1="6" y2="6"></line>
+            <line x1="3" x2="21" y1="18" y2="18"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+        <title>Expand</title>
+        <svg class="feather-chevron-right" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun" viewBox="0 0 24 24">
+        <title>Light mode</title>
+        <svg class="feather-sun" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" x2="12" y1="1" y2="3"></line>
+            <line x1="12" x2="12" y1="21" y2="23"></line>
+            <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+            <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+            <line x1="1" x2="3" y1="12" y2="12"></line>
+            <line x1="21" x2="23" y1="12" y2="12"></line>
+            <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+            <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-moon" viewBox="0 0 24 24">
+        <title>Dark mode</title>
+        <svg class="icon-tabler-moon" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun-half" viewBox="0 0 24 24">
+        <title>Auto light/dark mode</title>
+        <svg class="icon-tabler-shadow" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M13 12h5"/>
+            <path d="M13 15h4"/>
+            <path d="M13 18h1"/>
+            <path d="M13 9h4"/>
+            <path d="M13 6h1"/>
+        </svg>
+    </symbol>
+</svg>
+
+<input class="sidebar-toggle" id="__navigation" name="__navigation" type="checkbox">
+<input class="sidebar-toggle" id="__toc" name="__toc" type="checkbox">
+<label class="overlay sidebar-overlay" for="__navigation">
+    <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+    <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+<div class="page">
+    <header class="mobile-header">
+        <div class="header-left">
+            <label class="nav-overlay-icon" for="__navigation">
+                <div class="visually-hidden">Toggle site navigation sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-menu"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+        <div class="header-center">
+            <a href="#">
+                <div class="brand">flarchitect</div>
+            </a>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle-container theme-toggle-header">
+                <button class="theme-toggle">
+                    <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                    <svg class="theme-icon-when-auto">
+                        <use href="#svg-sun-half"></use>
+                    </svg>
+                    <svg class="theme-icon-when-dark">
+                        <use href="#svg-moon"></use>
+                    </svg>
+                    <svg class="theme-icon-when-light">
+                        <use href="#svg-sun"></use>
+                    </svg>
+                </button>
+            </div>
+            <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+                <div class="visually-hidden">Toggle table of contents sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-toc"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+    </header>
+    <aside class="sidebar-drawer">
+        <div class="sidebar-container">
+
+            <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+
+                <div class="sidebar-logo-container">
+                    <img alt="Logo" class="sidebar-logo" src="_static/logo.png"/>
+                </div>
+
+                <span class="sidebar-brand-text">flarchitect</span>
+
+            </a>
+                <form action="search.html" class="sidebar-search-container" method="get" role="search">
+                    <input aria-label="Search" class="sidebar-search" name="q" placeholder="Search">
+                    <input name="check_keywords" type="hidden" value="yes">
+                    <input name="area" type="hidden" value="default">
+                </form>
+                <div id="searchbox"></div>
+                <div class="sidebar-scroll">
+                    <div class="sidebar-tree">
+                        <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+                        <ul>
+                            <li class="toctree-l1"><a class="reference internal"
+                                                      href="installation.html">Installation</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy
+                                Models</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a>
+                            </li>
+                            <li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input
+                                    class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1"
+                                    role="switch" type="checkbox"/><label for="toctree-checkbox-1">
+                                <div class="visually-hidden">Toggle navigation of Configuration</div>
+                                <i class="icon">
+                                    <svg>
+                                        <use href="#svg-arrow-right"></use>
+                                    </svg>
+                                </i></label>
+                                <ul>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_.html">Config Globals</a>
+                                    </li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_method.html">Config by
+                                        Method Globals</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model.html">Config Models</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model_method.html">Config by Method
+                                        Models</a></li>
+                                </ul>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+                        </ul>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </aside>
+    <div class="main">
+        <div class="content">
+            <div class="article-container">
+                <a class="back-to-top muted-link" href="#">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+                    </svg>
+                    <span>Back to top</span>
+                </a>
+                <div class="content-icon-container">
+
+                    <div class="theme-toggle-container theme-toggle-content">
+                        <button class="theme-toggle">
+                            <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                            <svg class="theme-icon-when-auto">
+                                <use href="#svg-sun-half"></use>
+                            </svg>
+                            <svg class="theme-icon-when-dark">
+                                <use href="#svg-moon"></use>
+                            </svg>
+                            <svg class="theme-icon-when-light">
+                                <use href="#svg-sun"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+                        <div class="visually-hidden">Toggle table of contents sidebar</div>
+                        <i class="icon">
+                            <svg>
+                                <use href="#svg-toc"></use>
+                            </svg>
+                        </i>
+                    </label>
+                </div>
+                <article role="main">
+                    <section id="flarchitect">
+                        <h1>flarchitect<a class="headerlink" href="#flarchitect" title="Link to this heading">#</a></h1>
+                        <div class="toctree-wrapper compound">
+                        </div>
+                        <p>keema-architect == bread, flarchitect.architect == api</p>
+                        <img alt="Coverage Report" src="_images/coverage.svg"/><img alt="GitHub License"
+                                                                                    src="https://img.shields.io/github/license/arched-dev/flarchitect"/>
+                        <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/flarchitect"/>
+                        <a class="reference external image-reference"
+                           href="https://github.com/arched-dev/flarchitect"><img alt="GitHub Repo"
+                                                                                 src="https://badgen.net/static/Repo/Github/blue?icon=github&amp;link=https%3A%2F%2Fgithub.com%2Farched-dev%2Fflarchitect"/></a>
+                        <hr class="docutils"/>
+                        <p><strong>flarchitect</strong> automatically creates rapid, prototype or production ready API’s
+                            directly from <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                            models with
+                            accompanying <a class="reference external" href="https://redocly.github.io/redoc/">Redoc</a>
+                            documentation, all with little to no effort.</p>
+                        <p>By adding <strong>flarchitect</strong> to your <a class="reference external"
+                                                                             href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                            application, you can be up and running in seconds, creating a fully functional
+                            RESTful API, with a plethora of configuration options to suit your needs.</p>
+                        <p>What can it do?</p>
+                        <ul class="simple">
+                            <li><p>Automatically detect and create endpoints, with nested model relationships and
+                                more.</p></li>
+                            <li><p>Standardize your API responses with a consistent format.</p></li>
+                            <li><p>Authenticate users with a variety of methods.</p></li>
+                            <li><p>Add ratelimiting, caching and more with no work.</p></li>
+                            <li><p>Be configured globally in <a class="reference external"
+                                                                href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                or in your <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                models.</p></li>
+                            <li><p>Automatically generate <a class="reference external"
+                                                             href="https://redocly.github.io/redoc/">Redoc</a>
+                                documentation.</p></li>
+                        </ul>
+                        <p>What are you waiting for…?</p>
+                        <p>Turn this.</p>
+                        <div class="highlight-python notranslate">
+                            <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                    class="nc">Book</span><span class="p">(</span><span class="n">db</span><span
+                                    class="o">.</span><span class="n">Model</span><span class="p">):</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span
+                                        class="n">Column</span><span class="p">(</span><span class="n">db</span><span
+                                        class="o">.</span><span class="n">Integer</span><span class="p">,</span> <span
+                                        class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span
+                                        class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span
+                                        class="n">Column</span><span class="p">(</span><span class="n">db</span><span
+                                        class="o">.</span><span class="n">String</span><span class="p">(</span><span
+                                        class="mi">80</span><span class="p">),</span> <span class="n">unique</span><span
+                                        class="o">=</span><span class="kc">True</span><span class="p">,</span> <span
+                                        class="n">nullable</span><span class="o">=</span><span
+                                        class="kc">False</span><span class="p">)</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span
+                                        class="n">Column</span><span class="p">(</span><span class="n">db</span><span
+                                        class="o">.</span><span class="n">String</span><span class="p">(</span><span
+                                        class="mi">80</span><span class="p">),</span> <span
+                                        class="n">nullable</span><span class="o">=</span><span
+                                        class="kc">False</span><span class="p">)</span>
+    <span class="n">published</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span
+                                        class="n">Column</span><span class="p">(</span><span class="n">db</span><span
+                                        class="o">.</span><span class="n">DateTime</span><span class="p">,</span> <span
+                                        class="n">nullable</span><span class="o">=</span><span
+                                        class="kc">False</span><span class="p">)</span>
+</pre>
+                            </div>
+                        </div>
+                        <p>Into this:</p>
+                        <p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/books</span></code>
+                        </p>
+                        <div class="highlight-json notranslate">
+                            <div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;datetime&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span
+                                        class="s2">&quot;2024-01-01T00:00:00.0000+00:00&quot;</span><span
+                                        class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;api_version&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="s2">&quot;0.1.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="mi">200</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;response_ms&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="mi">15</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;total_count&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="mi">10</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;next_url&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span
+                                        class="s2">&quot;/api/authors?limit=2&amp;page=3&quot;</span><span
+                                        class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;previous_url&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span
+                                        class="s2">&quot;/api/authors?limit=2&amp;page=1&quot;</span><span
+                                        class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="s2">&quot;null&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;author&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span
+                                        class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="mi">3</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;published&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span
+                                        class="s2">&quot;2024-01-01T00:00:00.0000+00:00&quot;</span><span
+                                        class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span class="s2">&quot;The Book&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;author&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span class="s2">&quot;Jane Doe&quot;</span><span
+                                        class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span
+                                        class="mi">4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;published&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span
+                                        class="s2">&quot;2024-01-01T00:00:00.0000+00:00&quot;</span><span
+                                        class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span
+                                        class="w"> </span><span class="s2">&quot;The Book 2&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre>
+                            </div>
+                        </div>
+                        <p>Let’s get started!</p>
+                        <p><a class="reference internal" href="quickstart.html"><span class="doc">Quick Start</span></a>
+                        </p>
+                        <p><a class="reference external"
+                              href="https://github.com/arched-dev/flarchitect/tree/master/demo">View Demos</a></p>
+                        <a class="reference internal image-reference" href="_images/one_does_not.png"><img
+                                alt="One does not simply generate API's" class="align-center"
+                                src="_images/one_does_not.png" style="width: 100%;"/></a>
+                    </section>
+
+                </article>
+            </div>
+            <footer>
+
+                <div class="related-pages">
+                    <a class="next-page" href="installation.html">
+                        <div class="page-info">
+                            <div class="context">
+                                <span>Next</span>
+                            </div>
+                            <div class="title">Installation</div>
+                        </div>
+                        <svg class="furo-related-icon">
+                            <use href="#svg-arrow-right"></use>
+                        </svg>
+                    </a>
+
+                </div>
+                <div class="bottom-of-page">
+                    <div class="left-details">
+                        <div class="copyright">
+                            Copyright &#169; 2024, arched.dev (Lewis Morris)
+                        </div>
+                        Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link"
+                                                                                          href="https://pradyunsg.me">@pradyunsg</a>'s
+
+                        <a href="https://github.com/pradyunsg/furo">Furo</a>
+
+                    </div>
+                    <div class="right-details">
+
+                    </div>
+                </div>
+
+            </footer>
+        </div>
+        <aside class="toc-drawer no-toc">
+
+
+        </aside>
+    </div>
+</div>
+<script src="_static/documentation_options.js?v=92734c54"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="_static/scripts/furo.js?v=32e29ea5"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=f281be69"></script>
+<script src="_static/design-tabs.js?v=36754332"></script>
+</body>
+</html>

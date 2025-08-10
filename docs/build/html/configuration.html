@@ -1,0 +1,2296 @@
+<!doctype html>
+<html class="no-js" data-content_root="./" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1" name="viewport"/>
+    <meta content="light dark" name="color-scheme">
+    <meta content="Docutils 0.19: https://docutils.sourceforge.io/" name="generator"/>
+    <meta content="Configuration" property="og:title"/>
+    <meta content="website" property="og:type"/>
+    <meta content="configuration.html" property="og:url"/>
+    <meta content="flarchitect" property="og:site_name"/>
+    <meta content="Intro: In flarchitect, configuration options play a crucial role in customizing the behavior of API and its accompanying documentation. These configurations can be specified through Flask config ..."
+          property="og:description"/>
+    <meta content="1146" property="og:image:width"/>
+    <meta content="600" property="og:image:height"/>
+    <meta content="/None" property="og:image"/>
+    <meta content="Intro: In flarchitect, configuration options play a crucial role in customizing the behavior of API and its accompanying documentation. These configuration..."
+          property="og:image:alt"/>
+    <meta content="Intro: In flarchitect, configuration options play a crucial role in customizing the behavior of API and its accompanying documentation. These configurations can be specified through Flask config ..."
+          name="description"/>
+    <meta content="summary_large_image" name="twitter:card"/>
+    <link href="genindex.html" rel="index" title="Index"/>
+    <link href="search.html" rel="search" title="Search"/>
+    <link href="config_locations/global_.html" rel="next" title="Config Globals"/>
+    <link href="callbacks.html" rel="prev" title="Callbacks"/>
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+    <title>Configuration - flarchitect</title>
+    <link href="_static/pygments.css?v=85e76eac" rel="stylesheet" type="text/css"/>
+    <link href="_static/styles/furo.css?v=135e06be" rel="stylesheet" type="text/css"/>
+    <link href="_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
+    <link href="_static/design-style.4045f2051d55cab465a707391d5b2007.min.css?v=6ad1a40c" rel="stylesheet"
+          type="text/css"/>
+    <link href="_static/styles/furo-extensions.css?v=36a5483c" rel="stylesheet" type="text/css"/>
+    <link href="_static/colours.css?v=c0a5cac4" rel="stylesheet" type="text/css"/>
+    <link href="_static/custom.css?v=2f422ba6" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"
+          type="text/css"/>
+
+
+    <style>
+        body {
+            --color-code-background: #fbf1c7;
+            --color-code-foreground: black;
+            --font-stack: JetBrains Mono, sans-serif;
+            --font-stack--monospace: JetBrains Mono, monospace;
+            --color-brand-primary: #8f3f71;
+            --color-brand-content: #076678;
+
+        }
+
+        @media not print {
+            body[data-theme="dark"] {
+                --color-code-background: #282828;
+                --color-code-foreground: #dddddd;
+                --color-brand-primary: #b16286;
+                --color-brand-content: #458588;
+                --color-background-primary: #3c3836;
+                --color-background-secondary: #282828;
+                --color-foreground-primary: #fbf1c7;
+                --color-foreground-secondary: #ebdbb2;
+                --color-highlighted-background: #d79921;
+                --color-highlight-on-target: #504945;
+
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body:not([data-theme="light"]) {
+                    --color-code-background: #282828;
+                    --color-code-foreground: #dddddd;
+                    --color-brand-primary: #b16286;
+                    --color-brand-content: #458588;
+                    --color-background-primary: #3c3836;
+                    --color-background-secondary: #282828;
+                    --color-foreground-primary: #fbf1c7;
+                    --color-foreground-secondary: #ebdbb2;
+                    --color-highlighted-background: #d79921;
+                    --color-highlight-on-target: #504945;
+
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+</script>
+
+
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="svg-toc" viewBox="0 0 24 24">
+        <title>Contents</title>
+        <svg fill="currentColor" stroke="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+            <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+        <title>Menu</title>
+        <svg class="feather-menu" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="3" x2="21" y1="12" y2="12"></line>
+            <line x1="3" x2="21" y1="6" y2="6"></line>
+            <line x1="3" x2="21" y1="18" y2="18"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+        <title>Expand</title>
+        <svg class="feather-chevron-right" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun" viewBox="0 0 24 24">
+        <title>Light mode</title>
+        <svg class="feather-sun" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" x2="12" y1="1" y2="3"></line>
+            <line x1="12" x2="12" y1="21" y2="23"></line>
+            <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+            <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+            <line x1="1" x2="3" y1="12" y2="12"></line>
+            <line x1="21" x2="23" y1="12" y2="12"></line>
+            <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+            <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-moon" viewBox="0 0 24 24">
+        <title>Dark mode</title>
+        <svg class="icon-tabler-moon" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun-half" viewBox="0 0 24 24">
+        <title>Auto light/dark mode</title>
+        <svg class="icon-tabler-shadow" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M13 12h5"/>
+            <path d="M13 15h4"/>
+            <path d="M13 18h1"/>
+            <path d="M13 9h4"/>
+            <path d="M13 6h1"/>
+        </svg>
+    </symbol>
+</svg>
+
+<input class="sidebar-toggle" id="__navigation" name="__navigation" type="checkbox">
+<input class="sidebar-toggle" id="__toc" name="__toc" type="checkbox">
+<label class="overlay sidebar-overlay" for="__navigation">
+    <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+    <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+<div class="page">
+    <header class="mobile-header">
+        <div class="header-left">
+            <label class="nav-overlay-icon" for="__navigation">
+                <div class="visually-hidden">Toggle site navigation sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-menu"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+        <div class="header-center">
+            <a href="index.html">
+                <div class="brand">flarchitect</div>
+            </a>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle-container theme-toggle-header">
+                <button class="theme-toggle">
+                    <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                    <svg class="theme-icon-when-auto">
+                        <use href="#svg-sun-half"></use>
+                    </svg>
+                    <svg class="theme-icon-when-dark">
+                        <use href="#svg-moon"></use>
+                    </svg>
+                    <svg class="theme-icon-when-light">
+                        <use href="#svg-sun"></use>
+                    </svg>
+                </button>
+            </div>
+            <label class="toc-overlay-icon toc-header-icon" for="__toc">
+                <div class="visually-hidden">Toggle table of contents sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-toc"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+    </header>
+    <aside class="sidebar-drawer">
+        <div class="sidebar-container">
+
+            <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+
+                <div class="sidebar-logo-container">
+                    <img alt="Logo" class="sidebar-logo" src="_static/logo.png"/>
+                </div>
+
+                <span class="sidebar-brand-text">flarchitect</span>
+
+            </a>
+                <form action="search.html" class="sidebar-search-container" method="get" role="search">
+                    <input aria-label="Search" class="sidebar-search" name="q" placeholder="Search">
+                    <input name="check_keywords" type="hidden" value="yes">
+                    <input name="area" type="hidden" value="default">
+                </form>
+                <div id="searchbox"></div>
+                <div class="sidebar-scroll">
+                    <div class="sidebar-tree">
+                        <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+                        <ul class="current">
+                            <li class="toctree-l1"><a class="reference internal"
+                                                      href="installation.html">Installation</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy
+                                Models</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a>
+                            </li>
+                            <li class="toctree-l1 current has-children current-page"><a
+                                    class="current reference internal" href="#">Configuration</a><input checked=""
+                                                                                                        class="toctree-checkbox"
+                                                                                                        id="toctree-checkbox-1"
+                                                                                                        name="toctree-checkbox-1"
+                                                                                                        role="switch"
+                                                                                                        type="checkbox"/><label
+                                    for="toctree-checkbox-1">
+                                <div class="visually-hidden">Toggle navigation of Configuration</div>
+                                <i class="icon">
+                                    <svg>
+                                        <use href="#svg-arrow-right"></use>
+                                    </svg>
+                                </i></label>
+                                <ul>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_.html">Config Globals</a>
+                                    </li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_method.html">Config by
+                                        Method Globals</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model.html">Config Models</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model_method.html">Config by Method
+                                        Models</a></li>
+                                </ul>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+                        </ul>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </aside>
+    <div class="main">
+        <div class="content">
+            <div class="article-container">
+                <a class="back-to-top muted-link" href="#">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+                    </svg>
+                    <span>Back to top</span>
+                </a>
+                <div class="content-icon-container">
+
+                    <div class="theme-toggle-container theme-toggle-content">
+                        <button class="theme-toggle">
+                            <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                            <svg class="theme-icon-when-auto">
+                                <use href="#svg-sun-half"></use>
+                            </svg>
+                            <svg class="theme-icon-when-dark">
+                                <use href="#svg-moon"></use>
+                            </svg>
+                            <svg class="theme-icon-when-light">
+                                <use href="#svg-sun"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <label class="toc-overlay-icon toc-content-icon" for="__toc">
+                        <div class="visually-hidden">Toggle table of contents sidebar</div>
+                        <i class="icon">
+                            <svg>
+                                <use href="#svg-toc"></use>
+                            </svg>
+                        </i>
+                    </label>
+                </div>
+                <article role="main">
+                    <section id="configuration">
+                        <h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a>
+                        </h1>
+                        <div class="toctree-wrapper compound">
+                        </div>
+                        <section id="intro">
+                            <h2>Intro<a class="headerlink" href="#intro" title="Link to this heading">#</a></h2>
+                            <p>In <cite>flarchitect</cite>, configuration options play a crucial role in customizing the
+                                behavior of API and its accompanying
+                                documentation. These configurations can be specified through <a
+                                        class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                config values or directly within <a class="reference external"
+                                                                    href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                model
+                                classes using <cite>Meta</cite> classes.</p>
+                            <p><a class="reference external"
+                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a> config values are the
+                                most straightforward way to configure the API. Offering a standardized approach to
+                                modifying
+                                the extension’s behavior at a global or model level.</p>
+                        </section>
+                        <section id="config-hierarchy">
+                            <h2>Config Hierarchy<a class="headerlink" href="#config-hierarchy"
+                                                   title="Link to this heading">#</a></h2>
+                            <p>To offer flexibility and control, <code class="docutils literal notranslate"><span
+                                    class="pre">flarchitect</span></code> adheres to a hierarchy of configuration
+                                priorities.</p>
+                            <ul class="simple">
+                                <li><p>Lowest Priority - At the base of this hierarchy are the global <a
+                                        class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                    config options, applied globally to all requests. These values will
+                                    be overridden by more specific configurations.</p></li>
+                                <li><p>Method based configurations can be applied to the global <a
+                                        class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                    config, allowing for more precise control over the
+                                    behavior of the API in response to specific <a class="reference external"
+                                                                                   href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                        method</a>.</p></li>
+                                <li><p>Model based configurations can be embedded within <a class="reference external"
+                                                                                            href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                    model classes through <cite>Meta</cite> class attributes, allowing
+                                    for more fine-grained control over the behavior of the API in response to specific
+                                    models.</p></li>
+                                <li><p>Highest Priority - Finally the highest precedence is given to model-specific
+                                    configurations suffixed with a <a class="reference external"
+                                                                      href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                        method</a>, allowing for
+                                    the most detailed customization of the API’s behavior per model and <a
+                                            class="reference external"
+                                            href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                        method</a>.</p></li>
+                            </ul>
+                            <div class="admonition note">
+                                <p class="admonition-title">Note</p>
+                                <p>When applying config values</p>
+                                <ul class="simple">
+                                    <li><p>Global <a class="reference external"
+                                                     href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                        config values are prefixed with <code class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code>.</p></li>
+                                    <li><p>Global <a class="reference external"
+                                                     href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                        method based config values are prefixed with <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">API_{method}_</span></code>.</p></li>
+                                    <li><p><a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                        Model config values omit the <code class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code> prefix and are lower case.</p></li>
+                                    <li><p><a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                        Model method based config values omit the <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code> prefix, are lower case and are prefixed
+                                        with the method.</p></li>
+                                </ul>
+                            </div>
+                            <div class="admonition note">
+                                <p class="admonition-title">Note</p>
+                                <p>Each configuration value below is assigned a tag, which will define where the value
+                                    can be used and which priority
+                                    it takes.</p>
+                                <p>Pri 1. <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                    - <a class="reference internal" href="config_locations/model_method.html"><span
+                                            class="doc">View here</span></a></p>
+                                <p>Pri 2. <span
+                                        class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span> -
+                                    <a class="reference internal" href="config_locations/model.html"><span class="doc">View here</span></a>
+                                </p>
+                                <p>Pri 3. <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>
+                                    - <a class="reference internal" href="config_locations/global_method.html"><span
+                                            class="doc">View here</span></a></p>
+                                <p>Pri 4. <span
+                                        class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span> -
+                                    <a class="reference internal" href="config_locations/global_.html"><span
+                                            class="doc">View here</span></a></p>
+                            </div>
+                        </section>
+                        <section id="config-value-structure">
+                            <h2>Config Value Structure<a class="headerlink" href="#config-value-structure"
+                                                         title="Link to this heading">#</a></h2>
+                            <p>Every configuration value has a specific structure that defines where it can be used and
+                                how it should be written.
+                                These are defined by the the below badges which are listed in the configuration value
+                                tables next to each value.</p>
+                            <p>Please take note of the badge for each configuration value, as this will define where the
+                                value can be used and how it
+                                should be written.</p>
+                            <div class="sd-tab-set docutils">
+                                <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
+                                </input><label class="sd-tab-label" for="sd-tab-item-0">
+                                Global</label>
+                                <div class="sd-tab-content docutils">
+                                    <p><span
+                                            class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                    </p>
+                                    <p>Global configuration values are the lowest priority and apply to all requests
+                                        unless overridden by a more specific
+                                        configuration.</p>
+                                    <p>They are applied in the <a class="reference external"
+                                                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a>.
+                                        config class and are prefixed with <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code>.</p>
+                                    <p>Example <a class="reference external"
+                                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a> config
+                                        value:</p>
+                                    <div class="highlight-python notranslate">
+                                        <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                class="nc">Config</span><span class="p">():</span>
+
+    <span class="n">TITLE</span><span class="o">=</span><span class="s2">&quot;My API&quot;</span>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>See the <a class="reference internal" href="config_locations/global_.html"><span
+                                            class="doc">Global</span></a> page for more information.</p>
+                                </div>
+                                <input id="sd-tab-item-1" name="sd-tab-set-0" type="radio">
+                                </input><label class="sd-tab-label" for="sd-tab-item-1">
+                                Global Method</label>
+                                <div class="sd-tab-content docutils">
+                                    <p><span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>
+                                    </p>
+                                    <p>Global configuration values can apply globally to specific <a
+                                            class="reference external"
+                                            href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                        method</a>, <code class="docutils literal notranslate"><span
+                                            class="pre">GET</span></code>, <code
+                                            class="docutils literal notranslate"><span class="pre">POST</span></code>,
+                                        <code class="docutils literal notranslate"><span class="pre">PUT</span></code>,
+                                        <code class="docutils literal notranslate"><span
+                                                class="pre">DELETE</span></code>,
+                                        <code class="docutils literal notranslate"><span class="pre">PATCH</span></code>.
+                                    </p>
+                                    <p>The method should be added after the <code
+                                            class="docutils literal notranslate"><span class="pre">API_</span></code>
+                                        prefix.</p>
+                                    <p>Example <a class="reference external"
+                                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a> config
+                                        value:</p>
+                                    <div class="highlight-python notranslate">
+                                        <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                class="nc">Config</span><span class="p">():</span>
+
+    <span class="n">GET_RATE_LIMIT</span><span class="o">=</span><span class="s2">&quot;100 per minute&quot;</span>
+    <span class="n">POST_RATE_LIMIT</span><span class="o">=</span><span class="s2">&quot;10 per minute&quot;</span>
+    <span class="n">PATCH_RATE_LIMIT</span><span class="o">=</span><span class="s2">&quot;10 per minute&quot;</span>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>See the <a class="reference internal" href="config_locations/global_method.html"><span
+                                            class="doc">Global Method</span></a> page for more information.</p>
+                                </div>
+                                <input id="sd-tab-item-2" name="sd-tab-set-0" type="radio">
+                                </input><label class="sd-tab-label" for="sd-tab-item-2">
+                                Model</label>
+                                <div class="sd-tab-content docutils">
+                                    <p><span
+                                            class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span>
+                                    </p>
+                                    <p>Model configuration values override any <a class="reference external"
+                                                                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                        configuration.</p>
+                                    <p>They are applied in the <a class="reference external"
+                                                                  href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                        models Meta class, they should omit the prefix <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code> and be written in lower
+                                        case.</p>
+                                    <p>Example model.Meta config value:</p>
+                                    <div class="highlight-python notranslate">
+                                        <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                class="nc">MyModel</span><span class="p">(</span><span
+                                                class="n">db</span><span class="o">.</span><span
+                                                class="n">model</span><span class="p">):</span>
+    <span class="n">__table__</span> <span class="o">=</span> <span class="s2">&quot;my_model&quot;</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c1"># config value is shown as RATE_LIMIT in flask config</span>
+        <span class="n">rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per second&quot;</span>
+        <span class="c1"># config value is shown as BLOCK_METHODS in flask config</span>
+        <span class="n">blocked_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span
+                                                    class="p">,</span> <span class="s2">&quot;POST&quot;</span><span
+                                                    class="p">]</span>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>See the <a class="reference internal" href="config_locations/model.html"><span
+                                            class="doc">Model</span></a> page for more information.</p>
+                                </div>
+                                <input id="sd-tab-item-3" name="sd-tab-set-0" type="radio">
+                                </input><label class="sd-tab-label" for="sd-tab-item-3">
+                                Model Method</label>
+                                <div class="sd-tab-content docutils">
+                                    <p><span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                    </p>
+                                    <p>Model method configuration values have the highest priority and will override any
+                                        other configuration.</p>
+                                    <p>They are applied in the <a class="reference external"
+                                                                  href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                        models Meta class, they should omit the prefix <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">API_</span></code>, be written in lower
+                                        case and be prefixed with the method.</p>
+                                    <p>Example model.Meta config value:</p>
+                                    <div class="highlight-python notranslate">
+                                        <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                class="nc">MyModel</span><span class="p">(</span><span
+                                                class="n">db</span><span class="o">.</span><span
+                                                class="n">model</span><span class="p">):</span>
+    <span class="n">__table__</span> <span class="o">=</span> <span class="s2">&quot;my_model&quot;</span>
+
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="c1"># config value is shown as RATE_LIMIT in flask config</span>
+        <span class="n">get_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>
+        <span class="n">post_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;5 per minute&quot;</span>
+</pre>
+                                        </div>
+                                    </div>
+                                    <p>See the <a class="reference internal"
+                                                  href="config_locations/model_method.html"><span class="doc">Model Method</span></a>
+                                        page for more information.</p>
+                                </div>
+                            </div>
+                        </section>
+                        <section id="documentation-configuration-values">
+                            <h2>Documentation Configuration Values<a class="headerlink"
+                                                                     href="#documentation-configuration-values"
+                                                                     title="Link to this heading">#</a></h2>
+                            <div class="table-wrapper docutils container">
+                                <table class="docutils align-default">
+                                    <tbody>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="CREATE_DOCS">
+                                                    <span class="sig-name descname"><span class="pre">CREATE_DOCS</span></span><a
+                                                        class="headerlink" href="#CREATE_DOCS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Controls whether the <a class="reference external"
+                                                                       href="https://redocly.github.io/redoc/">Redoc</a>
+                                            documentation is created and served by the API. When disabled, the API will
+                                            not serve documentation. If true, the API will serve documentation at the
+                                            url specified by <a class="reference external"
+                                                                href="configuration.html#DOCUMENTATION_URL">DOCUMENTATION_URL</a>.
+                                        </p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DOCUMENTATION_URL">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DOCUMENTATION_URL</span></span><a
+                                                        class="headerlink" href="#DOCUMENTATION_URL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">/docs</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The url for accessing the <a class="reference external"
+                                                                            href="https://redocly.github.io/redoc/">ReDoc</a>
+                                            documentation.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="TITLE">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">TITLE</span></span><a class="headerlink"
+                                                                                              href="#TITLE"
+                                                                                              title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge sd-bg-danger sd-bg-text-danger">Required</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Sets the title of your API in the generated ReDoc documentation. It
+                                            appears prominently in the
+                                            documentation, serving as a headline for users exploring your API.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="VERSION">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">VERSION</span></span><a class="headerlink"
+                                                                                                href="#VERSION"
+                                                                                                title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge sd-bg-danger sd-bg-text-danger">Required</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Sets the version number of your API. This value will appear in the
+                                            generated ReDoc documentation and in api
+                                            responses when <cite>DUMP_VERSION</cite> is enabled.</p>
+                                            <dl class="simple">
+                                                <dt>Example:</dt>
+                                                <dd><p><code class="docutils literal notranslate"><span class="pre">0.1.0</span></code>
+                                                </p>
+                                                </dd>
+                                            </dl>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="LOGO_URL">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">LOGO_URL</span></span><a class="headerlink"
+                                                                                                 href="#LOGO_URL"
+                                                                                                 title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When defined, a logo will be displayed in the ReDoc documentation. This
+                                            should be be valid image URL</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="LOGO_BACKGROUND">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">LOGO_BACKGROUND</span></span><a
+                                                        class="headerlink" href="#LOGO_BACKGROUND"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Paired with <a class="reference external"
+                                                              href="configuration.html#LOGO_URL">LOGO_URL</a>, this
+                                            value sets the background color of the logo in the ReDoc documentation.
+                                            This value should be a valid CSS color value.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DESCRIPTION">
+                                                    <span class="sig-name descname"><span class="pre">DESCRIPTION</span></span><a
+                                                        class="headerlink" href="#DESCRIPTION"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">./flask_schema/html/base_readme.MD</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The main description of the API in the generated ReDoc documentation.
+                                            This value should be a valid markdown
+                                            string or a path to a markdown file. The file will be rendered with <a
+                                                    class="reference external"
+                                                    href="https://jinja.palletsprojects.com/en/3.1.x/">Jinja</a> and you
+                                            can access the <a class="reference external"
+                                                              href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            config with the <code class="docutils literal notranslate"><span
+                                                    class="pre">{{</span> <span class="pre">config</span> <span
+                                                    class="pre">}}</span></code> variable.</p>
+                                            <p>View the template file <a class="reference external"
+                                                                         href="https://github.com/arched-dev/flarchitect/blob/master/flask_schema/html/base_readme.MD">here</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DOCS_FONT">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DOCS_FONT</span></span><a class="headerlink"
+                                                                                                  href="#DOCS_FONT"
+                                                                                                  title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">jetbrains_mono</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Configures the font style for your ReDoc documentation, with <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">jetbrains_mono</span></code> as the default. Options
+                                            include <code class="docutils literal notranslate"><span class="pre">jetbrains_mono</span></code>,
+                                            <code class="docutils literal notranslate"><span
+                                                    class="pre">sourcecode_pro</span></code>, <code
+                                                    class="docutils literal notranslate"><span class="pre">roboto</span></code>,
+                                            <code class="docutils literal notranslate"><span
+                                                    class="pre">montserrat</span></code>, <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">lato</span></code> or any valid css font.</p>
+                                            <p>This setting allows for visual customization to match your
+                                                documentation’s aesthetic preferences.</p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="CONTACT_NAME">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">CONTACT_NAME</span></span><a class="headerlink"
+                                                                                                     href="#CONTACT_NAME"
+                                                                                                     title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies the contact name for inquiries and support in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="CONTACT_EMAIL">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">CONTACT_EMAIL</span></span><a class="headerlink"
+                                                                                                      href="#CONTACT_EMAIL"
+                                                                                                      title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies the contact email for inquiries and support in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="CONTACT_URL">
+                                                    <span class="sig-name descname"><span class="pre">CONTACT_URL</span></span><a
+                                                        class="headerlink" href="#CONTACT_URL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies the contact web address for inquiries and support in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="LICENCE_NAME">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">LICENCE_NAME</span></span><a class="headerlink"
+                                                                                                     href="#LICENCE_NAME"
+                                                                                                     title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies the licence type for the API in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="LICENCE_URL">
+                                                    <span class="sig-name descname"><span class="pre">LICENCE_URL</span></span><a
+                                                        class="headerlink" href="#LICENCE_URL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies a url to the licence type for the API in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SERVER_URLS">
+                                                    <span class="sig-name descname"><span class="pre">SERVER_URLS</span></span><a
+                                                        class="headerlink" href="#SERVER_URLS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">list[dict]</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Specifies the server(s) used for calling the API in the <a
+                                                class="reference external"
+                                                href="https://redocly.github.io/redoc/">ReDoc</a> documentation. If not
+                                            provided, the field name will not be displayed in the docs.</p>
+                                            <p>Example structure:</p>
+                                            <blockquote>
+                                                <div><p>[{“url”: “<a class="reference external"
+                                                                     href="https://api.example.com">https://api.example.com</a>”,
+                                                    “description”: “Main server”}, …]</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="CUSTOM_HEADERS">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">CUSTOM_HEADERS</span></span><a
+                                                        class="headerlink" href="#CUSTOM_HEADERS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Custom CSS or JS to be added to the <a class="reference external"
+                                                                                      href="https://redocly.github.io/redoc/">ReDoc</a>
+                                            documentation.</p>
+                                            <p>Example:</p>
+                                            <div class="highlight-html notranslate">
+                                                <div class="highlight"><pre><span></span><span
+                                                        class="p">&lt;</span><span class="nt">style</span><span
+                                                        class="p">&gt;</span>
+<span class="w">    </span><span class="p">.</span><span class="nc">redoc-section</span><span class="w"> </span><span
+                                                            class="nt">h1</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">color</span><span class="p">:</span><span class="w"> </span><span
+                                                            class="kc">red</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">&lt;/</span><span class="nt">style</span><span class="p">&gt;</span>
+</pre>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="VERBOSITY_LEVEL">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">VERBOSITY_LEVEL</span></span><a
+                                                        class="headerlink" href="#VERBOSITY_LEVEL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">0</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">int</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>Controls the verbosity of <strong>flarchitect</strong>’s output to
+                                            console, choose a value between 0 and 4.
+                                            0 being no output and 4 being the most verbose.</p></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section id="api-configuration-values-main">
+                            <h2>API Configuration Values (MAIN)<a class="headerlink"
+                                                                  href="#api-configuration-values-main"
+                                                                  title="Link to this heading">#</a></h2>
+                            <div class="table-wrapper docutils container">
+                                <table class="docutils align-default">
+                                    <tbody>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="PRINT_EXCEPTIONS">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">PRINT_EXCEPTIONS</span></span><a
+                                                        class="headerlink" href="#PRINT_EXCEPTIONS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will print exceptions to the console when they
+                                            occur. This is useful for debugging
+                                            purposes.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_DATETIME">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_DATETIME</span></span><a class="headerlink"
+                                                                                                      href="#DUMP_DATETIME"
+                                                                                                      title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">datetime</span></code> field in the response data. This
+                                            field will contain the
+                                            current date and time of the response.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_VERSION">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_VERSION</span></span><a class="headerlink"
+                                                                                                     href="#DUMP_VERSION"
+                                                                                                     title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">version</span></code> field in the response data. This field
+                                            will contain the
+                                            version number of the API.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_STATUS_CODE">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_STATUS_CODE</span></span><a
+                                                        class="headerlink" href="#DUMP_STATUS_CODE"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span class="pre">statusCode</span></code>
+                                            field in the response data. This field will contain the
+                                            status code of the response.</p>
+                                            <p>The output key will either be camelCase or snake_case depending on the
+                                                value of <a class="reference external"
+                                                            href="configuration.html#CONVERT_TO_CAMEL_CASE">CONVERT_TO_CAMEL_CASE</a>.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_RESPONSE_TIME">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_RESPONSE_TIME</span></span><a
+                                                        class="headerlink" href="#DUMP_RESPONSE_TIME"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">bool`</span></code>
+                                            </p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">responseTime</span></code> field in the response data. This
+                                            field will contain the
+                                            time taken to process the request in ms.</p>
+                                            <p>The output key will either be camelCase or snake_case depending on the
+                                                value of <a class="reference external"
+                                                            href="configuration.html#CONVERT_TO_CAMEL_CASE">CONVERT_TO_CAMEL_CASE</a>.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_COUNT">
+                                                    <span class="sig-name descname"><span class="pre">DUMP_COUNT</span></span><a
+                                                        class="headerlink" href="#DUMP_COUNT"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span class="pre">totalCount</span></code>
+                                            field in the response data. This field will contain the
+                                            total number of records available to be queried with pagination (not the
+                                            number of records returned in the
+                                            response).</p>
+                                            <p>The output key will either be camelCase or snake_case depending on the
+                                                value of <a class="reference external"
+                                                            href="configuration.html#CONVERT_TO_CAMEL_CASE">CONVERT_TO_CAMEL_CASE</a>.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_NULL_NEXT_URL">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_NULL_NEXT_URL</span></span><a
+                                                        class="headerlink" href="#DUMP_NULL_NEXT_URL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">nextUrl</span></code> field in the response data if null.
+                                            When disabled the
+                                            <code class="docutils literal notranslate"><span class="pre">nextUrl</span></code>
+                                            field will not be included in the response data if null.</p>
+                                            <p>The output key will either be camelCase or snake_case depending on the
+                                                value of <a class="reference external"
+                                                            href="configuration.html#CONVERT_TO_CAMEL_CASE">CONVERT_TO_CAMEL_CASE</a>.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_NULL_PREVIOUS_URL">
+                                                    <span class="sig-name descname"><span class="pre">DUMP_NULL_PREVIOUS_URL</span></span><a
+                                                        class="headerlink" href="#DUMP_NULL_PREVIOUS_URL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">previousUrl</span></code> field in the response data if
+                                            null. When disabled the
+                                            <code class="docutils literal notranslate"><span
+                                                    class="pre">previousUrl</span></code> field will not be included in
+                                            the response data if null.</p>
+                                            <p>The output key will either be camelCase or snake_case depending on the
+                                                value of <a class="reference external"
+                                                            href="configuration.html#CONVERT_TO_CAMEL_CASE">CONVERT_TO_CAMEL_CASE</a>.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_NULL_ERRORS">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">DUMP_NULL_ERRORS</span></span><a
+                                                        class="headerlink" href="#DUMP_NULL_ERRORS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">False</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">error</span></code> field in the response data if null. When
+                                            disabled the
+                                            <code class="docutils literal notranslate"><span
+                                                    class="pre">error</span></code> field will not be included in the
+                                            response data if null.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="BASE_MODEL">
+                                                    <span class="sig-name descname"><span class="pre">BASE_MODEL</span></span><a
+                                                        class="headerlink" href="#BASE_MODEL"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">DeclarativeBase</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge sd-bg-danger sd-bg-text-danger">Required</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The base class for all models in the API, and a required configuration
+                                            value. Used by <strong>flarchitect</strong> to
+                                            correctly analyse models and automatically create endpoints.</p>
+                                            <blockquote>
+                                                <div><p>This value should be a valid base model (<a
+                                                        class="reference external"
+                                                        href="https://docs.sqlalchemy.org/en/20/orm/quickstart.html#declare-models">see
+                                                    here</a>).</p>
+                                                </div>
+                                            </blockquote>
+                                            <p>When using <a class="reference external"
+                                                             href="https://flask-sqlalchemy.palletsprojects.com/en/">Flask-SQLAlchemy</a>
+                                                you must subclass your models with <code
+                                                        class="docutils literal notranslate"><span
+                                                        class="pre">db.Model</span></code> as normal, and also
+                                                populate this field with <code
+                                                        class="docutils literal notranslate"><span
+                                                        class="pre">db.Model</span></code>. You will, however, have to
+                                                pass your actual base model to the
+                                                <code class="docutils literal notranslate"><span class="pre">SQLAlchemy.init_app(base_clas=YourBase)</span></code>
+                                            </p>
+                                            <blockquote>
+                                                <div><p>View the <a class="reference internal"
+                                                                    href="quickstart.html"><span
+                                                        class="doc">Quickstart</span></a> docs for more information on
+                                                    how to use this value.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="DUMP_HYBRID_PROPERTIES">
+                                                    <span class="sig-name descname"><span class="pre">DUMP_HYBRID_PROPERTIES</span></span><a
+                                                        class="headerlink" href="#DUMP_HYBRID_PROPERTIES"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include hybrid properties in resources
+                                            response data &amp; in the <a class="reference external"
+                                                                          href="https://redocly.github.io/redoc/">ReDoc</a>
+                                            documentation.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ADD_RELATIONS">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">ADD_RELATIONS</span></span><a class="headerlink"
+                                                                                                      href="#ADD_RELATIONS"
+                                                                                                      title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will automatically add relationships to the model’s
+                                            schema. This is useful for
+                                            automatically including related resources in the response data.</p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="IGNORE_UNDERSCORE_ATTRIBUTES">
+                                                    <span class="sig-name descname"><span class="pre">IGNORE_UNDERSCORE_ATTRIBUTES</span></span><a
+                                                        class="headerlink" href="#IGNORE_UNDERSCORE_ATTRIBUTES"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will ignore all attributes that start with an
+                                            underscore in the model. This is useful
+                                            for hiding private attributes from the API.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="PAGINATION_SIZE_DEFAULT">
+                                                    <span class="sig-name descname"><span class="pre">PAGINATION_SIZE_DEFAULT</span></span><a
+                                                        class="headerlink" href="#PAGINATION_SIZE_DEFAULT"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">20</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">int</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The default number of records to return in a single response. This value
+                                            can be overridden by the client
+                                            by adding the query parameter <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">?limit=</span></code> to the request. The maximum value
+                                            for this parameter is defined by
+                                            <a class="reference external" href="configuration.html#PAGINATION_SIZE_MAX">PAGINATION_SIZE_MAX</a>.
+                                        </p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="PAGINATION_SIZE_MAX">
+                                                    <span class="sig-name descname"><span class="pre">PAGINATION_SIZE_MAX</span></span><a
+                                                        class="headerlink" href="#PAGINATION_SIZE_MAX"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The maximum number of records to return in a single response. The default
+                                            (no query parameter) is defined by
+                                            <a class="reference external"
+                                               href="configuration.html#PAGINATION_SIZE_DEFAULT">PAGINATION_SIZE_DEFAULT</a>.
+                                            Adding the query parameter
+                                            <code class="docutils literal notranslate"><span class="pre">?limit=</span></code>
+                                            to the request allows the user in increase this default but it is limited to
+                                            this value as the
+                                            maximum allowed to be returned. Increase this value to allow more records to
+                                            be returned in a single response.</p></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section id="api-callbacks">
+                            <h2>API Callbacks<a class="headerlink" href="#api-callbacks"
+                                                title="Link to this heading">#</a></h2>
+                            <div class="table-wrapper docutils container">
+                                <table class="docutils align-default">
+                                    <tbody>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SETUP_CALLBACK">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">SETUP_CALLBACK</span></span><a
+                                                        class="headerlink" href="#SETUP_CALLBACK"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">callable</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When assigned, the API will call the function prior to the model being
+                                            queried.
+                                            This is useful for adding custom logic to the API, such as adding additional
+                                            query parameters/modifying the
+                                            query or logging request to the database.</p>
+                                            <blockquote>
+                                                <div><p>View an example function &amp; its signature <a
+                                                        class="reference external"
+                                                        href="callbacks.html#setup-function-signature">here</a>.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="POST_DUMP_CALLBACK">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">POST_DUMP_CALLBACK</span></span><a
+                                                        class="headerlink" href="#POST_DUMP_CALLBACK"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">callable</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When assigned, the API will call the function after the model has been
+                                            dumped to a dictionary by Marshmallow.
+                                            Its possible to add extra validation here or modify the response data.</p>
+                                            <p>View an example function &amp; its signature <a
+                                                    class="reference external"
+                                                    href="callbacks.html#post-dump-function-signature">here</a>.</p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="RETURN_CALLBACK">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">RETURN_CALLBACK</span></span><a
+                                                        class="headerlink" href="#RETURN_CALLBACK"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">callable</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When assigned, the API will call the function post database call and pre
+                                            returning
+                                            the data to the client. This is useful for adding custom logic to the API,
+                                            such as modifying the response data
+                                            or logging the response to the database.</p>
+                                            <blockquote>
+                                                <div><p>View an example function &amp; its signature <a
+                                                        class="reference external"
+                                                        href="callbacks.html#return-function-signature">here</a>.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ERROR_CALLBACK">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">ERROR_CALLBACK</span></span><a
+                                                        class="headerlink" href="#ERROR_CALLBACK"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">callable</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When assigned, the API will call the function when an error occurs. This
+                                            is useful
+                                            for adding custom logic to the API, such as logging the error to the
+                                            database, sending an emails etc.</p>
+                                            <blockquote>
+                                                <div><p>View an example function &amp; its signature <a
+                                                        class="reference external"
+                                                        href="callbacks.html#error-function-signature">here</a>.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ADDITIONAL_QUERY_PARAMS">
+                                                    <span class="sig-name descname"><span class="pre">ADDITIONAL_QUERY_PARAMS</span></span><a
+                                                        class="headerlink" href="#ADDITIONAL_QUERY_PARAMS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">list[dict]</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>If you are hoping to extend the default query parameters of the API using
+                                            callbacks, you may also want to add
+                                            these to the <a class="reference external"
+                                                            href="https://redocly.github.io/redoc/">ReDoc</a>
+                                            documentation. This value allows you to add additional query parameters per
+                                            model or
+                                            globally to the API.</p>
+                                            <blockquote>
+                                                <div><p>View an example of its use and expected value here <a
+                                                        class="reference external"
+                                                        href="configuration.html#extending-query-params">Example of its
+                                                    use here</a>.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section id="api-method-config-delete">
+                            <h2>API Method Config (Delete)<a class="headerlink" href="#api-method-config-delete"
+                                                             title="Link to this heading">#</a></h2>
+                            <div class="table-wrapper docutils container">
+                                <table class="docutils align-default">
+                                    <tbody>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ALLOW_DELETE_RELATED">
+                                                    <span class="sig-name descname"><span class="pre">ALLOW_DELETE_RELATED</span></span><a
+                                                        class="headerlink" href="#ALLOW_DELETE_RELATED"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will allow the user to specify models to delete
+                                            along with the model being queried.</p>
+                                            <blockquote>
+                                                <div><p>i.e <code class="docutils literal notranslate"><span
+                                                        class="pre">?delete_related=Books,Authors</span></code></p>
+                                                </div>
+                                            </blockquote>
+                                            <p>When disabled, the API will not allow these operations and will raise a
+                                                409 error if the user attempts to do
+                                                so, signalling that the operation is not allowed along with a message of
+                                                the offending related model(s).</p>
+                                            <div class="admonition note">
+                                                <p class="admonition-title">Note</p>
+                                                <p>Setting the cascade delete options on your models, is the best way to
+                                                    control this behavior.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ALLOW_DELETE_DEPENDENTS">
+                                                    <span class="sig-name descname"><span class="pre">ALLOW_DELETE_DEPENDENTS</span></span><a
+                                                        class="headerlink" href="#ALLOW_DELETE_DEPENDENTS"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">True</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will recursively attempt to delete all dependents
+                                            of the model being queried.</p>
+                                            <blockquote>
+                                                <div><p>i.e <code class="docutils literal notranslate"><span
+                                                        class="pre">?delete_dependents=1</span></code></p>
+                                                </div>
+                                            </blockquote>
+                                            <p>Its possible however, some fringe cases have not been accounted for and
+                                                the operation may fail. In this case
+                                                it is always best to set the cascade delete options on your models to
+                                                control this behavior.</p>
+                                            <p>When disabled, the API will not allow these operations and will raise a
+                                                400 error if the user attempts to apply
+                                                the query parameter.</p>
+                                            <div class="admonition note">
+                                                <p class="admonition-title">Note</p>
+                                                <p>Setting the cascade delete options on your models, is the best way to
+                                                    control this behavior.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SOFT_DELETE">
+                                                    <span class="sig-name descname"><span class="pre">SOFT_DELETE</span></span><a
+                                                        class="headerlink" href="#SOFT_DELETE"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">False</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">bool</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will soft delete records from the database. Soft
+                                            deleting will mark a record as deleted
+                                            in a user specified column, rather than actually deleting the record from
+                                            the database. Users can show deleted
+                                            records with the query parameter <code class="docutils literal notranslate"><span
+                                                    class="pre">?include_deleted=true</span></code>. Relies on <a
+                                                    class="reference external"
+                                                    href="configuration.html#SOFT_DELETE_ATTRIBUTE">SOFT_DELETE_ATTRIBUTE</a>
+                                            and <a class="reference external"
+                                                   href="configuration.html#SOFT_DELETE_VALUES">SOFT_DELETE_VALUES</a>
+                                            to function.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SOFT_DELETE_ATTRIBUTE">
+                                                    <span class="sig-name descname"><span class="pre">SOFT_DELETE_ATTRIBUTE</span></span><a
+                                                        class="headerlink" href="#SOFT_DELETE_ATTRIBUTE"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>The model attribute name that hold the soft delete value. This value
+                                            should be ideally set in your base model
+                                            and can be any type, but for ease boolean is recommended. i.e <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">deleted</span></code> for the attribute name with a
+                                            default
+                                            value of <code class="docutils literal notranslate"><span
+                                                    class="pre">False</span></code>. Active and deleted values can be
+                                            set in <a class="reference external"
+                                                      href="configuration.html#SOFT_DELETE_VALUES">SOFT_DELETE_VALUES</a>.
+                                        </p></td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SOFT_DELETE_VALUES">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">SOFT_DELETE_VALUES</span></span><a
+                                                        class="headerlink" href="#SOFT_DELETE_VALUES"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">None</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">tuple</span></code>
+                                            </p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>A tuple that represents the <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">Active</span></code> and <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">Deleted</span></code> values for the <a
+                                                class="reference external"
+                                                href="configuration.html#SOFT_DELETE_ATTRIBUTE">SOFT_DELETE_ATTRIBUTE</a>.
+                                            i.e <code class="docutils literal notranslate"><span
+                                                    class="pre">(False,</span> <span class="pre">True)</span></code> or
+                                            <code class="docutils literal notranslate"><span class="pre">(&quot;active&quot;,</span>
+                                                <span class="pre">&quot;deleted&quot;)</span></code>.</p></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section id="schema-configuration-values">
+                            <h2>Schema Configuration Values<a class="headerlink" href="#schema-configuration-values"
+                                                              title="Link to this heading">#</a></h2>
+                            <div class="table-wrapper docutils container">
+                                <table class="docutils align-default">
+                                    <tbody>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="BASE_SCHEMA">
+                                                    <span class="sig-name descname"><span class="pre">BASE_SCHEMA</span></span><a
+                                                        class="headerlink" href="#BASE_SCHEMA"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">AutoSchema</span></code></p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">Schema</span></code>
+                                            </p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>At the heart of <strong>flarchitect</strong> is the <code
+                                                class="docutils literal notranslate"><span class="pre">AutoSchema</span></code>
+                                            which creates and translates your <a class="reference external"
+                                                                                 href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                            models
+                                            into <a class="reference external"
+                                                    href="https://marshmallow.readthedocs.io/en/stable/">Marshmallow</a>
+                                            schema’s. This value should be a valid schema class (<a
+                                                    class="reference external"
+                                                    href="https://marshmallow.readthedocs.io/en/stable/quickstart.html">see
+                                                here</a>).</p>
+                                            <blockquote>
+                                                <div><p>It is advisable to leave this value as the default, unless you
+                                                    have a specific use case or know what you
+                                                    are doing.</p>
+                                                </div>
+                                            </blockquote>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="ENDPOINT_CASE">
+                                                    <span class="sig-name descname"><span
+                                                            class="pre">ENDPOINT_CASE</span></span><a class="headerlink"
+                                                                                                      href="#ENDPOINT_CASE"
+                                                                                                      title="Link to this definition">#</a>
+                                                </dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">kebab</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>One of the following options: <code class="docutils literal notranslate"><span
+                                                class="pre">camel</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">pascal</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">snake</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">screaming_snake</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">kebab</span></code> or <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">screaming_kebab</span></code>.</p>
+                                            <p>Defines which case to use to convert the model names into endpoint URLs.
+                                                To keep inline with restful API
+                                                conventions, the endpoint URL will also be pluralized.</p>
+                                        </td>
+                                    </tr>
+                                    <tr class="row-odd">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="FIELD_CASE">
+                                                    <span class="sig-name descname"><span class="pre">FIELD_CASE</span></span><a
+                                                        class="headerlink" href="#FIELD_CASE"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">snake</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>One of the following options: <code class="docutils literal notranslate"><span
+                                                class="pre">camel</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">pascal</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">snake</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">screaming_snake</span></code>, <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">kebab</span></code>,
+                                            <code class="docutils literal notranslate"><span
+                                                    class="pre">screaming_kebab</span></code>. This value will be used
+                                            to convert the model attributes into field names.</p></td>
+                                    </tr>
+                                    <tr class="row-even">
+                                        <td>
+                                            <dl class="py data">
+                                                <dt class="sig sig-object py" id="SCHEMA_CASE">
+                                                    <span class="sig-name descname"><span class="pre">SCHEMA_CASE</span></span><a
+                                                        class="headerlink" href="#SCHEMA_CASE"
+                                                        title="Link to this definition">#</a></dt>
+                                                <dd></dd>
+                                            </dl>
+
+                                            <p><span class="sd-sphinx-override sd-badge">default:</span> <code
+                                                    class="docutils literal notranslate"><span class="pre">camel</span></code>
+                                            </p>
+                                            <p><span class="sd-sphinx-override sd-badge">type</span> <code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">str</span></code></p>
+                                            <p><span
+                                                    class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span>
+                                                <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span>
+                                            </p>
+                                        </td>
+                                        <td><p>When enabled, the API will include a <code
+                                                class="docutils literal notranslate"><span
+                                                class="pre">datetime</span></code> field in the response data. This
+                                            field will contain the
+                                            current date and time of the response.</p></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </section>
+
+                </article>
+            </div>
+            <footer>
+
+                <div class="related-pages">
+                    <a class="next-page" href="config_locations/global_.html">
+                        <div class="page-info">
+                            <div class="context">
+                                <span>Next</span>
+                            </div>
+                            <div class="title">Config Globals</div>
+                        </div>
+                        <svg class="furo-related-icon">
+                            <use href="#svg-arrow-right"></use>
+                        </svg>
+                    </a>
+                    <a class="prev-page" href="callbacks.html">
+                        <svg class="furo-related-icon">
+                            <use href="#svg-arrow-right"></use>
+                        </svg>
+                        <div class="page-info">
+                            <div class="context">
+                                <span>Previous</span>
+                            </div>
+
+                            <div class="title">Callbacks</div>
+
+                        </div>
+                    </a>
+                </div>
+                <div class="bottom-of-page">
+                    <div class="left-details">
+                        <div class="copyright">
+                            Copyright &#169; 2024, arched.dev (Lewis Morris)
+                        </div>
+                        Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link"
+                                                                                          href="https://pradyunsg.me">@pradyunsg</a>'s
+
+                        <a href="https://github.com/pradyunsg/furo">Furo</a>
+
+                    </div>
+                    <div class="right-details">
+
+                    </div>
+                </div>
+
+            </footer>
+        </div>
+        <aside class="toc-drawer">
+
+
+            <div class="toc-sticky toc-scroll">
+                <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+                </div>
+                <div class="toc-tree-container">
+                    <div class="toc-tree">
+                        <ul>
+                            <li><a class="reference internal" href="#">Configuration</a>
+                                <ul>
+                                    <li><a class="reference internal" href="#intro">Intro</a></li>
+                                    <li><a class="reference internal" href="#config-hierarchy">Config Hierarchy</a></li>
+                                    <li><a class="reference internal" href="#config-value-structure">Config Value
+                                        Structure</a></li>
+                                    <li><a class="reference internal" href="#documentation-configuration-values">Documentation
+                                        Configuration Values</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#CREATE_DOCS"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">CREATE_DOCS</span></code></a></li>
+                                            <li><a class="reference internal" href="#DOCUMENTATION_URL"><code
+                                                    class="docutils literal notranslate"><span class="pre">DOCUMENTATION_URL</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#TITLE"><code
+                                                    class="docutils literal notranslate"><span class="pre">TITLE</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#VERSION"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">VERSION</span></code></a></li>
+                                            <li><a class="reference internal" href="#LOGO_URL"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">LOGO_URL</span></code></a></li>
+                                            <li><a class="reference internal" href="#LOGO_BACKGROUND"><code
+                                                    class="docutils literal notranslate"><span class="pre">LOGO_BACKGROUND</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DESCRIPTION"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">DESCRIPTION</span></code></a></li>
+                                            <li><a class="reference internal" href="#DOCS_FONT"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">DOCS_FONT</span></code></a></li>
+                                            <li><a class="reference internal" href="#CONTACT_NAME"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">CONTACT_NAME</span></code></a></li>
+                                            <li><a class="reference internal" href="#CONTACT_EMAIL"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">CONTACT_EMAIL</span></code></a></li>
+                                            <li><a class="reference internal" href="#CONTACT_URL"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">CONTACT_URL</span></code></a></li>
+                                            <li><a class="reference internal" href="#LICENCE_NAME"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">LICENCE_NAME</span></code></a></li>
+                                            <li><a class="reference internal" href="#LICENCE_URL"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">LICENCE_URL</span></code></a></li>
+                                            <li><a class="reference internal" href="#SERVER_URLS"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">SERVER_URLS</span></code></a></li>
+                                            <li><a class="reference internal" href="#CUSTOM_HEADERS"><code
+                                                    class="docutils literal notranslate"><span class="pre">CUSTOM_HEADERS</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#VERBOSITY_LEVEL"><code
+                                                    class="docutils literal notranslate"><span class="pre">VERBOSITY_LEVEL</span></code></a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#api-configuration-values-main">API
+                                        Configuration Values (MAIN)</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#PRINT_EXCEPTIONS"><code
+                                                    class="docutils literal notranslate"><span class="pre">PRINT_EXCEPTIONS</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DUMP_DATETIME"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">DUMP_DATETIME</span></code></a></li>
+                                            <li><a class="reference internal" href="#DUMP_VERSION"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">DUMP_VERSION</span></code></a></li>
+                                            <li><a class="reference internal" href="#DUMP_STATUS_CODE"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_STATUS_CODE</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DUMP_RESPONSE_TIME"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_RESPONSE_TIME</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DUMP_COUNT"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">DUMP_COUNT</span></code></a></li>
+                                            <li><a class="reference internal" href="#DUMP_NULL_NEXT_URL"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_NULL_NEXT_URL</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DUMP_NULL_PREVIOUS_URL"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_NULL_PREVIOUS_URL</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#DUMP_NULL_ERRORS"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_NULL_ERRORS</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#BASE_MODEL"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">BASE_MODEL</span></code></a></li>
+                                            <li><a class="reference internal" href="#DUMP_HYBRID_PROPERTIES"><code
+                                                    class="docutils literal notranslate"><span class="pre">DUMP_HYBRID_PROPERTIES</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#ADD_RELATIONS"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">ADD_RELATIONS</span></code></a></li>
+                                            <li><a class="reference internal" href="#IGNORE_UNDERSCORE_ATTRIBUTES"><code
+                                                    class="docutils literal notranslate"><span class="pre">IGNORE_UNDERSCORE_ATTRIBUTES</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#PAGINATION_SIZE_DEFAULT"><code
+                                                    class="docutils literal notranslate"><span class="pre">PAGINATION_SIZE_DEFAULT</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#PAGINATION_SIZE_MAX"><code
+                                                    class="docutils literal notranslate"><span class="pre">PAGINATION_SIZE_MAX</span></code></a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#api-callbacks">API Callbacks</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#SETUP_CALLBACK"><code
+                                                    class="docutils literal notranslate"><span class="pre">SETUP_CALLBACK</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#POST_DUMP_CALLBACK"><code
+                                                    class="docutils literal notranslate"><span class="pre">POST_DUMP_CALLBACK</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#RETURN_CALLBACK"><code
+                                                    class="docutils literal notranslate"><span class="pre">RETURN_CALLBACK</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#ERROR_CALLBACK"><code
+                                                    class="docutils literal notranslate"><span class="pre">ERROR_CALLBACK</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#ADDITIONAL_QUERY_PARAMS"><code
+                                                    class="docutils literal notranslate"><span class="pre">ADDITIONAL_QUERY_PARAMS</span></code></a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#api-method-config-delete">API Method Config
+                                        (Delete)</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#ALLOW_DELETE_RELATED"><code
+                                                    class="docutils literal notranslate"><span class="pre">ALLOW_DELETE_RELATED</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#ALLOW_DELETE_DEPENDENTS"><code
+                                                    class="docutils literal notranslate"><span class="pre">ALLOW_DELETE_DEPENDENTS</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#SOFT_DELETE"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">SOFT_DELETE</span></code></a></li>
+                                            <li><a class="reference internal" href="#SOFT_DELETE_ATTRIBUTE"><code
+                                                    class="docutils literal notranslate"><span class="pre">SOFT_DELETE_ATTRIBUTE</span></code></a>
+                                            </li>
+                                            <li><a class="reference internal" href="#SOFT_DELETE_VALUES"><code
+                                                    class="docutils literal notranslate"><span class="pre">SOFT_DELETE_VALUES</span></code></a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#schema-configuration-values">Schema
+                                        Configuration Values</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#BASE_SCHEMA"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">BASE_SCHEMA</span></code></a></li>
+                                            <li><a class="reference internal" href="#ENDPOINT_CASE"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">ENDPOINT_CASE</span></code></a></li>
+                                            <li><a class="reference internal" href="#FIELD_CASE"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">FIELD_CASE</span></code></a></li>
+                                            <li><a class="reference internal" href="#SCHEMA_CASE"><code
+                                                    class="docutils literal notranslate"><span
+                                                    class="pre">SCHEMA_CASE</span></code></a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+
+
+        </aside>
+    </div>
+</div>
+<script src="_static/documentation_options.js?v=92734c54"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="_static/scripts/furo.js?v=32e29ea5"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=f281be69"></script>
+<script src="_static/design-tabs.js?v=36754332"></script>
+</body>
+</html>

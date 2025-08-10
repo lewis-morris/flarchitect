@@ -1,0 +1,1140 @@
+<!doctype html>
+<html class="no-js" data-content_root="./" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width,initial-scale=1" name="viewport"/>
+    <meta content="light dark" name="color-scheme">
+    <meta content="Docutils 0.19: https://docutils.sourceforge.io/" name="generator"/>
+    <meta content="Callbacks" property="og:title"/>
+    <meta content="website" property="og:type"/>
+    <meta content="callbacks.html" property="og:url"/>
+    <meta content="flarchitect" property="og:site_name"/>
+    <meta content="While accessing and updating your models via the API flask-schema has created is great. Sometimes you need to perform some additional logic before or after a model is returned, created, updated, de..."
+          property="og:description"/>
+    <meta content="1146" property="og:image:width"/>
+    <meta content="600" property="og:image:height"/>
+    <meta content="/_images/social_previews/summary_callbacks_58169b97.png" property="og:image"/>
+    <meta content="While accessing and updating your models via the API flask-schema has created is great. Sometimes you need to perform some additional logic before or after a..."
+          property="og:image:alt"/>
+    <meta content="While accessing and updating your models via the API flask-schema has created is great. Sometimes you need to perform some additional logic before or after a model is returned, created, updated, de..."
+          name="description"/>
+    <meta content="summary_large_image" name="twitter:card"/>
+    <link href="genindex.html" rel="index" title="Index"/>
+    <link href="search.html" rel="search" title="Search"/>
+    <link href="configuration.html" rel="next" title="Configuration"/>
+    <link href="authentication.html" rel="prev" title="Authentication"/>
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+    <title>Callbacks - flarchitect</title>
+    <link href="_static/pygments.css?v=85e76eac" rel="stylesheet" type="text/css"/>
+    <link href="_static/styles/furo.css?v=135e06be" rel="stylesheet" type="text/css"/>
+    <link href="_static/copybutton.css?v=76b2166b" rel="stylesheet" type="text/css"/>
+    <link href="_static/design-style.4045f2051d55cab465a707391d5b2007.min.css?v=6ad1a40c" rel="stylesheet"
+          type="text/css"/>
+    <link href="_static/styles/furo-extensions.css?v=36a5483c" rel="stylesheet" type="text/css"/>
+    <link href="_static/colours.css?v=c0a5cac4" rel="stylesheet" type="text/css"/>
+    <link href="_static/custom.css?v=2f422ba6" rel="stylesheet" type="text/css"/>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet"
+          type="text/css"/>
+
+
+    <style>
+        body {
+            --color-code-background: #fbf1c7;
+            --color-code-foreground: black;
+            --font-stack: JetBrains Mono, sans-serif;
+            --font-stack--monospace: JetBrains Mono, monospace;
+            --color-brand-primary: #8f3f71;
+            --color-brand-content: #076678;
+
+        }
+
+        @media not print {
+            body[data-theme="dark"] {
+                --color-code-background: #282828;
+                --color-code-foreground: #dddddd;
+                --color-brand-primary: #b16286;
+                --color-brand-content: #458588;
+                --color-background-primary: #3c3836;
+                --color-background-secondary: #282828;
+                --color-foreground-primary: #fbf1c7;
+                --color-foreground-secondary: #ebdbb2;
+                --color-highlighted-background: #d79921;
+                --color-highlight-on-target: #504945;
+
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body:not([data-theme="light"]) {
+                    --color-code-background: #282828;
+                    --color-code-foreground: #dddddd;
+                    --color-brand-primary: #b16286;
+                    --color-brand-content: #458588;
+                    --color-background-primary: #3c3836;
+                    --color-background-secondary: #282828;
+                    --color-foreground-primary: #fbf1c7;
+                    --color-foreground-secondary: #ebdbb2;
+                    --color-highlighted-background: #d79921;
+                    --color-highlight-on-target: #504945;
+
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+</script>
+
+
+<svg style="display: none;" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="svg-toc" viewBox="0 0 24 24">
+        <title>Contents</title>
+        <svg fill="currentColor" stroke="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+            <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-menu" viewBox="0 0 24 24">
+        <title>Menu</title>
+        <svg class="feather-menu" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="3" x2="21" y1="12" y2="12"></line>
+            <line x1="3" x2="21" y1="6" y2="6"></line>
+            <line x1="3" x2="21" y1="18" y2="18"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+        <title>Expand</title>
+        <svg class="feather-chevron-right" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun" viewBox="0 0 24 24">
+        <title>Light mode</title>
+        <svg class="feather-sun" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" x2="12" y1="1" y2="3"></line>
+            <line x1="12" x2="12" y1="21" y2="23"></line>
+            <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+            <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+            <line x1="1" x2="3" y1="12" y2="12"></line>
+            <line x1="21" x2="23" y1="12" y2="12"></line>
+            <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+            <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+        </svg>
+    </symbol>
+    <symbol id="svg-moon" viewBox="0 0 24 24">
+        <title>Dark mode</title>
+        <svg class="icon-tabler-moon" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
+        </svg>
+    </symbol>
+    <symbol id="svg-sun-half" viewBox="0 0 24 24">
+        <title>Auto light/dark mode</title>
+        <svg class="icon-tabler-shadow" fill="none" stroke="currentColor" stroke-linecap="round"
+             stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none" stroke="none"/>
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M13 12h5"/>
+            <path d="M13 15h4"/>
+            <path d="M13 18h1"/>
+            <path d="M13 9h4"/>
+            <path d="M13 6h1"/>
+        </svg>
+    </symbol>
+</svg>
+
+<input class="sidebar-toggle" id="__navigation" name="__navigation" type="checkbox">
+<input class="sidebar-toggle" id="__toc" name="__toc" type="checkbox">
+<label class="overlay sidebar-overlay" for="__navigation">
+    <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+    <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+<div class="page">
+    <header class="mobile-header">
+        <div class="header-left">
+            <label class="nav-overlay-icon" for="__navigation">
+                <div class="visually-hidden">Toggle site navigation sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-menu"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+        <div class="header-center">
+            <a href="index.html">
+                <div class="brand">flarchitect</div>
+            </a>
+        </div>
+        <div class="header-right">
+            <div class="theme-toggle-container theme-toggle-header">
+                <button class="theme-toggle">
+                    <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                    <svg class="theme-icon-when-auto">
+                        <use href="#svg-sun-half"></use>
+                    </svg>
+                    <svg class="theme-icon-when-dark">
+                        <use href="#svg-moon"></use>
+                    </svg>
+                    <svg class="theme-icon-when-light">
+                        <use href="#svg-sun"></use>
+                    </svg>
+                </button>
+            </div>
+            <label class="toc-overlay-icon toc-header-icon" for="__toc">
+                <div class="visually-hidden">Toggle table of contents sidebar</div>
+                <i class="icon">
+                    <svg>
+                        <use href="#svg-toc"></use>
+                    </svg>
+                </i>
+            </label>
+        </div>
+    </header>
+    <aside class="sidebar-drawer">
+        <div class="sidebar-container">
+
+            <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+
+                <div class="sidebar-logo-container">
+                    <img alt="Logo" class="sidebar-logo" src="_static/logo.png"/>
+                </div>
+
+                <span class="sidebar-brand-text">flarchitect</span>
+
+            </a>
+                <form action="search.html" class="sidebar-search-container" method="get" role="search">
+                    <input aria-label="Search" class="sidebar-search" name="q" placeholder="Search">
+                    <input name="check_keywords" type="hidden" value="yes">
+                    <input name="area" type="hidden" value="default">
+                </form>
+                <div id="searchbox"></div>
+                <div class="sidebar-scroll">
+                    <div class="sidebar-tree">
+                        <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+                        <ul class="current">
+                            <li class="toctree-l1"><a class="reference internal"
+                                                      href="installation.html">Installation</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy
+                                Models</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a>
+                            </li>
+                            <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Callbacks</a>
+                            </li>
+                            <li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input
+                                    class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1"
+                                    role="switch" type="checkbox"/><label for="toctree-checkbox-1">
+                                <div class="visually-hidden">Toggle navigation of Configuration</div>
+                                <i class="icon">
+                                    <svg>
+                                        <use href="#svg-arrow-right"></use>
+                                    </svg>
+                                </i></label>
+                                <ul>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_.html">Config Globals</a>
+                                    </li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/global_method.html">Config by
+                                        Method Globals</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model.html">Config Models</a></li>
+                                    <li class="toctree-l2"><a class="reference internal"
+                                                              href="config_locations/model_method.html">Config by Method
+                                        Models</a></li>
+                                </ul>
+                            </li>
+                            <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+                            <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+                        </ul>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </aside>
+    <div class="main">
+        <div class="content">
+            <div class="article-container">
+                <a class="back-to-top muted-link" href="#">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+                    </svg>
+                    <span>Back to top</span>
+                </a>
+                <div class="content-icon-container">
+
+                    <div class="theme-toggle-container theme-toggle-content">
+                        <button class="theme-toggle">
+                            <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+                            <svg class="theme-icon-when-auto">
+                                <use href="#svg-sun-half"></use>
+                            </svg>
+                            <svg class="theme-icon-when-dark">
+                                <use href="#svg-moon"></use>
+                            </svg>
+                            <svg class="theme-icon-when-light">
+                                <use href="#svg-sun"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <label class="toc-overlay-icon toc-content-icon" for="__toc">
+                        <div class="visually-hidden">Toggle table of contents sidebar</div>
+                        <i class="icon">
+                            <svg>
+                                <use href="#svg-toc"></use>
+                            </svg>
+                        </i>
+                    </label>
+                </div>
+                <article role="main">
+                    <section id="callbacks">
+                        <h1>Callbacks<a class="headerlink" href="#callbacks" title="Link to this heading">#</a></h1>
+                        <p>While accessing and updating your models via the API <strong>flask-schema</strong> has
+                            created is great. Sometimes you need to
+                            perform some additional logic before or after a model is returned, created, updated, deleted
+                            or if an error is raised.</p>
+                        <p>You might need to log API calls in the database, or send out an email when an error is
+                            raised. Possibly you need to
+                            perform some additional validation on the data before it is saved to the database.</p>
+                        <p><strong>flask-schema</strong> provides a way to do this by defining callbacks on your <a
+                                class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                            models or <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                            configuration.</p>
+                        <section id="callback-lifecycle">
+                            <h2>Callback Lifecycle<a class="headerlink" href="#callback-lifecycle"
+                                                     title="Link to this heading">#</a></h2>
+                            <p>Callbacks can fire at 3 different points in the API request lifecycle.</p>
+                            <ol class="arabic simple">
+                                <li><p><strong>Setup Callback</strong> - This is called before any database operation is
+                                    executed. This could be used to perform any
+                                    additional validation or logging before the database operation is executed.</p></li>
+                                <li><p><strong>Return Callback</strong> - This is called before the completed API
+                                    response is returned. Here you could intercept the
+                                    response and perform any additional logic before the response is returned to the
+                                    client.</p></li>
+                                <li><p><strong>Error Callback</strong> - This is called when an exception is raised.
+                                    This could be used to log the error, send an email
+                                    or perform any additional logic when an exception is raised.</p></li>
+                            </ol>
+                        </section>
+                        <section id="configuring-callbacks">
+                            <h2>Configuring Callbacks<a class="headerlink" href="#configuring-callbacks"
+                                                        title="Link to this heading">#</a></h2>
+                            <p><strong>flask-schema</strong> uses the <a class="reference external"
+                                                                         href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                configuration to define global configuration values and these same configuration
+                                values can be applied to specific <a class="reference external"
+                                                                     href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                    method</a>’s or <a class="reference external"
+                                                       href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                models.</p>
+                            <div class="admonition note">
+                                <p class="admonition-title">Note</p>
+                                <p>For comprehensive details on configuration, and where they can be applied visit our
+                                    <a class="reference internal" href="configuration.html"><span class="doc">configuration</span></a>
+                                    page.</p>
+                            </div>
+                            <section id="configuration-keys">
+                                <h3>Configuration Keys<a class="headerlink" href="#configuration-keys"
+                                                         title="Link to this heading">#</a></h3>
+                                <dl>
+                                    <dt><a class="reference external" href="configuration.html#SETUP_CALLBACK">SETUP_CALLBACK</a>
+                                    </dt>
+                                    <dd><p>Called before the database operation is executed.</p>
+                                        <p>Can be set in the <a class="reference external"
+                                                                href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            configuration or in <a class="reference external"
+                                                                   href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                            models.</p>
+                                    </dd>
+                                    <dt><a class="reference external" href="configuration.html#RETURN_CALLBACK">RETURN_CALLBACK</a>
+                                    </dt>
+                                    <dd><p>Called before the completed API response is returned.</p>
+                                        <p>Can be set in the <a class="reference external"
+                                                                href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            configuration or in <a class="reference external"
+                                                                   href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                            models.</p>
+                                    </dd>
+                                    <dt><a class="reference external" href="configuration.html#ERROR_CALLBACK">ERROR_CALLBACK</a>
+                                    </dt>
+                                    <dd><p>Called when an exception is raised.</p>
+                                        <p>Can only be set in the <a class="reference external"
+                                                                     href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            configuration, not in models.</p>
+                                    </dd>
+                                </dl>
+                            </section>
+                            <section id="configuration-placement">
+                                <h3>Configuration Placement<a class="headerlink" href="#configuration-placement"
+                                                              title="Link to this heading">#</a></h3>
+                                <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+                                    <summary class="sd-summary-title sd-card-header">
+                                        Flask Global Configuration
+                                        <div class="sd-summary-down docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-down" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M5.22 8.72a.75.75 0 000 1.06l6.25 6.25a.75.75 0 001.06 0l6.25-6.25a.75.75 0 00-1.06-1.06L12 14.44 6.28 8.72a.75.75 0 00-1.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="sd-summary-up docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-up" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M18.78 15.28a.75.75 0 000-1.06l-6.25-6.25a.75.75 0 00-1.06 0l-6.25 6.25a.75.75 0 101.06 1.06L12 9.56l5.72 5.72a.75.75 0 001.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </summary>
+                                    <div class="sd-summary-content sd-card-body docutils">
+                                        <p class="sd-card-text">These configuration values can be set in your <a
+                                                class="reference external"
+                                                href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            configuration and will apply to all endpoints unless a more
+                                            specific value is set.</p>
+                                        <blockquote>
+                                            <div><p class="sd-card-text">Using the structure of <code
+                                                    class="docutils literal notranslate"><span class="pre">API_{configuration_key}</span></code>
+                                            </p>
+                                                <p class="sd-card-text">i.e API_SETUP_CALLBACK = my_setup_callback</p>
+                                            </div>
+                                        </blockquote>
+                                        <ul class="simple">
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#SETUP_CALLBACK">API_SETUP_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                any database operation is executed.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#RETURN_CALLBACK">API_RETURN_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                the completed API response is returned.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#ERROR_CALLBACK">API_ERROR_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed when an
+                                                exception is raised.</p></li>
+                                        </ul>
+                                    </div>
+                                </details>
+                                <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+                                    <summary class="sd-summary-title sd-card-header">
+                                        Flask Method Based Configuration
+                                        <div class="sd-summary-down docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-down" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M5.22 8.72a.75.75 0 000 1.06l6.25 6.25a.75.75 0 001.06 0l6.25-6.25a.75.75 0 00-1.06-1.06L12 14.44 6.28 8.72a.75.75 0 00-1.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="sd-summary-up docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-up" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M18.78 15.28a.75.75 0 000-1.06l-6.25-6.25a.75.75 0 00-1.06 0l-6.25 6.25a.75.75 0 101.06 1.06L12 9.56l5.72 5.72a.75.75 0 001.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </summary>
+                                    <div class="sd-summary-content sd-card-body docutils">
+                                        <p class="sd-card-text">These methods will override any global configuration
+                                            values for the specific <a class="reference external"
+                                                                       href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                                method</a> and are set in your <a class="reference external"
+                                                                                  href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                            configuration.</p>
+                                        <blockquote>
+                                            <div><p class="sd-card-text">Using the structure of <code
+                                                    class="docutils literal notranslate"><span class="pre">API_{method}_{configuration_key}</span></code>
+                                            </p>
+                                                <p class="sd-card-text">i.e API_GET_SETUP_CALLBACK =
+                                                    my_get_setup_callback</p>
+                                            </div>
+                                        </blockquote>
+                                        <ul class="simple">
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#SETUP_CALLBACK">API_GET_SETUP_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                any <cite>GET</cite> database operation is executed.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#RETURN_CALLBACK">API_POST_RETURN_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                a completed <cite>POST</cite> API response is returned.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#ERROR_CALLBACK">API_DELETE_ERROR_CALLBACK</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed when a
+                                                <cite>DELETE</cite> API call has an exception raised.</p></li>
+                                        </ul>
+                                    </div>
+                                </details>
+                                <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+                                    <summary class="sd-summary-title sd-card-header">
+                                        SQLAlchemy Model Configuration
+                                        <div class="sd-summary-down docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-down" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M5.22 8.72a.75.75 0 000 1.06l6.25 6.25a.75.75 0 001.06 0l6.25-6.25a.75.75 0 00-1.06-1.06L12 14.44 6.28 8.72a.75.75 0 00-1.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="sd-summary-up docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-up" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M18.78 15.28a.75.75 0 000-1.06l-6.25-6.25a.75.75 0 00-1.06 0l-6.25 6.25a.75.75 0 101.06 1.06L12 9.56l5.72 5.72a.75.75 0 001.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </summary>
+                                    <div class="sd-summary-content sd-card-body docutils">
+                                        <p class="sd-card-text">These override any of the previous configuration values,
+                                            only overridden by method based model configuration. These
+                                            functions will apply to ANY endpoint for the model.</p>
+                                        <blockquote>
+                                            <div><p class="sd-card-text">Using the structure of <code
+                                                    class="docutils literal notranslate"><span class="pre">{configuration_key}</span></code>
+                                                in lower case.</p>
+                                                <p class="sd-card-text">Applied to the <code
+                                                        class="docutils literal notranslate"><span
+                                                        class="pre">Meta</span></code> class of the model.</p>
+                                            </div>
+                                        </blockquote>
+                                        <p class="sd-card-text">i.e</p>
+                                        <div class="highlight-python notranslate">
+                                            <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                    class="nc">MyModel</span><span class="p">(</span><span
+                                                    class="n">db</span><span class="o">.</span><span
+                                                    class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">setup_callback</span> <span class="o">=</span> <span class="n">my_setup_callback</span>
+</pre>
+                                            </div>
+                                        </div>
+                                        <p class="sd-card-text">Example Configuration Values:</p>
+                                        <ul class="simple">
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#SETUP_CALLBACK">setup_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                database operation is executed on the model.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#RETURN_CALLBACK">return_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                a completed request for this model is returned by the API.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#ERROR_CALLBACK">error_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed when a
+                                                API call has an exception raised for this models endpoint.</p></li>
+                                        </ul>
+                                    </div>
+                                </details>
+                                <details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+                                    <summary class="sd-summary-title sd-card-header">
+                                        SQLAlchemy Model Method Based Configuration
+                                        <div class="sd-summary-down docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-down" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M5.22 8.72a.75.75 0 000 1.06l6.25 6.25a.75.75 0 001.06 0l6.25-6.25a.75.75 0 00-1.06-1.06L12 14.44 6.28 8.72a.75.75 0 00-1.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="sd-summary-up docutils">
+                                            <svg aria-hidden="true" class="sd-octicon sd-octicon-chevron-up" height="1.5em"
+                                                 version="1.1" viewBox="0 0 24 24"
+                                                 width="1.5em">
+                                                <path d="M18.78 15.28a.75.75 0 000-1.06l-6.25-6.25a.75.75 0 00-1.06 0l-6.25 6.25a.75.75 0 101.06 1.06L12 9.56l5.72 5.72a.75.75 0 001.06 0z"
+                                                      fill-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </summary>
+                                    <div class="sd-summary-content sd-card-body docutils">
+                                        <p class="sd-card-text">These take the highest priority and will override all
+                                            other configuration values, and are set directly in the models</p>
+                                        <blockquote>
+                                            <div><p class="sd-card-text">Using the structure of <code
+                                                    class="docutils literal notranslate"><span class="pre">{method}_{configuration_key}</span></code>
+                                                in lower case.</p>
+                                                <p class="sd-card-text">Applied to the <code
+                                                        class="docutils literal notranslate"><span
+                                                        class="pre">Meta</span></code> class of the model.</p>
+                                            </div>
+                                        </blockquote>
+                                        <p class="sd-card-text">i.e</p>
+                                        <div class="highlight-python notranslate">
+                                            <div class="highlight"><pre><span></span><span class="k">class</span> <span
+                                                    class="nc">MyModel</span><span class="p">(</span><span
+                                                    class="n">db</span><span class="o">.</span><span
+                                                    class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">get_setup_callback</span> <span class="o">=</span> <span class="n">my_get_setup_callback</span>
+        <span class="n">post_error_callback</span> <span class="o">=</span> <span
+                                                        class="n">my_post_error_callback</span>
+</pre>
+                                            </div>
+                                        </div>
+                                        <p class="sd-card-text">Example Configuration Values:</p>
+                                        <ul class="simple">
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#SETUP_CALLBACK">get_setup_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                any <cite>GET</cite> database operation is executed on the model.</p>
+                                            </li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#RETURN_CALLBACK">post_return_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed before
+                                                a completed <cite>POST</cite> request for this model is returned by the
+                                                API.</p></li>
+                                            <li><p class="sd-card-text"><a class="reference external"
+                                                                           href="configuration.html#ERROR_CALLBACK">delete_error_callback</a>
+                                                - <code class="docutils literal notranslate"><span
+                                                        class="pre">callable</span></code> object to be executed when a
+                                                <cite>DELETE</cite> API call has an exception raised for this model’s
+                                                endpoint.</p></li>
+                                        </ul>
+                                    </div>
+                                </details>
+                            </section>
+                        </section>
+                        <section id="callback-examples">
+                            <h2>Callback Examples<a class="headerlink" href="#callback-examples"
+                                                    title="Link to this heading">#</a></h2>
+                            <p>To demonstrate how to use callbacks, please see the demo folder of our <a
+                                    class="reference external" href="https://github.com/arched-dev/flarchitect">repo</a>
+                                or view the demo code <a class="reference external"
+                                                         href="https://github.com/arched-dev/flarchitect/tree/master/demo/callbacks">here</a>.
+                            </p>
+                        </section>
+                        <section id="callback-signatures">
+                            <h2>Callback Signatures<a class="headerlink" href="#callback-signatures"
+                                                      title="Link to this heading">#</a></h2>
+                            <p>It’s probably best for your callback functions to accept <cite>**kwargs</cite> as the
+                                only argument. This will allow you to access
+                                any data you need from the request, response or error.</p>
+                            <p>A selection of data is passed to the callback functions (where possible), and this can
+                                differ depending on the
+                                <a class="reference external"
+                                   href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP method</a> or
+                                lifecycle position. <em>It’s also possible the structure of this data could change in
+                                    later versions.</em></p>
+                            <section id="setup-callback-signature">
+                                <h3>Setup callback signature<a class="headerlink" href="#setup-callback-signature"
+                                                               title="Link to this heading">#</a></h3>
+                                <p>The setup callback function’s kwargs will accept data that could be needed to process
+                                    the request.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;model&#39;</span><span
+                                            class="p">:</span> <span class="s2">&quot;&lt;class &#39;demo.model_extension.model.models.Author&#39;&gt;&quot;</span><span
+                                            class="p">,</span> <span class="s1">&#39;id&#39;</span><span
+                                            class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span
+                                            class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;join_model&#39;</span><span
+                                            class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;many&#39;</span><span
+                                            class="p">:</span> <span class="kc">False</span><span
+                                            class="p">,</span> <span class="s1">&#39;url&#39;</span><span
+                                            class="p">:</span> <span class="s1">&#39;/authors&#39;</span><span
+                                            class="p">,</span> <span class="s1">&#39;name&#39;</span><span
+                                            class="p">:</span> <span class="s1">&#39;author&#39;</span><span
+                                            class="p">,</span> <span class="s1">&#39;output_schema&#39;</span><span
+                                            class="p">:</span> <span class="s2">&quot;&lt;class &#39;abc.AuthorSchema&#39;&gt;&quot;</span><span
+                                            class="p">,</span> <span class="s1">&#39;session&#39;</span><span class="p">:</span> <span
+                                            class="s2">&quot;&lt;sqlalchemy.orm.scoping.scoped_session object at 0x7fbde078ae10&gt;&quot;</span><span
+                                            class="p">,</span> <span class="s1">&#39;input_schema&#39;</span><span
+                                            class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;group_tag&#39;</span><span
+                                            class="p">:</span> <span class="s1">&#39;People/Companies&#39;</span><span
+                                            class="p">}</span>
+</pre>
+                                    </div>
+                                </div>
+                                <p>The setup function should return the <cite>kwargs</cite> object with any changes made
+                                    to the data.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">my_setup_callback</span><span class="p">(</span><span class="o">**</span><span
+                                            class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Do some logic here</span>
+    <span class="k">return</span> <span class="n">kwargs</span>
+</pre>
+                                    </div>
+                                </div>
+                            </section>
+                            <section id="return-callback-signature">
+                                <h3>Return callback signature<a class="headerlink" href="#return-callback-signature"
+                                                                title="Link to this heading">#</a></h3>
+                                <p>The return callback function’s kwargs will house the data that will be returned to
+                                    the client. This may be the <a class="reference external"
+                                                                   href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                    query object or a dictionary of data depending on the query made.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;model&#39;</span><span
+                                            class="p">:</span> <span class="s2">&quot;&lt;class &#39;demo.model_extension.model.models.Book&#39;&gt;&quot;</span><span
+                                            class="p">,</span> <span class="s1">&#39;output&#39;</span><span
+                                            class="p">:</span> <span class="p">{</span><span
+                                            class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="s2">&quot;&lt;Book 137&gt;&quot;</span><span
+                                            class="p">},</span> <span class="s1">&#39;id&#39;</span><span
+                                            class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;field&#39;</span><span
+                                            class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;join_model&#39;</span><span
+                                            class="p">:</span> <span class="kc">None</span><span
+                                            class="p">,</span> <span class="s1">&#39;deserialized_data&#39;</span><span
+                                            class="p">:</span> <span class="p">{</span><span
+                                            class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;The Crimson Beacon&#39;</span><span
+                                            class="p">,</span> <span class="s1">&#39;isbn&#39;</span><span
+                                            class="p">:</span> <span class="s1">&#39;9782227215&#39;</span><span
+                                            class="p">,</span> <span class="s1">&#39;publication_date&#39;</span><span
+                                            class="p">:</span> <span
+                                            class="s2">&quot;datetime.date(2024, 4, 19)&quot;</span><span
+                                            class="p">,</span> <span class="s1">&#39;author_id&#39;</span><span
+                                            class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span
+                                            class="s1">&#39;publisher_id&#39;</span><span class="p">:</span> <span
+                                            class="mi">12</span><span class="p">}}</span>
+</pre>
+                                    </div>
+                                </div>
+                                <p>The return function should return the <cite>kwargs</cite> object with any changes
+                                    made to the data.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">my_return_callback</span><span class="p">(</span><span class="o">**</span><span
+                                            class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Do some logic here</span>
+    <span class="k">return</span> <span class="n">kwargs</span>
+</pre>
+                                    </div>
+                                </div>
+                            </section>
+                            <section id="post-dump-callback-signature">
+                                <h3>Post dump callback signature<a class="headerlink"
+                                                                   href="#post-dump-callback-signature"
+                                                                   title="Link to this heading">#</a></h3>
+                                <p>The post dump callback function accepts two arguments, the data (the serialized model
+                                    in <code class="docutils literal notranslate"><span class="pre">dict</span></code>
+                                    form) and <code class="docutils literal notranslate"><span
+                                            class="pre">**kwargs</span></code>
+                                    passed to the schemas dump method.</p>
+                                <p>You must return the data after any changes have been made or the api will return
+                                    <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">my_dump_function_callback</span><span class="p">(</span><span
+                                            class="n">data</span><span class="p">,</span> <span class="o">**</span><span
+                                            class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span
+                                                class="p">(</span><span class="s2">&quot;name&quot;</span><span
+                                                class="p">)</span> <span class="o">==</span> <span class="s2">&quot;John&quot;</span><span
+                                                class="p">:</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span
+                                                class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Johnathon&quot;</span>
+    <span class="k">return</span> <span class="n">data</span>
+</pre>
+                                    </div>
+                                </div>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">my_dump_function_callback</span><span class="p">(</span><span
+                                            class="n">data</span><span class="p">,</span> <span class="o">**</span><span
+                                            class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">validate</span><span class="o">.</span><span
+                                                class="n">email</span><span class="p">(</span><span
+                                                class="n">data</span><span class="o">.</span><span
+                                                class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span
+                                                class="p">)):</span>
+        <span class="k">raise</span> <span class="n">CustomHTTPException</span><span class="p">(</span><span class="mi">400</span><span
+                                                class="p">,</span> <span
+                                                class="s2">&quot;Invalid email&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+</pre>
+                                    </div>
+                                </div>
+                            </section>
+                            <section id="error-callback-signature">
+                                <h3>Error callback signature<a class="headerlink" href="#error-callback-signature"
+                                                               title="Link to this heading">#</a></h3>
+                                <p>The error callback function accepts the exception and traceback as arguments. There
+                                    is no need to return anything.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">error_callback</span><span class="p">(</span><span
+                                            class="n">e</span><span class="p">,</span> <span
+                                            class="n">traceback</span><span class="p">):</span>
+    <span class="c1"># Do some logic here</span>
+</pre>
+                                    </div>
+                                </div>
+                            </section>
+                        </section>
+                        <section id="custom-exceptions">
+                            <h2>Custom Exceptions<a class="headerlink" href="#custom-exceptions"
+                                                    title="Link to this heading">#</a></h2>
+                            <p>Raising a custom exception in your callback will cause the API to return a custom error
+                                response. This can be useful
+                                for following the same error response structure as the rest of your API.</p>
+                            <p>This is simple and can be achieved with the custom exception class provided by <strong>flask-schema</strong>.
+                            </p>
+                            <div class="highlight-python notranslate">
+                                <div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask_schema</span> <span
+                                        class="kn">import</span> <span class="n">CustomHTTPException</span>
+
+<span class="k">def</span> <span class="nf">my_error_callback</span><span class="p">(</span><span
+                                            class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="n">CustomHTTPException</span><span class="p">(</span><span
+                                            class="mi">400</span><span class="p">,</span> <span class="s2">&quot;My custom error message&quot;</span><span
+                                            class="p">)</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">db</span><span
+                                            class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">error_callback</span> <span class="o">=</span> <span class="n">my_error_callback</span>
+</pre>
+                                </div>
+                            </div>
+                        </section>
+                        <section id="extending-query-params">
+                            <h2>Extending Query Params<a class="headerlink" href="#extending-query-params"
+                                                         title="Link to this heading">#</a></h2>
+                            <p>If you are hoping to extend a endpoints by adding additional <code
+                                    class="docutils literal notranslate"><span class="pre">query</span> <span
+                                    class="pre">params</span></code> to your endpoints defining the function is
+                                beyond the scope of <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code>.
+                            </p>
+                            <div class="admonition note">
+                                <p class="admonition-title">Note</p>
+                                <p>If you are looking to add aditional filters…</p>
+                                <p>The <a class="reference external" href="configuration.html#RETURN_CALLBACK">return
+                                    callback</a> is the best place to handle this, as it will have
+                                    access to the <a class="reference external"
+                                                     href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> <code
+                                            class="docutils literal notranslate"><span class="pre">Query</span></code>
+                                    object when in the kwargs passed to the function.</p>
+                                <p>From here you can quite easily add additional filters.</p>
+                                <div class="highlight-python notranslate">
+                                    <div class="highlight"><pre><span></span><span class="k">def</span> <span
+                                            class="nf">my_return_callback</span><span class="p">(</span><span class="o">**</span><span
+                                            class="n">kwargs</span><span class="p">):</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span
+                                                class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span
+                                                class="p">)</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span
+                                                class="n">filter_by</span><span class="p">(</span><span class="n">my_field</span><span
+                                                class="o">=</span><span class="n">kwargs</span><span
+                                                class="o">.</span><span class="n">get</span><span
+                                                class="p">(</span><span
+                                                class="s2">&quot;my_query_param&quot;</span><span class="p">))</span>
+    <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span
+                                                class="p">]</span> <span class="o">=</span> <span class="n">query</span>
+    <span class="k">return</span> <span class="n">kwargs</span>
+</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            <p>However, you’ll like want to document any changes to the available query params in <a
+                                    class="reference external" href="https://redocly.github.io/redoc/">Redoc</a>. This
+                                can be achieved with the
+                                <a class="reference external" href="configuration.html#ADDITIONAL_QUERY_PARAMS">ADDITIONAL_QUERY_PARAMS</a>
+                                configuration key.</p>
+                            <p>This key can be set in the <a class="reference external"
+                                                             href="https://flask.palletsprojects.com/en/latest/">Flask</a>
+                                configuration or in <a class="reference external"
+                                                       href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a>
+                                models (globally or by <a class="reference external"
+                                                          href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">Http
+                                    method</a>).
+                                This means you can apply new query params to specific models, or across the API as a
+                                whole.</p>
+                            <p>The expected value is a <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code>
+                                of the query params you want to add to the endpoint. Please use the below code
+                                examples as a guide for the expected structure.</p>
+                            <p>Consider the below example where we add a new query param to the <a
+                                    class="reference external"
+                                    href="https://flask.palletsprojects.com/en/latest/">Flask</a> configuration (which
+                                is applied globally) to
+                                every model and endpoint in the documentation.</p>
+                            <div class="highlight-python notranslate">
+                                <div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span
+                                        class="p">:</span>
+
+    <span class="n">API_ADDITIONAL_QUERY_PARAMS</span> <span class="o">=</span> <span class="p">[{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;log&quot;</span><span
+                                            class="p">,</span>
+        <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span
+                                            class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Log call into the database&quot;</span><span
+                                            class="p">,</span> <span class="c1"># optional</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="kc">False</span><span
+                                            class="p">,</span> <span class="c1"># optional</span>
+        <span class="s2">&quot;deprecated&quot;</span><span class="p">:</span> <span class="kc">False</span><span
+                                            class="p">,</span> <span class="c1"># optional</span>
+        <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span
+                                            class="s2">&quot;string&quot;</span><span class="p">,</span> <span
+                                            class="c1"># see below for options available</span>
+            <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span
+                                            class="s2">&quot;password&quot;</span><span class="p">,</span> <span
+                                            class="c1"># see below for options available ... optional</span>
+            <span class="s2">&quot;example&quot;</span><span class="p">:</span> <span class="mi">1</span>  <span
+                                            class="c1"># optional</span>
+        <span class="p">}</span>
+    <span class="p">}]</span>
+</pre>
+                                </div>
+                            </div>
+                            <p>Or set to a specific <a class="reference external"
+                                                       href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP
+                                method</a> - <code class="docutils literal notranslate"><span
+                                    class="pre">GET</span></code> on the model level.</p>
+                            <div class="highlight-python notranslate">
+                                <div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span
+                                        class="p">(</span><span class="n">db</span><span class="o">.</span><span
+                                        class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">get_additional_query_params</span> <span class="o">=</span> <span class="p">[{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;log&quot;</span><span
+                                            class="p">,</span>
+                <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span
+                                            class="p">,</span>
+                <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Log call into the database&quot;</span><span
+                                            class="p">,</span> <span class="c1"># optional</span>
+                <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="kc">False</span><span
+                                            class="p">,</span> <span class="c1"># optional</span>
+                <span class="s2">&quot;deprecated&quot;</span><span class="p">:</span> <span
+                                            class="kc">False</span><span class="p">,</span> <span
+                                            class="c1"># optional</span>
+                <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span
+                                            class="s2">&quot;string&quot;</span><span class="p">,</span> <span
+                                            class="c1"># see below for options available</span>
+                    <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;password&quot;</span><span
+                                            class="p">,</span> <span class="c1"># see below for options available ... optional</span>
+                    <span class="s2">&quot;example&quot;</span><span class="p">:</span> <span class="mi">1</span>  <span
+                                            class="c1"># optional</span>
+                <span class="p">}</span>
+            <span class="p">}]</span>
+</pre>
+                                </div>
+                            </div>
+                            <section id="acceptable-types">
+                                <h3>Acceptable Types<a class="headerlink" href="#acceptable-types"
+                                                       title="Link to this heading">#</a></h3>
+                                <p>Below is a list of acceptable types for the <cite>schema</cite> key in the <a
+                                        class="reference external" href="configuration.html#ADDITIONAL_QUERY_PARAMS">ADDITIONAL_QUERY_PARAMS</a>
+                                    configuration key.</p>
+                                <blockquote>
+                                    <div><p><code class="docutils literal notranslate"><span
+                                            class="pre">string</span></code>: For string values.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">number</span></code>: For floating-point numbers.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">integer</span></code>: For whole numbers.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">boolean</span></code>: For true or false values.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">array</span></code>: For arrays or lists of values.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">object</span></code>: For JSON objects.</p>
+                                    </div>
+                                </blockquote>
+                            </section>
+                            <section id="acceptable-formats">
+                                <h3>Acceptable Formats<a class="headerlink" href="#acceptable-formats"
+                                                         title="Link to this heading">#</a></h3>
+                                <p>Below is a list of acceptable formats for the <cite>schema</cite> key in the <a
+                                        class="reference external" href="configuration.html#ADDITIONAL_QUERY_PARAMS">ADDITIONAL_QUERY_PARAMS</a>
+                                    configuration key.</p>
+                                <dl>
+                                    <dt>string formats</dt>
+                                    <dd><p><code class="docutils literal notranslate"><span
+                                            class="pre">date</span></code>: Full-date according to RFC3339 (e.g.,
+                                        2020-01-01).</p>
+                                        <p><code class="docutils literal notranslate"><span class="pre">date-time</span></code>:
+                                            The date-time notation as defined by RFC 3339, section 5.6 (e.g.,
+                                            2020-01-01T12:00:00Z).</p>
+                                        <p><code class="docutils literal notranslate"><span class="pre">password</span></code>:
+                                            A hint to UIs to mask the input.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">byte</span></code>: Base64-encoded characters, for binary
+                                            data carried in JSON strings.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">binary</span></code>: Binary data not encoded in a string,
+                                            used for file uploads.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">email</span></code>: String must be in email format.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">uuid</span></code>: String must be a UUID.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">uri</span></code>: String must be a URI.</p>
+                                        <p><code class="docutils literal notranslate"><span class="pre">hostname</span></code>:
+                                            String must be a hostname.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">ipv4</span></code>: String must be an IPv4.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">ipv6</span></code>: String must be an IPv6.</p>
+                                    </dd>
+                                    <dt>integer formats</dt>
+                                    <dd><p><code class="docutils literal notranslate"><span
+                                            class="pre">int32</span></code>: Signed 32-bit integers.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">int64</span></code>: Signed 64-bit integers (long).</p>
+                                    </dd>
+                                    <dt>number formats</dt>
+                                    <dd><p><code class="docutils literal notranslate"><span
+                                            class="pre">float</span></code>: Floating-point numbers.</p>
+                                        <p><code class="docutils literal notranslate"><span
+                                                class="pre">double</span></code>: Double-precision floating-point
+                                            numbers.</p>
+                                    </dd>
+                                </dl>
+                            </section>
+                        </section>
+                    </section>
+
+                </article>
+            </div>
+            <footer>
+
+                <div class="related-pages">
+                    <a class="next-page" href="configuration.html">
+                        <div class="page-info">
+                            <div class="context">
+                                <span>Next</span>
+                            </div>
+                            <div class="title">Configuration</div>
+                        </div>
+                        <svg class="furo-related-icon">
+                            <use href="#svg-arrow-right"></use>
+                        </svg>
+                    </a>
+                    <a class="prev-page" href="authentication.html">
+                        <svg class="furo-related-icon">
+                            <use href="#svg-arrow-right"></use>
+                        </svg>
+                        <div class="page-info">
+                            <div class="context">
+                                <span>Previous</span>
+                            </div>
+
+                            <div class="title">Authentication</div>
+
+                        </div>
+                    </a>
+                </div>
+                <div class="bottom-of-page">
+                    <div class="left-details">
+                        <div class="copyright">
+                            Copyright &#169; 2024, arched.dev (Lewis Morris)
+                        </div>
+                        Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link"
+                                                                                          href="https://pradyunsg.me">@pradyunsg</a>'s
+
+                        <a href="https://github.com/pradyunsg/furo">Furo</a>
+
+                    </div>
+                    <div class="right-details">
+
+                    </div>
+                </div>
+
+            </footer>
+        </div>
+        <aside class="toc-drawer">
+
+
+            <div class="toc-sticky toc-scroll">
+                <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+                </div>
+                <div class="toc-tree-container">
+                    <div class="toc-tree">
+                        <ul>
+                            <li><a class="reference internal" href="#">Callbacks</a>
+                                <ul>
+                                    <li><a class="reference internal" href="#callback-lifecycle">Callback Lifecycle</a>
+                                    </li>
+                                    <li><a class="reference internal" href="#configuring-callbacks">Configuring
+                                        Callbacks</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#configuration-keys">Configuration
+                                                Keys</a></li>
+                                            <li><a class="reference internal" href="#configuration-placement">Configuration
+                                                Placement</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#callback-examples">Callback Examples</a>
+                                    </li>
+                                    <li><a class="reference internal" href="#callback-signatures">Callback
+                                        Signatures</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#setup-callback-signature">Setup
+                                                callback signature</a></li>
+                                            <li><a class="reference internal" href="#return-callback-signature">Return
+                                                callback signature</a></li>
+                                            <li><a class="reference internal" href="#post-dump-callback-signature">Post
+                                                dump callback signature</a></li>
+                                            <li><a class="reference internal" href="#error-callback-signature">Error
+                                                callback signature</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a class="reference internal" href="#custom-exceptions">Custom Exceptions</a>
+                                    </li>
+                                    <li><a class="reference internal" href="#extending-query-params">Extending Query
+                                        Params</a>
+                                        <ul>
+                                            <li><a class="reference internal" href="#acceptable-types">Acceptable
+                                                Types</a></li>
+                                            <li><a class="reference internal" href="#acceptable-formats">Acceptable
+                                                Formats</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+            </div>
+
+
+        </aside>
+    </div>
+</div>
+<script src="_static/documentation_options.js?v=92734c54"></script>
+<script src="_static/doctools.js?v=888ff710"></script>
+<script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+<script src="_static/scripts/furo.js?v=32e29ea5"></script>
+<script src="_static/clipboard.min.js?v=a7894cd8"></script>
+<script src="_static/copybutton.js?v=f281be69"></script>
+<script src="_static/design-tabs.js?v=36754332"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% if model_relationship_names|length == 0 %}
+This model does not have any relationships with other models.
+{% else %}
+You can join multiple model endpoints together to perform more complex queries. This is especially useful when you
+want to retrieve related data from different resources in a single API call.
+
+### Syntax
+
+To join resources, use the `join` query parameter with a comma-separated list of the resource names you wish to join.
+
+- **Example**: `join={{ model_relationship_names[0] }}`
+
+### Table Name Requirement
+
+Once you include the `join` query parameter, it becomes mandatory to specify resource names for all your other query
+parameters. This is done to eliminate any ambiguity in the queries.
+
+- **Example with Join and Fields**: `?join={{ relationship_resource }}&fields={{ relationship_resource }}.{{ relationship_fields[0] }},{{ base_table }}.{{ base_fields[0] }}`
+
+### Tables That Can Be Joined
+
+The following resources can be joined to this endpoint:
+
+{% for model_relationship_name in model_relationship_names %}
+- `{{ model_relationship_name }}`
+{% endfor %}
+
+By utilising resources joins, you have the ability to make your API queries more expressive, enabling you to fetch
+precisely the data you need in an efficient manner.
+{% endif %}

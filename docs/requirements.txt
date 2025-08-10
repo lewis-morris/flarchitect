@@ -1,0 +1,15 @@
+sphinx
+sphinx-autobuild
+sphinx-basic-ng
+sphinx-copybutton
+sphinx-design2
+sphinx-prompt
+sphinx_inline_tabs
+sphinxcontrib-applehelp
+sphinxcontrib-devhelp
+sphinxcontrib-htmlhelp
+sphinxcontrib-jsmath
+sphinxcontrib-qthelp
+sphinxcontrib-serializinghtml
+sphinxext-opengraph
+furo
