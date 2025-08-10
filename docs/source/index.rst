@@ -15,9 +15,6 @@ flarchitect
    faq
    genindex
 
-
-keema-architect == bread, flarchitect.architect == api
-
 .. image:: /_static/coverage.svg
    :alt: Coverage Report
 
@@ -37,25 +34,17 @@ keema-architect == bread, flarchitect.architect == api
 
 
 
-**flarchitect** automatically creates rapid, prototype or production ready API's directly from `SQLAlchemy`_ models with
-accompanying `Redoc`_ documentation, all with little to no effort.
-
-By adding **flarchitect** to your `Flask`_ application, you can be up and running in seconds, creating a fully functional
-RESTful API, with a plethora of configuration options to suit your needs.
+**flarchitect** turns your `SQLAlchemy`_ models into a polished RESTful API complete with interactive `Redoc`_ documentation.
+Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments.
 
 What can it do?
 
-* Automatically detect and create endpoints, with nested model relationships and more.
-
-* Standardize your API responses with a consistent format.
-
-* Authenticate users with a variety of methods.
-
-* Add ratelimiting, caching and more with no work.
-
-* Be configured globally in `Flask`_ or in your `SQLAlchemy`_ models.
-
-* Automatically generate `Redoc`_ documentation.
+* Automatically detect and create endpoints, including nested relationships.
+* Standardise responses with a consistent structure.
+* Authenticate users with JWT access and refresh tokens.
+* Add configurable rate limits backed by Redis, Memcached or MongoDB.
+* Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
+* Generate `Redoc`_ documentation on the fly.
 
 What are you waiting for...?
 
