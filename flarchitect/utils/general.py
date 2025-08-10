@@ -363,7 +363,9 @@ def pluralize_last_word(converted_name: str) -> str:
         converted_name (str): The name after case conversion.
 
     Returns:
-        str: The name with the last word pluralized.
+        str: The name with the last word pluralized. If no alphabetic
+        characters are found, the original ``converted_name`` is returned
+        unchanged.
     """
     delimiters = {"_": "snake", "-": "kebab"}
     delimiter = next((d for d in delimiters if d in converted_name), "")
@@ -373,6 +375,9 @@ def pluralize_last_word(converted_name: str) -> str:
         if delimiter
         else re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", converted_name)
     )
+    if not words:
+        return converted_name
+
     last_word = words[-1]
     last_word_pluralized = p.plural(p.singular_noun(last_word) or last_word)
 

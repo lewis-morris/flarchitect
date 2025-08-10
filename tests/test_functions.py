@@ -2,7 +2,9 @@ import pytest
 
 from flarchitect.utils.core_utils import convert_case, dict_to_xml, get_count
 from flarchitect.utils.general import (
+    normalize_key,
     pluralize_last_word,
+    update_dict_if_flag_true,
     validate_flask_limiter_rate_limit_string,
     xml_to_dict,
 )
@@ -145,62 +147,42 @@ class TestConvertCase:
 
 
 class TestPluralizeLastWord:
-    #  pluralizes last word in camelCase
-    def test_pluralize_last_word_camel_case(self):
-        # Arrange
-        converted_name = "camelCase"
+    @pytest.mark.parametrize(
+        ("converted_name", "expected"),
+        [
+            ("camelCase", "camelCases"),
+            ("PascalCase", "PascalCases"),
+            ("snake_case", "snake_cases"),
+            ("SCREAMING_SNAKE_CASE", "SCREAMING_SNAKE_CASES"),
+            ("word", "words"),
+            ("12345", "12345"),
+        ],
+    )
+    def test_pluralize_last_word(self, converted_name: str, expected: str) -> None:
+        """Pluralize the final word of ``converted_name``."""
 
-        # Act
-        result = pluralize_last_word(converted_name)
+        assert pluralize_last_word(converted_name) == expected
 
-        # Assert
-        assert result == "camelCases"
 
-    #  pluralizes last word in PascalCase
-    def test_pluralize_last_word_pascal_case(self):
-        # Arrange
-        converted_name = "PascalCase"
+class TestGeneralHelpers:
+    def test_update_dict_if_flag_true(self) -> None:
+        """Update dictionary when flag is True."""
 
-        # Act
-        result = pluralize_last_word(converted_name)
+        output: dict[str, str] = {}
+        update_dict_if_flag_true(output, True, "TestKey", "value", "snake")
+        assert output == {"test_key": "value"}
 
-        # Assert
-        assert result == "PascalCases"
+    def test_update_dict_if_flag_false(self) -> None:
+        """Do not update dictionary when flag is False."""
 
-    #  pluralizes last word in snake_case
-    def test_pluralize_last_word_snake_case(self):
-        # Arrange
-        converted_name = "snake_case"
+        output: dict[str, str] = {"existing": "data"}
+        update_dict_if_flag_true(output, False, "TestKey", "value", "snake")
+        assert output == {"existing": "data"}
 
-        # Act
-        result = pluralize_last_word(converted_name)
+    def test_normalize_key(self) -> None:
+        """Normalize key to uppercase."""
 
-        # Assert
-        assert result == "snake_cases"
-
-    #  pluralizes last word in SCREAMING_SNAKE_CASE
-    def test_pluralize_last_word_screaming_snake_case(self):
-        # Arrange
-        converted_name = "SCREAMING_SNAKE_CASE"
-
-        # Act
-        result = pluralize_last_word(converted_name)
-
-        # Assert
-        assert result == "SCREAMING_SNAKE_CASES"
-
-    #  input with only one word returns the plural of that word
-    def test_pluralize_last_word_single_word(self):
-        # Arrange
-        converted_name = "word"
-
-        # Act
-        result = pluralize_last_word(converted_name)
-
-        # Assert
-        assert result == "words"
-
-    #  input with only non-alphabetic characters returns the same input
+        assert normalize_key("test") == "TEST"
 
 
 class TestXml:
