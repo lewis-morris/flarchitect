@@ -371,19 +371,22 @@ class CrudService:
         count = query.count()
         order_query = self.order_query(args_dict, query)
 
-        paginated_query, default_pagination_size = paginate_query(
-            order_query, args_dict.get("page", 1), args_dict.get("limit")
-        )
+        # Apply soft delete filtering before pagination to avoid operating on
+        # paginated objects, which lack SQLAlchemy query attributes such as
+        # ``column_descriptions``.
+        filtered_query = self.apply_soft_delete_filter(order_query)
 
-        final_query = self.apply_soft_delete_filter(paginated_query)
+        paginated_query, default_pagination_size = paginate_query(
+            filtered_query, args_dict.get("page", 1), args_dict.get("limit")
+        )
 
         return {
             "query": (
-                final_query.all()
-                if hasattr(final_query, "all")
-                else final_query.items
-                if hasattr(final_query, "items")
-                else final_query
+                paginated_query.all()
+                if hasattr(paginated_query, "all")
+                else paginated_query.items
+                if hasattr(paginated_query, "items")
+                else paginated_query
             ),
             "limit": (
                 int(args_dict.get("limit"))
@@ -421,7 +424,7 @@ class CrudService:
             return obj
         except (IntegrityError, DataError) as e:
             self.session.rollback()
-            raise CustomHTTPException(422, str(e.orig))
+            raise CustomHTTPException(422, str(e.orig)) from e
 
     def update_object(
         self, lookup_val: int | str, data_dict: dict[str, Any], *args, **kwargs
@@ -460,11 +463,9 @@ class CrudService:
             return obj
         except (IntegrityError, DataError) as e:
             self.session.rollback()
-            raise CustomHTTPException(422, str(e.orig))
+            raise CustomHTTPException(422, str(e.orig)) from e
 
-    def delete_object(
-        self, lookup_val: int | str, *args, **kwargs
-    ) -> None:
+    def delete_object(self, lookup_val: int | str, *args, **kwargs) -> None:
         """
         Deletes an object from the database.
 
@@ -509,7 +510,7 @@ class CrudService:
                 objects_touched = recursive_delete(obj, cascade_delete)
                 self.session.commit()
 
-            except SQLAlchemyError:
+            except SQLAlchemyError as e:
                 self.session.rollback()
                 if get_config_or_model_meta(
                     "API_ALLOW_CASCADE_DELETE", model=self.model, default=False
@@ -518,7 +519,7 @@ class CrudService:
                 else:
                     error_msg = "Error deleting object"
 
-                raise CustomHTTPException(409, error_msg)
+                raise CustomHTTPException(409, error_msg) from e
 
         return None, 200
 

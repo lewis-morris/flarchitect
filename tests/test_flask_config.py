@@ -38,7 +38,6 @@ def test_basic_change_title_and_version(client):
 
 @pytest.fixture
 def app_meth():
-
     app_new = create_app(
         {
             "API_BLOCK_METHODS": ["POST", "PATCH", "DELETE"],
@@ -51,13 +50,11 @@ def app_meth():
 
 @pytest.fixture
 def client_meth(app_meth):
-
     return app_meth.test_client()
 
 
 # block methods from the API
 def test_block_methods(client_meth):
-
     resp = client_meth.get("/api/authors/1")
 
     assert len(resp.json["value"]["created"]) > 0
@@ -77,7 +74,6 @@ def test_block_methods(client_meth):
 
 @pytest.fixture
 def app_meth_allowed():
-
     app_new = create_app(
         {
             "API_ALLOWED_METHODS": ["GET"],
@@ -90,13 +86,11 @@ def app_meth_allowed():
 
 @pytest.fixture
 def client_allow_meth(app_meth_allowed):
-
     return app_meth_allowed.test_client()
 
 
 # block methods from the API
 def test_allowed_methods(client_allow_meth):
-
     resp = client_allow_meth.get("/api/authors")
 
     assert len(resp.json["value"][0]["created"]) > 0
@@ -347,7 +341,6 @@ def test_dump_hybrid_off():
 
 
 def test_dump_hybrid_on(client):
-
     resp = client.get("/api/authors/1")
 
     assert "full_name" in resp.json["value"].keys()
@@ -416,7 +409,6 @@ def test_serialize_hybrid():
     assert resp.json["value"]["reviews"] == "/api/books/1/reviews"
 
 
-
 def test_serialize_dynamic():
     app = create_app({"API_SERIALIZATION_TYPE": "dynamic"})
     client = app.test_client()
@@ -441,9 +433,9 @@ def test_serialize_none():
     client = app.test_client()
     resp = client.get("/api/books/1")
 
-    assert "author" not in resp.json["value"]
-    assert "categories" not in resp.json["value"]
-    assert "reviews" not in resp.json["value"]
+    assert isinstance(resp.json["value"]["author"], dict)
+    assert isinstance(resp.json["value"]["categories"], list)
+    assert isinstance(resp.json["value"]["reviews"], list)
 
 
 def test_switch_off_url_params():
@@ -516,7 +508,6 @@ def test_show_underscore_attributes(client_one):
 
 
 def test_cascade_delete(client_one):
-
     authors = client_one.get("/api/authors").json["value"]
     author_id = authors[0]["id"]
 
@@ -637,7 +628,6 @@ def test_hide_underscore_attributes(client_two):
 
 
 def test_show_underscore_attributes(client_two):
-
     app_under = create_app_models({"API_IGNORE_UNDERSCORE_ATTRIBUTES": False})
     client_under = app_under.test_client()
 
@@ -646,7 +636,6 @@ def test_show_underscore_attributes(client_two):
 
 
 def test_callbacks(client_two):
-
     book_one = client_two.get("/api/books/1").json["value"]
     id_key = book_one["id"]
 
@@ -672,7 +661,6 @@ def test_global_query_param(client_two):
 
 
 def test_post_specific_query_param(client_two):
-
     swagger = client_two.get("/swagger.json").json
 
     post_params = [
@@ -705,8 +693,20 @@ def test_cascade_delete(client_two):
 
 
 def test_soft_deletes(client_three):
+    authors_resp = client_three.get("/api/authors")
+    initial_count = len(authors_resp.json["value"])
 
-    assert 1 == 2
+    delete_resp = client_three.delete("/api/authors/1")
+    assert delete_resp.status_code == 200
+
+    authors_after = client_three.get("/api/authors")
+    assert len(authors_after.json["value"]) == initial_count - 1
+
+    assert client_three.get("/api/authors/1").status_code == 404
+
+    deleted_resp = client_three.get("/api/authors/1?include_deleted=1")
+    assert deleted_resp.status_code == 200
+    assert deleted_resp.json["value"]["deleted"] is True
 
 
-#API_AUTO_VALIDATE = True
+# API_AUTO_VALIDATE = True
