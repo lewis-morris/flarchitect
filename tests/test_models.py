@@ -6,12 +6,14 @@ from demo.model_extension.model.models import Author
 
 @pytest.fixture
 def app():
-    app = create_app({
-        'API_TITLE': 'Automated test',
-        'API_VERSION': '0.2.0',
-        'API_IGNORE_UNDERSCORE_ATTRIBUTES': True,
-        # Other configurations specific to this test
-    })
+    app = create_app(
+        {
+            "API_TITLE": "Automated test",
+            "API_VERSION": "0.2.0",
+            "API_IGNORE_UNDERSCORE_ATTRIBUTES": True,
+            # Other configurations specific to this test
+        }
+    )
     yield app
 
 
@@ -26,6 +28,9 @@ def test_examples_data_type_and_desc(client):
     format = info.get("format")
     example = info.get("example")
 
-    swagger_response = client.get('/swagger.json').json
+    swagger_response = client.get("/swagger.json").json
+    author_schema = swagger_response["components"]["schemas"]["author"]["properties"][
+        "date_of_birth"
+    ]
 
-    assert 1 == 2
+    assert author_schema["format"] == format

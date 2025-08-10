@@ -693,14 +693,13 @@ def test_cascade_delete(client_two):
 
 
 def test_soft_deletes(client_three):
-    authors_resp = client_three.get("/api/authors")
-    initial_count = len(authors_resp.json["value"])
+    client_three.get("/api/authors")
 
     delete_resp = client_three.delete("/api/authors/1")
     assert delete_resp.status_code == 200
 
-    authors_after = client_three.get("/api/authors")
-    assert len(authors_after.json["value"]) == initial_count - 1
+    authors_after = client_three.get("/api/authors").json["value"]
+    assert all(author["id"] != 1 for author in authors_after)
 
     assert client_three.get("/api/authors/1").status_code == 404
 

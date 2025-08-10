@@ -336,6 +336,21 @@ class CrudService:
                     **get_primary_key_filters(base_model, lookup_val)
                 )
 
+            if get_config_or_model_meta(
+                "API_SOFT_DELETE", model=base_model, default=False
+            ):
+                show_deleted = request.args.get("include_deleted", None)
+                deleted_attr = get_config_or_model_meta(
+                    "API_SOFT_DELETE_ATTRIBUTE", model=base_model, default=None
+                )
+                soft_delete_values = get_config_or_model_meta(
+                    "API_SOFT_DELETE_VALUES", model=base_model, default=None
+                )
+                if not show_deleted and deleted_attr:
+                    query = query.filter(
+                        getattr(base_model, deleted_attr) == soft_delete_values[0]
+                    )
+
             result = query.one_or_none()
 
             if result is None:
@@ -493,6 +508,25 @@ class CrudService:
         if callback:
             obj = callback(obj, self.model)
 
+        # Handle soft deletes when configured.
+        if (
+            get_config_or_model_meta("API_SOFT_DELETE", model=self.model, default=False)
+            and not cascade_delete
+        ):
+            deleted_attr = get_config_or_model_meta(
+                "API_SOFT_DELETE_ATTRIBUTE", model=self.model, default=None
+            )
+            soft_delete_values = get_config_or_model_meta(
+                "API_SOFT_DELETE_VALUES", model=self.model, default=None
+            )
+
+            if not deleted_attr or not soft_delete_values:
+                raise CustomHTTPException(500, "Soft delete misconfigured")
+
+            setattr(obj, deleted_attr, soft_delete_values[1])
+            self.session.commit()
+            return None, 200
+
         with self.session.no_autoflush:
             self.session.delete(obj)
             try:
@@ -507,7 +541,7 @@ class CrudService:
 
                 # Perform recursive delete based on cascade_delete flag
 
-                objects_touched = recursive_delete(obj, cascade_delete)
+                recursive_delete(obj, cascade_delete)
                 self.session.commit()
 
             except SQLAlchemyError as e:
