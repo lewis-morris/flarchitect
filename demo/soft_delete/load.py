@@ -1,3 +1,5 @@
+"""Run the soft delete demo application."""
+
 from demo.soft_delete.soft_delete import create_app
 
 app = create_app()

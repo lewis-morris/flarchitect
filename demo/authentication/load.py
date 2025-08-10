@@ -1,3 +1,5 @@
+"""Run the authentication demo application."""
+
 from demo.model_extension.model import create_app
 
 app = create_app()

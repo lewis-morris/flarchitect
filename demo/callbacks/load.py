@@ -1,3 +1,5 @@
+"""Run the callbacks demo application."""
+
 from demo.callbacks.model import create_app
 
 app = create_app()
