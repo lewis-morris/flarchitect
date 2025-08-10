@@ -268,8 +268,6 @@ Documentation Configuration Values
           string or a path to a markdown file. The file will be rendered with `Jinja`_ and you can access the `Flask`_
           config with the ``{{ config }}`` variable.
 
-          -----------------------------------------------------------------
-
           View the template file `here <https://github.com/arched-dev/flarchitect/blob/master/flask_schema/html/base_readme.MD>`_
 
     *
@@ -410,14 +408,14 @@ API Configuration Values (MAIN)
     *
         - .. data:: XML_AS_TEXT
 
-          :bdg:`default:` ``True``
+          :bdg:`default:` ``False``
 
           :bdg:`type` ``bool``
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - For legacy systems XML can be output, if you need the response to be `text/xml` rather than `application/json`
-          set this value to ``True``.
+        - For legacy systems XML can be output. Set this value to ``True`` to return
+          responses as ``text/xml`` instead of ``application/json``.
 
     *
         - .. data:: PRINT_EXCEPTIONS
@@ -465,25 +463,25 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``statusCode`` field in the response data. This field will contain the
           status code of the response.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key will either be camelCase or snake_case depending on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
     *
-        - .. data:: DUMP_RESPONSE_TIME
+        - .. data:: DUMP_RESPONSE_MS
 
           :bdg:`default:` ``True``
 
-          :bdg:`type` ``bool```
+          :bdg:`type` ``bool``
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - When enabled, the API will include a ``responseTime`` field in the response data. This field will contain the
-          time taken to process the request in ms.
+        - When enabled, the API will include a ``responseMs`` field in the response data. This field will contain the
+          time taken to process the request in milliseconds.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key will either be camelCase or snake_case depending on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
 
 
     *
-        - .. data:: DUMP_COUNT
+        - .. data:: DUMP_TOTAL_COUNT
 
           :bdg:`default:` ``True``
 
@@ -495,7 +493,7 @@ API Configuration Values (MAIN)
           total number of records available to be queried with pagination (not the number of records returned in the
           response).
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key will either be camelCase or snake_case depending on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
     *
         - .. data:: DUMP_NULL_NEXT_URL
@@ -509,7 +507,7 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``nextUrl`` field in the response data if null. When disabled the
           ``nextUrl`` field will not be included in the response data if null.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key will either be camelCase or snake_case depending on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
 
     *
@@ -524,7 +522,7 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``previousUrl`` field in the response data if null. When disabled the
           ``previousUrl`` field will not be included in the response data if null.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key will either be camelCase or snake_case depending on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
     *
         - .. data:: DUMP_NULL_ERRORS
 
@@ -534,8 +532,8 @@ API Configuration Values (MAIN)
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - When enabled, the API will include a ``error`` field in the response data if null. When disabled the
-          ``error`` field will not be included in the response data if null.
+        - When enabled, the API will include an ``errors`` field in the response data if null. When disabled the
+          ``errors`` field will not be included in the response data if null.
 
 
     *
@@ -567,9 +565,9 @@ API Configuration Values (MAIN)
 
           :bdg:`type` ``bool``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - When enabled, the API will include hybrid properties in resources response data & in the `ReDoc`_
+        - When enabled, the API will include hybrid properties in resource response data and in the `ReDoc`_
           documentation.
 
 
@@ -592,7 +590,7 @@ API Configuration Values (MAIN)
 
           :bdg:`type` ``bool``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - When enabled, the API will ignore all attributes that start with an underscore in the model. This is useful
           for hiding private attributes from the API.
@@ -613,15 +611,15 @@ API Configuration Values (MAIN)
     *
         - .. data:: PAGINATION_SIZE_MAX
 
-          :bdg:`default:` ``True``
+          :bdg:`default:` ``100``
 
-          :bdg:`type` ``bool``
+          :bdg:`type` ``int``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - The maximum number of records to return in a single response. The default (no query parameter) is defined by
           `PAGINATION_SIZE_DEFAULT <configuration.html#PAGINATION_SIZE_DEFAULT>`_. Adding the query parameter
-          ``?limit=`` to the request allows the user in increase this default but it is limited to this value as the
+          ``?limit=`` to the request allows the user to increase this default but it is limited to this value as the
           maximum allowed to be returned. Increase this value to allow more records to be returned in a single response.
 
 
