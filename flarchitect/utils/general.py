@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import pprint
 import re
@@ -36,7 +37,7 @@ class AttributeInitializerMixin:
         Args:
             app (Flask): The Flask application instance.
         """
-        for key in vars(type(self)).keys():
+        for key in vars(type(self)):
             if key.startswith("__"):
                 continue
             config_key = key.upper().lstrip("_")
@@ -50,31 +51,37 @@ class AttributeInitializerMixin:
         Args:
             **kwargs: Keyword arguments representing class attributes.
         """
-        for key in vars(type(self)).keys():
+        for key in vars(type(self)):
             if key.startswith("__"):
                 continue
             if key in kwargs:
                 setattr(self, key, kwargs[key])
 
 
-def find_html_directory(starting_directory=None):
-    # If no starting directory is provided, use the directory of the current file
+def find_html_directory(starting_directory: str | None = None) -> str | None:
+    """Locate the nearest ``html`` directory by searching parent folders.
+
+    Args:
+        starting_directory: Directory to begin the search from. If ``None``,
+            the search starts from the directory containing this module.
+
+    Returns:
+        str | None: Absolute path to the ``html`` directory or ``None`` if it
+        cannot be found.
+    """
+
     if starting_directory is None:
         starting_directory = os.path.abspath(os.path.dirname(__file__))
 
-    # Get the list of all files and directories in the current directory
     contents = os.listdir(starting_directory)
 
-    # Check if "html" directory exists in the current directory
     if "html" in contents and os.path.isdir(os.path.join(starting_directory, "html")):
         return os.path.join(starting_directory, "html")
 
-    # If the current directory is the root directory, stop the search
     parent_directory = os.path.dirname(starting_directory)
     if starting_directory == parent_directory:
         return None
 
-    # Recursively go one level up
     return find_html_directory(parent_directory)
 
 
@@ -147,29 +154,22 @@ def check_rate_prerequisites(service: str) -> None:
         "API_RATE_LIMIT_STORAGE_URI={URL}:{PORT}"
     )
     if service == "Memcached":
-        try:
-            import pymemcache
-        except ImportError:
+        if importlib.util.find_spec("pymemcache") is None:
             raise ImportError(
                 "Memcached prerequisite not available. Please install pymemcache "
                 + back_end_spec
-            ) from ImportError
+            )
     elif service == "Redis":
-        try:
-            import redis
-        except ImportError:
+        if importlib.util.find_spec("redis") is None:
             raise ImportError(
                 "Redis prerequisite not available. Please install redis-py "
                 + back_end_spec
-            ) from ImportError
-    elif service == "MongoDB":
-        try:
-            import pymongo
-        except ImportError:
-            raise ImportError(
-                "MongoDB prerequisite not available. Please install pymongo "
-                + back_end_spec
-            ) from ImportError
+            )
+    elif service == "MongoDB" and importlib.util.find_spec("pymongo") is None:
+        raise ImportError(
+            "MongoDB prerequisite not available. Please install pymongo "
+            + back_end_spec
+        )
 
 
 def check_rate_services() -> str | None:
