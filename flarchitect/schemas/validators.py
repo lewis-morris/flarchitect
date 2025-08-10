@@ -1,3 +1,4 @@
+from collections.abc import Callable, Iterable
 from datetime import date, datetime, time
 from decimal import Decimal
 
@@ -6,7 +7,20 @@ from marshmallow import ValidationError
 from validators import ValidationError as VE
 
 
-def validate_datetime(value: str, formats=None):
+def validate_datetime(value: str, formats: Iterable[str] | None = None) -> bool:
+    """Validate a datetime string against multiple accepted formats.
+
+    Args:
+        value: The datetime string to validate.
+        formats: Optional iterable of format strings to try when parsing ``value``.
+
+    Returns:
+        bool: ``True`` if ``value`` matches one of the provided formats.
+
+    Raises:
+        ValidationError: If ``value`` does not conform to any of the supplied formats.
+    """
+
     if isinstance(value, datetime):
         return True
 
@@ -35,7 +49,20 @@ def validate_datetime(value: str, formats=None):
     )
 
 
-def validate_date(value: str, formats=None):
+def validate_date(value: str, formats: Iterable[str] | None = None) -> bool:
+    """Validate that a string represents a date in one of the accepted formats.
+
+    Args:
+        value: The date string to validate.
+        formats: Optional iterable of accepted date formats.
+
+    Returns:
+        bool: ``True`` if the string matches one of the accepted formats.
+
+    Raises:
+        ValidationError: If ``value`` cannot be parsed using any provided format.
+    """
+
     if isinstance(value, date):
         return True
 
@@ -49,10 +76,21 @@ def validate_date(value: str, formats=None):
     raise ValidationError(
         f"Invalid date format. Acceptable formats are: {', '.join(formats)}"
     )
+def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
+    """Validate that a string represents a time in one of the accepted formats.
 
+    Args:
+        value: The time string to validate.
+        formats: Optional iterable of accepted time formats.
 
-def validate_time(value: str, formats=None):
-    if isinstance(value, (time, datetime.time)):
+    Returns:
+        bool: ``True`` if the string matches one of the accepted formats.
+
+    Raises:
+        ValidationError: If ``value`` cannot be parsed using any provided format.
+    """
+
+    if isinstance(value, time | datetime):
         return True
     # Define common time formats
     formats = formats or [
@@ -76,16 +114,39 @@ def validate_time(value: str, formats=None):
     raise ValidationError(
         f"Invalid time format. Acceptable formats are: {', '.join(formats)}"
     )
+def validate_decimal(value: str | int | float | Decimal) -> bool:
+    """Validate that the provided value can be converted to a :class:`Decimal`.
 
+    Args:
+        value: The value to validate.
 
-def validate_decimal(value):
+    Returns:
+        bool: ``True`` if ``value`` is a valid decimal representation.
+
+    Raises:
+        ValidationError: If ``value`` cannot be converted to ``Decimal``.
+    """
+
     try:
         Decimal(value)
-    except ValueError:
-        raise ValidationError("Invalid decimal number.")
+        return True
+    except ValueError as err:
+        raise ValidationError("Invalid decimal number.") from err
 
 
-def validate_boolean(value):
+def validate_boolean(value: bool | str) -> bool:
+    """Validate that a value represents a boolean.
+
+    Args:
+        value: The value to validate. Accepts booleans or common string representations.
+
+    Returns:
+        bool: ``True`` if ``value`` can be interpreted as a boolean.
+
+    Raises:
+        ValidationError: If ``value`` cannot be interpreted as boolean.
+    """
+
     # Define truthy and falsy values
     truthy_values = {True, "1", "true", "True", "yes", "Yes"}
     falsy_values = {False, "0", "false", "False", "no", "No"}
@@ -96,14 +157,26 @@ def validate_boolean(value):
 
     # If the value is neither truthy nor falsy, raise a validation error
     raise ValidationError(
-        "Invalid boolean value. Accepted values are: True, False, 1, 0, 'true', 'false', 'yes', 'no'."
+        "Invalid boolean value. Accepted values are: True, False, 1, 0, "
+        "'true', 'false', 'yes', 'no'."
     )
 
 
-def wrap_validator(validator, error_message="Not a valid value."):
-    """Wrap a Marshmallow validator to raise ValidationError in case of failure."""
+def wrap_validator(
+    validator: Callable[[str], bool | VE], error_message: str = "Not a valid value."
+) -> Callable[[str], None]:
+    """Wrap a Marshmallow validator to raise :class:`ValidationError` on failure.
 
-    def wrapper(value):
+    Args:
+        validator: The validation function to execute.
+        error_message: Error message to raise if validation fails.
+
+    Returns:
+        Callable[[str], None]: A function that validates a value or raises a
+        ``ValidationError``.
+    """
+
+    def wrapper(value: str) -> None:
         try:
             # Call the Marshmallow validator
             out = validator(value)
@@ -111,25 +184,22 @@ def wrap_validator(validator, error_message="Not a valid value."):
                 raise ValidationError(error_message)
         except ValidationError as err:
             # Re-raise the error to match Marshmallow's default behavior
-            raise ValidationError(err.messages)
+            raise ValidationError(err.messages) from err
 
     return wrapper
 
 
-def validate_by_type(validator_type: str) -> callable:
+def validate_by_type(validator_type: str) -> Callable[[str], None] | None:
     """Return a validation function based on the type of validator.
 
     Args:
-        validator_type (str): The type of validator to use.
-
-    Raises:
-        ValidationError: If the validation fails.
+        validator_type: The type of validator to use.
 
     Returns:
-        callable: The validation function.
+        Callable | None: The validation function or ``None`` if not found.
     """
 
-    validation_map = {
+    validation_map: dict[str, Callable[[str], None]] = {
         "email": wrap_validator(validators.email, "Email address is not valid."),
         "url": wrap_validator(validators.url, "URL is not valid."),
         "ipv4": wrap_validator(validators.ipv4, "IPv4 address is not valid."),
