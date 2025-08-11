@@ -19,12 +19,12 @@ Intro
 --------------------------------
 
 
-In `flarchitect`, configuration options play a crucial role in customizing the behavior of API and its accompanying
-documentation. These configurations can be specified through `Flask`_ config values or directly within `SQLAlchemy`_ model
-classes using `Meta` classes.
+In `flarchitect`, configuration options are essential for customizing the API and its accompanying documentation. These
+settings can be provided through `Flask`_ config values or directly within `SQLAlchemy`_ model classes using ``Meta``
+classes.
 
-`Flask`_ config values are the most straightforward way to configure the API. Offering a standardized approach to modifying
-the extension's behavior at a global or model level.
+`Flask`_ config values offer a straightforward, standardized way to modify the extension's behavior at a global or
+model level.
 
 
 
@@ -34,19 +34,12 @@ Config Hierarchy
 
 
 
-To offer flexibility and control, ``flarchitect`` adheres to a hierarchy of configuration priorities.
+To offer flexibility and control, ``flarchitect`` follows a hierarchy of configuration priorities:
 
-- Lowest Priority - At the base of this hierarchy are the global `Flask`_ config options, applied globally to all requests. These values will
-  be overridden by more specific configurations.
-
-- Method based configurations can be applied to the global `Flask`_ config, allowing for more precise control over the
-  behavior of the API in response to specific `HTTP method`_.
-
-- Model based configurations can be embedded within `SQLAlchemy`_ model classes through `Meta` class attributes, allowing
-  for more fine-grained control over the behavior of the API in response to specific models.
-
-- Highest Priority - Finally the highest precedence is given to model-specific configurations suffixed with a `HTTP method`_, allowing for
-  the most detailed customization of the API's behavior per model and `HTTP method`_.
+- **Lowest Priority** – Global `Flask`_ config options apply to all requests and are overridden by any more specific configuration.
+- **Method-based** – Method-specific options can override global settings for particular `HTTP method`_s.
+- **Model-based** – `SQLAlchemy`_ model ``Meta`` attributes override both global and method-based configurations.
+- **Highest Priority** – Model-specific configurations suffixed with an `HTTP method`_ allow the most detailed customization per model and method.
 
 
 .. note::
@@ -54,9 +47,9 @@ To offer flexibility and control, ``flarchitect`` adheres to a hierarchy of conf
     When applying config values
 
     - Global `Flask`_ config values are prefixed with ``API_``.
-    - Global `Flask`_ method based config values are prefixed with ``API_{method}_``.
-    - `SQLAlchemy`_ Model config values omit the ``API_`` prefix and are lower case.
-    - `SQLAlchemy`_ Model method based config values omit the ``API_`` prefix, are lower case and are prefixed with the method.
+    - Global method-based `Flask`_ config values are prefixed with ``API_{method}_``.
+    - `SQLAlchemy`_ model config values omit the ``API_`` prefix and are lowercase.
+    - `SQLAlchemy`_ model method config values omit the ``API_`` prefix, are lowercase, and are prefixed with the method.
 
 
 .. note::
@@ -79,10 +72,9 @@ Config Value Structure
 --------------------------------
 
 Every configuration value has a specific structure that defines where it can be used and how it should be written.
-These are defined by the the below badges which are listed in the configuration value tables next to each value.
+These structures are indicated by the badges listed in the configuration tables next to each value.
 
-Please take note of the badge for each configuration value, as this will define where the value can be used and how it
-should be written.
+Please note the badge for each configuration value, as it defines where the value can be used and how it should be written.
 
 
 
@@ -95,15 +87,14 @@ should be written.
         Global configuration values are the lowest priority and apply to all requests unless overridden by a more specific
         configuration.
 
-        They are applied in the `Flask`_. config class and are prefixed with ``API_``.
+        They are applied in the `Flask` config object and are prefixed with ``API_``.
 
         Example `Flask`_ config value:
 
         .. code:: python
 
-            class Config():
-
-                TITLE="My API"
+            class Config:
+                API_TITLE = "My API"
 
         See the :doc:`Global <config_locations/global_>` page for more information.
 
@@ -111,20 +102,19 @@ should be written.
 
         :bdg-dark-line:`Global Method`
 
-        Global configuration values can apply globally to specific `HTTP method`_, ``GET``, ``POST``, ``PUT``, ``DELETE``,
-        ``PATCH``.
+        Global configuration values can apply to specific `HTTP method`_s, ``GET``, ``POST``, ``PUT``, ``DELETE``,
+        or ``PATCH``.
 
-        The method should be added after the ``API_`` prefix.
+        The method name should be added after the ``API_`` prefix.
 
         Example `Flask`_ config value:
 
         .. code:: python
 
-            class Config():
-
-                GET_RATE_LIMIT="100 per minute"
-                POST_RATE_LIMIT="10 per minute"
-                PATCH_RATE_LIMIT="10 per minute"
+            class Config:
+                API_GET_RATE_LIMIT = "100 per minute"
+                API_POST_RATE_LIMIT = "10 per minute"
+                API_PATCH_RATE_LIMIT = "10 per minute"
 
         See the :doc:`Global Method<config_locations/global_method>` page for more information.
 
@@ -141,13 +131,13 @@ should be written.
 
         .. code:: python
 
-            class MyModel(db.model):
-                __table__ = "my_model"
+            class MyModel(db.Model):
+                __tablename__ = "my_model"
 
                 class Meta:
-                    # config value is shown as RATE_LIMIT in flask config
+                    # shown as API_RATE_LIMIT in Flask config
                     rate_limit = "10 per second"
-                    # config value is shown as BLOCK_METHODS in flask config
+                    # shown as API_BLOCK_METHODS in Flask config
                     blocked_methods = ["DELETE", "POST"]
 
         See the :doc:`Model<config_locations/model>` page for more information.
@@ -167,11 +157,11 @@ should be written.
 
         .. code:: python
 
-            class MyModel(db.model):
-                __table__ = "my_model"
+            class MyModel(db.Model):
+                __tablename__ = "my_model"
 
                 class Meta:
-                    # config value is shown as RATE_LIMIT in flask config
+                    # shown as API_GET_RATE_LIMIT in Flask config
                     get_rate_limit = "10 per minute"
                     post_rate_limit = "5 per minute"
 
@@ -343,6 +333,18 @@ Documentation Configuration Values
             [{"url": "https://api.example.com", "description": "Main server"}, ...]
 
     *
+        - .. data:: DOCUMENTATION_HEADERS
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``str``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Custom HTML to inject into the ``<head>`` of the documentation page. Takes precedence over
+          :data:`DOC_HTML_HEADERS`.
+
+    *
         - .. data:: DOC_HTML_HEADERS
 
 
@@ -353,35 +355,8 @@ Documentation Configuration Values
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
 
-        - Custom CSS or JS to be added to the header of the `ReDoc`_ documentation HTML page.
-
-          Example:
-
-          .. code:: html
-
-            <style>
-                .redoc-section h1 {
-                    color: red;
-                }
-            </style>
-    *
-        - .. data:: DOC_HTML_FOOTERS
-
-
-          :bdg:`default:` ``None``
-
-          :bdg:`type` ``str``
-
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-
-        - Custom CSS or JS to be added to the footer of the `ReDoc`_ documentation HTML page.
-
-          Example:
-
-          .. code:: html
-
-            <script src="https://my.script/main.js"></script>
+        - **Deprecated:** legacy option for adding custom HTML headers. Use
+          :data:`DOCUMENTATION_HEADERS` instead.
 
 
 
@@ -440,8 +415,8 @@ API Configuration Values (MAIN)
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - When enabled, the API will include a ``datetime`` field in the response data. This field will contain the
-          current date and time of the response.
+        - One of the following options: ``camel``, ``pascal``, ``snake``, ``screaming_snake``, ``kebab``,
+          ``screaming_kebab``. Controls the casing of schema class names in generated documentation.
     *
         - .. data:: DUMP_VERSION
 
@@ -465,20 +440,20 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``statusCode`` field in the response data. This field will contain the
           status code of the response.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key uses camelCase or snake_case based on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
     *
         - .. data:: DUMP_RESPONSE_TIME
 
           :bdg:`default:` ``True``
 
-          :bdg:`type` ``bool```
+          :bdg:`type` ``bool``
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - When enabled, the API will include a ``responseTime`` field in the response data. This field will contain the
           time taken to process the request in ms.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key uses camelCase or snake_case based on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
 
 
@@ -495,7 +470,7 @@ API Configuration Values (MAIN)
           total number of records available to be queried with pagination (not the number of records returned in the
           response).
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key uses camelCase or snake_case based on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
     *
         - .. data:: DUMP_NULL_NEXT_URL
@@ -509,7 +484,7 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``nextUrl`` field in the response data if null. When disabled the
           ``nextUrl`` field will not be included in the response data if null.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key uses camelCase or snake_case based on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
 
 
     *
@@ -524,7 +499,7 @@ API Configuration Values (MAIN)
         - When enabled, the API will include a ``previousUrl`` field in the response data if null. When disabled the
           ``previousUrl`` field will not be included in the response data if null.
 
-          The output key will either be camelCase or snake_case depending on the value of `CONVERT_TO_CAMEL_CASE <configuration.html#CONVERT_TO_CAMEL_CASE>`_.
+          The output key uses camelCase or snake_case based on the value of `FIELD_CASE <configuration.html#FIELD_CASE>`_.
     *
         - .. data:: DUMP_NULL_ERRORS
 
@@ -567,7 +542,7 @@ API Configuration Values (MAIN)
 
           :bdg:`type` ``bool``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - When enabled, the API will include hybrid properties in resources response data & in the `ReDoc`_
           documentation.
@@ -592,7 +567,7 @@ API Configuration Values (MAIN)
 
           :bdg:`type` ``bool``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - When enabled, the API will ignore all attributes that start with an underscore in the model. This is useful
           for hiding private attributes from the API.
@@ -613,11 +588,11 @@ API Configuration Values (MAIN)
     *
         - .. data:: PAGINATION_SIZE_MAX
 
-          :bdg:`default:` ``True``
+          :bdg:`default:` ``100``
 
-          :bdg:`type` ``bool``
+          :bdg:`type` ``int``
 
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - The maximum number of records to return in a single response. The default (no query parameter) is defined by
           `PAGINATION_SIZE_DEFAULT <configuration.html#PAGINATION_SIZE_DEFAULT>`_. Adding the query parameter
@@ -634,6 +609,17 @@ API Callbacks
 
 
     *
+        - .. data:: GLOBAL_SETUP_CALLBACK
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global Method`
+
+        - Executed before any request is processed. Use ``API_<METHOD>_GLOBAL_SETUP_CALLBACK`` for method-specific hooks.
+
+    *
         - .. data:: SETUP_CALLBACK
 
           :bdg:`default:` ``None``
@@ -643,8 +629,8 @@ API Callbacks
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - When assigned, the API will call the function prior to the model being queried.
-          This is useful for adding custom logic to the API, such as adding additional query parameters/modifying the
-          query or logging request to the database.
+          This is useful for adding custom logic to the API, such as adding additional query parameters, modifying the
+          query or logging requests to the database.
 
             View an example function & its signature `here <callbacks.html#setup-function-signature>`_.
     *
@@ -851,5 +837,5 @@ Schema Configuration Values
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - When enabled, the API will include a ``datetime`` field in the response data. This field will contain the
-          current date and time of the response.
+        - One of the following options: ``camel``, ``pascal``, ``snake``, ``screaming_snake``, ``kebab``,
+          ``screaming_kebab``. Controls the casing of schema class names in generated documentation.
