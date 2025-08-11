@@ -520,37 +520,58 @@ hooks = {
     "return_hook": False,
     "patch_setup_hook": False,
     "get_return_hook": False,
+    "final_hook": False,
+    "error_hook": False,
 }
 
 
-def setup_hook(*args, **kwargs):
+def setup_hook(*args, **kwargs) -> dict:
+    """Record execution of the global setup callback."""
     global hooks
     hooks["setup_hook"] = True
     return kwargs
 
 
-def return_hook(*args, **kwargs):
+def return_hook(*args, **kwargs) -> dict:
+    """Record execution of the return callback."""
     global hooks
     hooks["return_hook"] = True
     return kwargs
 
 
-def postdump_hook(data, **kwargs):
+def postdump_hook(data: dict, **kwargs) -> dict:
+    """Modify dumped data during tests."""
     if "title" in data:
         data["title"] = "Test postdump hook"
     return data
 
 
-def patch_setup_hook(*args, **kwargs):
+def patch_setup_hook(*args, **kwargs) -> dict:
+    """Record execution of the PATCH setup callback."""
     global hooks
     hooks["patch_setup_hook"] = True
     return kwargs
 
 
-def get_return_hook(*args, **kwargs):
+def get_return_hook(*args, **kwargs) -> dict:
+    """Record execution of the GET return callback."""
     global hooks
     hooks["get_return_hook"] = True
     return kwargs
+
+
+def final_hook(data: dict) -> dict:
+    """Attach a marker to the final response payload."""
+    global hooks
+    hooks["final_hook"] = True
+    data["finalized"] = True
+    return data
+
+
+def error_hook(error: str, status_code: int, value: object) -> None:
+    """Record execution of the error callback."""
+    global hooks
+    hooks["error_hook"] = True
 
 
 @pytest.fixture
@@ -565,7 +586,8 @@ def app_two():
             "API_PATCH_SETUP_CALLBACK": patch_setup_hook,
             "API_SETUP_CALLBACK": setup_hook,
             "API_RETURN_CALLBACK": return_hook,
-            "API_ERROR_CALLBACK": return_hook,
+            "API_FINAL_CALLBACK": final_hook,
+            "API_ERROR_CALLBACK": error_hook,
             "API_DUMP_CALLBACK": postdump_hook,
             "API_ADDITIONAL_QUERY_PARAMS": [
                 {
@@ -636,21 +658,23 @@ def test_show_underscore_attributes(client_two):
 
 
 def test_callbacks(client_two):
-    book_one = client_two.get("/api/books/1").json["value"]
+    book_one_resp = client_two.get("/api/books/1").json
+    book_one = book_one_resp["value"]
     id_key = book_one["id"]
 
     del book_one["id"]
-    book_new = client_two.post("/api/books", json=book_one).json["value"]
-    book_error = client_two.get("/api/books/9999999").json
-    book_update = client_two.patch("/api/books/" + str(id_key), json=book_one).json[
-        "value"
-    ]
+    client_two.post("/api/books", json=book_one).json["value"]
+    client_two.get("/api/books/9999999").json
+    client_two.patch("/api/books/" + str(id_key), json=book_one).json["value"]
     global hooks
     assert hooks.get("setup_hook")
     assert hooks.get("patch_setup_hook")
     assert hooks.get("get_return_hook")
     assert hooks.get("return_hook")
+    assert hooks.get("final_hook")
+    assert hooks.get("error_hook")
     assert book_one["title"] == "Test postdump hook"
+    assert book_one_resp["finalized"] is True
 
 
 def test_global_query_param(client_two):

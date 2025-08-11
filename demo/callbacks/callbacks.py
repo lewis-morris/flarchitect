@@ -1,4 +1,6 @@
-from demo.model_extension.model import create_app
+"""Entry point for running the callback demonstration app."""
+
+from demo.callbacks.model import create_app
 
 app = create_app()
 
