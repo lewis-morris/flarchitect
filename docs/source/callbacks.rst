@@ -5,26 +5,42 @@ Callbacks let you hook into the request lifecycle to run custom logic around
 database operations and responses. They can be declared globally in the Flask
 configuration or on individual SQLAlchemy models.
 
-Lifecycle
----------
+Callback types
+--------------
 
-flarchitect recognizes four callback types:
+flarchitect recognises a number of callback hooks that allow you to run custom
+logic at various stages of processing:
 
-* **Setup** – runs before any database operation. Use for validation, logging
-  or altering the incoming data.
-* **Return** – runs after the operation but before the response is sent.
-  Ideal for adjusting the output or adding headers.
-* **Error** – runs when an exception bubbles up. Handle logging or
+* **Global setup** – runs before any model-specific processing.
+* **Setup** – runs before database operations. Useful for validation, logging
+  or altering incoming data.
+* **Filter** – lets you adjust the SQLAlchemy query object before filtering and
+  pagination are applied.
+* **Add** – called before a new object is committed to the database.
+* **Update** – invoked prior to persisting updates to an existing object.
+* **Remove** – executed before an object is deleted.
+* **Return** – runs after the database operation but before the response is
+  returned. Ideal for adjusting the output or adding headers.
+* **Dump** – executes after Marshmallow serialisation allowing you to modify
+  the dumped data.
+* **Final** – runs immediately before the response is sent to the client.
+* **Error** – triggered when an exception bubbles up; handle logging or
   notifications here.
-* **Final** – runs immediately before the response is returned to the client.
 
 Configuration
 -------------
 
 Callbacks are referenced by the following configuration keys:
 
+* ``GLOBAL_SETUP_CALLBACK``
 * ``SETUP_CALLBACK``
+* ``FILTER_CALLBACK``
+* ``ADD_CALLBACK``
+* ``UPDATE_CALLBACK``
+* ``REMOVE_CALLBACK``
 * ``RETURN_CALLBACK``
+* ``DUMP_CALLBACK``
+* ``FINAL_CALLBACK``
 * ``ERROR_CALLBACK``
 
 You can apply these keys in several places:
@@ -72,29 +88,74 @@ You can apply these keys in several places:
 Callback signatures
 -------------------
 
-``Setup`` and ``return`` callbacks should accept ``**kwargs`` and return the
-modified kwargs. Example:
+Setup, Global setup and filter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Setup-style callbacks should accept ``model`` and ``**kwargs`` and return the
+modified kwargs:
 
 .. code-block:: python
 
-    def my_setup_callback(**kwargs):
+    def my_setup_callback(model, **kwargs):
         # modify kwargs as needed
         return kwargs
 
-Error callbacks receive the exception and traceback:
+    def my_filter_callback(query, model, params):
+        return query.filter(model.id > 0)
+
+Add, update and remove
+^^^^^^^^^^^^^^^^^^^^^^
+
+These callbacks receive the SQLAlchemy object instance and must return it:
 
 .. code-block:: python
 
-    def my_error_callback(exc, tb):
-        log_exception(exc, tb)
+    def my_add_callback(obj, model):
+        obj.created_by = "system"
+        return obj
 
-Post dump callbacks accept ``data`` and ``**kwargs`` and must return the data:
+Return
+^^^^^^
+
+Return callbacks receive ``model`` and ``output`` and must return a dictionary
+containing the ``output`` key:
+
+.. code-block:: python
+
+    def my_return_callback(model, output, **kwargs):
+        return {"output": output}
+
+Dump
+^^^^
+
+Dump callbacks accept ``data`` and ``**kwargs`` and must return the data:
 
 .. code-block:: python
 
     def my_dump_callback(data, **kwargs):
         data["name"] = data["name"].upper()
         return data
+
+Final
+^^^^^
+
+Final callbacks receive the response dictionary before it is serialised:
+
+.. code-block:: python
+
+    def my_final_callback(data):
+        data["processed"] = True
+        return data
+
+Error
+^^^^^
+
+Error callbacks receive the error message, status code and original value:
+
+.. code-block:: python
+
+    def my_error_callback(error, status_code, value):
+        log_exception(error)
 
 Extending query parameters
 --------------------------
