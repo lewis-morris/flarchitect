@@ -78,3 +78,14 @@ With these steps completed, run your application and navigate to the `/docs` rou
 
 This refined approach clarifies the setup process, emphasizing essential steps and configurations for
 integrating `flarchitect` into your Flask application.
+
+## Authentication Examples
+
+The `demo/authentication` directory contains runnable snippets for each built-in authentication strategy:
+
+- `jwt_auth.py` – JSON Web Token authentication
+- `basic_auth.py` – HTTP Basic authentication
+- `api_key_auth.py` – API key authentication
+- `custom_auth.py` – Custom callable authentication
+
+All examples share a common setup defined in `app_base.py`.
