@@ -634,6 +634,19 @@ API Callbacks
 
 
     *
+        - .. data:: GLOBAL_SETUP_CALLBACK
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global Method`
+
+        - Executes before any model specific processing. Useful for cross-cutting
+          concerns such as authentication or logging.
+
+            View an example function & its signature `here <callbacks.html#setup-global-setup-and-filter>`_.
+    *
         - .. data:: SETUP_CALLBACK
 
           :bdg:`default:` ``None``
@@ -642,13 +655,12 @@ API Callbacks
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - When assigned, the API will call the function prior to the model being queried.
-          This is useful for adding custom logic to the API, such as adding additional query parameters/modifying the
-          query or logging request to the database.
+        - Called prior to the model being queried. Useful for adding additional
+          query parameters or performing validation.
 
-            View an example function & its signature `here <callbacks.html#setup-function-signature>`_.
+            View an example function & its signature `here <callbacks.html#setup-global-setup-and-filter>`_.
     *
-        - .. data:: POST_DUMP_CALLBACK
+        - .. data:: FILTER_CALLBACK
 
           :bdg:`default:` ``None``
 
@@ -656,11 +668,59 @@ API Callbacks
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - When assigned, the API will call the function after the model has been dumped to a dictionary by Marshmallow.
-          Its possible to add extra validation here or modify the response data.
+        - Allows modification of the SQLAlchemy query before filters and
+          pagination are applied.
 
-          View an example function & its signature `here <callbacks.html#post-dump-function-signature>`_.
+            View an example function & its signature `here <callbacks.html#setup-global-setup-and-filter>`_.
+    *
+        - .. data:: ADD_CALLBACK
 
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+
+        - Invoked before a new object is added to the session.
+
+            View an example function & its signature `here <callbacks.html#add-update-and-remove>`_.
+    *
+        - .. data:: UPDATE_CALLBACK
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+
+        - Runs prior to committing updates to an existing object.
+
+            View an example function & its signature `here <callbacks.html#add-update-and-remove>`_.
+    *
+        - .. data:: REMOVE_CALLBACK
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+
+        - Called before deleting an object from the database.
+
+            View an example function & its signature `here <callbacks.html#add-update-and-remove>`_.
+    *
+        - .. data:: DUMP_CALLBACK
+
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+
+        - Runs after the model has been serialised to a dictionary by Marshmallow,
+          allowing last minute modifications to the payload.
+
+          View an example function & its signature `here <callbacks.html#dump>`_.
     *
         - .. data:: RETURN_CALLBACK
 
@@ -670,12 +730,23 @@ API Callbacks
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - When assigned, the API will call the function post database call and pre returning
-          the data to the client. This is useful for adding custom logic to the API, such as modifying the response data
-          or logging the response to the database.
+        - Called after the database operation but before the response is
+          returned. Useful for adjusting the response or adding headers.
 
-            View an example function & its signature `here <callbacks.html#return-function-signature>`_.
+            View an example function & its signature `here <callbacks.html#return>`_.
+    *
+        - .. data:: FINAL_CALLBACK
 
+          :bdg:`default:` ``None``
+
+          :bdg:`type` ``callable``
+
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model Method`
+
+        - Invoked on the final response dictionary immediately before it is
+          serialised and returned to the client.
+
+            View an example function & its signature `here <callbacks.html#final>`_.
     *
         - .. data:: ERROR_CALLBACK
 
@@ -685,11 +756,9 @@ API Callbacks
 
           :bdg-secondary:`Optional` :bdg-dark-line:`Global Method`
 
-        - When assigned, the API will call the function when an error occurs. This is useful
-          for adding custom logic to the API, such as logging the error to the database, sending an emails etc.
+        - Triggered when an error occurs, allowing logging or notifications.
 
-            View an example function & its signature `here <callbacks.html#error-function-signature>`_.
-
+            View an example function & its signature `here <callbacks.html#error>`_.
     *
         - .. data:: ADDITIONAL_QUERY_PARAMS
 
