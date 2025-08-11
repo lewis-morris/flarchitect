@@ -35,7 +35,7 @@ a SQLAlchemy session.
 
         .. code:: python
 
-            from sqlalchemy.ext.declarative import declarative_base
+            from sqlalchemy.orm import DeclarativeBase
 
             class BaseModel(DeclarativeBase):
                 def get_session(*args):
@@ -70,19 +70,10 @@ a SQLAlchemy session.
         .. code:: python
 
             from sqlalchemy import create_engine
-            from sqlalchemy.ext.declarative import declarative_base
-            from sqlalchemy.orm import sessionmaker
+            from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-            # Define the SQLite engine to use a local file-based database
-            engine = create_engine('sqlite:///example.db', echo=True)
-
-            # Generate a base class for your class definitions
-            Base = declarative_base()
-
-            # Create a Session class bound to the engine
+            engine = create_engine("sqlite:///example.db", echo=True)
             Session = sessionmaker(bind=engine)
-
-            # Now you can create a session instance
             session = Session()
 
 
@@ -91,7 +82,6 @@ a SQLAlchemy session.
         .. code:: python
 
             class BaseModel(DeclarativeBase):
-
                 def get_session(*args):
                     return session
 
@@ -139,37 +129,30 @@ The only other requirement's are a few configuration values that need to be pass
     .. tab-item:: flask-sqlalchemy
         :sync: key1
 
-        Notice below when you initialise `Flask-SQLAlchemy`_ you pass your ``BaseModel`` as the ``model_clas`` attribute,
-        but pass in ``db.model`` to the `Flask`_ config as :data:`API_BASE_MODEL`.
+          Notice below when you initialise `Flask-SQLAlchemy`_ you pass your ``BaseModel`` as the ``model_class`` attribute,
+          but pass in ``db.Model`` to the `Flask`_ config as :data:`API_BASE_MODEL`.
 
         This will mean that ``db.Model`` will inherit from your ``BaseModel`` and all related methods will be available
         to your models.
 
         .. code:: python
 
-            from flask import Flask
-            from flask_sqlalchemy import SQLAlchemy
+              from flask import Flask
+              from flask_sqlalchemy import SQLAlchemy
+              from flarchitect.core.architect import Architect
 
-            # Import your models
-            from models import Author
+              app = Flask(__name__)
 
-            app = Flask(__name__)
+              db = SQLAlchemy(model_class=BaseModel)
 
-            db = SQLAlchemy(model_class=BaseModel)
-            schema = Architect()
+              app.config["API_TITLE"] = "My API"
+              app.config["API_VERSION"] = "1.0"
+              app.config["API_BASE_MODEL"] = db.Model
 
-            app.config['API_TITLE'] = 'My API
-            app.config['API_VERSION'] = '1.0'
-            app.config['API_BASE_MODEL'] = db.Model
+              architect = Architect(app)
 
-            from flask_schema import Architect
-
-            with app.app_context():
-                db = db.init_app(app=app)
-                schema.init_all(app)
-
-            if __name__ == '__main__':
-                app.run(debug=True)
+              if __name__ == "__main__":
+                  app.run(debug=True)
 
         .. note:: For comprehensive details on configuration, visit our :doc:`configuration </configuration>` page.
 
@@ -182,25 +165,19 @@ The only other requirement's are a few configuration values that need to be pass
 
         .. code:: python
 
-            from flask import Flask
+              from flask import Flask
+              from flarchitect.core.architect import Architect
 
-            # Import your models
-            from models import Author, BaseModel
+              app = Flask(__name__)
 
-            app = Flask(__name__)
+              app.config["API_TITLE"] = "My API"
+              app.config["API_VERSION"] = "1.0"
+              app.config["API_BASE_MODEL"] = BaseModel
 
-            app.config['API_TITLE'] = 'My API
-            app.config['API_VERSION'] = '1.0'
-            app.config['API_BASE_MODEL'] = BaseModel
+              architect = Architect(app)
 
-            from flask_schema import Architect
-
-            with app.app_context():
-                schema = Architect(app)
-
-            if __name__ == '__main__':
-
-                app.run(debug=True)
+              if __name__ == "__main__":
+                  app.run(debug=True)
 
         .. note:: For comprehensive details on configuration, visit our :doc:`configuration </configuration>` page.
 

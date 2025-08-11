@@ -6,7 +6,7 @@ button.copybtn {
     right: .3em;
     width: 1.7em;
     height: 1.7em;
-    opacity: 0;
+	opacity: 0;
     transition: opacity 0.3s, border .3s, background-color .3s;
     user-select: none;
     padding: 0;
@@ -31,13 +31,13 @@ button.copybtn svg {
     padding: 0.1em;
 }
 
-div.highlight {
+div.highlight  {
     position: relative;
 }
 
 /* Show the copybutton */
 .highlight:hover button.copybtn, button.copybtn.success {
-    opacity: 1;
+	opacity: 1;
 }
 
 .highlight button.copybtn:hover {
@@ -56,11 +56,11 @@ div.highlight {
  *
  * <p class="o-tooltip--left" data-tooltip="Hey">Short</p>
  */
-.o-tooltip--left {
-    position: relative;
-}
+ .o-tooltip--left {
+  position: relative;
+ }
 
-.o-tooltip--left:after {
+ .o-tooltip--left:after {
     opacity: 0;
     visibility: hidden;
     position: absolute;
