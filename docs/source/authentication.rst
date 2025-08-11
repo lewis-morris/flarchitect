@@ -1,16 +1,15 @@
 Authentication
 =========================================
 
-flarchitect ships with multiple authentication helpers so you can secure your
-API quickly. Enable one or more strategies via the ``API_AUTHENTICATE_METHOD``
-configuration value. The available methods are ``jwt``, ``basic``, ``api_key``
-and ``custom``. Each example below shares a common setup defined in
-``demo/authentication/app_base.py``.
+flarchitect provides several helpers so you can secure your API quickly.
+Enable one or more strategies via ``API_AUTHENTICATE_METHOD``. Available
+methods are ``jwt``, ``basic``, ``api_key`` and ``custom``. Each example below
+uses the common setup defined in ``demo/authentication/app_base.py``.
 
-JWT tokens
-----------
+JWT authentication
+------------------
 
-Requires ``ACCESS_SECRET_KEY`` and ``REFRESH_SECRET_KEY`` as well as a user
+JWT auth requires ``ACCESS_SECRET_KEY``, ``REFRESH_SECRET_KEY`` and a user
 model. A minimal configuration looks like:
 
 .. code-block:: python
@@ -23,7 +22,7 @@ model. A minimal configuration looks like:
        API_USER_LOOKUP_FIELD = "username"
        API_CREDENTIAL_CHECK_METHOD = "check_password"
 
-See ``demo/authentication/jwt_auth.py`` for a full example including a login
+See ``demo/authentication/jwt_auth.py`` for a complete example with a login
 endpoint.
 
 Basic authentication
@@ -39,7 +38,7 @@ Provide a lookup field and password check method on your user model:
        API_USER_LOOKUP_FIELD = "username"
        API_CREDENTIAL_CHECK_METHOD = "check_password"
 
-A runnable snippet lives at ``demo/authentication/basic_auth.py``.
+See ``demo/authentication/basic_auth.py`` for a runnable snippet.
 
 API key authentication
 ----------------------
@@ -80,5 +79,4 @@ For complete control supply your own callable:
        API_AUTHENTICATE_METHOD = ["custom"]
        API_CUSTOM_AUTH = staticmethod(custom_auth)
 
-The ``demo/authentication/custom_auth.py`` module shows this approach in
-context.
+See ``demo/authentication/custom_auth.py`` for this approach in context.
