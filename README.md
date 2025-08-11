@@ -1,15 +1,15 @@
 # flarchitect
 
-flarchitect is a Flask extension that turns your SQLAlchemy models into a fully fledged REST API with minimal boilerplate. It automatically builds CRUD endpoints, generates Redoc documentation and keeps responses consistent so you can focus on your application logic.
+flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
 
 ## Features
 
-- **Automatic endpoint creation** – expose models as RESTful resources by simply adding a `Meta` class with tags.
-- **JWT authentication** – issue access and refresh tokens and protect endpoints with decorators.
-- **Rate limiting support** – configure global or per-endpoint limits using `flask-limiter` with optional Redis, Memcached or MongoDB backends.
-- **Structured responses** – all responses share a common format including metadata and pagination details.
-- **Extensive configuration** – customise behaviour via Flask config or per-model settings.
-- **Redoc documentation** – interactive documentation is generated at runtime from your models and configuration.
+- **Zero-configuration endpoints** – expose models as RESTful resources by adding a simple `Meta` class.
+- **Automatic documentation** – comprehensive Redoc docs are generated at runtime and stay in sync with your models.
+- **SQLAlchemy integration** – works with plain SQLAlchemy or Flask-SQLAlchemy.
+- **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, or plug in your own authentication.
+- **Rate limiting & structured responses** – configurable throttling and responses with a consistent schema.
+- **Highly configurable** – tweak behaviour globally via Flask config or per model with `Meta` attributes.
 
 ## Installation
 
@@ -35,4 +35,9 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
-For more examples check out the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory or read the [full documentation](docs/source/index.rst).
+## Documentation & help
+
+- Browse the [full documentation](docs/source/index.rst) for tutorials and API reference.
+- Explore runnable examples in the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory.
+- Questions? Join the [GitHub discussions](https://github.com/arched-dev/flarchitect/discussions) or open an [issue](https://github.com/arched-dev/flarchitect/issues).
+
