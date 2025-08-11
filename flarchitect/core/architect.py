@@ -1,3 +1,5 @@
+import base64
+import binascii
 import importlib
 import os
 from collections.abc import Callable
@@ -81,7 +83,7 @@ class Architect(AttributeInitializerMixin):
             *args (list): List of arguments.
             **kwargs (dict): Dictionary of keyword arguments.
         """
-        super().__init__(app=app, *args, **kwargs)
+        super().__init__(app, *args, **kwargs)
         self._register_app(app)
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
@@ -169,16 +171,20 @@ class Architect(AttributeInitializerMixin):
         many: bool | None = False,
         **kwargs,
     ) -> Callable:
-        """
-        Decorator to specify OpenAPI metadata for an endpoint, along with schema information for the input and output.
+        """Decorate an endpoint with schema and OpenAPI metadata.
 
         Args:
-            output_schema (Optional[Type[Schema]], optional): Output schema. Defaults to None.
-            input_schema (Optional[Type[Schema]], optional): Input schema. Defaults to None.
-            model (Optional[DeclarativeBase], optional): Database model. Defaults to None.
-            group_tag (Optional[str], optional): Group name. Defaults to None.
-            many (Optional[Bool], optional): Is many or one? Defaults to False
-            kwargs (dict): Dictionary of keyword arguments.
+            output_schema (Optional[Type[Schema]], optional):
+                Output schema. Defaults to ``None``.
+            input_schema (Optional[Type[Schema]], optional):
+                Input schema. Defaults to ``None``.
+            model (Optional[DeclarativeBase], optional):
+                Database model. Defaults to ``None``.
+            group_tag (Optional[str], optional):
+                Group name. Defaults to ``None``.
+            many (Optional[Bool], optional):
+                Indicates if multiple items are returned. Defaults to ``False``.
+            kwargs (dict): Additional keyword arguments.
 
         Returns:
             Callable: The decorated function.
@@ -218,10 +224,9 @@ class Architect(AttributeInitializerMixin):
                             if authenticate_api_key():
                                 auth_succeeded = True
                                 break
-                        elif method == "custom":
-                            if authenticate_custom():
-                                auth_succeeded = True
-                                break
+                        elif method == "custom" and authenticate_custom():
+                            auth_succeeded = True
+                            break
 
                     # If all authentication methods failed
                     if not auth_succeeded:
@@ -251,7 +256,10 @@ class Architect(AttributeInitializerMixin):
                 elif rl:
                     rule = find_rule_by_function(self, f).rule
                     logger.error(
-                        f"Rate limit definition not a string or not valid. Skipping for `{rule}` route."
+                        
+                            "Rate limit definition not a string or not valid. "
+                            f"Skipping for `{rule}` route."
+                        
                     )
 
                 # Call the decorated function
@@ -273,34 +281,99 @@ class Architect(AttributeInitializerMixin):
                 return False
 
             def authenticate_basic() -> bool:
-                # Implement basic authentication logic here
-                # Example:
+                """Authenticate the request using HTTP Basic auth.
+
+                Returns:
+                    bool: ``True`` if authentication succeeds, otherwise ``False``.
+                """
+
                 auth = request.headers.get("Authorization")
-                if auth and auth.startswith("Basic "):
-                    encoded_credentials = auth.split(" ")[1]
-                    # Decode and verify credentials
-                    return True  # Return True if authenticated
+                if not auth or not auth.startswith("Basic "):
+                    return False
+
+                encoded_credentials = auth.split(" ", 1)[1]
+                try:
+                    decoded = base64.b64decode(encoded_credentials).decode("utf-8")
+                except (ValueError, binascii.Error, UnicodeDecodeError):
+                    return False
+
+                username, _, password = decoded.partition(":")
+                if not username or not password:
+                    return False
+
+                user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
+                lookup_field = get_config_or_model_meta(
+                    "API_USER_LOOKUP_FIELD", default=None
+                )
+                check_method = get_config_or_model_meta(
+                    "API_CREDENTIAL_CHECK_METHOD", default=None
+                )
+
+                if not (user_model and lookup_field and check_method):
+                    return False
+
+                try:
+                    user = (
+                        user_model.query.filter(
+                            getattr(user_model, lookup_field) == username
+                        ).first()
+                    )
+                except Exception:  # pragma: no cover
+                    return False
+
+                if user and getattr(user, check_method)(password):
+                    set_current_user(user)
+                    return True
+
                 return False
 
             def authenticate_api_key() -> bool:
+                """Authenticate the request using an API key.
+
+                Returns:
+                    bool: ``True`` if authentication succeeds, otherwise ``False``.
+                """
 
                 header = request.headers.get("Authorization", "")
                 scheme, _, token = header.partition(" ")
                 if scheme.lower() != "api-key" or not token:
                     return False
 
+                custom_method = get_config_or_model_meta(
+                    "API_KEY_AUTH_AND_RETURN_METHOD", default=None
+                )
+                if callable(custom_method):
+                    user = custom_method(token)
+                    if user:
+                        set_current_user(user)
+                        return True
+                    return False
+
                 user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
-                hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
+                hash_field = get_config_or_model_meta(
+                    "API_CREDENTIAL_HASH_FIELD", default=None
+                )
+                check_method = get_config_or_model_meta(
+                    "API_CREDENTIAL_CHECK_METHOD", default=None
+                )
 
+                if not (user_model and hash_field and check_method):
+                    return False
 
+                query = getattr(user_model, "query", None)
+                if query is None:
+                    session = getattr(user_model, "get_session", lambda: None)()
+                    if session is None:
+                        return False
+                    query = session.query(user_model)
 
-                user = User.from_api_key(token)
-                if not user:
-                    abort(401)
+                for usr in query.all():
+                    stored = getattr(usr, hash_field, None)
+                    if stored and getattr(usr, check_method)(token):
+                        set_current_user(usr)
+                        return True
 
-                g.current_user = user
-                return view(*args, **kwargs)
+                return False
 
             def authenticate_custom() -> bool:
                 custom_auth_func = get_config_or_model_meta("API_CUSTOM_AUTH")
@@ -346,7 +419,7 @@ class Architect(AttributeInitializerMixin):
         source_dir = Path(os.path.split(spec.origin)[0])
 
         # Traverse up to max_levels levels
-        for level in range(max_levels):
+        for _level in range(max_levels):
             # Search for the folder in the current directory
             potential_path = source_dir / folder_name
             if potential_path.exists() and potential_path.is_dir():
