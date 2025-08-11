@@ -1,11 +1,13 @@
 """Authentication method integration tests."""
 
 import base64
+from collections.abc import Generator
 
 import pytest
 from flask import Flask, request
+from flask.testing import FlaskClient
 from flask_sqlalchemy import SQLAlchemy
-from marshmallow import Schema
+from marshmallow import Schema, fields
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flarchitect.authentication.jwt import (
@@ -13,7 +15,11 @@ from flarchitect.authentication.jwt import (
     generate_refresh_token,
     refresh_access_token,
 )
-from flarchitect.authentication.user import set_current_user
+from flarchitect.authentication.user import (
+    current_user,
+    get_current_user,
+    set_current_user,
+)
 from flarchitect.core.architect import Architect
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.response_helpers import create_response
@@ -38,8 +44,15 @@ class User(db.Model):
         return db.session
 
 
+class UsernameSchema(Schema):
+    """Schema for serializing responses containing a username."""
+
+    username = fields.Str()
+
+
 @pytest.fixture()
-def client_basic():
+def client_basic() -> Generator[FlaskClient, None, None]:
+    """Create a test client configured for basic authentication."""
     app = Flask(__name__)
     app.config.update(
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
@@ -62,13 +75,11 @@ def client_basic():
                 errors={"error": exc.error, "reason": exc.reason},
             )
 
-        class DummySchema(Schema):
-            pass
-
         @app.route("/basic")
-        @architect.schema_constructor(model=User, output_schema=DummySchema)
-        def basic_route():
-            return {"value": True}
+        @architect.schema_constructor(model=User, output_schema=UsernameSchema)
+        def basic_route() -> dict[str, str]:
+            """Return the authenticated user's name for verification."""
+            return {"username": current_user.username}
 
         db.create_all()
         user = User(
@@ -82,7 +93,8 @@ def client_basic():
 
 
 @pytest.fixture()
-def client_api_key():
+def client_api_key() -> Generator[FlaskClient, None, None]:
+    """Create a test client configured for API key authentication."""
     app = Flask(__name__)
     app.config.update(
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
@@ -105,13 +117,11 @@ def client_api_key():
                 errors={"error": exc.error, "reason": exc.reason},
             )
 
-        class DummySchema(Schema):
-            pass
-
         @app.route("/key")
-        @architect.schema_constructor(model=User, output_schema=DummySchema)
-        def key_route():
-            return {"value": True}
+        @architect.schema_constructor(model=User, output_schema=UsernameSchema)
+        def key_route() -> dict[str, str]:
+            """Return the authenticated user's name for verification."""
+            return {"username": current_user.username}
 
         db.create_all()
         user = User(
@@ -125,7 +135,8 @@ def client_api_key():
 
 
 @pytest.fixture()
-def client_jwt():
+def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
+    """Create a test client configured for JWT authentication."""
     app = Flask(__name__)
     app.config.update(
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
@@ -149,13 +160,11 @@ def client_jwt():
                 errors={"error": exc.error, "reason": exc.reason},
             )
 
-        class DummySchema(Schema):
-            pass
-
         @app.route("/jwt")
-        @architect.schema_constructor(model=User, output_schema=DummySchema)
-        def jwt_route():
-            return {"value": True}
+        @architect.schema_constructor(model=User, output_schema=UsernameSchema)
+        def jwt_route() -> dict[str, str]:
+            """Return the authenticated user's name for verification."""
+            return {"username": current_user.username}
 
         db.create_all()
         user = User(
@@ -171,7 +180,9 @@ def client_jwt():
 
 
 @pytest.fixture()
-def client_custom():
+def client_custom() -> Generator[FlaskClient, None, None]:
+    """Create a test client using a custom authentication callback."""
+
     def custom_auth() -> bool:
         """Simple custom authentication using a fixed token."""
         if request.headers.get("Authorization") != "Custom secret":
@@ -202,13 +213,11 @@ def client_custom():
                 errors={"error": exc.error, "reason": exc.reason},
             )
 
-        class DummySchema(Schema):
-            pass
-
         @app.route("/custom")
-        @architect.schema_constructor(model=User, output_schema=DummySchema)
-        def custom_route():
-            return {"value": True}
+        @architect.schema_constructor(model=User, output_schema=UsernameSchema)
+        def custom_route() -> dict[str, str]:
+            """Return the authenticated user's name for verification."""
+            return {"username": current_user.username}
 
         db.create_all()
         user = User(
@@ -221,32 +230,47 @@ def client_custom():
         yield app.test_client()
 
 
-def test_basic_success_and_failure(client_basic):
+def test_basic_success_and_failure(client_basic: FlaskClient) -> None:
+    """Test basic authentication and ensure user context resets."""
+    assert get_current_user() is None
+
     credentials = base64.b64encode(b"alice:wonderland").decode("utf-8")
     resp = client_basic.get("/basic", headers={"Authorization": f"Basic {credentials}"})
     assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "alice"
+    assert get_current_user() is None
 
     bad_credentials = base64.b64encode(b"alice:wrong").decode("utf-8")
     resp_bad = client_basic.get(
         "/basic", headers={"Authorization": f"Basic {bad_credentials}"}
     )
     assert resp_bad.status_code == 401
+    assert get_current_user() is None
 
 
-def test_api_key_success_and_failure(client_api_key):
+def test_api_key_success_and_failure(client_api_key: FlaskClient) -> None:
+    """Test API key authentication and ensure user context resets."""
+    assert get_current_user() is None
+
     resp = client_api_key.get("/key", headers={"Authorization": "Api-Key secret"})
     assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "bob"
+    assert get_current_user() is None
 
-    resp_bad = client_api_key.get(
-        "/key", headers={"Authorization": "Api-Key invalid"}
-    )
+    resp_bad = client_api_key.get("/key", headers={"Authorization": "Api-Key invalid"})
     assert resp_bad.status_code == 401
+    assert get_current_user() is None
 
 
-def test_jwt_success_and_failure(client_jwt):
+def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """Test JWT authentication, refresh, and ensure user context resets."""
     client, access_token, refresh_token = client_jwt
+    assert get_current_user() is None
+
     resp = client.get("/jwt", headers={"Authorization": f"Bearer {access_token}"})
     assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "carol"
+    assert get_current_user() is None
 
     new_access_token, user = refresh_access_token(refresh_token)
     assert user.username == "carol"
@@ -254,19 +278,27 @@ def test_jwt_success_and_failure(client_jwt):
         "/jwt", headers={"Authorization": f"Bearer {new_access_token}"}
     )
     assert resp_new.status_code == 200
+    assert resp_new.get_json()["value"]["username"] == "carol"
+    assert get_current_user() is None
 
     resp_bad = client.get("/jwt", headers={"Authorization": "Bearer bad"})
     assert resp_bad.status_code == 401
+    assert get_current_user() is None
 
     with pytest.raises(CustomHTTPException):
         refresh_access_token(refresh_token)
+    assert get_current_user() is None
 
 
-def test_custom_success_and_failure(client_custom):
+def test_custom_success_and_failure(client_custom: FlaskClient) -> None:
+    """Test custom authentication and ensure user context resets."""
+    assert get_current_user() is None
+
     resp = client_custom.get("/custom", headers={"Authorization": "Custom secret"})
     assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "diana"
+    assert get_current_user() is None
 
-    resp_bad = client_custom.get(
-        "/custom", headers={"Authorization": "Wrong token"}
-    )
+    resp_bad = client_custom.get("/custom", headers={"Authorization": "Wrong token"})
     assert resp_bad.status_code == 401
+    assert get_current_user() is None
