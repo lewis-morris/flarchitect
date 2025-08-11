@@ -106,19 +106,16 @@ type_mapping = {
     float: fields.Float,
     dict: fields.Dict,
     list: fields.List,
-    sqlalchemy_utils.types.encrypted.encrypted_type.StringEncryptedType: fields.Str  # Added StringEncryptedType
-
+    sqlalchemy_utils.types.encrypted.encrypted_type.StringEncryptedType: fields.Str,  # Added StringEncryptedType
 }
 
 
 class Base(Schema):  # Inheriting from marshmallow's Schema
-
     def __init__(self, *args, context=None, **kwargs):
         # 1️⃣  Stash the context *before* super().__init__
         #     (marshmallow 4 no longer accepts it)
         self.context: dict = context or {}
         super().__init__(*args, **kwargs)
-
 
     @classmethod
     def get_model(cls):
@@ -245,7 +242,9 @@ class AutoSchema(Base):
         mapper_property: RelationshipProperty,
     ):
         """Handle adding a relationship field to the schema."""
-        if not get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True):
+        if not get_config_or_model_meta(
+            "API_ADD_RELATIONS", model=self.model, default=True
+        ):
             return
         try:
             if request.args.get("dump_relationships") in ["false", "False", "0"]:
@@ -391,7 +390,6 @@ class AutoSchema(Base):
         # Check for column length constraints and add validation
         field_args = self._add_validation(column, field_args)
 
-
         # NO UNIQUE FIELD ANY MORE??!?
         # Mark fields as unique or primary keys
         # if column.unique or column.primary_key:
@@ -426,7 +424,6 @@ class AutoSchema(Base):
         if isinstance(column.type, Integer):
             field_args["validate"].append(Range(min=-2147483648, max=2147483647))
 
-
         if get_config_or_model_meta(
             "API_AUTO_VALIDATE", model=self.model, default=True
         ):
@@ -434,7 +431,6 @@ class AutoSchema(Base):
             column_name = column.name
             format_name = column.info.get("format")
             try:
-
                 if (
                     "email" in column_name and column.type.python_type == str
                 ) or format_name == "email":
@@ -569,7 +565,9 @@ class AutoSchema(Base):
                             ),
                             **field_args,
                         ),
+                        load=False,
                     )
+                    field_name = attribute
                 else:
                     # Serialize as a single URL
                     self.add_to_fields(
@@ -580,20 +578,26 @@ class AutoSchema(Base):
                             ),
                             **field_args,
                         ),
+                        load=False,
                     )
+                    field_name = attribute
             elif dump_type == "json":
                 if relationship_prop.uselist:
                     # Always dump as a list of nested schemas
                     self.add_to_fields(
                         original_attribute,
                         fields.List(fields.Nested(output_schema), **field_args),
+                        load=False,
                     )
+                    field_name = original_attribute
                 else:
                     # Always dump as a nested schema
                     self.add_to_fields(
                         original_attribute,
                         fields.Nested(output_schema, **field_args),
+                        load=False,
                     )
+                    field_name = original_attribute
             elif dump_type == "dynamic":
                 try:
                     request.args
@@ -622,13 +626,17 @@ class AutoSchema(Base):
                             self.add_to_fields(
                                 original_attribute,
                                 fields.List(fields.Nested(output_schema), **field_args),
+                                load=False,
                             )
+                            field_name = original_attribute
                         else:
                             # Always dump as a nested schema
                             self.add_to_fields(
                                 original_attribute,
                                 fields.Nested(output_schema, **field_args),
+                                load=False,
                             )
+                            field_name = original_attribute
                     else:
                         return
                 else:
@@ -643,27 +651,43 @@ class AutoSchema(Base):
                             lambda obj: self.get_many_url(obj, attribute, input_schema),
                             **field_args,
                         ),
+                        load=False,
                     )
+                    field_name = original_attribute
                 else:
                     # Serialize as a nested schema
                     self.add_to_fields(
                         original_attribute,
                         fields.Nested(output_schema, **field_args),
+                        load=False,
                     )
+                    field_name = original_attribute
             else:
                 # Fallback to JSON serialization if an unknown dump_type is provided
                 if relationship_prop.uselist:
                     self.add_to_fields(
                         original_attribute,
                         fields.List(fields.Nested(output_schema), **field_args),
+                        load=False,
                     )
+                    field_name = original_attribute
                 else:
                     self.add_to_fields(
                         original_attribute,
                         fields.Nested(output_schema, **field_args),
+                        load=False,
                     )
+                    field_name = original_attribute
 
-        self._update_field_metadata(attribute)
+        self._update_field_metadata(field_name)
+
+        if not relationship_prop.viewonly:
+            load_field = fields.Nested(
+                input_schema,
+                many=relationship_prop.uselist,
+                load_only=True,
+            )
+            self.add_to_fields(field_name, load_field, dump=False)
 
     def _update_field_metadata(self, attribute: str):
         """Update metadata for the generated field."""
