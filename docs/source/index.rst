@@ -98,6 +98,8 @@ Let's get started!
 
 `View Demos <https://github.com/arched-dev/flarchitect/tree/master/demo>`__
 
+`Browse Unit Tests <https://github.com/arched-dev/flarchitect/tree/master/tests>`__
+
 
 .. image:: /_static/one_does_not.png
    :alt: One does not simply generate API's

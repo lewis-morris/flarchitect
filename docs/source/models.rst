@@ -20,3 +20,5 @@ Example::
         name = db.Column(db.String(80))
 
 That's all that's required to make the model available through the generated API.
+For extended model examples, explore the demo - `model_extension <https://github.com/arched-dev/flarchitect/tree/master/demo/model_extension>`_.
+Unit tests demonstrating model behaviour live in `tests/test_models.py <https://github.com/arched-dev/flarchitect/blob/master/tests/test_models.py>`_.

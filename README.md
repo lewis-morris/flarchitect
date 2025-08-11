@@ -35,4 +35,4 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
-For more examples check out the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory or read the [full documentation](docs/source/index.rst).
+For runnable examples check out the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory, browse the [unit tests](https://github.com/arched-dev/flarchitect/tree/master/tests) for real-world usage patterns or read the [full documentation](docs/source/index.rst).

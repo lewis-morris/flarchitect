@@ -26,6 +26,9 @@ classes using `Meta` classes.
 `Flask`_ config values are the most straightforward way to configure the API. Offering a standardized approach to modifying
 the extension's behavior at a global or model level.
 
+For a runnable illustration of these concepts, see the demo - `configuration/load.py <https://github.com/arched-dev/flarchitect/blob/master/demo/configuration/load.py>`_.
+Unit tests covering configuration behaviour can be found in `tests/test_flask_config.py <https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py>`_ and the `model meta tests <https://github.com/arched-dev/flarchitect/tree/master/tests/test_model_meta>`_.
+
 
 
 

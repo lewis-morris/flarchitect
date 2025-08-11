@@ -82,3 +82,4 @@ For complete control supply your own callable:
 
 The ``demo/authentication/custom_auth.py`` module shows this approach in
 context.
+For end-to-end examples validated by tests, see `tests/test_authentication.py <https://github.com/arched-dev/flarchitect/blob/master/tests/test_authentication.py>`_.

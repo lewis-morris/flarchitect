@@ -138,6 +138,7 @@ Callback Examples
 --------------------------
 
 To demonstrate how to use callbacks, please see the demo folder of our `repo`_ or view the demo code `here <https://github.com/arched-dev/flarchitect/tree/master/demo/callbacks>`_.
+Additional examples are available in the unit tests - `test_flask_config.py <https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py>`_.
 
 
 
