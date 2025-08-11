@@ -1,5 +1,6 @@
 import datetime
 import os
+from typing import Any
 
 import jwt
 from flask import current_app
@@ -13,28 +14,49 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 
 # In-memory store for refresh tokens (use a persistent database in production)
-refresh_tokens_store = {}
+refresh_tokens_store: dict[str, dict[str, Any]] = {}
 
 
-def get_pk_and_lookups():
+def get_pk_and_lookups() -> tuple[str, str]:
+    """Retrieve the primary key name and lookup field for the user model.
+
+    Returns:
+        tuple[str, str]: A tuple of the primary key field name and the lookup
+        field configured for the user model.
+
+    Raises:
+        CustomHTTPException: If the user model or lookup field configuration is
+        missing.
     """
-    Get the primary key and lookup field for the user model.
-    """
+
     lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD")
     usr = get_config_or_model_meta("API_USER_MODEL")
     primary_keys = get_primary_keys(usr)
     return primary_keys.name, lookup_field
 
 
-def generate_access_token(usr_model, expires_in_minutes=360):
+def generate_access_token(usr_model: Any, expires_in_minutes: int = 360) -> str:
+    """Create a short-lived JSON Web Token for the given user.
+
+    Args:
+        usr_model (Any): The user model instance for which to create the token.
+        expires_in_minutes (int, optional): Token lifetime in minutes.
+            Defaults to ``360``.
+
+    Returns:
+        str: The encoded JWT access token.
+
+    Raises:
+        CustomHTTPException: If the access secret key is not configured.
     """
-    Generates a short-lived access token (JWT).
-    """
+
     pk, lookup_field = get_pk_and_lookups()
 
     ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get(
         "ACCESS_SECRET_KEY"
     )
+    if ACCESS_SECRET_KEY is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
@@ -47,13 +69,25 @@ def generate_access_token(usr_model, expires_in_minutes=360):
     return token
 
 
-def generate_refresh_token(usr_model, expires_in_days=2):
+def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
+    """Create a long-lived refresh token for the given user.
+
+    Args:
+        usr_model (Any): The user model instance for which to create the token.
+        expires_in_days (int, optional): Token lifetime in days. Defaults to ``2``.
+
+    Returns:
+        str: The encoded JWT refresh token.
+
+    Raises:
+        CustomHTTPException: If the refresh secret key is not configured.
     """
-    Generates a long-lived refresh token (JWT).
-    """
+
     REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
         "REFRESH_SECRET_KEY"
     )
+    if REFRESH_SECRET_KEY is None:
+        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
     pk, lookup_field = get_pk_and_lookups()
 
@@ -75,32 +109,42 @@ def generate_refresh_token(usr_model, expires_in_days=2):
     return token
 
 
-def decode_token(token, secret_key):
+def decode_token(token: str, secret_key: str) -> dict[str, Any]:
+    """Decode a JWT and return its payload.
+
+    Args:
+        token (str): The encoded JWT.
+        secret_key (str): The secret key used to decode the token.
+
+    Returns:
+        dict[str, Any]: The decoded token payload.
+
+    Raises:
+        CustomHTTPException: If the token is expired or invalid.
     """
-    Decodes a JWT token.
-    """
+
     try:
         payload = jwt.decode(token, secret_key, algorithms=["HS256"])
         return payload
-    except jwt.ExpiredSignatureError:
-        raise CustomHTTPException(status_code=401, reason="Token has expired")
+    except jwt.ExpiredSignatureError as exc:
+        raise CustomHTTPException(status_code=401, reason="Token has expired") from exc
+    except jwt.InvalidTokenError as exc:
+        raise CustomHTTPException(status_code=401, reason="Invalid token") from exc
 
-    except jwt.InvalidTokenError:
-        raise CustomHTTPException(status_code=401, reason="Invalid token")
 
-
-def refresh_access_token(refresh_token):
-    """
-    Uses a refresh token to generate a new access token and returns the user.
+def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
+    """Use a refresh token to issue a new access token.
 
     Args:
         refresh_token (str): The JWT refresh token.
 
     Returns:
-        tuple: A tuple containing the new access token (str) and the user object.
+        tuple[str, Any]: A tuple containing the new access token and the user
+        object.
 
     Raises:
-        CustomHTTPException: If the token is invalid, expired, or the user is not found.
+        CustomHTTPException: If the token is invalid, expired, or the user cannot
+        be found.
     """
     # Verify refresh token
     REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
@@ -139,8 +183,8 @@ def refresh_access_token(refresh_token):
             )
             .one()
         )
-    except NoResultFound:
-        raise CustomHTTPException(status_code=404, reason="User not found")
+    except NoResultFound as exc:
+        raise CustomHTTPException(status_code=404, reason="User not found") from exc
 
     # Generate new access token
     new_access_token = generate_access_token(user)
@@ -150,17 +194,16 @@ def refresh_access_token(refresh_token):
     return new_access_token, user
 
 
-def get_user_from_token(token, secret_key=None):
-    """
-    Decodes a JWT token and returns the user associated with the token.
+def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
+    """Decode a token and return the associated user.
 
     Args:
-        token (str): The JWT token containing user information.
-        secret_key (str, optional): The secret key used to decode the token.
-                                     If None, uses access secret key.
+        token (str): The JWT containing user information.
+        secret_key (str | None, optional): The secret key used to decode the
+            token. If ``None``, the access secret key is used.
 
     Returns:
-        usr_model: The user object.
+        Any: The user model instance corresponding to the token.
 
     Raises:
         CustomHTTPException: If the token is invalid or the user is not found.
@@ -192,7 +235,7 @@ def get_user_from_token(token, secret_key=None):
             )
             .one()
         )
-    except NoResultFound:
-        raise CustomHTTPException(status_code=404, reason="User not found")
+    except NoResultFound as exc:
+        raise CustomHTTPException(status_code=404, reason="User not found") from exc
 
     return user
