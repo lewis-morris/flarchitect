@@ -5,7 +5,7 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional, TypeVar, cast
 
 from flask import Flask, request
 from flask_limiter import Limiter
@@ -29,10 +29,26 @@ from flarchitect.utils.general import (
 
 FLASK_APP_NAME = "flarchitect"
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def jwt_authentication(func):
+
+def jwt_authentication(func: F) -> F:
+    """Decorator enforcing JSON Web Token (JWT) authentication.
+
+    Args:
+        func (Callable[..., Any]): The view function to wrap.
+
+    Returns:
+        Callable[..., Any]: A wrapped function that validates the request's JWT
+        before executing ``func``.
+
+    Raises:
+        CustomHTTPException: If the ``Authorization`` header is missing,
+        malformed, or the provided token is invalid.
+    """
+
     @wraps(func)
-    def auth_wrapped(*args, **kwargs):
+    def auth_wrapped(*args: Any, **kwargs: Any) -> Any:
         auth = request.headers.get("Authorization")
         if not auth:
             raise CustomHTTPException(
@@ -50,7 +66,7 @@ def jwt_authentication(func):
         set_current_user(usr)
         return func(*args, **kwargs)
 
-    return auth_wrapped
+    return cast(F, auth_wrapped)
 
 
 class Architect(AttributeInitializerMixin):
@@ -105,7 +121,17 @@ class Architect(AttributeInitializerMixin):
         )
 
         @app.teardown_request
-        def clear_current_user(exception=None):
+        def clear_current_user(exception: BaseException | None = None) -> None:
+            """Remove the current user from the context after each request.
+
+            Args:
+                exception (BaseException | None): Exception raised during the
+                    request lifecycle, if any.
+
+            Returns:
+                None: Flask ignores the return value of teardown callbacks.
+            """
+
             set_current_user(None)
 
     def _register_app(self, app: Flask):
@@ -256,10 +282,8 @@ class Architect(AttributeInitializerMixin):
                 elif rl:
                     rule = find_rule_by_function(self, f).rule
                     logger.error(
-                        
-                            "Rate limit definition not a string or not valid. "
-                            f"Skipping for `{rule}` route."
-                        
+                        "Rate limit definition not a string or not valid. "
+                        f"Skipping for `{rule}` route."
                     )
 
                 # Call the decorated function
@@ -313,11 +337,9 @@ class Architect(AttributeInitializerMixin):
                     return False
 
                 try:
-                    user = (
-                        user_model.query.filter(
-                            getattr(user_model, lookup_field) == username
-                        ).first()
-                    )
+                    user = user_model.query.filter(
+                        getattr(user_model, lookup_field) == username
+                    ).first()
                 except Exception:  # pragma: no cover
                     return False
 
