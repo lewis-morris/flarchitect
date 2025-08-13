@@ -168,27 +168,41 @@ Please note the badge for each configuration value, as it defines where the valu
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
 
-.. _custom-session-getter:
+Automatic generation
+--------------------
 
-Custom session getter
----------------------
+Two flags control flarchitect's automatic behaviour when building routes and
+documentation.
 
-``flarchitect`` tries to resolve the active SQLAlchemy session automatically
-from Flask-SQLAlchemy, model ``query`` attributes, or bound engines. When your
-application manages sessions differently—for example, using a custom factory or
-multiple database binds—you can supply :data:`API_SESSION_GETTER`.
+FULL_AUTO
+^^^^^^^^^
 
-Provide a callable that returns a :class:`~sqlalchemy.orm.Session` instance:
+When ``True`` (default), :class:`~flarchitect.Architect` inspects your SQLAlchemy
+models and registers CRUD routes for each one. Set ``FULL_AUTO`` to ``False`` if
+you plan to define routes manually or only want to initialise specific models.
 
 .. code:: python
 
-    from myapp.database import SessionLocal
+    class Config:
+        FULL_AUTO = False
+
+    app = Flask(__name__)
+    arch = Architect(app)
+    arch.init_api(app=app)  # call manually when FULL_AUTO is disabled
+
+AUTO_NAME_ENDPOINTS
+^^^^^^^^^^^^^^^^^^^
+
+``AUTO_NAME_ENDPOINTS`` defaults to ``True`` and automatically generates a
+summary line for each endpoint based on the schema and HTTP method. Disable it
+to keep custom summaries supplied via ``*_SUMMARY`` config options or
+callbacks.
+
+.. code:: python
 
     class Config:
-        API_SESSION_GETTER = lambda: SessionLocal()
+        AUTO_NAME_ENDPOINTS = False
 
-This hook removes the need for model-level ``get_session`` methods and ensures
-``flarchitect`` uses the correct session in unconventional setups.
 
 
 Cascade delete settings

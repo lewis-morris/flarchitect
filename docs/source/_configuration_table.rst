@@ -655,6 +655,35 @@
         - Companion flag to ``API_ALLOW_DELETE_RELATED`` covering association-table entries and similar dependents.
           Not currently evaluated by the code base; cascade behaviour hinges solely on ``API_ALLOW_CASCADE_DELETE``.
           Documented for completeness and potential future use.
+    * - ``AUTO_NAME_ENDPOINTS``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Automatically generates OpenAPI summaries from the schema and HTTP
+          method when no summary is supplied. Disable to preserve custom
+          summaries.
+
+          Example::
+
+              class Config:
+                  AUTO_NAME_ENDPOINTS = False
+
+    * - ``FULL_AUTO``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True`` ``flarchitect`` registers CRUD routes for all models at
+          startup. Set to ``False`` to define routes manually.
+
+        Example::
+
+              class Config:
+                  FULL_AUTO = False
+
     * - ``GET_MANY_SUMMARY``
 
           :bdg:`default:` ``None``
