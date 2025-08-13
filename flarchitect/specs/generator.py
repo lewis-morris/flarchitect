@@ -259,8 +259,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 str: The HTML documentation page.
             """
             custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
-            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()<<<<<<< arched/update-register_routes_with_spec-signature
-381
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
  
 
             template_name = "swagger.html" if docs_style == "swagger" else "apispec.html"
