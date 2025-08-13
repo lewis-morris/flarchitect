@@ -1,5 +1,4 @@
 # Schema for loading login data (username and password)
-from typing import Any
 
 from marshmallow import Schema, ValidationError, fields, validates
 
