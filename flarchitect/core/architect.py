@@ -13,10 +13,10 @@ from flask_limiter.util import get_remote_address
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
-
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
 
+from flarchitect.authentication import roles_required
 from flarchitect.authentication.jwt import get_user_from_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function

@@ -1,8 +1,8 @@
 # flarchitect
 
-[![Docs](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml)
-[![Tests](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml)
-![Coverage](https://lewis-morris.github.io/flarchitect/_static/coverage.svg)
+[![Docs](https://github.com/arched-dev/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/arched-dev/flarchitect/actions/workflows/docs.yml)
+[![Tests](https://github.com/arched-dev/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master)](https://github.com/arched-dev/flarchitect/actions/workflows/run-unit-tests.yml)
+![Coverage](https://arched-dev.github.io/flarchitect/_static/coverage.svg)
 
 
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
@@ -77,7 +77,7 @@ pytest
 
 ## Documentation & help
 
-- Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
+- Browse the [full documentation](https://arched-dev.github.io/flarchitect/) for tutorials and API reference.
 - Explore runnable examples in the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory.
 - Questions? Join the [GitHub discussions](https://github.com/arched-dev/flarchitect/discussions) or open an [issue](https://github.com/arched-dev/flarchitect/issues).
 
