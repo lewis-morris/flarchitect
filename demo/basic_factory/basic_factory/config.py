@@ -9,3 +9,4 @@ class Config:
     API_VERSION = "0.1.0"
     API_VERBOSITY_LEVEL = 4
     SECRET_KEY = "8Kobns1_vnmg3rxnr0RZpkF4D1s"
+    API_ALLOW_NESTED_WRITES = False
