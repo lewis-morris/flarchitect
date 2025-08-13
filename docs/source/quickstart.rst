@@ -139,7 +139,7 @@ The only other requirement's are a few configuration values that need to be pass
 
               from flask import Flask
               from flask_sqlalchemy import SQLAlchemy
-              from flarchitect.core.architect import Architect
+              from flarchitect import Architect
 
               app = Flask(__name__)
 
@@ -166,7 +166,7 @@ The only other requirement's are a few configuration values that need to be pass
         .. code:: python
 
               from flask import Flask
-              from flarchitect.core.architect import Architect
+              from flarchitect import Architect
 
               app = Flask(__name__)
 

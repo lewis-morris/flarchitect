@@ -41,7 +41,7 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import AttributeInitializerMixin
 
 if TYPE_CHECKING:
-    from flarchitect.core.architect import Architect
+    from flarchitect import Architect
 
 
 def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> list[dict[str, Any]]:

@@ -10,7 +10,7 @@ Automatic generation
 
 When ``API_CREATE_DOCS`` is enabled (it is ``True`` by default) the
 specification is built on start-up by inspecting the routes and schemas
-registered with :class:`flarchitect.core.architect.Architect`.  Any models
+registered with :class:`flarchitect.Architect`.  Any models
 added later are included the next time the application boots.
 
 Accessing the spec
@@ -22,7 +22,7 @@ manually if you prefer:
 .. code-block:: python
 
     from flask import Flask, Response, jsonify
-    from flarchitect.core.architect import Architect
+    from flarchitect import Architect
 
     app = Flask(__name__)
     architect = Architect(app)

@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Date, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 
 
 # Create a base model that all models will inherit from. This is a requirement for the auto api creator to work.

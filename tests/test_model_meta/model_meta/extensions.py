@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 
 
 class BaseModel(DeclarativeBase):
