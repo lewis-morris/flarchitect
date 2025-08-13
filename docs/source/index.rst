@@ -12,6 +12,7 @@ flarchitect
    authentication
    callbacks
    configuration
+   openapi
    faq
    genindex
 

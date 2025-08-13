@@ -39,6 +39,26 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
+## OpenAPI specification
+
+An OpenAPI 3 schema is generated automatically and powers the Redoc UI. You
+can serve the raw specification to integrate with tooling such as Postman:
+
+```python
+from flask import Flask, Response, jsonify
+from flarchitect.core.architect import Architect
+
+app = Flask(__name__)
+architect = Architect(app)
+
+@app.get("/openapi.json")
+def openapi() -> Response:
+    return jsonify(architect.api_spec.to_dict())
+```
+
+See the [OpenAPI docs](docs/source/openapi.rst) for exporting or customising
+the document.
+
 ## Running Tests
 
 To run the test suite locally:
