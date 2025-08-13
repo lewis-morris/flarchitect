@@ -3,7 +3,7 @@ from types import new_class
 from typing import Any
 
 from flask import Response, request
-from marshmallow import Schema, ValidationError
+from marshmallow import Schema, ValidationError, fields
 from sqlalchemy.orm import DeclarativeBase
 
 from flarchitect.database.utils import _extract_model_attributes
@@ -109,7 +109,10 @@ def deserialize_data(
     Returns:
         Union[Dict[str, Any], Tuple[Dict[str, Any], int]]: The deserialized
             data if successful, or a tuple containing errors and a status code
-            if there's an error.
+            if there's an error. Fields representing relationships are ignored
+            if they are provided as plain strings (e.g., URLs), allowing patch
+            operations to submit full response payloads without manual
+            sanitization.
     """
     try:
         data = request.data.decode() if is_xml() else response.json
@@ -125,21 +128,38 @@ def deserialize_data(
         )
 
         if hasattr(input_schema, "fields"):
-            fields = [
-                v.attribute or k
-                for k, v in input_schema.fields.items()
-                if not v.dump_only
-            ]
+            field_items = {
+                k: v for k, v in input_schema.fields.items() if not v.dump_only
+            }
         else:
-            fields = [
-                v.attribute or k
+            field_items = {
+                k: v
                 for k, v in input_schema._declared_fields.items()
                 if not v.dump_only
-            ]
+            }
 
-        data = {
-            k: v for k, v in data.get("deserialized_data", data).items() if k in fields
-        }
+        cleaned: dict[str, Any] = {}
+        source_data = data.get("deserialized_data", data)
+        for key, value in source_data.items():
+            field_obj = field_items.get(key)
+            if not field_obj:
+                continue
+            # ``fields.Nested`` expects a dict (or list for many). When a URL string
+            # from a previous GET request is supplied, the field should be ignored
+            # to allow partial updates without manual payload pruning.
+            if isinstance(field_obj, fields.Nested) and not isinstance(
+                value, (dict | list)
+            ):
+                continue
+            if (
+                isinstance(field_obj, fields.List)
+                and isinstance(field_obj.inner, fields.Nested)
+                and not isinstance(value, list)
+            ):
+                continue
+            cleaned[key] = value
+
+        data = cleaned
         if request.method == "PATCH":
             from flarchitect.specs.utils import _prepare_patch_schema
 
