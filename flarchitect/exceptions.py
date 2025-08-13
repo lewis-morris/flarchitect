@@ -18,19 +18,18 @@ class CustomHTTPException(Exception):
     error = None
     reason = None
 
-    def __init__(self, status_code, reason=None):
-        """
-        A custom HTTP exception class
+    def __init__(self, status_code: int, reason: str | None = None) -> None:
+        """A custom HTTP exception class.
 
         Args:
             status_code (int): HTTP status code
-            reason (str): Reason for the HTTP status code
+            reason (str | None): Reason for the HTTP status code
         """
         self.status_code = status_code
         self.error = HTTPStatus(status_code).phrase  # Fetch the standard HTTP status phrase
         self.reason = reason or self.error  # Use the reason if provided, otherwise use the standard HTTP status phrase
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, int | str | None]:
         return {
             "status_code": self.status_code,
             "status_text": self.error,
@@ -82,5 +81,5 @@ def _handle_exception(error: str, status_code: int, error_name: str | None = Non
         errors={
             "error": error,
             "reason": error_name,
-        },  # changed this in an attempt to make errors more uniform ##[{"status_text": error_name or "Error", "error": error}]
+        },  # Structured error payload for consistent responses
     )
