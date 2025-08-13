@@ -8,7 +8,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 
 
 class BaseModel(DeclarativeBase):

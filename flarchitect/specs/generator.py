@@ -36,7 +36,7 @@ from flarchitect.utils.general import (
 )
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type hints
-    from flarchitect.core.architect import Architect
+    from flarchitect import Architect
 
 
 class CustomSpec(APISpec, AttributeInitializerMixin):

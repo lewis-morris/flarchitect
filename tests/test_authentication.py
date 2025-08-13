@@ -20,7 +20,7 @@ from flarchitect.authentication.user import (
     get_current_user,
     set_current_user,
 )
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.response_helpers import create_response
 

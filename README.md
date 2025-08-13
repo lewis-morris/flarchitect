@@ -25,7 +25,7 @@ pip install flarchitect
 
 ```python
 from flask import Flask
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 from models import Author, BaseModel  # your SQLAlchemy models
 
 app = Flask(__name__)
@@ -47,7 +47,7 @@ can serve the raw specification to integrate with tooling such as Postman:
 
 ```python
 from flask import Flask, Response, jsonify
-from flarchitect.core.architect import Architect
+from flarchitect import Architect
 
 app = Flask(__name__)
 architect = Architect(app)
