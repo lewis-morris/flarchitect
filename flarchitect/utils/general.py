@@ -402,16 +402,15 @@ def xml_to_dict(xml_data: str | bytes) -> dict[str, Any]:
 
 
 def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
+    """Process a route result for standardised API responses.
+
+    Args:
+        result: Output produced by a route handler.
+
+    Returns:
+        tuple[int, Any, int, str | None, str | None]:
+            Status code, value, total count, next URL and previous URL.
     """
-    Processes the result of a route function
-    and prepares it for the standardised response.
-    """
-
-    # todo really not sure why this is here again.
-    # Its a relic from the past, a lot of this needs looking at.
-
-    from flarchitect.utils.responses import CustomResponse
-
     status_code, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
 
     if isinstance(result, tuple):
@@ -423,18 +422,20 @@ def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
             if len(result) == 2 and isinstance(result[1], int)
             else (HTTP_OK, result)
         )
+
     if isinstance(result, dict):
-        value, count = (
-            result.get("query", result),
-            get_count(result, result.get("query")),
-        )
-        next_url, previous_url = result.get("next_url"), result.get("previous_url")
-    elif isinstance(result, CustomResponse):
-        next_url, previous_url, count = (
-            result.next_url,
-            result.previous_url,
-            result.count,
-        )
+        if "value" in result and "count" in result:
+            value = result.get("value")
+            count = result.get("count", count)
+            next_url, previous_url = result.get("next_url"), result.get("previous_url")
+            status_code = result.get("status_code", status_code)
+        else:
+            value, count = (
+                result.get("query", result),
+                get_count(result, result.get("query")),
+            )
+            next_url, previous_url = result.get("next_url"), result.get("previous_url")
+            status_code = result.get("status_code", status_code)
 
     return status_code, value, count, next_url, previous_url
 

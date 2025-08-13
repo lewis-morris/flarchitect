@@ -7,46 +7,15 @@ from flarchitect.schemas.utils import dump_schema_if_exists
 from flarchitect.utils.core_utils import get_count
 
 
-class CustomResponse:
-    """
-    Custom response class to be used for serializing output.
-    """
-
-    # TODO: Not sure why this is here anymore and it needs reviewing.
-    # It once had a purpose but doesn't appear to any longer.
-
-    def __init__(
-        self,
-        value: list | Any | None = None,
-        count: int | None = 1,
-        error: list | dict | Any | None = None,
-        status_code: int | None = 200,
-        next_url: str | None = None,
-        previous_url: str | None = None,
-        many: bool | None = False,
-        response_ms: float | None = None,
-    ):
-        self.response_ms = response_ms
-        self.value = value
-        self.count = count
-        self.error = error
-        self.status_code = status_code
-        self.next_url = next_url
-        self.previous_url = previous_url
-        self.many = many
-
-
-def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> CustomResponse:
-    """
-    Utility function to serialise output using a given Marshmallow schema.
+def serialize_output_with_mallow(output_schema: Schema, data: Any) -> dict[str, Any]:
+    """Serialise output using a Marshmallow schema.
 
     Args:
-        output_schema (Type[Schema]):
-            The Marshmallow schema to be used for serialisation.
-        data (Any): The data to be serialised.
+        output_schema (Schema): Schema used for serialisation.
+        data (Any): Data to serialise.
 
     Returns:
-        CustomResponse: The serialised data wrapped in a CustomResponse object.
+        dict[str, Any]: Dictionary containing serialised data and metadata.
     """
 
     try:
@@ -55,22 +24,21 @@ def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> Cust
         value = dump_schema_if_exists(output_schema, dump_data, is_list)
         count = get_count(data, value)
 
-        # Added this is the create_response function as errors were
-        # missing the response time
-        # response_ms = (time.time() - g.start_time) * 1000
-        # if g.get("start_time") else "n/a"
+        return {
+            "value": value,
+            "count": count,
+            "next_url": data.get("next_url") if isinstance(data, dict) else None,
+            "previous_url": data.get("previous_url") if isinstance(data, dict) else None,
+            "many": is_list,
+        }
 
-        return CustomResponse(
-            value=value,
-            count=count,
-            next_url=data.get("next_url") if isinstance(data, dict) else None,
-            previous_url=data.get("previous_url") if isinstance(data, dict) else None,
-            # response_ms=response_ms,
-            many=is_list,
-        )
-
-    except ValidationError as err:
-        return CustomResponse(value=None, count=None, error=err.messages, status_code=500)
+    except ValidationError as err:  # pragma: no cover - defensive
+        return {
+            "value": None,
+            "count": None,
+            "error": err.messages,
+            "status_code": 500,
+        }
 
 
 def check_serialise_method_and_return(
