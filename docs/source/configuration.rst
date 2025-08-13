@@ -82,7 +82,9 @@ Please note the badge for each configuration value, as it defines where the valu
         .. code:: python
 
             class Config:
-                API_TITLE = "My API"
+                API_TITLE = "My API"           # text shown in documentation header
+                API_PREFIX = "/v1"             # apply a versioned base route
+                API_CREATE_DOCS = True          # generate ReDoc documentation
 
         See the :doc:`Global <config_locations/global_>` page for more information.
 
@@ -104,9 +106,9 @@ Please note the badge for each configuration value, as it defines where the valu
         .. code:: python
 
             class Config:
-                API_GET_RATE_LIMIT = "100 per minute"
-                API_POST_RATE_LIMIT = "10 per minute"
-                API_PATCH_RATE_LIMIT = "10 per minute"
+                API_GET_RATE_LIMIT = "100 per minute"  # throttle read requests
+                API_POST_BLOCKED = True                 # disable POST across the API
+                API_PATCH_RATE_LIMIT = "10 per minute"  # tighter limits on writes
 
         See the :doc:`Global Method<config_locations/global_method>` page for more information.
 
@@ -127,12 +129,13 @@ Please note the badge for each configuration value, as it defines where the valu
 
         .. code:: python
 
-            class MyModel(db.Model):
-                __tablename__ = "my_model"
+            class Article(db.Model):
+                __tablename__ = "article"
 
                 class Meta:
-                    rate_limit = "10 per second"        # shown as API_RATE_LIMIT in Flask config
-                    blocked_methods = ["DELETE", "POST"]  # shown as API_BLOCK_METHODS in Flask config
+                    rate_limit = "10 per second"         # API_RATE_LIMIT in Flask config
+                    pagination_size_default = 10           # API_PAGINATION_SIZE_DEFAULT
+                    blocked_methods = ["DELETE", "POST"]  # API_BLOCK_METHODS
 
         See the :doc:`Model<config_locations/model>` page for more information.
 
@@ -154,12 +157,13 @@ Please note the badge for each configuration value, as it defines where the valu
 
         .. code:: python
 
-            class MyModel(db.Model):
-                __tablename__ = "my_model"
+            class Article(db.Model):
+                __tablename__ = "article"
 
                 class Meta:
-                    get_rate_limit = "10 per minute"   # shown as API_GET_RATE_LIMIT in Flask config
-                    post_rate_limit = "5 per minute"   # shown as API_POST_RATE_LIMIT in Flask config
+                    get_rate_limit = "100 per minute"    # API_GET_RATE_LIMIT
+                    post_blocked = True                   # API_POST_BLOCKED
+                    patch_serialization_depth = 1         # API_PATCH_SERIALIZATION_DEPTH
 
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
