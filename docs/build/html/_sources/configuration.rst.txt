@@ -68,6 +68,13 @@ Please note the badge for each configuration value, as it defines where the valu
 
         They are applied in the `Flask` config object and are prefixed with ``API_``.
 
+        These settings are ideal for defining application-wide defaults such as API metadata, documentation behaviour,
+        or pagination policies. Any option listed in the configuration table can be supplied here using its
+        global ``API_`` form (for example ``API_TITLE`` or ``API_PREFIX``) and may accept strings, integers,
+        booleans, lists, or dictionaries depending on the option.
+
+        Use this level when you need a single setting to apply consistently across all models and methods.
+
         Example:
 
         .. code:: python
@@ -84,6 +91,11 @@ Please note the badge for each configuration value, as it defines where the valu
         Global configuration values can apply to specific HTTP methods: ``GET``, ``POST``, ``PUT``, ``DELETE``, or ``PATCH``.
 
         The method name should be added after the ``API_`` prefix.
+
+        Use method-scoped options to change behaviour between reads and writes across the entire API, such as
+        applying tighter rate limits to mutating requests or disabling a verb globally. Any global configuration
+        key that supports method scoping can be used here by inserting the method name (e.g. ``API_GET_RATE_LIMIT``),
+        with value types mirroring their global counterparts.
 
         Example:
 
@@ -103,6 +115,11 @@ Please note the badge for each configuration value, as it defines where the valu
         Model configuration values override any global `Flask`_ configuration.
 
         They are applied in the `SQLAlchemy`_ model's ``Meta`` class, omit the ``API_`` prefix, and are written in lowercase.
+
+        Configure this level when a single model requires behaviour different from the rest of the application,
+        such as marking a model read only, changing its serialization depth, or blocking specific methods.
+        Options correspond directly to the global keys but in lowercase without the prefix (for example ``rate_limit``
+        or ``pagination_size_default``) and accept the same data types noted in the configuration table.
 
         Example:
 
@@ -124,6 +141,12 @@ Please note the badge for each configuration value, as it defines where the valu
         Model method configuration values have the highest priority and override all other configuration.
 
         They are applied in the `SQLAlchemy`_ model's ``Meta`` class, omit the ``API_`` prefix, are lowercase, and are prefixed with the method.
+
+        Use these settings to fine-tune behaviour for a specific model-method combination. This is useful when,
+        for example, a model should allow ``GET`` requests with a high rate limit but restrict ``POST`` calls or
+        customise serialization only for ``PATCH``. Any model-level option can be adapted by prefixing it with the
+        HTTP method name (such as ``get_rate_limit`` or ``post_blocked``) and follows the same value types as the
+        corresponding model option.
 
         Example:
 

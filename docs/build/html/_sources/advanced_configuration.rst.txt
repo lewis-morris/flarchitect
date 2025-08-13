@@ -1,8 +1,8 @@
 Advanced Configuration
 ======================
 
-Beyond the basics, **flarchitect** offers several advanced options for fine-tuning
-API behaviour. This guide covers rate limiting and cache configuration.
+Beyond the basics, **flarchitect** offers several advanced options for fine-
+tuning API behaviour. This guide covers rate limiting and cache configuration.
 
 Rate limiting
 -------------
@@ -51,6 +51,79 @@ storage URI:
 If no backend is available, the limiter falls back to in-memory storage
 with rate-limit headers enabled by default.
 
+Response metadata
+-----------------
+
+``flarchitect`` can attach additional metadata to every response. These
+keys let you toggle each field individually:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Key
+     - Default
+     - Effect
+   * - ``API_DUMP_HYBRID_PROPERTIES``
+     - ``True``
+     - Include SQLAlchemy hybrid properties in serialized output.
+   * - ``API_DUMP_DATETIME``
+     - ``True``
+     - Append the current UTC timestamp as ``datetime``.
+   * - ``API_DUMP_VERSION``
+     - ``True``
+     - Embed the API version string as ``api_version``.
+   * - ``API_DUMP_STATUS_CODE``
+     - ``True``
+     - Add the HTTP status code to the payload.
+   * - ``API_DUMP_RESPONSE_MS``
+     - ``True``
+     - Include elapsed processing time in milliseconds as ``response_ms``.
+   * - ``API_DUMP_TOTAL_COUNT``
+     - ``True``
+     - Provide a ``total_count`` field for collection endpoints.
+   * - ``API_DUMP_NULL_NEXT_URL``
+     - ``True``
+     - Show ``next_url`` with ``null`` when no further page exists.
+   * - ``API_DUMP_NULL_PREVIOUS_URL``
+     - ``True``
+     - Show ``previous_url`` with ``null`` when at the first page.
+   * - ``API_DUMP_NULL_ERRORS``
+     - ``True``
+     - Always include an ``errors`` field, defaulting to ``null``.
+
+Example
+^^^^^^^
+
+With metadata enabled (defaults)::
+
+    {
+        "data": [...],
+        "datetime": "2024-01-01T00:00:00Z",
+        "api_version": "0.0.0",
+        "status_code": 200,
+        "response_ms": 15,
+        "total_count": 1,
+        "next_url": null,
+        "previous_url": null,
+        "errors": null
+    }
+
+Disabling all metadata::
+
+    class Config:
+        API_DUMP_DATETIME = False
+        API_DUMP_VERSION = False
+        API_DUMP_STATUS_CODE = False
+        API_DUMP_RESPONSE_MS = False
+        API_DUMP_TOTAL_COUNT = False
+        API_DUMP_NULL_NEXT_URL = False
+        API_DUMP_NULL_PREVIOUS_URL = False
+        API_DUMP_NULL_ERRORS = False
+
+    {
+        "data": [...]
+    }
+
 CORS
 ----
 
@@ -70,6 +143,161 @@ options, mirroring the format used by `Flask-CORS <https://flask-cors.readthedoc
             r"/api/*": {"origins": "*"}
         }
 
+Example
+^^^^^^^
+
+The following snippet enables CORS for all API routes::
+
+    from flask import Flask
+    from flarchitect import Architect
+
+    app = Flask(__name__)
+    app.config["API_ENABLE_CORS"] = True
+    app.config["CORS_RESOURCES"] = {r"/api/*": {"origins": "*"}}
+
+    architect = Architect(app)
+
+    if __name__ == "__main__":
+        app.run()
+
 See the :doc:`configuration <configuration>` page for the full list of
 available CORS settings.
+
+Case style configuration
+------------------------
+
+``flarchitect`` can reshape field and schema names to match different
+case conventions. These options keep the API's payloads, schemas and
+endpoints consistent with the style used by your clients.
+
+``API_FIELD_CASE``
+^^^^^^^^^^^^^^^^^^
+
+Controls the casing for fields in JSON responses. By default, field names
+use ``snake`` case. Setting ``API_FIELD_CASE`` changes the output to match
+other naming styles:
+
+.. code-block:: python
+
+    class Config:
+        API_FIELD_CASE = "camel"
+
+.. code-block:: json
+
+    {
+        "statusCode": 200,
+        "value": {
+            "publicationDate": "2024-05-10"
+        }
+    }
+
+Switching to ``kebab`` case instead renders the same field as
+``publication-date``. Supported options include ``snake``, ``camel``,
+``pascal``, ``kebab`` and ``screaming_snake``.
+
+``API_SCHEMA_CASE``
+^^^^^^^^^^^^^^^^^^^
+
+Defines the naming convention for generated schema names in the OpenAPI
+document. The default, ``camel``, produces schema identifiers such as
+``apiCalls``. Other styles are also available:
+
+.. code-block:: python
+
+    class Config:
+        API_SCHEMA_CASE = "screaming_snake"
+
+.. code-block:: json
+
+    {
+        "components": {
+            "schemas": {
+                "API_CALLS": {
+                    "...": "..."
+                }
+            }
+        }
+    }
+
+Interplay with ``API_ENDPOINT_CASE``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``API_ENDPOINT_CASE`` controls the casing of the generated URL paths. To
+maintain a consistent style across paths, schemas and payloads, combine
+``API_ENDPOINT_CASE`` with the appropriate ``API_FIELD_CASE`` and
+``API_SCHEMA_CASE`` values. For example, selecting ``kebab`` endpoint
+casing pairs naturally with ``kebab`` field names.
+
+
+.. _advanced-callbacks:
+
+Callbacks, validators and hooks
+-------------------------------
+
+``flarchitect`` offers several extension points for tailoring behaviour beyond
+configuration files. These hooks let you alter request handling, apply
+additional field validation and tweak responses on a per-route basis.
+
+Response callbacks
+^^^^^^^^^^^^^^^^^^
+
+Return callbacks run after database operations but before the response is
+serialised. Use them to adjust the output or append metadata.
+
+.. code-block:: python
+
+    from datetime import datetime
+
+    def add_timestamp(model, output, **kwargs):
+        output["generated"] = datetime.utcnow().isoformat()
+        return {"output": output}
+
+    class Config:
+        API_GET_RETURN_CALLBACK = add_timestamp
+
+See :func:`flarchitect.core.routes.create_route_function` for details on how
+responses are constructed.
+
+Custom validators
+^^^^^^^^^^^^^^^^^
+
+
+Attach validators to SQLAlchemy columns via the ``info`` mapping.
+Validators are looked up in :mod:`flarchitect.schemas.validators` and
+applied automatically.
+
+.. code-block:: python
+
+    class User(db.Model):
+        email = db.Column(
+            db.String,
+            info={"validator": "email", "validator_message": "Invalid email"},
+        )
+
+See :doc:`validation` for the full list of available validators.
+
+Per-route hooks
+^^^^^^^^^^^^^^^
+
+Execute custom logic before or after a specific route by defining setup or
+return callbacks in configuration or on a model's ``Meta`` class.
+
+.. code-block:: python
+
+    from flask import abort
+    from flask_login import current_user
+
+    def ensure_admin(model, **kwargs):
+        if not current_user.is_admin:
+            abort(403)
+        return kwargs
+
+    class Book(db.Model):
+        class Meta:
+            post_return_callback = add_timestamp
+
+    class Config:
+        API_POST_SETUP_CALLBACK = ensure_admin
+
+For more examples see the :doc:`callbacks` page.
 

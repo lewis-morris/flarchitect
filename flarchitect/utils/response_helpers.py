@@ -82,7 +82,6 @@ def create_response(
     data = _filter_response_data(data)
     data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")): v for k, v in data.items()}
 
-
     # Optional hook allowing applications to post-process the outgoing payload.
     # ``API_FINAL_CALLBACK`` should be a callable that accepts the response
     # dictionary and returns the modified dictionary. This can be used to inject

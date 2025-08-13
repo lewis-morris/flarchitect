@@ -18,20 +18,8 @@ added later are included the next time the application boots.
 Accessing the spec
 ------------------
 
-The generated schema is served at ``/openapi.json``.  You can expose it
-manually if you prefer:
-
-.. code-block:: python
-
-    from flask import Flask, Response, jsonify
-    from flarchitect import Architect
-
-    app = Flask(__name__)
-    architect = Architect(app)
-
-    @app.get("/openapi.json")
-    def openapi() -> Response:
-        return jsonify(architect.api_spec.to_dict())
+The generated schema is automatically served at ``/openapi.json``. Override
+the URL with ``API_SPEC_ROUTE`` if you need to mount the document elsewhere.
 
 Exporting to a file
 -------------------

@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be rendered with Swagger UI by setting API..." />
 <meta name="description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be rendered with Swagger UI by setting API..." />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="FAQ" href="faq.html" /><link rel="prev" title="Advanced Configuration" href="advanced_configuration.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Soft delete" href="soft_delete.html" /><link rel="prev" title="Advanced Configuration" href="advanced_configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
@@ -236,6 +236,7 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
@@ -249,6 +250,8 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">OpenAPI Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
 </ul>
@@ -307,19 +310,8 @@ added later are included the next time the application boots.</p>
 </section>
 <section id="accessing-the-spec">
 <h2>Accessing the spec<a class="headerlink" href="#accessing-the-spec" title="Link to this heading">¶</a></h2>
-<p>The generated schema is served at <code class="docutils literal notranslate"><span class="pre">/openapi.json</span></code>.  You can expose it
-manually if you prefer:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">jsonify</span>
-<span class="kn">from</span> <span class="nn">flarchitect</span> <span class="kn">import</span> <span class="n">Architect</span>
-
-<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-<span class="n">architect</span> <span class="o">=</span> <span class="n">Architect</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
-
-<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/openapi.json&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">openapi</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Response</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">architect</span><span class="o">.</span><span class="n">api_spec</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
-</pre></div>
-</div>
+<p>The generated schema is automatically served at <code class="docutils literal notranslate"><span class="pre">/openapi.json</span></code>. Override
+the URL with <code class="docutils literal notranslate"><span class="pre">API_SPEC_ROUTE</span></code> if you need to mount the document elsewhere.</p>
 </section>
 <section id="exporting-to-a-file">
 <h2>Exporting to a file<a class="headerlink" href="#exporting-to-a-file" title="Link to this heading">¶</a></h2>
@@ -350,12 +342,12 @@ manually if you prefer:</p>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="faq.html">
+          <a class="next-page" href="soft_delete.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">FAQ</div>
+                <div class="title">Soft delete</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
