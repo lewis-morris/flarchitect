@@ -14,8 +14,10 @@ Configuration
 Intro
 --------------------------------
 
-In `flarchitect`, configuration options are essential for customizing the API and its accompanying documentation.  
+In `flarchitect`, configuration options are essential for customizing the API and its accompanying documentation.
 These settings can be provided through `Flask`_ config values or directly within `SQLAlchemy`_ model classes using ``Meta`` classes.
+
+Beyond the basics, the extension supports hooks and advanced flags for post-serialization callbacks, rate limiting, field exclusion, blueprint naming, soft deletion, and per-method documentation summaries.
 
 `Flask`_ config values offer a straightforward, standardized way to modify the extension's behavior at a global or model level.
 
