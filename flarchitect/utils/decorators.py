@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-from flask import request
+from flask import Response, request
 from sqlalchemy.exc import ProgrammingError
 from werkzeug.exceptions import HTTPException
 
@@ -18,6 +20,9 @@ from flarchitect.utils.general import (
 )
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.responses import serialize_output_with_mallow
+
+if TYPE_CHECKING:  # pragma: no cover - used only for type checking
+    from flarchitect.schemas.bases import AutoSchema
 
 
 def add_dict_to_query(f: Callable) -> Callable:
@@ -122,7 +127,7 @@ def _construct_url(parsed_url, query_params, page, total_count, limit):
 
 
 def handle_many(
-    output_schema: type["AutoSchema"], input_schema: type["AutoSchema"] | None = None
+    output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None
 ) -> Callable:
     """
     A decorator to handle multiple records from a route.
@@ -137,14 +142,15 @@ def handle_many(
 
 
 def handle_one(
-    output_schema: type["AutoSchema"], input_schema: type["AutoSchema"] | None = None
+    output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None
 ) -> Callable:
     """
     A decorator to handle a single record from a route.
 
     Args:
         output_schema (Schema): The Marshmallow schema to serialize the output.
-        input_schema (Schema, optional): The Marshmallow schema to validate and deserialize input.
+        input_schema (Schema, optional):
+            The Marshmallow schema to validate and deserialize input.
 
     Returns:
         Callable: The decorated function.
@@ -153,8 +159,8 @@ def handle_one(
 
 
 def _handle_decorator(
-    output_schema: type["AutoSchema"],
-    input_schema: type["AutoSchema"] | None,
+    output_schema: type[AutoSchema],
+    input_schema: type[AutoSchema] | None,
     many: bool,
 ) -> Callable:
     """
@@ -205,11 +211,21 @@ def _handle_decorator(
 
 
 def standardize_response(func: Callable) -> Callable:
-    """Standardizes the API response format across all decorated routes."""
+    """Standardize API responses and invoke error callbacks when needed.
+
+    Args:
+        func: The route handler to wrap.
+
+    Returns:
+        Callable: A wrapper that returns a :class:`~flask.Response`.
+    """
 
     @wraps(func)
-    def decorated_function(*args, **kwargs):
+    def decorated_function(*args: Any, **kwargs: Any) -> Response:
         had_error = False
+        error: Any | None = None
+        status_code: int | None = None
+        value: Any | None = None
 
         try:
             result = func(*args, **kwargs)
@@ -228,23 +244,37 @@ def standardize_response(func: Callable) -> Callable:
 
         except HTTPException as e:
             had_error = True
-            out_resp = _handle_exception(e.description, e.code, e.name, print_exc=True)
+            error = e.description
+            status_code = e.code or HTTP_INTERNAL_SERVER_ERROR
+            value = {"error": e.name, "reason": e.description}
+            out_resp = _handle_exception(error, status_code, e.name, print_exc=True)
+
         except ProgrammingError as e:
             had_error = True
             text = str(e).split(")")[1].split("\n")[0].strip().capitalize()
-            out_resp = _handle_exception(f"SQL Format Error: {text}", HTTP_BAD_REQUEST)
+            error = f"SQL Format Error: {text}"
+            status_code = HTTP_BAD_REQUEST
+            value = None
+            out_resp = _handle_exception(error, status_code)
+
         except CustomHTTPException as e:
             had_error = True
-            out_resp = _handle_exception(e.reason, e.status_code, e.error)
+            error = e.reason
+            status_code = e.status_code
+            value = None
+            out_resp = _handle_exception(error, status_code, e.error)
 
         except Exception as e:
             had_error = True
+            error = str(e)
+            status_code = HTTP_INTERNAL_SERVER_ERROR
+            value = None
             out_resp = _handle_exception(
-                f"Internal Server Error: {str(e)}", HTTP_INTERNAL_SERVER_ERROR
+                f"Internal Server Error: {error}", status_code
             )
+
         finally:
             error_callback = get_config_or_model_meta("API_ERROR_CALLBACK")
-            # todo check this works and test
             if error_callback and had_error:
                 error_callback(error, status_code, value)
 
@@ -253,7 +283,7 @@ def standardize_response(func: Callable) -> Callable:
     return decorated_function
 
 
-def fields(model_schema: type["AutoSchema"], many: bool = False) -> Callable:
+def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
     """
     A decorator to specify which fields to return in the response.
 
