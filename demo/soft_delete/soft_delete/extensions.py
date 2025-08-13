@@ -9,12 +9,8 @@ from flarchitect.core.architect import Architect
 
 class BaseModel(DeclarativeBase):
     # you can optionally add fields that apply to all models.
-    created: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
-    )
-    updated: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def get_session(*args):

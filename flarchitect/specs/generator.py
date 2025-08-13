@@ -145,15 +145,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Returns:
             dict: A dictionary containing the contact information.
         """
-        contact_info = {
-            k: self._get_config(f"API_CONTACT_{k.upper()}")
-            for k in ["name", "email", "url"]
-        }
-        return (
-            {"contact": {k: v for k, v in contact_info.items() if v}}
-            if any(contact_info.values())
-            else {}
-        )
+        contact_info = {k: self._get_config(f"API_CONTACT_{k.upper()}") for k in ["name", "email", "url"]}
+        return {"contact": {k: v for k, v in contact_info.items() if v}} if any(contact_info.values()) else {}
 
     def _get_license_info(self) -> dict[str, dict[str, str | None]]:
         """Retrieves license information for the API spec.
@@ -161,14 +154,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Returns:
             dict: A dictionary containing the license information.
         """
-        license_info = {
-            k: self._get_config(f"API_LICENCE_{k.upper()}") for k in ["name", "url"]
-        }
-        return (
-            {"license": {k: v for k, v in license_info.items() if v}}
-            if any(license_info.values())
-            else {}
-        )
+        license_info = {k: self._get_config(f"API_LICENCE_{k.upper()}") for k in ["name", "url"]}
+        return {"license": {k: v for k, v in license_info.items() if v}} if any(license_info.values()) else {}
 
     def _get_servers_info(self) -> dict[str, list[str] | None]:
         """Retrieves server URLs for the API spec.
@@ -190,9 +177,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             return {
                 "x-logo": {
                     "url": logo_url,
-                    "backgroundColor": self._get_config(
-                        "API_LOGO_BACKGROUND", "#ffffff"
-                    ),
+                    "backgroundColor": self._get_config("API_LOGO_BACKGROUND", "#ffffff"),
                     "altText": f"{self._get_config('API_TITLE', 'My API')} logo.",
                 }
             }
@@ -236,21 +221,16 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
 
     def _create_specification_blueprint(self) -> None:
         """Sets up the blueprint to serve the API specification and documentation."""
-        html_path = find_child_from_parent_dir(
-            "src", "html", current_dir=os.path.dirname(os.path.abspath(__file__))
-        )
+        html_path = find_child_from_parent_dir("src", "html", current_dir=os.path.dirname(os.path.abspath(__file__)))
 
         specification = Blueprint(
             "specification",
             __name__,
             static_folder=html_path,
-            url_prefix=self.documentation_url_prefix
-            or self._get_config("DOCUMENTATION_URL_PREFIX", "/"),
+            url_prefix=self.documentation_url_prefix or self._get_config("DOCUMENTATION_URL_PREFIX", "/"),
         )
 
-        documentation_url = get_config_or_model_meta(
-            "API_DOCUMENTATION_URL", default="/docs"
-        )
+        documentation_url = get_config_or_model_meta("API_DOCUMENTATION_URL", default="/docs")
 
         @specification.route("swagger.json")
         def get_swagger_spec() -> dict:
@@ -270,9 +250,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 str: The HTML documentation page.
             """
 
-            custom_headers = get_config_or_model_meta(
-                "API_DOCUMENTATION_HEADERS", default=""
-            ) or self._get_config("API_DOC_HTML_HEADERS", "")
+            custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
             return manual_render_absolute_template(
                 os.path.join(self.architect.get_templates_path(), "apispec.html"),
                 config=self.app.config,
@@ -319,9 +297,7 @@ def generate_swagger_spec(
         output_schema=output_schema,
         default=False,
     )
-    spec_template = initialize_spec_template(
-        http_method, many, rate_limit, error_responses
-    )
+    spec_template = initialize_spec_template(http_method, many, rate_limit, error_responses)
 
     append_parameters(
         spec_template,
@@ -369,12 +345,8 @@ def register_schemas(
             model = schema.get_model() if hasattr(schema, "get_model") else None
 
             schema_name = convert_case(
-                schema.__name__.replace("Schema", "")
-                if hasattr(schema, "__name__")
-                else schema.__class__.__name__.replace("Schema", ""),
-                get_config_or_model_meta(
-                    "API_SCHEMA_CASE", model=model, default="camel"
-                ),
+                schema.__name__.replace("Schema", "") if hasattr(schema, "__name__") else schema.__class__.__name__.replace("Schema", ""),
+                get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"),
             )
             schema.__name__ = schema_name
 
@@ -410,9 +382,7 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
             if rule:
                 methods = rule.methods - {"OPTIONS", "HEAD"}
                 for http_method in methods:
-                    route_info = scrape_extra_info_from_spec_data(
-                        route_info, method=http_method
-                    )
+                    route_info = scrape_extra_info_from_spec_data(route_info, method=http_method)
                     path = rule.rule
 
                     output_schema = route_info.get("output_schema")
@@ -426,9 +396,7 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
                     error_responses = route_info.get("error_responses")
 
                     path_params = create_params_from_rule(model, rule, output_schema)
-                    final_query_params = create_query_params_from_rule(
-                        rule, methods, output_schema, many, model, custom_query_params
-                    )
+                    final_query_params = create_query_params_from_rule(rule, methods, output_schema, many, model, custom_query_params)
 
                     endpoint_spec = generate_swagger_spec(
                         http_method,

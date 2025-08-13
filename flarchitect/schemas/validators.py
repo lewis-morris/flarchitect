@@ -44,9 +44,7 @@ def validate_datetime(value: str, formats: Iterable[str] | None = None) -> bool:
             continue  # If parsing fails, try the next format
 
     # If none of the formats worked, raise a ValidationError
-    raise ValidationError(
-        f"Invalid datetime format. Acceptable formats are: {', '.join(formats)}"
-    )
+    raise ValidationError(f"Invalid datetime format. Acceptable formats are: {', '.join(formats)}")
 
 
 def validate_date(value: str, formats: Iterable[str] | None = None) -> bool:
@@ -73,9 +71,7 @@ def validate_date(value: str, formats: Iterable[str] | None = None) -> bool:
             return True  # If one format works, the validation succeeds
         except ValueError:
             continue
-    raise ValidationError(
-        f"Invalid date format. Acceptable formats are: {', '.join(formats)}"
-    )
+    raise ValidationError(f"Invalid date format. Acceptable formats are: {', '.join(formats)}")
 
 
 def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
@@ -113,9 +109,7 @@ def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
             continue  # If parsing fails, try the next format
 
     # If none of the formats worked, raise a ValidationError
-    raise ValidationError(
-        f"Invalid time format. Acceptable formats are: {', '.join(formats)}"
-    )
+    raise ValidationError(f"Invalid time format. Acceptable formats are: {', '.join(formats)}")
 
 
 def validate_decimal(value: str | int | float | Decimal) -> bool:
@@ -160,15 +154,10 @@ def validate_boolean(value: bool | str) -> bool:
         return True
 
     # If the value is neither truthy nor falsy, raise a validation error
-    raise ValidationError(
-        "Invalid boolean value. Accepted values are: True, False, 1, 0, "
-        "'true', 'false', 'yes', 'no'."
-    )
+    raise ValidationError("Invalid boolean value. Accepted values are: True, False, 1, 0, 'true', 'false', 'yes', 'no'.")
 
 
-def wrap_validator(
-    validator: Callable[[str], bool | VE], error_message: str = "Not a valid value."
-) -> Callable[[str], None]:
+def wrap_validator(validator: Callable[[str], bool | VE], error_message: str = "Not a valid value.") -> Callable[[str], None]:
     """Wrap a Marshmallow validator to raise :class:`ValidationError` on failure.
 
     Args:
@@ -212,17 +201,13 @@ def validate_by_type(validator_type: str) -> Callable[[str], None] | None:
         "slug": wrap_validator(validators.slug, "Slug is not valid."),
         "uuid": wrap_validator(validators.uuid, "UUID is not valid."),
         "card": wrap_validator(validators.card_number, "Card number is not valid."),
-        "country_code": wrap_validator(
-            validators.country_code, "Country code is not valid."
-        ),
+        "country_code": wrap_validator(validators.country_code, "Country code is not valid."),
         "domain": wrap_validator(validators.domain, "Domain is not valid."),
         "md5": wrap_validator(validators.md5, "MD5 hash is not valid."),
         "sha1": wrap_validator(validators.sha1, "SHA1 hash is not valid."),
         "sha256": wrap_validator(validators.sha256, "SHA256 hash is not valid."),
         "sha512": wrap_validator(validators.sha512, "SHA512 hash is not valid."),
-        "date": lambda value: validate_date(
-            value, formats=["%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]
-        ),
+        "date": lambda value: validate_date(value, formats=["%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]),
         "datetime": lambda value: validate_datetime(
             value,
             formats=["%Y-%m-%d %H:%M:%S", "%d-%m-%Y %H:%M:%S", "%Y-%m-%dT%H:%M:%S"],

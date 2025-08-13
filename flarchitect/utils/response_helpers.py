@@ -39,11 +39,7 @@ def create_response(
 
     if response_ms is None:
         # error responses were missing this. Added here to ensure it's always present.
-        response_ms = (
-            round((time.time() - g.start_time) * 1000, 0)
-            if g.get("start_time")
-            else "n/a"
-        )
+        response_ms = round((time.time() - g.start_time) * 1000, 0) if g.get("start_time") else "n/a"
 
     current_time_with_tz = datetime.now(pytz.utc).isoformat()
     data = {
@@ -59,12 +55,7 @@ def create_response(
     }
 
     data = _filter_response_data(data)
-    data = {
-        convert_case(
-            k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")
-        ): v
-        for k, v in data.items()
-    }
+    data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")): v for k, v in data.items()}
 
     final_hook = get_config_or_model_meta("API_FINAL_CALLBACK")
     # todo check this works and test
@@ -72,11 +63,7 @@ def create_response(
         data = final_hook(data)
 
     if is_xml():
-        type_ = (
-            "text/xml"
-            if get_config_or_model_meta("API_XML_AS_TEXT", default=False)
-            else "application/xml"
-        )
+        type_ = "text/xml" if get_config_or_model_meta("API_XML_AS_TEXT", default=False) else "application/xml"
         response = Response(dict_to_xml(data), mimetype=type_)
     else:
         response = jsonify(data)

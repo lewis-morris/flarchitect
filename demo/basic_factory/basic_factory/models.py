@@ -44,9 +44,7 @@ class Author(db.Model):
         autoincrement=True,
         info={"description": "The unique identifier for the author."},
     )
-    first_name: Mapped[str] = mapped_column(
-        String, info={"description": "The author's name", "format": "name"}
-    )
+    first_name: Mapped[str] = mapped_column(String, info={"description": "The author's name", "format": "name"})
     last_name: Mapped[str] = mapped_column(String)
     biography: Mapped[str] = mapped_column(Text)
     date_of_birth: Mapped[datetime] = mapped_column(Date)
@@ -91,9 +89,7 @@ class Book(db.Model):
     author = relationship("Author", back_populates="books")
     publisher = relationship("Publisher", back_populates="books")
     reviews = relationship("Review", back_populates="book")
-    categories = relationship(
-        "Category", secondary=book_category_table, back_populates="books"
-    )
+    categories = relationship("Category", secondary=book_category_table, back_populates="books")
 
 
 class Publisher(db.Model):
@@ -141,6 +137,4 @@ class Category(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(Text)
-    books = relationship(
-        "Book", secondary=book_category_table, back_populates="categories"
-    )
+    books = relationship("Book", secondary=book_category_table, back_populates="categories")

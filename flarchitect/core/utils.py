@@ -34,9 +34,7 @@ def get_url_pk(model: type[DeclarativeBase]) -> str:
     pk_type = primary_key.type.python_type
 
     # Use the type from the SQLALCHEMY_TO_FLASK_CONVERTER mapping if it exists
-    flask_converter = SQLALCHEMY_TO_FLASK_CONVERTER.get(
-        pk_type, "string"
-    )  # Default to 'string' if unknown
+    flask_converter = SQLALCHEMY_TO_FLASK_CONVERTER.get(pk_type, "string")  # Default to 'string' if unknown
 
     return f"<{flask_converter}:{primary_key.key}>"
 

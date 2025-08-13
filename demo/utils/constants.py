@@ -134,14 +134,7 @@ last_names = [
     "Turner",
 ]
 
-nationality = (
-    ["English"] * 10
-    + ["Scottish"] * 10
-    + ["Welsh"] * 10
-    + ["Irish"] * 5
-    + ["American"] * 3
-    + ["Australian"] * 3
-)
+nationality = ["English"] * 10 + ["Scottish"] * 10 + ["Welsh"] * 10 + ["Irish"] * 5 + ["American"] * 3 + ["Australian"] * 3
 
 bios = [
     "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative ",

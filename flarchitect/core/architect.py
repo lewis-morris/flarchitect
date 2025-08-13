@@ -51,14 +51,10 @@ def jwt_authentication(func: F) -> F:
     def auth_wrapped(*args: Any, **kwargs: Any) -> Any:
         auth = request.headers.get("Authorization")
         if not auth:
-            raise CustomHTTPException(
-                status_code=401, reason="Authorization header missing"
-            )
+            raise CustomHTTPException(status_code=401, reason="Authorization header missing")
         parts = auth.split()
         if parts[0].lower() != "bearer" or len(parts) != 2:
-            raise CustomHTTPException(
-                status_code=401, reason="Invalid Authorization header"
-            )
+            raise CustomHTTPException(status_code=401, reason="Invalid Authorization header")
         token = parts[1]
         usr = get_user_from_token(token, secret_key=None)
         if not usr:
@@ -259,11 +255,7 @@ class Architect(AttributeInitializerMixin):
                         raise CustomHTTPException(status_code=401)
 
                 # Apply the input/output schema handlers
-                f_decorated = (
-                    handle_many(output_schema, input_schema)(f)
-                    if many
-                    else handle_one(output_schema, input_schema)(f)
-                )
+                f_decorated = handle_many(output_schema, input_schema)(f) if many else handle_one(output_schema, input_schema)(f)
 
                 # Apply rate limiting if configured
                 rl = get_config_or_model_meta(
@@ -273,18 +265,11 @@ class Architect(AttributeInitializerMixin):
                     output_schema=output_schema,
                     default=False,
                 )
-                if (
-                    rl
-                    and isinstance(rl, str)
-                    and validate_flask_limiter_rate_limit_string(rl)
-                ):
+                if rl and isinstance(rl, str) and validate_flask_limiter_rate_limit_string(rl):
                     f_decorated = self.limiter.limit(rl)(f_decorated)
                 elif rl:
                     rule = find_rule_by_function(self, f).rule
-                    logger.error(
-                        "Rate limit definition not a string or not valid. "
-                        f"Skipping for `{rule}` route."
-                    )
+                    logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
 
                 # Call the decorated function
                 result = f_decorated(*_args, **_kwargs)
@@ -326,20 +311,14 @@ class Architect(AttributeInitializerMixin):
                     return False
 
                 user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
-                lookup_field = get_config_or_model_meta(
-                    "API_USER_LOOKUP_FIELD", default=None
-                )
-                check_method = get_config_or_model_meta(
-                    "API_CREDENTIAL_CHECK_METHOD", default=None
-                )
+                lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", default=None)
+                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
 
                 if not (user_model and lookup_field and check_method):
                     return False
 
                 try:
-                    user = user_model.query.filter(
-                        getattr(user_model, lookup_field) == username
-                    ).first()
+                    user = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
                 except Exception:  # pragma: no cover
                     return False
 
@@ -361,9 +340,7 @@ class Architect(AttributeInitializerMixin):
                 if scheme.lower() != "api-key" or not token:
                     return False
 
-                custom_method = get_config_or_model_meta(
-                    "API_KEY_AUTH_AND_RETURN_METHOD", default=None
-                )
+                custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
                 if callable(custom_method):
                     user = custom_method(token)
                     if user:
@@ -372,12 +349,8 @@ class Architect(AttributeInitializerMixin):
                     return False
 
                 user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
-                hash_field = get_config_or_model_meta(
-                    "API_CREDENTIAL_HASH_FIELD", default=None
-                )
-                check_method = get_config_or_model_meta(
-                    "API_CREDENTIAL_CHECK_METHOD", default=None
-                )
+                hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
+                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
 
                 if not (user_model and hash_field and check_method):
                     return False

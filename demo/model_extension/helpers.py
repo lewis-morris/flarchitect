@@ -116,9 +116,7 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = (
-        pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
-    )
+    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
 
     return title
 
@@ -219,15 +217,9 @@ def create_reviews(db, books):
         ratings = random_ratings()
         for rating in ratings:
             if rating >= 5:
-                review_text = (
-                    f"{book.author.full_name} has done an {random.choice(good_words)} job with this book. "
-                    f"{random.choice(recommendations)}"
-                )
+                review_text = f"{book.author.full_name} has done an {random.choice(good_words)} job with this book. {random.choice(recommendations)}"
             else:
-                review_text = (
-                    f"{book.author.full_name} has done an {random.choice(bad_words)} job with this book. "
-                    f"{random.choice(negative_reviews)}"
-                )
+                review_text = f"{book.author.full_name} has done an {random.choice(bad_words)} job with this book. {random.choice(negative_reviews)}"
 
             review = Review(
                 rating=rating,
@@ -260,9 +252,7 @@ def create_books(
             categories_for_book = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(
-                author.date_of_birth.year + 20, datetime.now().year
-            )
+            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
 
             publication_date = datetime(
                 year=publication_year,
@@ -315,9 +305,7 @@ def create_publishers(db) -> list[Publisher]:
     publishers: list[Publisher] = []
     for _ in range(0, 30):
         name = generate_company_name()
-        website = (
-            "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
-        )
+        website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
         foundation_year = generate_random_year(1860, 1920)
 
         company = Publisher(name=name, website=website, foundation_year=foundation_year)

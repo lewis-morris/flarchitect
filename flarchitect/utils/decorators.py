@@ -41,9 +41,7 @@ def add_dict_to_query(f: Callable) -> Callable:
         if isinstance(output, dict):
             try:
                 if isinstance(output["query"], list):
-                    output["dictionary"] = [
-                        result._asdict() for result in output["query"]
-                    ]
+                    output["dictionary"] = [result._asdict() for result in output["query"]]
                 else:
                     output["dictionary"] = output["query"]._asdict()
             except AttributeError:
@@ -83,12 +81,8 @@ def add_page_totals_and_urls(f: Callable) -> Callable:
 
             query_params["limit"] = [str(limit)]
             next_page, prev_page = page + 1, page - 1
-            next_url = _construct_url(
-                parsed_url, query_params, next_page, total_count, limit
-            )
-            previous_url = _construct_url(
-                parsed_url, query_params, prev_page, total_count, limit
-            )
+            next_url = _construct_url(parsed_url, query_params, next_page, total_count, limit)
+            previous_url = _construct_url(parsed_url, query_params, prev_page, total_count, limit)
 
         if isinstance(output, dict):
             output.update(
@@ -120,15 +114,11 @@ def _construct_url(parsed_url, query_params, page, total_count, limit):
     """
     if 0 < page <= total_count // limit:
         query_params["page"] = [str(page)]
-        return urlunparse(
-            parsed_url._replace(query=urlencode(query_params, doseq=True))
-        )
+        return urlunparse(parsed_url._replace(query=urlencode(query_params, doseq=True)))
     return None
 
 
-def handle_many(
-    output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None
-) -> Callable:
+def handle_many(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
     """
     A decorator to handle multiple records from a route.
 
@@ -141,9 +131,7 @@ def handle_many(
     return _handle_decorator(output_schema, input_schema, many=True)
 
 
-def handle_one(
-    output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None
-) -> Callable:
+def handle_one(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
     """
     A decorator to handle a single record from a route.
 
@@ -185,13 +173,9 @@ def _handle_decorator(
         def wrapper(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
             if input_schema:
                 data_or_error = deserialize_data(input_schema, request)
-                if isinstance(
-                    data_or_error, tuple
-                ):  # Error occurred during deserialization
+                if isinstance(data_or_error, tuple):  # Error occurred during deserialization
                     case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
-                    error = {
-                        convert_case(k, case): v for k, v in data_or_error[0].items()
-                    }
+                    error = {convert_case(k, case): v for k, v in data_or_error[0].items()}
                     raise CustomHTTPException(HTTP_BAD_REQUEST, error)
                 kwargs["deserialized_data"] = data_or_error
                 kwargs["model"] = getattr(input_schema.Meta, "model", None)
@@ -199,11 +183,7 @@ def _handle_decorator(
             new_output_schema: type[AutoSchema] | None = kwargs.pop("schema", None)
             result = func(*args, **kwargs)
 
-            return (
-                serialize_output_with_mallow(new_output_schema, result)
-                if new_output_schema
-                else result
-            )
+            return serialize_output_with_mallow(new_output_schema, result) if new_output_schema else result
 
         return wrapper
 
@@ -302,16 +282,12 @@ def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
                 return func(*args, **kwargs)
 
             select_fields = request.args.get("fields")
-            if select_fields and get_config_or_model_meta(
-                "API_ALLOW_SELECT_FIELDS", model_schema.Meta.model, default=True
-            ):
+            if select_fields and get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model_schema.Meta.model, default=True):
                 select_fields = select_fields.split(",")
                 if callable(model_schema):
                     kwargs["schema"] = model_schema(many=many, only=select_fields)
                 else:
-                    kwargs["schema"] = model_schema.__class__(
-                        many=many, only=select_fields
-                    )
+                    kwargs["schema"] = model_schema.__class__(many=many, only=select_fields)
             else:
                 if callable(model_schema):
                     kwargs["schema"] = model_schema(many=many)

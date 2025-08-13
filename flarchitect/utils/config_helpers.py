@@ -40,9 +40,7 @@ def get_config_or_model_meta(
     def generate_method_based_keys(base_key: str) -> list[str]:
         methods = ["get", "post", "put", "patch", "delete"]
         base_key_lower = base_key.lower()  # Pre-lowercase if needed
-        return [
-            f"{meth}_{base_key_lower}" for meth in methods if method.lower() == meth
-        ]
+        return [f"{meth}_{base_key_lower}" for meth in methods if method.lower() == meth]
 
     def search_in_sources(sources: list[Any], keys: list[str]) -> Any | None:
         out = []
@@ -91,9 +89,7 @@ def get_config_or_model_meta(
     ]
 
     for from_ob, result in sources_checks:
-        if (
-            result is not None and result != [] and result != {}
-        ):  # This checks both for None and empty list
+        if result is not None and result != [] and result != {}:  # This checks both for None and empty list
             return (result, from_ob) if return_from_config else result
 
     return (default, "default") if return_from_config else default
@@ -107,7 +103,4 @@ def is_xml() -> bool:
     """
     accept_header = request.headers.get("Accept", "")
     content_type_header = request.headers.get("Content-Type", "")
-    return any(
-        header in ["application/xml", "text/xml"]
-        for header in [accept_header, content_type_header]
-    )
+    return any(header in ["application/xml", "text/xml"] for header in [accept_header, content_type_header])

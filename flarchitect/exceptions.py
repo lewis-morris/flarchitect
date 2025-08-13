@@ -27,12 +27,8 @@ class CustomHTTPException(Exception):
             reason (str): Reason for the HTTP status code
         """
         self.status_code = status_code
-        self.error = HTTPStatus(
-            status_code
-        ).phrase  # Fetch the standard HTTP status phrase
-        self.reason = (
-            reason or self.error
-        )  # Use the reason if provided, otherwise use the standard HTTP status phrase
+        self.error = HTTPStatus(status_code).phrase  # Fetch the standard HTTP status phrase
+        self.reason = reason or self.error  # Use the reason if provided, otherwise use the standard HTTP status phrase
 
     def to_dict(self):
         return {
@@ -57,9 +53,7 @@ def handle_http_exception(e: HTTPException) -> Response:
 
     prefix = get_config_or_model_meta("API_PREFIX", default="/api")
     if request.path.startswith(prefix):
-        return create_response(
-            status=e.code, errors={"error": e.name, "reason": e.description}
-        )
+        return create_response(status=e.code, errors={"error": e.name, "reason": e.description})
 
     # If not an API route, re-raise the exception to let Flask handle it
     return e
@@ -76,9 +70,7 @@ def _print_exception(e: Exception) -> None:
     traceback.print_exc()
 
 
-def _handle_exception(
-    error: str, status_code: int, error_name: str | None = None, print_exc: bool = True
-) -> Any:
+def _handle_exception(error: str, status_code: int, error_name: str | None = None, print_exc: bool = True) -> Any:
     """Handles exceptions and formats them into a standardized response."""
     if print_exc:
         import traceback

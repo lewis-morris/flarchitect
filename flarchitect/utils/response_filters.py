@@ -26,20 +26,10 @@ def _filter_response_data(data: dict[str, Any]) -> dict[str, Any]:
             data.pop(key)
 
     for key in ["next_url", "previous_url"]:
-        if (
-            key in data
-            and not data[key]
-            and not get_config_or_model_meta(
-                f"API_DUMP_NULL_{key.upper()}", default=True
-            )
-        ):
+        if key in data and not data[key] and not get_config_or_model_meta(f"API_DUMP_NULL_{key.upper()}", default=True):
             data.pop(key)
 
-    if (
-        "errors" in data
-        and not data.get("errors")
-        and not get_config_or_model_meta("API_DUMP_NULL_ERRORS", default=False)
-    ):
+    if "errors" in data and not data.get("errors") and not get_config_or_model_meta("API_DUMP_NULL_ERRORS", default=False):
         data.pop("errors")
 
     return data

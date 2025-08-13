@@ -22,15 +22,11 @@ def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable 
     """
     from flarchitect.schemas.bases import AutoSchema
 
-    schema_base = get_config_or_model_meta(
-        "API_BASE_SCHEMA", model=model, default=AutoSchema
-    )
+    schema_base = get_config_or_model_meta("API_BASE_SCHEMA", model=model, default=AutoSchema)
 
     for subclass in schema_base.__subclasses__():
         schema_model = getattr(subclass.Meta, "model", None)
-        if schema_model == model and (
-            getattr(subclass, "dump", False) is dump or getattr(subclass, "dump", None)
-        ):
+        if schema_model == model and (getattr(subclass, "dump", False) is dump or getattr(subclass, "dump", None)):
             return subclass
     return None
 
@@ -57,9 +53,7 @@ def create_dynamic_schema(base_class: Callable, model_class: Callable) -> Callab
     return dynamic_class
 
 
-def get_input_output_from_model_or_make(
-    model: Callable, **kwargs
-) -> tuple[Callable, Callable]:
+def get_input_output_from_model_or_make(model: Callable, **kwargs) -> tuple[Callable, Callable]:
     """Get or create input and output schema instances for the model.
 
     Args:
@@ -70,23 +64,15 @@ def get_input_output_from_model_or_make(
     """
     from flarchitect.schemas.bases import AutoSchema
 
-    disable_relations = not get_config_or_model_meta(
-        "API_ADD_RELATIONS", model=model, default=True
-    )
-    disable_hybrids = not get_config_or_model_meta(
-        "API_DUMP_HYBRID_PROPERTIES", model=model, default=True
-    )
+    disable_relations = not get_config_or_model_meta("API_ADD_RELATIONS", model=model, default=True)
+    disable_hybrids = not get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=model, default=True)
 
     if disable_relations or disable_hybrids:
         input_schema_class = create_dynamic_schema(AutoSchema, model)
         output_schema_class = create_dynamic_schema(AutoSchema, model)
     else:
-        input_schema_class = get_schema_subclass(
-            model, dump=False
-        ) or create_dynamic_schema(AutoSchema, model)
-        output_schema_class = get_schema_subclass(
-            model, dump=True
-        ) or create_dynamic_schema(AutoSchema, model)
+        input_schema_class = get_schema_subclass(model, dump=False) or create_dynamic_schema(AutoSchema, model)
+        output_schema_class = get_schema_subclass(model, dump=True) or create_dynamic_schema(AutoSchema, model)
 
     input_schema = input_schema_class(**kwargs)
     output_schema = output_schema_class(**kwargs)
@@ -94,9 +80,7 @@ def get_input_output_from_model_or_make(
     return input_schema, output_schema
 
 
-def deserialize_data(
-    input_schema: type[Schema], response: Response
-) -> dict[str, Any] | tuple[dict[str, Any], int]:
+def deserialize_data(input_schema: type[Schema], response: Response) -> dict[str, Any] | tuple[dict[str, Any], int]:
     """
     Utility function to deserialize data using a given Marshmallow schema.
 
@@ -121,22 +105,12 @@ def deserialize_data(
         if hook:
             data = hook(data)
 
-        input_schema = (
-            input_schema is not callable(input_schema)
-            and input_schema
-            or input_schema()
-        )
+        input_schema = input_schema is not callable(input_schema) and input_schema or input_schema()
 
         if hasattr(input_schema, "fields"):
-            field_items = {
-                k: v for k, v in input_schema.fields.items() if not v.dump_only
-            }
+            field_items = {k: v for k, v in input_schema.fields.items() if not v.dump_only}
         else:
-            field_items = {
-                k: v
-                for k, v in input_schema._declared_fields.items()
-                if not v.dump_only
-            }
+            field_items = {k: v for k, v in input_schema._declared_fields.items() if not v.dump_only}
 
         cleaned: dict[str, Any] = {}
         source_data = data.get("deserialized_data", data)
@@ -147,15 +121,9 @@ def deserialize_data(
             # ``fields.Nested`` expects a dict (or list for many). When a URL string
             # from a previous GET request is supplied, the field should be ignored
             # to allow partial updates without manual payload pruning.
-            if isinstance(field_obj, fields.Nested) and not isinstance(
-                value, (dict | list)
-            ):
+            if isinstance(field_obj, fields.Nested) and not isinstance(value, (dict | list)):
                 continue
-            if (
-                isinstance(field_obj, fields.List)
-                and isinstance(field_obj.inner, fields.Nested)
-                and not isinstance(value, list)
-            ):
+            if isinstance(field_obj, fields.List) and isinstance(field_obj.inner, fields.Nested) and not isinstance(value, list):
                 continue
             cleaned[key] = value
 
@@ -175,9 +143,7 @@ def deserialize_data(
         return err.messages, 400
 
 
-def filter_keys(
-    model: type[DeclarativeBase], schema: type[Schema], data_dict_list: list[dict]
-) -> list[dict]:
+def filter_keys(model: type[DeclarativeBase], schema: type[Schema], data_dict_list: list[dict]) -> list[dict]:
     """
     Filters keys from the data dictionary based on model attributes and schema fields.
 
@@ -193,19 +159,10 @@ def filter_keys(
     schema_fields = set(schema._declared_fields.keys())
     all_model_keys = model_keys.union(model_properties)
 
-    return [
-        {
-            key: value
-            for key, value in data_dict.items()
-            if key in all_model_keys or key in schema_fields
-        }
-        for data_dict in data_dict_list
-    ]
+    return [{key: value for key, value in data_dict.items() if key in all_model_keys or key in schema_fields} for data_dict in data_dict_list]
 
 
-def dump_schema_if_exists(
-    schema: Schema, data: dict | DeclarativeBase, is_list: bool = False
-) -> dict[str, Any] | list[dict[str, Any]]:
+def dump_schema_if_exists(schema: Schema, data: dict | DeclarativeBase, is_list: bool = False) -> dict[str, Any] | list[dict[str, Any]]:
     """
     Serialize the data using the schema if the data exists.
 
