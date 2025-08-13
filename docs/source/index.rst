@@ -21,7 +21,6 @@ flarchitect
    callbacks
    configuration
    openapi
-   soft_delete
    faq
    roadmap
 

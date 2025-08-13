@@ -84,7 +84,7 @@ The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
 [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
 document.
 
-Read about hiding and restoring records with the [soft delete guide](docs/source/soft_delete.rst).
+Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 
 ## Running Tests
 
