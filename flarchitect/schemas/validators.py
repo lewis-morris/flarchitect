@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable
 from datetime import date, datetime, time
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import validators
 from marshmallow import ValidationError
@@ -128,7 +128,7 @@ def validate_decimal(value: str | int | float | Decimal) -> bool:
     try:
         Decimal(value)
         return True
-    except ValueError as err:
+    except (ValueError, InvalidOperation) as err:  # type: ignore[name-defined]
         raise ValidationError("Invalid decimal number.") from err
 
 
@@ -214,5 +214,6 @@ def validate_by_type(validator_type: str) -> Callable[[str], None] | None:
         ),
         "time": validate_time,
         "boolean": validate_boolean,
+        "decimal": validate_decimal,
     }
     return validation_map.get(validator_type)

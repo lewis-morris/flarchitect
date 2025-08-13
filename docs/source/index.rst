@@ -9,6 +9,7 @@ flarchitect
    installation
    quickstart
    models
+   validation
    authentication
    callbacks
    configuration
