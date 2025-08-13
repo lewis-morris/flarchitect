@@ -164,6 +164,39 @@ The following snippet enables CORS for all API routes::
 See the :doc:`configuration <configuration>` page for the full list of
 available CORS settings.
 
+Query parameter controls
+------------------------
+
+``flarchitect`` can expose several query parameters that let clients tailor
+responses. These toggles may be disabled to enforce fixed behaviour.
+
+Filtering
+^^^^^^^^^
+
+The :data:`API_ALLOW_FILTER` flag enables a ``filter`` query parameter for
+constraining results. For example::
+
+    GET /api/books?filter=author_id__eq:1
+
+Ordering
+^^^^^^^^
+
+Activate :data:`API_ALLOW_ORDER_BY` to allow sorting via ``order_by``::
+
+    GET /api/books?order_by=-published_date
+
+Selecting fields
+^^^^^^^^^^^^^^^^
+
+:data:`API_ALLOW_SELECT_FIELDS` lets clients whitelist response columns with
+the ``fields`` parameter::
+
+    GET /api/books?fields=title,author_id
+
+See :doc:`configuration <configuration>` for detailed descriptions of
+:data:`API_ALLOW_FILTER`, :data:`API_ALLOW_ORDER_BY` and
+:data:`API_ALLOW_SELECT_FIELDS`.
+
 Cascade deletes
 ---------------
 
