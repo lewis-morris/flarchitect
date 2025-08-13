@@ -173,11 +173,17 @@ def check_rate_services() -> str | None:
     uri = get_config_or_model_meta("API_RATE_LIMIT_STORAGE_URI", default=None)
     if uri:
         parsed = urlparse(uri)
-        scheme_map = {"memcached": "Memcached", "redis": "Redis", "mongodb": "MongoDB"}
-        service_name = scheme_map.get(parsed.scheme)
-        if service_name is None:
+        scheme_map = {
+            "memcached": "Memcached",
+            "redis": "Redis",
+            "mongodb": "MongoDB",
+            "memory": None,
+        }
+        if parsed.scheme not in scheme_map:
             raise ValueError(f"Unsupported rate limit storage backend: {parsed.scheme}")
-        check_rate_prerequisites(service_name)
+        service_name = scheme_map[parsed.scheme]
+        if service_name:
+            check_rate_prerequisites(service_name)
         return uri
 
     for service, port in services.items():
