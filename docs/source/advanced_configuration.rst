@@ -1,8 +1,9 @@
 Advanced Configuration
 ======================
 
-Beyond the basics, **flarchitect** offers several advanced options for fine-tuning
-API behaviour. This guide covers rate limiting and cache configuration.
+Beyond the basics, **flarchitect** offers advanced options for fine-tuning
+API behaviour.
+This guide covers rate limiting and cache configuration.
 
 Rate limiting
 -------------
@@ -90,6 +91,42 @@ The following snippet enables CORS for all API routes::
 See the :doc:`configuration <configuration>` page for the full list of
 available CORS settings.
 
+Nested writes
+-------------
+
+Nested writes allow you to create related objects in a single request.
+Enable the behaviour globally:
+
+.. code:: python
+
+    class Config:
+        API_ALLOW_NESTED_WRITES = True
+
+To enable nested writes for a specific model, set the ``allow_nested_writes``
+flag on its ``Meta`` class:
+
+.. code:: python
+
+    class Book(db.Model):
+        class Meta:
+            allow_nested_writes = True
+
+Minimal payload
+^^^^^^^^^^^^^^^
+
+The following request creates an author and two related books:
+
+.. code-block:: json
+
+    {
+        "first_name": "Nested",
+        "last_name": "Author",
+        "books": [
+            {"title": "Book 1"},
+            {"title": "Book 2"}
+        ]
+    }
+
 .. _advanced-callbacks:
 
 Callbacks, validators and hooks
@@ -122,8 +159,9 @@ responses are constructed.
 Custom validators
 ^^^^^^^^^^^^^^^^^
 
-Attach validators to SQLAlchemy columns via the ``info`` mapping. Validators are
-looked up in :mod:`flarchitect.schemas.validators` and applied automatically.
+Attach validators to SQLAlchemy columns via the ``info`` mapping.
+Validators are looked up in :mod:`flarchitect.schemas.validators` and
+applied automatically.
 
 .. code-block:: python
 
