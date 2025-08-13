@@ -240,19 +240,25 @@
         - Allows filtering using query parameters. Useful for building rich search functionality. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_ALLOW_JOIN``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Intended toggle for joining related models in queries. Currently not implemented.
+        - Enables ``join`` query parameter to include related resources in queries.
     * - ``API_ALLOW_GROUPBY``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Placeholder for future group-by functionality in query parameters.
+        - Enables ``groupby`` query parameter for grouping results.
     * - ``API_ALLOW_AGGREGATION``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Reserved for upcoming aggregation features in API queries.
+        - Allows aggregate functions like ``field|label__sum`` for summarising data.
     * - ``API_ALLOW_SELECT_FIELDS``
 
           :bdg:`default:` ``True``

@@ -277,7 +277,7 @@ def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
 
             select_fields = request.args.get("fields")
             if select_fields and get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model_schema.Meta.model, default=True):
-                select_fields = select_fields.split(",")
+                select_fields = [field.split(".")[-1] for field in select_fields.split(",")]
                 if callable(model_schema):
                     kwargs["schema"] = model_schema(many=many, only=select_fields)
                 else:
