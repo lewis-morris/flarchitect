@@ -51,6 +51,8 @@ storage URI:
 If no backend is available, the limiter falls back to in-memory storage
 with rate-limit headers enabled by default.
 
+For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
+
 Response metadata
 -----------------
 

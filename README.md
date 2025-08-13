@@ -78,7 +78,7 @@ pytest
 ## Documentation & help
 
 - Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
-- Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory.
+- Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory, including a [caching example](https://github.com/lewis-morris/flarchitect/tree/master/demo/caching).
 - Questions? Join the [GitHub discussions](https://github.com/lewis-morris/flarchitect/discussions) or open an [issue](https://github.com/lewis-morris/flarchitect/issues).
 - See the [changelog](CHANGES.rst) for release history.
 
