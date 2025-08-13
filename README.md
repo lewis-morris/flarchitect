@@ -97,9 +97,9 @@ pytest
 ## Documentation & help
 
 - Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
+- Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory.
+- Authentication demos: [JWT](demo/authentication/jwt_auth.py), [Basic](demo/authentication/basic_auth.py) and [API key](demo/authentication/api_key_auth.py) snippets showcase the built-in strategies.
 - Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory, including a [validators example](demo/validators/README.md) showcasing email and URL validation.
-=======
-
 - Questions? Join the [GitHub discussions](https://github.com/lewis-morris/flarchitect/discussions) or open an [issue](https://github.com/lewis-morris/flarchitect/issues).
 - See the [changelog](CHANGES.rst) for release history.
 
