@@ -10,6 +10,28 @@ metadata.
 As traffic increases, managing how often clients can hit your API becomes
 critical.
 
+Full auto mode
+--------------
+
+``flarchitect`` enables automatic route creation by default. With
+``FULL_AUTO = True`` the :class:`~flarchitect.Architect` scans your models at
+startup and registers CRUD routes for each one. This is convenient for new
+projects but may conflict with custom blueprints or hand-written views.
+
+Disable ``FULL_AUTO`` when you need to manage routes manually or only expose a
+subset of models. After turning it off you must call ``init_api`` explicitly to
+register any automatic routes you still require.
+
+.. code:: python
+
+    app = Flask(__name__)
+    app.config["FULL_AUTO"] = False
+    arch = Architect(app)
+    arch.init_api(app=app)  # manually trigger route generation
+
+Use this mode when integrating with existing applications or when automatic
+registration would create unwanted endpoints.
+
 Rate limiting
 -------------
 
@@ -46,13 +68,29 @@ example, to shield a public search endpoint from abuse, you might allow only
 Because limits depend on counting requests, those counts must live
 somewhere.
 
-Caching backends
-----------------
+.. _api_caching:
 
-The rate limiter stores counters in a cache backend. When initialising,
+Caching backends
+-----------------
+
+``flarchitect`` can cache GET responses when ``API_CACHE_TYPE`` is set. If
+``flask-caching`` is installed, any of its backends (such as Redis or
+Memcached) may be used. When ``flask-caching`` is **not** available and
+``API_CACHE_TYPE`` is ``"SimpleCache"``, a bundled
+``SimpleCache`` provides an in-memory fallback. This lightweight cache is
+cleared when the process restarts and stores data only for the current
+worker, making it suitable for development or tests rather than
+production.
+
+Compared to ``flask-caching`` it lacks distributed backends, cache
+invalidation features and the broader decorator API. For deployments with
+multiple workers or where persistence matters, install ``flask-caching``
+and configure a production-ready backend instead.
+
+The rate limiter also stores counters in a cache backend. When initialising,
 ``flarchitect`` will automatically use a locally running Memcached,
-Redis or MongoDB instance. To point to a specific backend, supply a
-storage URI:
+Redis or MongoDB instance. To point to a specific backend, supply a storage
+URI:
 
 .. code:: python
 

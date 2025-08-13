@@ -150,13 +150,14 @@
           installed. Without that dependency, only ``SimpleCache`` is supported
           through a small built-in fallback; other values raise a runtime
           error.
+
     * - ``API_CACHE_TIMEOUT``
 
           :bdg:`default:` ``300``
           :bdg:`type` ``int``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Expiry time in seconds for cached responses. Only applicable when ``API_CACHE_TYPE`` is set.
+        - Expiry time in seconds for cached responses. Only applicable when ``API_CACHE_TYPE`` is set. See :ref:`api_caching`.
     * - ``API_ENABLE_CORS``
 
           :bdg:`default:` ``False``
@@ -565,6 +566,18 @@
         - URI for the rate limiter's storage backend, e.g., ``redis://127.0.0.1:6379``.
           When omitted, ``flarchitect`` probes for Redis, Memcached, or MongoDB and falls back to in-memory storage.
           Use this to pin rate limiting to a specific service instead of auto-detection.
+    * - ``API_SESSION_GETTER``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Callable returning a SQLAlchemy :class:`~sqlalchemy.orm.Session`.
+          Provides manual control over session retrieval when automatic
+          resolution is insufficient, such as with custom session factories
+          or multiple database binds. If unset, ``flarchitect`` attempts to
+          locate the session via Flask-SQLAlchemy, model ``query`` attributes,
+          or engine bindings.
     * - ``IGNORE_FIELDS``
 
           :bdg:`default:` ``None``
@@ -650,6 +663,35 @@
         - Companion flag to ``API_ALLOW_DELETE_RELATED`` covering association-table entries and similar dependents.
           Not currently evaluated by the code base; cascade behaviour hinges solely on ``API_ALLOW_CASCADE_DELETE``.
           Documented for completeness and potential future use.
+    * - ``AUTO_NAME_ENDPOINTS``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Automatically generates OpenAPI summaries from the schema and HTTP
+          method when no summary is supplied. Disable to preserve custom
+          summaries.
+
+          Example::
+
+              class Config:
+                  AUTO_NAME_ENDPOINTS = False
+
+    * - ``FULL_AUTO``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True`` ``flarchitect`` registers CRUD routes for all models at
+          startup. Set to ``False`` to define routes manually.
+
+        Example::
+
+              class Config:
+                  FULL_AUTO = False
+
     * - ``GET_MANY_SUMMARY``
 
           :bdg:`default:` ``None``

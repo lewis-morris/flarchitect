@@ -5,6 +5,13 @@ Callbacks let you hook into the request lifecycle to run custom logic around
 database operations and responses. They can be declared globally in the Flask
 configuration or on individual SQLAlchemy models.
 
+.. note::
+
+   With ``AUTO_NAME_ENDPOINTS`` enabled (the default), flarchitect generates a
+   summary for each endpoint based on its schema and HTTP method. Disable this
+   flag if your callbacks provide custom summaries to prevent them from being
+   overwritten.
+
 Callback types
 --------------
 

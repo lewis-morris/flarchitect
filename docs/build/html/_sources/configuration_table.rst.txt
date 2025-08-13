@@ -228,12 +228,12 @@
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
         - Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - .. data:: API_DUMP_RESPONSE_TIME
+    * - .. data:: API_DUMP_RESPONSE_MS
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
         - 
-    * - .. data:: API_DUMP_COUNT
+    * - .. data:: API_DUMP_TOTAL_COUNT
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`

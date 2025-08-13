@@ -1,3 +1,9 @@
+"""Helper utilities for SQLAlchemy models.
+
+Provides functions for primary-key retrieval, URL formatting for Flask routes,
+and foreign-key inspection between related models.
+"""
+
 from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase
 
@@ -39,7 +45,7 @@ def get_url_pk(model: type[DeclarativeBase]) -> str:
     return f"<{flask_converter}:{primary_key.key}>"
 
 
-def get_foreign_key_to_parent(child_model, parent_model) -> tuple[str, str] | None:
+def get_foreign_key_to_parent(child_model: type[DeclarativeBase], parent_model: type[DeclarativeBase]) -> tuple[str, str] | None:
     """
     Get the foreign key columns in the association table that reference the child and parent models.
 
@@ -87,7 +93,7 @@ def get_foreign_key_to_parent(child_model, parent_model) -> tuple[str, str] | No
         return None
 
 
-def get_primary_key_info(model) -> tuple[str, str] | None:
+def get_primary_key_info(model: type[DeclarativeBase]) -> tuple[str, str] | None:
     """
     Get the primary key column name and its Flask converter type for the given model.
 

@@ -20,8 +20,13 @@ flarchitect
    validation
    extensions
    openapi
+   error_handling
 
-=======
+.. toctree::
+   :maxdepth: 2
+   :caption: Configuration
+   :hidden:
+
    soft_delete
    configuration
    advanced_configuration
