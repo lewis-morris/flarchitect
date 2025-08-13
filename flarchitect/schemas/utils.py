@@ -11,7 +11,7 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta, is_xml
 
 
 def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable | None:
-    """Search for the appropriate AutoSchema subclass that matches the model and dump parameters.
+    """Search for the AutoSchema subclass matching the model and dump flag.
 
     Args:
         model (Callable): The model to search for.
@@ -36,7 +36,7 @@ def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable 
 
 
 def create_dynamic_schema(base_class: Callable, model_class: Callable) -> Callable:
-    """Create a dynamic schema class that inherits from the base_class and associates with the model_class.
+    """Create a dynamic schema for ``model_class`` inheriting from ``base_class``.
 
     Args:
         base_class (Callable): The base class to inherit from.
@@ -101,12 +101,15 @@ def deserialize_data(
     Utility function to deserialize data using a given Marshmallow schema.
 
     Args:
-        input_schema (Type[Schema]): The Marshmallow schema to be used for deserialization.
-        response (Response): The response object containing data to be deserialized.
+        input_schema (Type[Schema]): Marshmallow schema to be used for
+            deserialization.
+        response (Response): The response object containing data to be
+            deserialized.
 
     Returns:
-        Union[Dict[str, Any], Tuple[Dict[str, Any], int]]: The deserialized data if successful, or a tuple containing
-        errors and a status code if there's an error.
+        Union[Dict[str, Any], Tuple[Dict[str, Any], int]]: The deserialized
+            data if successful, or a tuple containing errors and a status code
+            if there's an error.
     """
     try:
         data = request.data.decode() if is_xml() else response.json
