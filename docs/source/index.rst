@@ -20,6 +20,7 @@ flarchitect
    validation
    extensions
    openapi
+   error_handling
 
 .. toctree::
    :maxdepth: 2
