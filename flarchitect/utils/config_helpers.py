@@ -60,7 +60,7 @@ def get_config_or_model_meta(
 
     def search_in_flask_config(keys: list[str]) -> Any | None:
         app = current_app
-        with app.app_context():  #
+        with app.app_context():  # Ensure config is accessible outside request contexts
             for key in keys:
                 upper_key = key.upper()
                 prefixed_key = f"API_{upper_key}"
