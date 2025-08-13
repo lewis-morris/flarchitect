@@ -402,39 +402,30 @@ def xml_to_dict(xml_data: str | bytes) -> dict[str, Any]:
 
 
 def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
-    """
-    Processes the result of a route function
-    and prepares it for the standardised response.
-    """
+    """Normalise values returned from route handlers.
 
-    # todo really not sure why this is here again.
-    # Its a relic from the past, a lot of this needs looking at.
+    Args:
+        result: The value returned by a view function. It may be a
+            raw value, a ``(value, status_code)`` tuple or a dictionary
+            containing ``query`` and pagination metadata.
 
-    from flarchitect.utils.responses import CustomResponse
+    Returns:
+        tuple[int, Any, int, str | None, str | None]:
+            A tuple of ``(status_code, value, count, next_url, previous_url)``
+            ready for ``create_response``.
+    """
 
     status_code, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
 
-    if isinstance(result, tuple):
-        status_code, result = (
-            (
-                result[1],
-                result[0],
-            )
-            if len(result) == 2 and isinstance(result[1], int)
-            else (HTTP_OK, result)
-        )
+    if isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], int):
+        result, status_code = result
     if isinstance(result, dict):
-        value, count = (
-            result.get("query", result),
-            get_count(result, result.get("query")),
-        )
-        next_url, previous_url = result.get("next_url"), result.get("previous_url")
-    elif isinstance(result, CustomResponse):
-        next_url, previous_url, count = (
-            result.next_url,
-            result.previous_url,
-            result.count,
-        )
+        value = result.get("query", result)
+        count = get_count(result, value)
+        next_url = result.get("next_url")
+        previous_url = result.get("previous_url")
+    else:
+        value = result
 
     return status_code, value, count, next_url, previous_url
 
