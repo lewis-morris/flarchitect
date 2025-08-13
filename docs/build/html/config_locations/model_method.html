@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="config_locations/model_method.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="Global &lt; Global Method &lt; Model &lt; Model Method Model Method These values are defined as Meta class attributes in you SQLAlchemy models, and configure specific behavior per HTTP method for a..." />
-<meta name="description" content="Global &lt; Global Method &lt; Model &lt; Model Method Model Method These values are defined as Meta class attributes in you SQLAlchemy models, and configure specific behavior per HTTP method for a..." />
+<meta property="og:description" content="Global &lt; Global Method &lt; Model &lt; Model Method Model Method These values are defined as Meta class attributes in your SQLAlchemy models and configure specific behavior per HTTP method for a..." />
+<meta name="description" content="Global &lt; Global Method &lt; Model &lt; Model Method Model Method These values are defined as Meta class attributes in your SQLAlchemy models and configure specific behavior per HTTP method for a..." />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="FAQ" href="../faq.html" /><link rel="prev" title="Config Models" href="model.html" />
         <link rel="prefetch" href="../_static/logo.png" as="image" />
 
@@ -294,18 +294,18 @@
 <div><p>Global &lt; Global Method &lt; Model &lt; <strong>Model Method</strong></p>
 </div></blockquote>
 <p><span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
-<p>These values are defined as Meta class attributes in you <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> models, and configure specific behavior per
+<p>These values are defined as Meta class attributes in your <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> models and configure specific behavior per
 <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP method</a> for a specific model.</p>
 <ul class="simple">
 <li><p>They should always be lowercase</p></li>
 <li><p>They should always omit any <code class="docutils literal notranslate"><span class="pre">API_</span></code> prefix.</p></li>
-<li><p>They should be prefixed with the http method you want to configure. i.e <code class="docutils literal notranslate"><span class="pre">get_</span></code>, <code class="docutils literal notranslate"><span class="pre">post_</span></code>, <code class="docutils literal notranslate"><span class="pre">patch_</span></code>, <code class="docutils literal notranslate"><span class="pre">delete_</span></code></p></li>
+<li><p>They should be prefixed with the HTTP method you want to configure, e.g. <code class="docutils literal notranslate"><span class="pre">get_</span></code>, <code class="docutils literal notranslate"><span class="pre">post_</span></code>, <code class="docutils literal notranslate"><span class="pre">patch_</span></code>, <code class="docutils literal notranslate"><span class="pre">delete_</span></code></p></li>
 </ul>
-<p>Values defined here will apply per model / http method and can not be overridden.</p>
+<p>Values defined here will apply per model/HTTP method and cannot be overridden.</p>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">():</span>
-    <span class="n">__table__</span> <span class="o">=</span> <span class="s2">&quot;author&quot;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">:</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;author&quot;</span>
     <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
         <span class="c1"># shows this description for the `GET` endpoint in the documentation</span>
         <span class="n">get_description</span> <span class="o">=</span> <span class="s2">&quot;Models an author of a book&quot;</span>

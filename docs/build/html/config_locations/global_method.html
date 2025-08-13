@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="config_locations/global_method.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config, but are constrained to a specific HTTP method. They should always be uppercase, The..." />
-<meta name="description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config, but are constrained to a specific HTTP method. They should always be uppercase, The..." />
+<meta property="og:description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config and are constrained to a specific HTTP method. They should always be uppercase, They..." />
+<meta name="description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config and are constrained to a specific HTTP method. They should always be uppercase, They..." />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Config Models" href="model.html" /><link rel="prev" title="Config Globals" href="global_.html" />
         <link rel="prefetch" href="../_static/logo.png" as="image" />
 
@@ -294,18 +294,18 @@
 <div><p>Global &lt; <strong>Global Method</strong> &lt; Model &lt; Model Method</p>
 </div></blockquote>
 <p><span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span></p>
-<p>These values are defined in the <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a> config, but are constrained to a specific <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP method</a>.</p>
+<p>These values are defined in the <cite>Flask</cite> config and are constrained to a specific <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP method</a>.</p>
 <ul class="simple">
 <li><p>They should always be uppercase</p></li>
 <li><p>They should always start with <code class="docutils literal notranslate"><span class="pre">API_{method}_</span></code></p></li>
 </ul>
-<p>Values defined here will apply globally per method unless a more specific value is defined, they overwrite the global
-value if they are defined.</p>
-<p>Will be overridden by value types;  <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>, <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span>, <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>.</p>
+<p>Values defined here apply globally per method unless a more specific value is defined, and they overwrite the global
+value when present.</p>
+<p>These values are overridden by <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span> and <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span> configurations.</p>
 <p>Overrides <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
     <span class="c1"># the rate limit for `POST` requests across all endpoints in your API</span>
     <span class="n">API_POST_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;1 per minute&quot;</span>
     <span class="c1"># the rate limit for `GET` requests across all endpoints in your API</span>

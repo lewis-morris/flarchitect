@@ -210,7 +210,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -282,7 +282,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -309,6 +309,32 @@
 </pre></div>
 </div>
 <p>That’s all that’s required to make the model available through the generated API.</p>
+<section id="nested-model-creation">
+<h2>Nested model creation<a class="headerlink" href="#nested-model-creation" title="Link to this heading">¶</a></h2>
+<p>Nested writes are disabled by default. Enable them globally with
+<code class="docutils literal notranslate"><span class="pre">API_ALLOW_NESTED_WRITES</span> <span class="pre">=</span> <span class="pre">True</span></code> or per model via <code class="docutils literal notranslate"><span class="pre">Meta.allow_nested_writes</span></code>.
+Once enabled, <code class="docutils literal notranslate"><span class="pre">AutoSchema</span></code> can deserialize nested relationship data during
+POST or PUT requests. Include related objects under the relationship name in
+your payload:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;My Book&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;isbn&quot;</span><span class="p">:</span> <span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-01-01&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;author_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;first_name&quot;</span><span class="p">:</span> <span class="s2">&quot;John&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;last_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Doe&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;biography&quot;</span><span class="p">:</span> <span class="s2">&quot;Bio&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;date_of_birth&quot;</span><span class="p">:</span> <span class="s2">&quot;1980-01-01&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nationality&quot;</span><span class="p">:</span> <span class="s2">&quot;US&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The nested <code class="docutils literal notranslate"><span class="pre">author</span></code> object is deserialized into an <code class="docutils literal notranslate"><span class="pre">Author</span></code> instance while
+responses continue to use the configured serialization type (URL, JSON, or
+dynamic).</p>
+</section>
 </section>
 
         </article>
@@ -354,8 +380,27 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">SQLAlchemy Models</a><ul>
+<li><a class="reference internal" href="#nested-model-creation">Nested model creation</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

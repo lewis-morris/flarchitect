@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="config_locations/global_.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="Global&lt; Global Method &lt; Model &lt; Model Method Global These are the global configuration variables which are assigned in Flask. They should always be uppercase, They should always start with..." />
-<meta name="description" content="Global&lt; Global Method &lt; Model &lt; Model Method Global These are the global configuration variables which are assigned in Flask. They should always be uppercase, They should always start with..." />
+<meta property="og:description" content="Global&lt; Global Method &lt; Model &lt; Model Method Global These are the global configuration variables which are defined in Flask. They should always be uppercase, They should always start with ..." />
+<meta name="description" content="Global&lt; Global Method &lt; Model &lt; Model Method Global These are the global configuration variables which are defined in Flask. They should always be uppercase, They should always start with ..." />
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Config by Method Globals" href="global_method.html" /><link rel="prev" title="Configuration" href="../configuration.html" />
         <link rel="prefetch" href="../_static/logo.png" as="image" />
 
@@ -294,16 +294,16 @@
 <div><p><strong>Global</strong> &lt; Global Method &lt; Model &lt; Model Method</p>
 </div></blockquote>
 <p><span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
-<p>These are the global configuration variables which are assigned in <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>.</p>
+<p>These are the global configuration variables which are defined in <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a>.</p>
 <ul class="simple">
 <li><p>They should always be uppercase</p></li>
 <li><p>They should always start with <code class="docutils literal notranslate"><span class="pre">API_</span></code></p></li>
 </ul>
-<p>Values defined here will apply globally unless a more specific value is defined.</p>
-<p>Will be overridden by any other config value type;  <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>, <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span>, <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span>.</p>
+<p>Values defined here apply globally unless a more specific value is defined.</p>
+<p>These values are overridden by <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global Method</span>, <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span>, or <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span> configurations.</p>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">():</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
     <span class="c1"># the rate limit across all endpoints in your API</span>
     <span class="c1"># If any other, more specific, rate limit is defined, it will</span>
     <span class="c1"># override this one for the particular endpoint / method / model.</span>
