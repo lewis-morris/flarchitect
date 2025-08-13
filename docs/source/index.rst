@@ -8,6 +8,7 @@ flarchitect
 
    installation
    quickstart
+   getting_started
    models
    validation
    authentication
@@ -15,6 +16,7 @@ flarchitect
    configuration
    advanced_configuration
    soft_delete
+   advanced_demo
    openapi
    faq
    genindex
