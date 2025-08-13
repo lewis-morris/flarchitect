@@ -26,3 +26,16 @@ jobs:
           coverage xml
           coverage-badge -o coverage.svg
           coverage-badge -o docs/source/_static/coverage.svg
+
+      - name: Produce version badge
+        run: |
+          pip install anybadge
+          python - <<'PY'
+          import flarchitect, importlib.metadata
+          from anybadge import Badge
+
+          version = getattr(flarchitect, "__version__", importlib.metadata.version("flarchitect"))
+          Badge("version", version).write_badge("version.svg", overwrite=True)
+          PY
+          mkdir -p docs/source/_static
+          cp -f version.svg docs/source/_static/version.svg
