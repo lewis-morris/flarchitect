@@ -11,7 +11,7 @@ from flask import Flask
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.core_utils import convert_case, get_count
+from flarchitect.utils.core_utils import convert_case
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"

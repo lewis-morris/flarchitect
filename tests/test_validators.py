@@ -9,6 +9,8 @@ from flarchitect.schemas.validators import (
     validate_date,
     validate_datetime,
     validate_decimal,
+    validate_phone_number,
+    validate_postal_code,
     validate_time,
 )
 
@@ -21,6 +23,8 @@ from flarchitect.schemas.validators import (
         (validate_time, "23:59:59"),
         (validate_decimal, "10.5"),
         (validate_boolean, "true"),
+        (validate_phone_number, "+1 650-555-1234"),
+        (validate_postal_code, "12345"),
     ],
 )
 def test_custom_validators_success(validator, value):
@@ -36,6 +40,8 @@ def test_custom_validators_success(validator, value):
         (validate_time, "24:00:00"),
         (validate_decimal, "abc"),
         (validate_boolean, "maybe"),
+        (validate_phone_number, "abc"),
+        (validate_postal_code, "!!"),
     ],
 )
 def test_custom_validators_failure(validator, value):
@@ -76,6 +82,8 @@ def test_custom_validators_failure(validator, value):
         ("cron", "* * * * *", "bad cron"),
         ("base64", "aGVsbG8=", "invalid"),
         ("currency", "USD", "XXX"),
+        ("phone", "+1 650-555-1234", "not-phone"),
+        ("postal_code", "12345", "!!!"),
         ("date", "2024-01-01", "20240101"),
         ("datetime", "2024-01-01 12:00:00", "2024/01/01 12:00:00"),
         ("time", "23:59:59", "24:00:00"),

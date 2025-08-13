@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable, Iterable
 from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
@@ -157,6 +158,44 @@ def validate_boolean(value: bool | str) -> bool:
     raise ValidationError("Invalid boolean value. Accepted values are: True, False, 1, 0, 'true', 'false', 'yes', 'no'.")
 
 
+def validate_phone_number(value: str) -> bool:
+    """Validate that a string represents a phone number.
+
+    Args:
+        value: The phone number string to validate.
+
+    Returns:
+        bool: ``True`` if the value resembles a phone number.
+
+    Raises:
+        ValidationError: If ``value`` is not a valid phone number.
+    """
+
+    pattern = re.compile(r"^\+?[0-9\s\-().]{7,20}$")
+    if pattern.fullmatch(value):
+        return True
+    raise ValidationError("Phone number is not valid.")
+
+
+def validate_postal_code(value: str) -> bool:
+    """Validate that a string represents a postal code.
+
+    Args:
+        value: The postal code string to validate.
+
+    Returns:
+        bool: ``True`` if the value matches common postal code patterns.
+
+    Raises:
+        ValidationError: If ``value`` is not a valid postal code.
+    """
+
+    pattern = re.compile(r"^[A-Za-z0-9][A-Za-z0-9\s\-]{2,10}$")
+    if pattern.fullmatch(value):
+        return True
+    raise ValidationError("Postal code is not valid.")
+
+
 def wrap_validator(validator: Callable[[str], bool | VE], error_message: str = "Not a valid value.") -> Callable[[str], None]:
     """Wrap a Marshmallow validator to raise :class:`ValidationError` on failure.
 
@@ -214,6 +253,8 @@ def validate_by_type(validator_type: str) -> Callable[[str], None] | None:
         "sha384": wrap_validator(validators.sha384, "SHA384 hash is not valid."),
         "sha512": wrap_validator(validators.sha512, "SHA512 hash is not valid."),
         "currency": wrap_validator(validators.currency, "Currency code is not valid."),
+        "phone": validate_phone_number,
+        "postal_code": validate_postal_code,
         "date": lambda value: validate_date(value, formats=["%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]),
         "datetime": lambda value: validate_datetime(
             value,

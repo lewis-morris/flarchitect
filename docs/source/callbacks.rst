@@ -204,6 +204,8 @@ Common ``schema.format`` values include:
 * ``byte``
 * ``binary``
 * ``email``
+* ``phone``
+* ``postal_code``
 * ``uuid``
 * ``uri``
 * ``hostname``

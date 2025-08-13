@@ -248,6 +248,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
@@ -306,7 +307,7 @@ These settings can be provided through <a class="reference external" href="https
 <p>To offer flexibility and control, <strong>flarchitect</strong> follows a hierarchy of configuration priorities:</p>
 <ul class="simple">
 <li><p><strong>Lowest Priority</strong> – Global <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a> config options apply to all requests and are overridden by any more specific configuration.</p></li>
-<li><p><strong>Method-based</strong> – Method-specific options can override global settings for particular <a href="#id1"><span class="problematic" id="id2">`</span></a>HTTP method`_s.</p></li>
+<li><p><strong>Method-based</strong> – Method-specific options can override global settings for particular HTTP methods.</p></li>
 <li><p><strong>Model-based</strong> – <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> model <code class="docutils literal notranslate"><span class="pre">Meta</span></code> attributes override both global and method-based configurations.</p></li>
 <li><p><strong>Highest Priority</strong> – Model-specific configurations suffixed with an <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods">HTTP method</a> allow the most detailed customization per model and method.</p></li>
 </ul>
@@ -404,1059 +405,743 @@ Model Method</label><div class="sd-tab-content docutils">
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
 <tbody>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_CREATE_DOCS">
-<span class="sig-name descname"><span class="pre">API_CREATE_DOCS</span></span><a class="headerlink" href="#API_CREATE_DOCS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DOCUMENTATION_URL">
-<span class="sig-name descname"><span class="pre">API_DOCUMENTATION_URL</span></span><a class="headerlink" href="#API_DOCUMENTATION_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``/docs``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DOCUMENTATION_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">/docs</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>The url of the docs  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_TITLE">
-<span class="sig-name descname"><span class="pre">API_TITLE</span></span><a class="headerlink" href="#API_TITLE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-danger:`Required`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_TITLE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-danger sd-bg-text-danger">Required</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>The title of the docs  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_VERSION">
-<span class="sig-name descname"><span class="pre">API_VERSION</span></span><a class="headerlink" href="#API_VERSION" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-danger:`Required`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_VERSION</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-danger sd-bg-text-danger">Required</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>The version no of the docs  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_LOGO_URL">
-<span class="sig-name descname"><span class="pre">API_LOGO_URL</span></span><a class="headerlink" href="#API_LOGO_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_LOGO_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>The logo to display in the docs  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_LOGO_BACKGROUND">
-<span class="sig-name descname"><span class="pre">API_LOGO_BACKGROUND</span></span><a class="headerlink" href="#API_LOGO_BACKGROUND" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_LOGO_BACKGROUND</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>The background colour of the area where the logo is  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DESCRIPTION">
-<span class="sig-name descname"><span class="pre">API_DESCRIPTION</span></span><a class="headerlink" href="#API_DESCRIPTION" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str</span> <span class="pre">or</span> <span class="pre">str</span> <span class="pre">path``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DESCRIPTION</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">or</span> <span class="pre">str</span> <span class="pre">path</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Accepts a string or a filepath string, with a default behavior that auto-generates a comprehensive documentation description.   If a filepath is provided, it can point to a Jinja template that dynamically accesses the Flask configuration via {config.xxxx} placeholders. This flexible approach allows for a rich, context-aware description in your ReDoc documentation.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_KEYWORDS">
-<span class="sig-name descname"><span class="pre">API_KEYWORDS</span></span><a class="headerlink" href="#API_KEYWORDS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_KEYWORDS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_CONTACT_NAME">
-<span class="sig-name descname"><span class="pre">API_CONTACT_NAME</span></span><a class="headerlink" href="#API_CONTACT_NAME" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CONTACT_NAME</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Specifies the contact name for inquiries and support in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_CONTACT_EMAIL">
-<span class="sig-name descname"><span class="pre">API_CONTACT_EMAIL</span></span><a class="headerlink" href="#API_CONTACT_EMAIL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_CONTACT_EMAIL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Specifies the contact email for inquiries and support in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_CONTACT_URL">
-<span class="sig-name descname"><span class="pre">API_CONTACT_URL</span></span><a class="headerlink" href="#API_CONTACT_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CONTACT_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Specifies the contact url for inquiries and support in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_LICENCE_NAME">
-<span class="sig-name descname"><span class="pre">API_LICENCE_NAME</span></span><a class="headerlink" href="#API_LICENCE_NAME" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_LICENCE_NAME</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Specifies the licence name in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_LICENCE_URL">
-<span class="sig-name descname"><span class="pre">API_LICENCE_URL</span></span><a class="headerlink" href="#API_LICENCE_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_LICENCE_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Specifies the licence url in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SERVER_URLS">
-<span class="sig-name descname"><span class="pre">API_SERVER_URLS</span></span><a class="headerlink" href="#API_SERVER_URLS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``list[dict]``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERVER_URLS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>example: [{“url”: “<a class="reference external" href="http://localhost:5000">http://localhost:5000</a>”, “description”: “Local server”}…]  Specifies the server(s) used for   calling the API in the redoc documentation. If not provided, the field name will not be displayed in the docs.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DOC_HTML_HEADERS">
-<span class="sig-name descname"><span class="pre">API_DOC_HTML_HEADERS</span></span><a class="headerlink" href="#API_DOC_HTML_HEADERS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DOC_HTML_HEADERS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>custom headers to be added to the documentation page.  Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DOC_HTML_FOOTERS">
-<span class="sig-name descname"><span class="pre">API_DOC_HTML_FOOTERS</span></span><a class="headerlink" href="#API_DOC_HTML_FOOTERS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DOC_HTML_FOOTERS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>custom footers to be added to the documentation page.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_PREFIX">
-<span class="sig-name descname"><span class="pre">API_PREFIX</span></span><a class="headerlink" href="#API_PREFIX" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``/api``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_PREFIX</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">/api</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_VERBOSITY_LEVEL">
-<span class="sig-name descname"><span class="pre">API_VERBOSITY_LEVEL</span></span><a class="headerlink" href="#API_VERBOSITY_LEVEL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``1``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``int``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_VERBOSITY_LEVEL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">1</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_model_meta/model_meta/config.py">tests/test_model_meta/model_meta/config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ENDPOINT_CASE">
-<span class="sig-name descname"><span class="pre">API_ENDPOINT_CASE</span></span><a class="headerlink" href="#API_ENDPOINT_CASE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``kebab``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``string``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ENDPOINT_CASE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">kebab</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">string</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_FIELD_CASE">
-<span class="sig-name descname"><span class="pre">API_FIELD_CASE</span></span><a class="headerlink" href="#API_FIELD_CASE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``snake``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``string``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_FIELD_CASE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">snake</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">string</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SCHEMA_CASE">
-<span class="sig-name descname"><span class="pre">API_SCHEMA_CASE</span></span><a class="headerlink" href="#API_SCHEMA_CASE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``camel``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``string``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SCHEMA_CASE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">camel</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">string</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_PRINT_EXCEPTIONS">
-<span class="sig-name descname"><span class="pre">API_PRINT_EXCEPTIONS</span></span><a class="headerlink" href="#API_PRINT_EXCEPTIONS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_PRINT_EXCEPTIONS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_BASE_SCHEMA">
-<span class="sig-name descname"><span class="pre">API_BASE_SCHEMA</span></span><a class="headerlink" href="#API_BASE_SCHEMA" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``AutoSchema``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``Schema``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_BASE_SCHEMA</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">AutoSchema</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">Schema</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_CASCADE_DELETE">
-<span class="sig-name descname"><span class="pre">API_ALLOW_CASCADE_DELETE</span></span><a class="headerlink" href="#API_ALLOW_CASCADE_DELETE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_IGNORE_UNDERSCORE_ATTRIBUTES">
-<span class="sig-name descname"><span class="pre">API_IGNORE_UNDERSCORE_ATTRIBUTES</span></span><a class="headerlink" href="#API_IGNORE_UNDERSCORE_ATTRIBUTES" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_IGNORE_UNDERSCORE_ATTRIBUTES</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SERIALIZATION_TYPE">
-<span class="sig-name descname"><span class="pre">API_SERIALIZATION_TYPE</span></span><a class="headerlink" href="#API_SERIALIZATION_TYPE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_TYPE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SERIALIZATION_DEPTH">
-<span class="sig-name descname"><span class="pre">API_SERIALIZATION_DEPTH</span></span><a class="headerlink" href="#API_SERIALIZATION_DEPTH" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_DEPTH</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_HYBRID_PROPERTIES">
-<span class="sig-name descname"><span class="pre">API_DUMP_HYBRID_PROPERTIES</span></span><a class="headerlink" href="#API_DUMP_HYBRID_PROPERTIES" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_HYBRID_PROPERTIES</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ADD_RELATIONS">
-<span class="sig-name descname"><span class="pre">API_ADD_RELATIONS</span></span><a class="headerlink" href="#API_ADD_RELATIONS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADD_RELATIONS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_PAGINATION_SIZE_DEFAULT">
-<span class="sig-name descname"><span class="pre">API_PAGINATION_SIZE_DEFAULT</span></span><a class="headerlink" href="#API_PAGINATION_SIZE_DEFAULT" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``20``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``int``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_DEFAULT</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">20</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_api_filters.py">tests/test_api_filters.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_PAGINATION_SIZE_MAX">
-<span class="sig-name descname"><span class="pre">API_PAGINATION_SIZE_MAX</span></span><a class="headerlink" href="#API_PAGINATION_SIZE_MAX" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``100``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``int``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_MAX</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">100</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_READ_ONLY">
-<span class="sig-name descname"><span class="pre">API_READ_ONLY</span></span><a class="headerlink" href="#API_READ_ONLY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_READ_ONLY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_ORDER_BY">
-<span class="sig-name descname"><span class="pre">API_ALLOW_ORDER_BY</span></span><a class="headerlink" href="#API_ALLOW_ORDER_BY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_FILTER">
-<span class="sig-name descname"><span class="pre">API_ALLOW_FILTER</span></span><a class="headerlink" href="#API_ALLOW_FILTER" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_JOIN">
-<span class="sig-name descname"><span class="pre">API_ALLOW_JOIN</span></span><a class="headerlink" href="#API_ALLOW_JOIN" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_JOIN</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>IN DEVELOPMENT</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_GROUPBY">
-<span class="sig-name descname"><span class="pre">API_ALLOW_GROUPBY</span></span><a class="headerlink" href="#API_ALLOW_GROUPBY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_GROUPBY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>IN DEVELOPMENT</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_AGGREGATION">
-<span class="sig-name descname"><span class="pre">API_ALLOW_AGGREGATION</span></span><a class="headerlink" href="#API_ALLOW_AGGREGATION" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_AGGREGATION</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>IN DEVELOPMENT</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_SELECT_FIELDS">
-<span class="sig-name descname"><span class="pre">API_ALLOW_SELECT_FIELDS</span></span><a class="headerlink" href="#API_ALLOW_SELECT_FIELDS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_block_methods">
-<span class="sig-name descname"><span class="pre">API_block_methods</span></span><a class="headerlink" href="#API_block_methods" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_block_methods</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_AUTHENTICATE">
-<span class="sig-name descname"><span class="pre">API_AUTHENTICATE</span></span><a class="headerlink" href="#API_AUTHENTICATE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_authentication.py">tests/test_authentication.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_AUTHENTICATE_METHOD">
-<span class="sig-name descname"><span class="pre">API_AUTHENTICATE_METHOD</span></span><a class="headerlink" href="#API_AUTHENTICATE_METHOD" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE_METHOD</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_authentication.py">tests/test_authentication.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_USER_MODEL">
-<span class="sig-name descname"><span class="pre">API_USER_MODEL</span></span><a class="headerlink" href="#API_USER_MODEL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_USER_MODEL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_authentication.py">tests/test_authentication.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SETUP_CALLBACK">
-<span class="sig-name descname"><span class="pre">API_SETUP_CALLBACK</span></span><a class="headerlink" href="#API_SETUP_CALLBACK" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``callable``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_RETURN_CALLBACK">
-<span class="sig-name descname"><span class="pre">API_RETURN_CALLBACK</span></span><a class="headerlink" href="#API_RETURN_CALLBACK" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``callable``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ERROR_CALLBACK">
-<span class="sig-name descname"><span class="pre">API_ERROR_CALLBACK</span></span><a class="headerlink" href="#API_ERROR_CALLBACK" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``callable``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_POST_DUMP_CALLBACK">
-<span class="sig-name descname"><span class="pre">API_POST_DUMP_CALLBACK</span></span><a class="headerlink" href="#API_POST_DUMP_CALLBACK" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``callable``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_POST_DUMP_CALLBACK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ADDITIONAL_QUERY_PARAMS">
-<span class="sig-name descname"><span class="pre">API_ADDITIONAL_QUERY_PARAMS</span></span><a class="headerlink" href="#API_ADDITIONAL_QUERY_PARAMS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``list[dict]``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADDITIONAL_QUERY_PARAMS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_DATETIME">
-<span class="sig-name descname"><span class="pre">API_DUMP_DATETIME</span></span><a class="headerlink" href="#API_DUMP_DATETIME" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_DATETIME</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_VERSION">
-<span class="sig-name descname"><span class="pre">API_DUMP_VERSION</span></span><a class="headerlink" href="#API_DUMP_VERSION" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_VERSION</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_STATUS_CODE">
-<span class="sig-name descname"><span class="pre">API_DUMP_STATUS_CODE</span></span><a class="headerlink" href="#API_DUMP_STATUS_CODE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_STATUS_CODE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_RESPONSE_TIME">
-<span class="sig-name descname"><span class="pre">API_DUMP_RESPONSE_TIME</span></span><a class="headerlink" href="#API_DUMP_RESPONSE_TIME" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_RESPONSE_TIME</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_COUNT">
-<span class="sig-name descname"><span class="pre">API_DUMP_COUNT</span></span><a class="headerlink" href="#API_DUMP_COUNT" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_COUNT</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_NULL_NEXT_URL">
-<span class="sig-name descname"><span class="pre">API_DUMP_NULL_NEXT_URL</span></span><a class="headerlink" href="#API_DUMP_NULL_NEXT_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_NEXT_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_NULL_PREVIOUS_URL">
-<span class="sig-name descname"><span class="pre">API_DUMP_NULL_PREVIOUS_URL</span></span><a class="headerlink" href="#API_DUMP_NULL_PREVIOUS_URL" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_PREVIOUS_URL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_DUMP_NULL_ERROR">
-<span class="sig-name descname"><span class="pre">API_DUMP_NULL_ERROR</span></span><a class="headerlink" href="#API_DUMP_NULL_ERROR" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_ERROR</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_RATE_LIMIT">
-<span class="sig-name descname"><span class="pre">API_RATE_LIMIT</span></span><a class="headerlink" href="#API_RATE_LIMIT" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_RATE_LIMIT_CALLBACK">
-<span class="sig-name descname"><span class="pre">API_RATE_LIMIT_CALLBACK</span></span><a class="headerlink" href="#API_RATE_LIMIT_CALLBACK" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_CALLBACK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_RATE_LIMIT_STORAGE_URI">
-<span class="sig-name descname"><span class="pre">API_RATE_LIMIT_STORAGE_URI</span></span><a class="headerlink" href="#API_RATE_LIMIT_STORAGE_URI" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_STORAGE_URI</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="IGNORE_FIELDS">
-<span class="sig-name descname"><span class="pre">IGNORE_FIELDS</span></span><a class="headerlink" href="#IGNORE_FIELDS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_FIELDS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="IGNORE_OUTPUT_FIELDS">
-<span class="sig-name descname"><span class="pre">IGNORE_OUTPUT_FIELDS</span></span><a class="headerlink" href="#IGNORE_OUTPUT_FIELDS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_OUTPUT_FIELDS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="IGNORE_INPUT_FIELDS">
-<span class="sig-name descname"><span class="pre">IGNORE_INPUT_FIELDS</span></span><a class="headerlink" href="#IGNORE_INPUT_FIELDS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_INPUT_FIELDS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_BLUEPRINT_NAME">
-<span class="sig-name descname"><span class="pre">API_BLUEPRINT_NAME</span></span><a class="headerlink" href="#API_BLUEPRINT_NAME" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_BLUEPRINT_NAME</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SOFT_DELETE">
-<span class="sig-name descname"><span class="pre">API_SOFT_DELETE</span></span><a class="headerlink" href="#API_SOFT_DELETE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``False``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SOFT_DELETE_ATTRIBUTE">
-<span class="sig-name descname"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></span><a class="headerlink" href="#API_SOFT_DELETE_ATTRIBUTE" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``str``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_SOFT_DELETE_VALUES">
-<span class="sig-name descname"><span class="pre">API_SOFT_DELETE_VALUES</span></span><a class="headerlink" href="#API_SOFT_DELETE_VALUES" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``None``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``tuple``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Global`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">tuple</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
 <ul class="simple">
 <li><p>Example: <a class="reference external" href="https://github.com/arched-dev/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_DELETE_RELATED">
-<span class="sig-name descname"><span class="pre">API_ALLOW_DELETE_RELATED</span></span><a class="headerlink" href="#API_ALLOW_DELETE_RELATED" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="API_ALLOW_DELETE_DEPENDENTS">
-<span class="sig-name descname"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></span><a class="headerlink" href="#API_ALLOW_DELETE_DEPENDENTS" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`default:`</span> <span class="pre">``True``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg:`type`</span> <span class="pre">``bool``</span></span></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span> <span class="pre">:bdg-dark-line:`Model</span> <span class="pre">Method`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="GET_MANY_SUMMARY">
-<span class="sig-name descname"><span class="pre">GET_MANY_SUMMARY</span></span><a class="headerlink" href="#GET_MANY_SUMMARY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET_MANY_SUMMARY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="GET_SINGLE_SUMMARY">
-<span class="sig-name descname"><span class="pre">GET_SINGLE_SUMMARY</span></span><a class="headerlink" href="#GET_SINGLE_SUMMARY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET_SINGLE_SUMMARY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><dl class="py data">
-<dt class="sig sig-object py" id="POST_SUMMARY">
-<span class="sig-name descname"><span class="pre">POST_SUMMARY</span></span><a class="headerlink" href="#POST_SUMMARY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST_SUMMARY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><dl class="py data">
-<dt class="sig sig-object py" id="PATCH_SUMMARY">
-<span class="sig-name descname"><span class="pre">PATCH_SUMMARY</span></span><a class="headerlink" href="#PATCH_SUMMARY" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">:bdg-secondary:`Optional`</span></span></dt>
-<dd></dd></dl>
-
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PATCH_SUMMARY</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+</div></blockquote>
 <ul class="simple">
 <li></li>
 </ul>
@@ -1527,80 +1212,7 @@ Model Method</label><div class="sd-tab-content docutils">
 <li><a class="reference internal" href="#intro">Intro</a></li>
 <li><a class="reference internal" href="#config-hierarchy">Config Hierarchy</a></li>
 <li><a class="reference internal" href="#config-value-structure">Config Value Structure</a></li>
-<li><a class="reference internal" href="#complete-configuration-reference">Complete Configuration Reference</a><ul>
-<li><a class="reference internal" href="#API_CREATE_DOCS"><code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code></a></li>
-<li><a class="reference internal" href="#API_DOCUMENTATION_URL"><code class="docutils literal notranslate"><span class="pre">API_DOCUMENTATION_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_TITLE"><code class="docutils literal notranslate"><span class="pre">API_TITLE</span></code></a></li>
-<li><a class="reference internal" href="#API_VERSION"><code class="docutils literal notranslate"><span class="pre">API_VERSION</span></code></a></li>
-<li><a class="reference internal" href="#API_LOGO_URL"><code class="docutils literal notranslate"><span class="pre">API_LOGO_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_LOGO_BACKGROUND"><code class="docutils literal notranslate"><span class="pre">API_LOGO_BACKGROUND</span></code></a></li>
-<li><a class="reference internal" href="#API_DESCRIPTION"><code class="docutils literal notranslate"><span class="pre">API_DESCRIPTION</span></code></a></li>
-<li><a class="reference internal" href="#API_KEYWORDS"><code class="docutils literal notranslate"><span class="pre">API_KEYWORDS</span></code></a></li>
-<li><a class="reference internal" href="#API_CONTACT_NAME"><code class="docutils literal notranslate"><span class="pre">API_CONTACT_NAME</span></code></a></li>
-<li><a class="reference internal" href="#API_CONTACT_EMAIL"><code class="docutils literal notranslate"><span class="pre">API_CONTACT_EMAIL</span></code></a></li>
-<li><a class="reference internal" href="#API_CONTACT_URL"><code class="docutils literal notranslate"><span class="pre">API_CONTACT_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_LICENCE_NAME"><code class="docutils literal notranslate"><span class="pre">API_LICENCE_NAME</span></code></a></li>
-<li><a class="reference internal" href="#API_LICENCE_URL"><code class="docutils literal notranslate"><span class="pre">API_LICENCE_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_SERVER_URLS"><code class="docutils literal notranslate"><span class="pre">API_SERVER_URLS</span></code></a></li>
-<li><a class="reference internal" href="#API_DOC_HTML_HEADERS"><code class="docutils literal notranslate"><span class="pre">API_DOC_HTML_HEADERS</span></code></a></li>
-<li><a class="reference internal" href="#API_DOC_HTML_FOOTERS"><code class="docutils literal notranslate"><span class="pre">API_DOC_HTML_FOOTERS</span></code></a></li>
-<li><a class="reference internal" href="#API_PREFIX"><code class="docutils literal notranslate"><span class="pre">API_PREFIX</span></code></a></li>
-<li><a class="reference internal" href="#API_VERBOSITY_LEVEL"><code class="docutils literal notranslate"><span class="pre">API_VERBOSITY_LEVEL</span></code></a></li>
-<li><a class="reference internal" href="#API_ENDPOINT_CASE"><code class="docutils literal notranslate"><span class="pre">API_ENDPOINT_CASE</span></code></a></li>
-<li><a class="reference internal" href="#API_FIELD_CASE"><code class="docutils literal notranslate"><span class="pre">API_FIELD_CASE</span></code></a></li>
-<li><a class="reference internal" href="#API_SCHEMA_CASE"><code class="docutils literal notranslate"><span class="pre">API_SCHEMA_CASE</span></code></a></li>
-<li><a class="reference internal" href="#API_PRINT_EXCEPTIONS"><code class="docutils literal notranslate"><span class="pre">API_PRINT_EXCEPTIONS</span></code></a></li>
-<li><a class="reference internal" href="#API_BASE_SCHEMA"><code class="docutils literal notranslate"><span class="pre">API_BASE_SCHEMA</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_CASCADE_DELETE"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code></a></li>
-<li><a class="reference internal" href="#API_IGNORE_UNDERSCORE_ATTRIBUTES"><code class="docutils literal notranslate"><span class="pre">API_IGNORE_UNDERSCORE_ATTRIBUTES</span></code></a></li>
-<li><a class="reference internal" href="#API_SERIALIZATION_TYPE"><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_TYPE</span></code></a></li>
-<li><a class="reference internal" href="#API_SERIALIZATION_DEPTH"><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_DEPTH</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_HYBRID_PROPERTIES"><code class="docutils literal notranslate"><span class="pre">API_DUMP_HYBRID_PROPERTIES</span></code></a></li>
-<li><a class="reference internal" href="#API_ADD_RELATIONS"><code class="docutils literal notranslate"><span class="pre">API_ADD_RELATIONS</span></code></a></li>
-<li><a class="reference internal" href="#API_PAGINATION_SIZE_DEFAULT"><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_DEFAULT</span></code></a></li>
-<li><a class="reference internal" href="#API_PAGINATION_SIZE_MAX"><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_MAX</span></code></a></li>
-<li><a class="reference internal" href="#API_READ_ONLY"><code class="docutils literal notranslate"><span class="pre">API_READ_ONLY</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_ORDER_BY"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_FILTER"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_JOIN"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_JOIN</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_GROUPBY"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_GROUPBY</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_AGGREGATION"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_AGGREGATION</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_SELECT_FIELDS"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code></a></li>
-<li><a class="reference internal" href="#API_block_methods"><code class="docutils literal notranslate"><span class="pre">API_block_methods</span></code></a></li>
-<li><a class="reference internal" href="#API_AUTHENTICATE"><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE</span></code></a></li>
-<li><a class="reference internal" href="#API_AUTHENTICATE_METHOD"><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE_METHOD</span></code></a></li>
-<li><a class="reference internal" href="#API_USER_MODEL"><code class="docutils literal notranslate"><span class="pre">API_USER_MODEL</span></code></a></li>
-<li><a class="reference internal" href="#API_SETUP_CALLBACK"><code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code></a></li>
-<li><a class="reference internal" href="#API_RETURN_CALLBACK"><code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code></a></li>
-<li><a class="reference internal" href="#API_ERROR_CALLBACK"><code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code></a></li>
-<li><a class="reference internal" href="#API_POST_DUMP_CALLBACK"><code class="docutils literal notranslate"><span class="pre">API_POST_DUMP_CALLBACK</span></code></a></li>
-<li><a class="reference internal" href="#API_ADDITIONAL_QUERY_PARAMS"><code class="docutils literal notranslate"><span class="pre">API_ADDITIONAL_QUERY_PARAMS</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_DATETIME"><code class="docutils literal notranslate"><span class="pre">API_DUMP_DATETIME</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_VERSION"><code class="docutils literal notranslate"><span class="pre">API_DUMP_VERSION</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_STATUS_CODE"><code class="docutils literal notranslate"><span class="pre">API_DUMP_STATUS_CODE</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_RESPONSE_TIME"><code class="docutils literal notranslate"><span class="pre">API_DUMP_RESPONSE_TIME</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_COUNT"><code class="docutils literal notranslate"><span class="pre">API_DUMP_COUNT</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_NULL_NEXT_URL"><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_NEXT_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_NULL_PREVIOUS_URL"><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_PREVIOUS_URL</span></code></a></li>
-<li><a class="reference internal" href="#API_DUMP_NULL_ERROR"><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_ERROR</span></code></a></li>
-<li><a class="reference internal" href="#API_RATE_LIMIT"><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT</span></code></a></li>
-<li><a class="reference internal" href="#API_RATE_LIMIT_CALLBACK"><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_CALLBACK</span></code></a></li>
-<li><a class="reference internal" href="#API_RATE_LIMIT_STORAGE_URI"><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_STORAGE_URI</span></code></a></li>
-<li><a class="reference internal" href="#IGNORE_FIELDS"><code class="docutils literal notranslate"><span class="pre">IGNORE_FIELDS</span></code></a></li>
-<li><a class="reference internal" href="#IGNORE_OUTPUT_FIELDS"><code class="docutils literal notranslate"><span class="pre">IGNORE_OUTPUT_FIELDS</span></code></a></li>
-<li><a class="reference internal" href="#IGNORE_INPUT_FIELDS"><code class="docutils literal notranslate"><span class="pre">IGNORE_INPUT_FIELDS</span></code></a></li>
-<li><a class="reference internal" href="#API_BLUEPRINT_NAME"><code class="docutils literal notranslate"><span class="pre">API_BLUEPRINT_NAME</span></code></a></li>
-<li><a class="reference internal" href="#API_SOFT_DELETE"><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE</span></code></a></li>
-<li><a class="reference internal" href="#API_SOFT_DELETE_ATTRIBUTE"><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code></a></li>
-<li><a class="reference internal" href="#API_SOFT_DELETE_VALUES"><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_DELETE_RELATED"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code></a></li>
-<li><a class="reference internal" href="#API_ALLOW_DELETE_DEPENDENTS"><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></code></a></li>
-<li><a class="reference internal" href="#GET_MANY_SUMMARY"><code class="docutils literal notranslate"><span class="pre">GET_MANY_SUMMARY</span></code></a></li>
-<li><a class="reference internal" href="#GET_SINGLE_SUMMARY"><code class="docutils literal notranslate"><span class="pre">GET_SINGLE_SUMMARY</span></code></a></li>
-<li><a class="reference internal" href="#POST_SUMMARY"><code class="docutils literal notranslate"><span class="pre">POST_SUMMARY</span></code></a></li>
-<li><a class="reference internal" href="#PATCH_SUMMARY"><code class="docutils literal notranslate"><span class="pre">PATCH_SUMMARY</span></code></a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#complete-configuration-reference">Complete Configuration Reference</a></li>
 </ul>
 </li>
 </ul>
