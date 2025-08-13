@@ -68,13 +68,29 @@ example, to shield a public search endpoint from abuse, you might allow only
 Because limits depend on counting requests, those counts must live
 somewhere.
 
-Caching backends
-----------------
+.. _api_caching:
 
-The rate limiter stores counters in a cache backend. When initialising,
+Caching backends
+-----------------
+
+``flarchitect`` can cache GET responses when ``API_CACHE_TYPE`` is set. If
+``flask-caching`` is installed, any of its backends (such as Redis or
+Memcached) may be used. When ``flask-caching`` is **not** available and
+``API_CACHE_TYPE`` is ``"SimpleCache"``, a bundled
+``SimpleCache`` provides an in-memory fallback. This lightweight cache is
+cleared when the process restarts and stores data only for the current
+worker, making it suitable for development or tests rather than
+production.
+
+Compared to ``flask-caching`` it lacks distributed backends, cache
+invalidation features and the broader decorator API. For deployments with
+multiple workers or where persistence matters, install ``flask-caching``
+and configure a production-ready backend instead.
+
+The rate limiter also stores counters in a cache backend. When initialising,
 ``flarchitect`` will automatically use a locally running Memcached,
-Redis or MongoDB instance. To point to a specific backend, supply a
-storage URI:
+Redis or MongoDB instance. To point to a specific backend, supply a storage
+URI:
 
 .. code:: python
 

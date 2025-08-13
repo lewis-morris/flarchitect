@@ -145,14 +145,14 @@
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Flask-Caching backend used for caching GET responses. Examples include ``SimpleCache`` and ``RedisCache``. Requires the ``flask-caching`` package.
+        - Flask-Caching backend used for caching GET responses. Examples include ``SimpleCache`` and ``RedisCache``. Requires the ``flask-caching`` package. See :ref:`api_caching`.
     * - ``API_CACHE_TIMEOUT``
 
           :bdg:`default:` ``300``
           :bdg:`type` ``int``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Expiry time in seconds for cached responses. Only applicable when ``API_CACHE_TYPE`` is set.
+        - Expiry time in seconds for cached responses. Only applicable when ``API_CACHE_TYPE`` is set. See :ref:`api_caching`.
     * - ``API_ENABLE_CORS``
 
           :bdg:`default:` ``False``
