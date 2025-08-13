@@ -12,7 +12,6 @@ from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import convert_case, get_count
-from flarchitect.utils.responses import CustomResponse
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"
@@ -411,10 +410,19 @@ def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
     # todo really not sure why this is here again.
     # Its a relic from the past, a lot of this needs looking at.
 
+    from flarchitect.utils.responses import CustomResponse
+
     status_code, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
 
     if isinstance(result, tuple):
-        status_code, result = (result[1], result[0]) if len(result) == 2 and isinstance(result[1], int) else (HTTP_OK, result)
+        status_code, result = (
+            (
+                result[1],
+                result[0],
+            )
+            if len(result) == 2 and isinstance(result[1], int)
+            else (HTTP_OK, result)
+        )
     if isinstance(result, dict):
         value, count = (
             result.get("query", result),
