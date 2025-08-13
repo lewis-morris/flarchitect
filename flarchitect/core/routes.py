@@ -42,6 +42,7 @@ from flarchitect.specs.utils import (
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import AttributeInitializerMixin
 from flarchitect.utils.response_helpers import create_response
+from flarchitect.utils.session import get_session
 
 if TYPE_CHECKING:
     from flarchitect import Architect
@@ -272,8 +273,10 @@ class RouteCreator(AttributeInitializerMixin):
         self.api_base_model = [self.api_base_model] if not isinstance(self.api_base_model, list) else self.api_base_model
 
         for base in self.api_base_model:
-            if not hasattr(base, "get_session"):
-                raise ValueError("If FULL_AUTO is True, API_BASE_MODEL must have a `get_session` function that returnsthe database session for that model.")
+            try:
+                get_session(base)
+            except Exception as exc:  # pragma: no cover - configuration error
+                raise ValueError("If FULL_AUTO is True, API_BASE_MODEL must be bound to a SQLAlchemy session.") from exc
 
     def _validate_authentication_setup(self):
         """Validate the authentication setup for the API."""
@@ -355,7 +358,7 @@ class RouteCreator(AttributeInitializerMixin):
         for base in self.api_base_model:
             for model_class in base.__subclasses__():
                 if hasattr(model_class, "__table__") and hasattr(model_class, "Meta"):
-                    session = model_class.get_session()
+                    session = get_session(model_class)
                     self.make_all_model_routes(model_class, session)
                 else:
                     logger.debug(
@@ -441,8 +444,11 @@ class RouteCreator(AttributeInitializerMixin):
 
                 query = getattr(user, "query", None)
                 if query is None:
-                    session = getattr(user, "get_session", lambda: None)()
-                    query = session.query(user) if session else None
+                    try:
+                        session = get_session(user)
+                        query = session.query(user)
+                    except Exception:
+                        query = None
                 usr = None
                 if query is not None:
                     for candidate in query.all():
