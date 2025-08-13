@@ -68,6 +68,9 @@ dev = [
   "ruff",
   "isort"
 ]
+cache = [
+  "flask-caching>=2.1.0",
+]
 [tool.ruff]
 exclude = ["./tests", ".bzr", ".direnv", ".eggs", ".git", "./frontend/*", ".git-rewrite", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out", "dist", "node_modules", ".venv"]
 fix = true
