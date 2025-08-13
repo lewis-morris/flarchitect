@@ -168,6 +168,29 @@ Please note the badge for each configuration value, as it defines where the valu
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
 
+.. _custom-session-getter:
+
+Custom session getter
+---------------------
+
+``flarchitect`` tries to resolve the active SQLAlchemy session automatically
+from Flask-SQLAlchemy, model ``query`` attributes, or bound engines. When your
+application manages sessions differently—for example, using a custom factory or
+multiple database binds—you can supply :data:`API_SESSION_GETTER`.
+
+Provide a callable that returns a :class:`~sqlalchemy.orm.Session` instance:
+
+.. code:: python
+
+    from myapp.database import SessionLocal
+
+    class Config:
+        API_SESSION_GETTER = lambda: SessionLocal()
+
+This hook removes the need for model-level ``get_session`` methods and ensures
+``flarchitect`` uses the correct session in unconventional setups.
+
+
 Cascade delete settings
 -----------------------
 
