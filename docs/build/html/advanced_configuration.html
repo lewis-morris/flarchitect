@@ -7,13 +7,13 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://lewis-morris.github.io/flarchitect/advanced_configuration.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="Beyond the basics, flarchitect offers several advanced options for fine- tuning API behaviour. This guide covers rate limiting and cache configuration. Rate limiting: Rate limits can be applied glo..." />
+<meta property="og:description" content="When your API grows, you might need tools for shaping traffic, offloading storage and refining responses. Beyond the basics, flarchitect offers several options for these scenarios. The following se..." />
 <meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
 <meta property="og:image:alt" content="flarchitect" />
-<meta name="description" content="Beyond the basics, flarchitect offers several advanced options for fine- tuning API behaviour. This guide covers rate limiting and cache configuration. Rate limiting: Rate limits can be applied glo..." />
+<meta name="description" content="When your API grows, you might need tools for shaping traffic, offloading storage and refining responses. Beyond the basics, flarchitect offers several options for these scenarios. The following se..." />
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@arched_dev">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Advanced Demo" href="advanced_demo.html" /><link rel="prev" title="FAQ" href="faq.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Advanced Demo" href="advanced_demo.html" /><link rel="prev" title="Roadmap" href="roadmap.html" />
         <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/advanced_configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
@@ -259,6 +259,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
 <ul class="current">
@@ -306,11 +307,18 @@
         <article role="main" id="furo-main-content">
           <section id="advanced-configuration">
 <h1>Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Link to this heading">¶</a></h1>
-<p>Beyond the basics, <strong>flarchitect</strong> offers several advanced options for fine-
-tuning API behaviour. This guide covers rate limiting and cache configuration.</p>
+<p>When your API grows, you might need tools for shaping traffic, offloading
+storage and refining responses. Beyond the basics, <strong>flarchitect</strong> offers
+several options for these scenarios. The following sections walk through
+common patterns such as rate limiting, cache configuration and response
+metadata.</p>
+<p>As traffic increases, managing how often clients can hit your API becomes
+critical.</p>
 <section id="rate-limiting">
 <h2>Rate limiting<a class="headerlink" href="#rate-limiting" title="Link to this heading">¶</a></h2>
-<p>Rate limits can be applied globally, per HTTP method or per model.</p>
+<p>Rate limits can be applied globally, per HTTP method or per model. For
+example, to shield a public search endpoint from abuse, you might allow only
+<code class="docutils literal notranslate"><span class="pre">100</span></code> GET requests per minute.</p>
 <p><strong>Global limit</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;200 per day&quot;</span>
@@ -331,6 +339,8 @@ tuning API behaviour. This guide covers rate limiting and cache configuration.</
         <span class="n">get_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>  <span class="c1"># becomes API_GET_RATE_LIMIT</span>
 </pre></div>
 </div>
+<p>Because limits depend on counting requests, those counts must live
+somewhere.</p>
 </section>
 <section id="caching-backends">
 <h2>Caching backends<a class="headerlink" href="#caching-backends" title="Link to this heading">¶</a></h2>
@@ -343,12 +353,18 @@ storage URI:</p>
 </pre></div>
 </div>
 <p>If no backend is available, the limiter falls back to in-memory storage
-with rate-limit headers enabled by default.</p>
+with rate-limit headers enabled by default. In production, you might point
+to a shared Redis cluster so that multiple application servers enforce the
+same limits.</p>
+<p>After securing throughput, you can also shape what your clients see in each
+payload.</p>
+<p>For a runnable example demonstrating cached responses see the <a class="reference external" href="https://github.com/lewis-morris/flarchitect/tree/master/demo/caching">caching demo</a>.</p>
 </section>
 <section id="response-metadata">
 <h2>Response metadata<a class="headerlink" href="#response-metadata" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> can attach additional metadata to every response. These
-keys let you toggle each field individually:</p>
+keys let you toggle each field individually. Including version numbers, for
+example, helps client developers cache against the correct release:</p>
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
 <thead>
@@ -496,9 +512,62 @@ the <code class="docutils literal notranslate"><span class="pre">fields</span></
 <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code> and
 <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code>.</p>
 </section>
+<section id="joining-related-resources">
+<h3>Joining related resources<a class="headerlink" href="#joining-related-resources" title="Link to this heading">¶</a></h3>
+<p>Enable <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_JOIN</span></code> to allow clients to join related models using
+the <code class="docutils literal notranslate"><span class="pre">join</span></code> query parameter:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="err">?</span><span class="n">join</span><span class="o">=</span><span class="n">author</span><span class="o">&amp;</span><span class="n">fields</span><span class="o">=</span><span class="n">books</span><span class="o">.</span><span class="n">title</span><span class="p">,</span><span class="n">author</span><span class="o">.</span><span class="n">first_name</span>
+</pre></div>
+</div>
+</section>
+<section id="grouping-and-aggregation">
+<h3>Grouping and aggregation<a class="headerlink" href="#grouping-and-aggregation" title="Link to this heading">¶</a></h3>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_GROUPBY</span></code> enables the <code class="docutils literal notranslate"><span class="pre">groupby</span></code> parameter for SQL
+<code class="docutils literal notranslate"><span class="pre">GROUP</span> <span class="pre">BY</span></code> clauses. Use <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_AGGREGATION</span></code> alongside it to
+compute aggregates. Aggregates are expressed by appending a label and
+function to a field name:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="err">?</span><span class="n">groupby</span><span class="o">=</span><span class="n">author_id</span><span class="o">&amp;</span><span class="nb">id</span><span class="o">|</span><span class="n">book_count__count</span><span class="o">=</span><span class="mi">1</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="cascade-deletes">
-<h2>Cascade deletes<a class="headerlink" href="#cascade-deletes" title="Link to this heading">¶</a></h2>
+<span id="id2"></span><h2>Cascade deletes<a class="headerlink" href="#cascade-deletes" title="Link to this heading">¶</a></h2>
+<p>When removing a record, related rows may block the operation. These
+settings let <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> clean up relationships automatically when
+explicitly requested.</p>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code> permits clients to trigger cascading
+removal by adding <code class="docutils literal notranslate"><span class="pre">?cascade_delete=1</span></code> to the request. Without this
+flag or query parameter, deletes that would orphan related records raise
+<code class="docutils literal notranslate"><span class="pre">409</span> <span class="pre">Conflict</span></code> instead of proceeding:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">DELETE</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="o">/</span><span class="mi">1</span><span class="err">?</span><span class="n">cascade_delete</span><span class="o">=</span><span class="mi">1</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+    <span class="n">API_ALLOW_CASCADE_DELETE</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code> governs whether child objects referencing
+the target can be removed automatically. Disable it to require manual
+cleanup of related rows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">delete_related</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># API_ALLOW_DELETE_RELATED</span>
+</pre></div>
+</div>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></code> covers dependent objects such as
+association table entries. Turning it off forces clients to delete those
+records explicitly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">delete_dependents</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># API_ALLOW_DELETE_DEPENDENTS</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="configuration.html"><span class="doc">configuration</span></a> for default values and additional
+context on these options.</p>
+</section>
+<section id="case-conventions">
+<h2>Case conventions<a class="headerlink" href="#case-conventions" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> can reshape field and schema names to match different
 case conventions. These options keep the API’s payloads, schemas and
 endpoints consistent with the style used by your clients.</p>
@@ -628,14 +697,14 @@ return callbacks in configuration or on a model’s <code class="docutils litera
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="faq.html">
+          <a class="prev-page" href="roadmap.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">FAQ</div>
+                <div class="title">Roadmap</div>
                 
               </div>
             </a>
@@ -684,9 +753,12 @@ return callbacks in configuration or on a model’s <code class="docutils litera
 <li><a class="reference internal" href="#filtering">Filtering</a></li>
 <li><a class="reference internal" href="#ordering">Ordering</a></li>
 <li><a class="reference internal" href="#selecting-fields">Selecting fields</a></li>
+<li><a class="reference internal" href="#joining-related-resources">Joining related resources</a></li>
+<li><a class="reference internal" href="#grouping-and-aggregation">Grouping and aggregation</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#cascade-deletes">Cascade deletes</a><ul>
+<li><a class="reference internal" href="#cascade-deletes">Cascade deletes</a></li>
+<li><a class="reference internal" href="#case-conventions">Case conventions</a><ul>
 <li><a class="reference internal" href="#api-field-case"><code class="docutils literal notranslate"><span class="pre">API_FIELD_CASE</span></code></a></li>
 <li><a class="reference internal" href="#api-schema-case"><code class="docutils literal notranslate"><span class="pre">API_SCHEMA_CASE</span></code></a></li>
 <li><a class="reference internal" href="#interplay-with-api-endpoint-case">Interplay with <code class="docutils literal notranslate"><span class="pre">API_ENDPOINT_CASE</span></code></a></li>
@@ -709,7 +781,7 @@ return callbacks in configuration or on a model’s <code class="docutils litera
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=92734c54"></script>
+</div><script src="_static/documentation_options.js?v=50d0ae8a"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

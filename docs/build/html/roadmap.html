@@ -3,22 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:title" content="Validation" />
+<meta property="og:title" content="Roadmap" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/validation.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/roadmap.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="flarchitect ships with a suite of field validators that hook directly into Marshmallow. Validators can be attached to a model column via the SQLAlchemy info mapping or inferred automatically from c..." />
+<meta property="og:description" content="Support for more database backends (e.g. PostgreSQL, MySQL), Improved role-based access control, Real-time updates via WebSockets, CLI tooling for project scaffolding." />
 <meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
 <meta property="og:image:alt" content="flarchitect" />
-<meta name="description" content="flarchitect ships with a suite of field validators that hook directly into Marshmallow. Validators can be attached to a model column via the SQLAlchemy info mapping or inferred automatically from c..." />
+<meta name="description" content="Support for more database backends (e.g. PostgreSQL, MySQL), Improved role-based access control, Real-time updates via WebSockets, CLI tooling for project scaffolding." />
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@arched_dev">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Authentication" href="authentication.html" /><link rel="prev" title="SQLAlchemy Models" href="models.html" />
-        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/validation.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Advanced Configuration" href="advanced_configuration.html" /><link rel="prev" title="FAQ" href="faq.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/roadmap.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
-        <title>Validation - flarchitect</title>
+        <title>Roadmap - flarchitect</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -215,7 +215,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -246,7 +246,7 @@
 <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -259,7 +259,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Roadmap</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
 <ul>
@@ -285,7 +285,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/validation.rst.txt" title="View this page">
+  <a class="muted-link" href="_sources/roadmap.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -299,90 +299,20 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="validation">
-<h1>Validation<a class="headerlink" href="#validation" title="Link to this heading">¶</a></h1>
-<p>flarchitect ships with a suite of field validators that hook directly into
-<a class="reference external" href="https://marshmallow.readthedocs.io/en/stable/">Marshmallow</a>.  Validators can be attached to a model column via the SQLAlchemy
-<code class="docutils literal notranslate"><span class="pre">info</span></code> mapping or inferred automatically from column names and formats.</p>
-<p>For a runnable example demonstrating email and URL validation see the <a class="reference external" href="https://github.com/lewis-morris/flarchitect/tree/master/demo/validators">validators demo</a>.</p>
-<section id="basic-usage">
-<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
-        <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="s2">&quot;email&quot;</span><span class="p">},</span>
-    <span class="p">)</span>
-    <span class="n">website</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
-        <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;uri&quot;</span><span class="p">},</span>  <span class="c1"># auto adds URL validation</span>
-    <span class="p">)</span>
-</pre></div>
-</div>
-<p>When invalid data is sent to the API a <code class="docutils literal notranslate"><span class="pre">400</span></code> response is returned:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Email address is not valid.&quot;</span><span class="p">]},</span>
-<span class="w">  </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-</section>
-<section id="field-validation">
-<h2>Field validation<a class="headerlink" href="#field-validation" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> inspects the <code class="docutils literal notranslate"><span class="pre">info</span></code> mapping and the optional <code class="docutils literal notranslate"><span class="pre">format</span></code>
-attribute on SQLAlchemy columns to determine which validators to apply.  When
-<code class="docutils literal notranslate"><span class="pre">API_AUTO_VALIDATE</span></code> is enabled, common formats such as <code class="docutils literal notranslate"><span class="pre">email</span></code> or <code class="docutils literal notranslate"><span class="pre">date</span></code>
-are added automatically based on column names.  Any validator supported by
-<code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> can also be assigned manually:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Payment</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">account</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="s2">&quot;iban&quot;</span><span class="p">})</span>
-    <span class="n">cron</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;cron&quot;</span><span class="p">})</span>
-</pre></div>
-</div>
-<p>This associates the <code class="docutils literal notranslate"><span class="pre">iban</span></code> and <code class="docutils literal notranslate"><span class="pre">cron</span></code> validators with the <code class="docutils literal notranslate"><span class="pre">account</span></code> and
-<code class="docutils literal notranslate"><span class="pre">cron</span></code> columns respectively.  Invalid values cause Marshmallow to raise a
-<code class="docutils literal notranslate"><span class="pre">ValidationError</span></code> and the API will respond with <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p>
-</section>
-<section id="available-validators">
-<h2>Available validators<a class="headerlink" href="#available-validators" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> supports the following names:</p>
+          <section id="roadmap">
+<h1>Roadmap<a class="headerlink" href="#roadmap" title="Link to this heading">¶</a></h1>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">email</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">url</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ipv4</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ipv6</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mac</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">slug</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">uuid</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">card</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">country_code</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">domain</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">md5</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha1</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha224</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha256</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha384</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha512</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hostname</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">iban</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cron</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">base64</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">currency</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">phone</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">postal_code</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">date</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datetime</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">decimal</span></code></p></li>
+<li><p>Support for more database backends (e.g. PostgreSQL, MySQL)</p></li>
+<li><p>Improved role-based access control</p></li>
+<li><p>Real-time updates via WebSockets</p></li>
+<li><p>CLI tooling for project scaffolding</p></li>
 </ul>
-</section>
 </section>
 
         </article>
@@ -390,23 +320,23 @@ are added automatically based on column names.  Any validator supported by
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="authentication.html">
+          <a class="next-page" href="advanced_configuration.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Authentication</div>
+                <div class="title">Advanced Configuration</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="models.html">
+          <a class="prev-page" href="faq.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">SQLAlchemy Models</div>
+                <div class="title">FAQ</div>
                 
               </div>
             </a>
@@ -428,29 +358,8 @@ are added automatically based on column names.  Any validator supported by
         
       </footer>
     </div>
-    <aside class="toc-drawer">
+    <aside class="toc-drawer no-toc">
       
-      
-      <div class="toc-sticky toc-scroll">
-        <div class="toc-title-container">
-          <span class="toc-title">
-            On this page
-          </span>
-        </div>
-        <div class="toc-tree-container">
-          <div class="toc-tree">
-            <ul>
-<li><a class="reference internal" href="#">Validation</a><ul>
-<li><a class="reference internal" href="#basic-usage">Basic usage</a></li>
-<li><a class="reference internal" href="#field-validation">Field validation</a></li>
-<li><a class="reference internal" href="#available-validators">Available validators</a></li>
-</ul>
-</li>
-</ul>
-
-          </div>
-        </div>
-      </div>
       
       
     </aside>

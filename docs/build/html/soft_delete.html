@@ -3,22 +3,22 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta property="og:title" content="Validation" />
+<meta property="og:title" content="Soft delete" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/validation.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/soft_delete.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="flarchitect ships with a suite of field validators that hook directly into Marshmallow. Validators can be attached to a model column via the SQLAlchemy info mapping or inferred automatically from c..." />
+<meta property="og:description" content="flarchitect can mark records as deleted without removing them from the database. This allows you to hide data from normal queries while retaining it for auditing or future restoration. Configuratio..." />
 <meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
 <meta property="og:image:alt" content="flarchitect" />
-<meta name="description" content="flarchitect ships with a suite of field validators that hook directly into Marshmallow. Validators can be attached to a model column via the SQLAlchemy info mapping or inferred automatically from c..." />
+<meta name="description" content="flarchitect can mark records as deleted without removing them from the database. This allows you to hide data from normal queries while retaining it for auditing or future restoration. Configuratio..." />
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@arched_dev">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Authentication" href="authentication.html" /><link rel="prev" title="SQLAlchemy Models" href="models.html" />
-        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/validation.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="FAQ" href="faq.html" /><link rel="prev" title="OpenAPI Specification" href="openapi.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/soft_delete.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
-        <title>Validation - flarchitect</title>
+        <title>Soft delete - flarchitect</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -246,7 +246,7 @@
 <p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Validation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -257,7 +257,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
@@ -285,7 +285,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/validation.rst.txt" title="View this page">
+  <a class="muted-link" href="_sources/soft_delete.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -305,83 +305,65 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="validation">
-<h1>Validation<a class="headerlink" href="#validation" title="Link to this heading">¶</a></h1>
-<p>flarchitect ships with a suite of field validators that hook directly into
-<a class="reference external" href="https://marshmallow.readthedocs.io/en/stable/">Marshmallow</a>.  Validators can be attached to a model column via the SQLAlchemy
-<code class="docutils literal notranslate"><span class="pre">info</span></code> mapping or inferred automatically from column names and formats.</p>
-<p>For a runnable example demonstrating email and URL validation see the <a class="reference external" href="https://github.com/lewis-morris/flarchitect/tree/master/demo/validators">validators demo</a>.</p>
-<section id="basic-usage">
-<h2>Basic usage<a class="headerlink" href="#basic-usage" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">email</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
-        <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="s2">&quot;email&quot;</span><span class="p">},</span>
-    <span class="p">)</span>
-    <span class="n">website</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
-        <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;uri&quot;</span><span class="p">},</span>  <span class="c1"># auto adds URL validation</span>
-    <span class="p">)</span>
+          <section id="soft-delete">
+<h1>Soft delete<a class="headerlink" href="#soft-delete" title="Link to this heading">¶</a></h1>
+<p>flarchitect can mark records as deleted without removing them from the database.
+This allows you to hide data from normal queries while retaining it for
+auditing or future restoration.</p>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<p>Enable soft deletes and define how records are flagged:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+    <span class="n">API_SOFT_DELETE</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">API_SOFT_DELETE_ATTRIBUTE</span> <span class="o">=</span> <span class="s2">&quot;deleted&quot;</span>
+    <span class="n">API_SOFT_DELETE_VALUES</span> <span class="o">=</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>When invalid data is sent to the API a <code class="docutils literal notranslate"><span class="pre">400</span></code> response is returned:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;email&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Email address is not valid.&quot;</span><span class="p">]},</span>
-<span class="w">  </span><span class="nt">&quot;status_code&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span>
-<span class="p">}</span>
+<p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code> names the column that stores the deleted flag.
+<code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code> is a tuple where the first value represents an
+active record and the second marks it as deleted.</p>
+</section>
+<section id="example-model">
+<h2>Example model<a class="headerlink" href="#example-model" title="Link to this heading">¶</a></h2>
+<p>Add a boolean column to your base model so every table can inherit the flag:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLAlchemy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="n">created</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">)</span>
+    <span class="n">updated</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">)</span>
+    <span class="n">deleted</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">SQLAlchemy</span><span class="p">(</span><span class="n">model_class</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;books&quot;</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">()</span>
 </pre></div>
 </div>
 </section>
-<section id="field-validation">
-<h2>Field validation<a class="headerlink" href="#field-validation" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> inspects the <code class="docutils literal notranslate"><span class="pre">info</span></code> mapping and the optional <code class="docutils literal notranslate"><span class="pre">format</span></code>
-attribute on SQLAlchemy columns to determine which validators to apply.  When
-<code class="docutils literal notranslate"><span class="pre">API_AUTO_VALIDATE</span></code> is enabled, common formats such as <code class="docutils literal notranslate"><span class="pre">email</span></code> or <code class="docutils literal notranslate"><span class="pre">date</span></code>
-are added automatically based on column names.  Any validator supported by
-<code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> can also be assigned manually:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Payment</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">account</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="s2">&quot;iban&quot;</span><span class="p">})</span>
-    <span class="n">cron</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;cron&quot;</span><span class="p">})</span>
+<section id="example-queries">
+<h2>Example queries<a class="headerlink" href="#example-queries" title="Link to this heading">¶</a></h2>
+<p>Soft deleted rows are hidden from normal requests:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">GET /api/books        # returns rows where deleted=False</span>
 </pre></div>
 </div>
-<p>This associates the <code class="docutils literal notranslate"><span class="pre">iban</span></code> and <code class="docutils literal notranslate"><span class="pre">cron</span></code> validators with the <code class="docutils literal notranslate"><span class="pre">account</span></code> and
-<code class="docutils literal notranslate"><span class="pre">cron</span></code> columns respectively.  Invalid values cause Marshmallow to raise a
-<code class="docutils literal notranslate"><span class="pre">ValidationError</span></code> and the API will respond with <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p>
-</section>
-<section id="available-validators">
-<h2>Available validators<a class="headerlink" href="#available-validators" title="Link to this heading">¶</a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> supports the following names:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">email</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">url</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ipv4</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ipv6</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">mac</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">slug</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">uuid</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">card</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">country_code</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">domain</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">md5</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha1</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha224</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha256</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha384</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sha512</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hostname</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">iban</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">cron</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">base64</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">currency</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">phone</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">postal_code</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">date</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">datetime</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">boolean</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">decimal</span></code></p></li>
-</ul>
+<p>Include the <code class="docutils literal notranslate"><span class="pre">include_deleted</span></code> query parameter to return all rows:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">GET /api/books?include_deleted=true</span>
+</pre></div>
+</div>
+<p>Issuing a DELETE request marks the record as deleted. To remove it
+permanently, supply <code class="docutils literal notranslate"><span class="pre">cascade_delete=1</span></code>:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">DELETE /api/books/1             # sets deleted=True</span>
+<span class="err">DELETE /api/books/1?cascade_delete=1  # removes row from database</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -390,23 +372,23 @@ are added automatically based on column names.  Any validator supported by
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="authentication.html">
+          <a class="next-page" href="faq.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Authentication</div>
+                <div class="title">FAQ</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="models.html">
+          <a class="prev-page" href="openapi.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">SQLAlchemy Models</div>
+                <div class="title">OpenAPI Specification</div>
                 
               </div>
             </a>
@@ -440,10 +422,10 @@ are added automatically based on column names.  Any validator supported by
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Validation</a><ul>
-<li><a class="reference internal" href="#basic-usage">Basic usage</a></li>
-<li><a class="reference internal" href="#field-validation">Field validation</a></li>
-<li><a class="reference internal" href="#available-validators">Available validators</a></li>
+<li><a class="reference internal" href="#">Soft delete</a><ul>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#example-model">Example model</a></li>
+<li><a class="reference internal" href="#example-queries">Example queries</a></li>
 </ul>
 </li>
 </ul>
