@@ -145,7 +145,12 @@
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Flask-Caching backend used for caching GET responses. Examples include ``SimpleCache`` and ``RedisCache``. Requires the ``flask-caching`` package. See :ref:`api_caching`.
+        - Flask-Caching backend used for caching ``GET`` responses. Specify
+          names like ``RedisCache`` when the ``flask-caching`` package is
+          installed. Without that dependency, only ``SimpleCache`` is supported
+          through a small built-in fallback; other values raise a runtime
+          error.
+
     * - ``API_CACHE_TIMEOUT``
 
           :bdg:`default:` ``300``
@@ -159,7 +164,10 @@
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Enables Cross-Origin Resource Sharing using ``flask-cors`` so browser clients from other origins can access the API.
+        - Enables Cross-Origin Resource Sharing. If ``flask-cors`` is present
+          the settings are delegated to it; otherwise a minimal
+          ``Access-Control-Allow-Origin`` header is applied based on
+          ``CORS_RESOURCES``.
     * - ``API_XML_AS_TEXT``
 
           :bdg:`default:` ``False``
