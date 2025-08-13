@@ -20,6 +20,7 @@ from flarchitect.authentication.jwt import (
     get_pk_and_lookups,
     refresh_access_token,
 )
+from flarchitect.authentication.refresh_token import RefreshToken
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.utils import (
     get_primary_key_info,
@@ -506,11 +507,20 @@ class RouteCreator(AttributeInitializerMixin):
 
         @self.architect.app.route("/auth/logout", methods=["POST"])
         @self.architect.schema_constructor(
-            output_schema=None,
+            output_schema=Schema,
             many=False,
             group_tag="Authentication",
         )
         def logout(*args, **kwargs):
+            refresh_token = (request.get_json() or {}).get("refresh_token")
+            if refresh_token:
+                session = RefreshToken.get_session()
+                token_obj = (
+                    session.query(RefreshToken).filter_by(token=refresh_token).one_or_none()
+                )
+                if token_obj:
+                    token_obj.revoked = True
+                    session.commit()
             set_current_user(None)
             return {}
 
