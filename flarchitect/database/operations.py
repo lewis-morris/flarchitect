@@ -155,6 +155,43 @@ class CrudService:
         self.model = model
         self.session = session
 
+    def _process_nested_relationships(
+        self, model: DeclarativeBase, data: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Recursively build related model instances from nested dictionaries.
+
+        Args:
+            model: SQLAlchemy model to inspect.
+            data: Payload containing potential nested relationship data.
+
+        Returns:
+            dict[str, Any]: Payload with nested dictionaries replaced by model instances.
+        """
+        for relationship in inspect(model).relationships:
+            key = relationship.key
+            if key not in data or data[key] is None:
+                continue
+
+            related_model = relationship.mapper.class_
+            value = data[key]
+
+            if relationship.uselist and isinstance(value, list):
+                data[key] = [
+                    related_model(
+                        **self._process_nested_relationships(related_model, item)
+                    )
+                    for item in value
+                ]
+            elif not relationship.uselist and isinstance(value, dict):
+                data[key] = related_model(
+                    **self._process_nested_relationships(related_model, value)
+                )
+
+            for col in relationship.local_columns:
+                data.pop(col.name, None)
+
+        return data
+
     def fetch_related_model_by_name(self, field_name: str) -> Callable:
         """Gets a related model by field name.
 
@@ -426,7 +463,15 @@ class CrudService:
             DataError: If there is a data type error.
         """
         try:
-            obj = self.model(**data_dict)
+            allow_nested = get_config_or_model_meta(
+                "ALLOW_NESTED_WRITES", model=self.model, default=False
+            )
+            payload = (
+                self._process_nested_relationships(self.model, data_dict.copy())
+                if allow_nested
+                else data_dict
+            )
+            obj = self.model(**payload)
 
             callback = get_config_or_model_meta(
                 "API_ADD_CALLBACK", model=self.model, default=None
@@ -465,7 +510,16 @@ class CrudService:
             )
             if obj is None:
                 raise CustomHTTPException(404, f"{self.model.__name__} not found.")
-            for key, value in data_dict.items():
+
+            allow_nested = get_config_or_model_meta(
+                "ALLOW_NESTED_WRITES", model=self.model, default=False
+            )
+            update_payload = (
+                self._process_nested_relationships(self.model, data_dict.copy())
+                if allow_nested
+                else data_dict
+            )
+            for key, value in update_payload.items():
                 setattr(obj, key, value)
 
             callback = get_config_or_model_meta(

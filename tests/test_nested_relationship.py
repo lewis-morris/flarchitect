@@ -8,7 +8,13 @@ from flarchitect.schemas.utils import get_input_output_from_model_or_make
 
 @pytest.fixture
 def app():
-    app = create_app({"API_TITLE": "Automated test", "API_VERSION": "0.2.0"})
+    app = create_app(
+        {
+            "API_TITLE": "Automated test",
+            "API_VERSION": "0.2.0",
+            "API_ALLOW_NESTED_WRITES": True,
+        }
+    )
     with app.app_context():
         yield app
 

@@ -524,7 +524,10 @@ class AutoSchema(Base):
         relationship_property: RelationshipProperty,
     ):
         """Automatically add a field for a given relationship in the SQLAlchemy model."""
-        max_depth = 1  # Set the maximum depth
+        allow_nested_writes = get_config_or_model_meta(
+            "ALLOW_NESTED_WRITES", model=self.model, default=False
+        )
+        max_depth = 2 if allow_nested_writes else 1
         current_depth = self.context.get("current_depth", 0)
 
         if current_depth >= max_depth:
@@ -681,12 +684,13 @@ class AutoSchema(Base):
 
         self._update_field_metadata(field_name)
 
-        if not relationship_prop.viewonly:
-            load_field = fields.Nested(
-                input_schema,
-                many=relationship_prop.uselist,
-                load_only=True,
-            )
+        if allow_nested_writes and not relationship_prop.viewonly:
+            if relationship_prop.uselist:
+                load_field = fields.List(
+                    fields.Nested(input_schema), load_only=True
+                )
+            else:
+                load_field = fields.Nested(input_schema, load_only=True)
             self.add_to_fields(field_name, load_field, dump=False)
 
     def _update_field_metadata(self, attribute: str):

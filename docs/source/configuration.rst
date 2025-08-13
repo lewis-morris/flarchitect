@@ -240,3 +240,9 @@ Documentation Configuration Values
           :bdg:`type` ``int``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
         - Console output verbosity (0–4).
+
+    * - .. data:: ALLOW_NESTED_WRITES
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+        - Enable POST/PATCH requests to include nested related objects.

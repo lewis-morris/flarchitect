@@ -10,7 +10,7 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 - **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, or plug in your own authentication.
 - **Rate limiting & structured responses** – configurable throttling and responses with a consistent schema.
 - **Highly configurable** – tweak behaviour globally via Flask config or per model with `Meta` attributes.
-- **Nested writes** – send related objects in POST/PUT payloads and let `AutoSchema` deserialize them automatically.
+- **Nested writes** – opt-in support for sending related objects in POST/PUT payloads. Enable with `API_ALLOW_NESTED_WRITES = True` and let `AutoSchema` deserialize them automatically.
 
 ## Installation
 
@@ -29,6 +29,7 @@ app = Flask(__name__)
 app.config["API_TITLE"] = "My API"
 app.config["API_VERSION"] = "1.0"
 app.config["API_BASE_MODEL"] = BaseModel
+app.config["API_ALLOW_NESTED_WRITES"] = True
 
 architect = Architect(app)
 

@@ -24,8 +24,11 @@ That's all that's required to make the model available through the generated API
 Nested model creation
 ---------------------
 
-`AutoSchema` can also deserialize nested relationship data during POST or PUT
-requests. Include related objects under the relationship name in your payload::
+Nested writes are disabled by default. Enable them globally with
+``API_ALLOW_NESTED_WRITES = True`` or per model via ``Meta.allow_nested_writes``.
+Once enabled, ``AutoSchema`` can deserialize nested relationship data during
+POST or PUT requests. Include related objects under the relationship name in
+your payload::
 
     {
         "title": "My Book",
