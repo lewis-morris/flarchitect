@@ -13,10 +13,10 @@ from flask_limiter.util import get_remote_address
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
-
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
 
+from flarchitect.authentication import roles_required
 from flarchitect.authentication.jwt import get_user_from_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
@@ -447,9 +447,7 @@ class Architect(AttributeInitializerMixin):
         auth_flag = kwargs.get("auth")
         roles_tuple: tuple[str, ...] = ()
         if roles and roles is not True:
-            roles_tuple = (
-                tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
-            )
+            roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
 
         def decorator(f: Callable) -> Callable:
             @wraps(f)
@@ -475,6 +473,7 @@ class Architect(AttributeInitializerMixin):
                 return f_decorated(*_args, **_kwargs)
 
             if roles and auth_flag is not False:
+
                 def _marker() -> None:
                     """Marker function for roles documentation."""
 
