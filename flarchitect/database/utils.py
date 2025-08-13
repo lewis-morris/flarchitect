@@ -129,18 +129,18 @@ def get_group_by_fields(
     all_columns: dict[str, dict[str, hybrid_property | InstrumentedAttribute]],
     base_model: DeclarativeBase,
 ) -> list[Callable]:
-    """
-    Get the group by fields from the request arguments.
+    """Retrieve ``GROUP BY`` columns from request arguments.
 
     Args:
-        args_dict (Dict[str, str]): Dictionary of request arguments.
-        all_columns (Dict[str, Dict[str, Column]]): Nested dictionary of table names and their columns.
-        base_model (DeclarativeBase): The base SQLAlchemy model.
+        args_dict: Dictionary of request arguments.
+        all_columns: Nested dictionary of table names and their columns.
+        base_model: The base SQLAlchemy model.
 
     Returns:
-        List[Callable]: List of conditions to apply in the query.
+        List of columns to apply in the ``GROUP BY`` clause.
     """
-    group_by_fields = []
+
+    group_by_fields: list[Callable] = []
     if "groupby" in args_dict:
         fields = args_dict.get("groupby").split(",")
         for field in fields:
@@ -151,20 +151,21 @@ def get_group_by_fields(
     return group_by_fields
 
 
-def get_join_models(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
-    """
-    Builds a list of SQLAlchemy models to join based on request arguments.
+def get_models_for_join(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
+    """Build a mapping of models to join based on the ``join`` query parameter.
 
     Args:
-        args_dict (Dict[str, str]): Dictionary of request arguments.
-        get_model_func (Callable): Function to get a model by name.
+        args_dict: Dictionary of request arguments.
+        get_model_func: Function used to resolve a model by name.
 
     Returns:
-        Dict[str, DeclarativeBase]: A dictionary of SQLAlchemy models to join.
+        Dictionary mapping requested join names to SQLAlchemy model classes.
     """
-    models = {}
-    if "join" in args_dict:
-        for join in args_dict["join"].split(","):
+
+    models: dict[str, DeclarativeBase] = {}
+    join_value = args_dict.get("join") or args_dict.get("join_models")
+    if join_value:
+        for join in join_value.split(","):
             model = get_model_func(join)
             if not model:
                 raise CustomHTTPException(400, f"Invalid join model: {join}")
@@ -300,26 +301,6 @@ def generate_conditions_from_args(
         conditions.append(or_(*or_conditions))
 
     return conditions
-
-
-def get_models_for_join(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
-    """
-    Builds a list of SQLAlchemy models to join based on request arguments.
-
-    Args:
-        args_dict (Dict[str, str]): Dictionary of request arguments.
-        get_model_func (Callable): Function to get a model by name.
-
-    Returns:
-        Dict[str, DeclarativeBase]: A dictionary of SQLAlchemy models to join.
-    """
-    models = {}
-    if "join_models" in args_dict:
-        for join in args_dict["join_models"].split(","):
-            model = get_model_func(join)
-            models[join] = model
-
-    return models
 
 
 def parse_key_and_label(key):

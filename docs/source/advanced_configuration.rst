@@ -196,6 +196,24 @@ See :doc:`configuration <configuration>` for detailed descriptions of
 :data:`API_ALLOW_FILTER`, :data:`API_ALLOW_ORDER_BY` and
 :data:`API_ALLOW_SELECT_FIELDS`.
 
+Joining related resources
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Enable :data:`API_ALLOW_JOIN` to allow clients to join related models using
+the ``join`` query parameter::
+
+    GET /api/books?join=author&fields=books.title,author.first_name
+
+Grouping and aggregation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+:data:`API_ALLOW_GROUPBY` enables the ``groupby`` parameter for SQL
+``GROUP BY`` clauses. Use :data:`API_ALLOW_AGGREGATION` alongside it to
+compute aggregates. Aggregates are expressed by appending a label and
+function to a field name::
+
+    GET /api/books?groupby=author_id&id|book_count__count=1
+
 Cascade deletes
 ---------------
 

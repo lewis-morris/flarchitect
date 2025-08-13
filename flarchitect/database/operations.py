@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from flask import request
-from sqlalchemy import Column, and_, inspect
+from sqlalchemy import and_, inspect
 from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
@@ -13,13 +13,18 @@ from flarchitect.database.inspections import (
     get_model_relationships,
 )
 from flarchitect.database.utils import (
+    AGGREGATE_FUNCS,
+    create_aggregate_conditions,
     generate_conditions_from_args,
     get_all_columns_and_hybrids,
+    get_group_by_fields,
     get_models_for_join,
     get_primary_key_filters,
     get_related_b_query,
     get_select_fields,
     get_table_and_column,
+    parse_column_table_and_operator,
+    validate_table_and_column,
 )
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -172,23 +177,56 @@ class CrudService:
         return related_model.mapper.class_
 
     def filter_query_from_args(self, args_dict: dict[str, str | int], query=None) -> Query:
-        """Filters a query based on request arguments.
+        """Build a query applying joins, filters, grouping and aggregation.
 
         Args:
-            args_dict (Dict[str, Union[str, int]]): Dictionary containing filtering, sorting, pagination, and aggregation conditions.
+            args_dict: Dictionary containing query parameters.
+            query: Optional existing SQLAlchemy query to build upon.
 
         Returns:
-            Query: The filtered query.
+            Query with all requested transformations applied.
         """
-        join_models = get_models_for_join(args_dict, self.fetch_related_model_by_name)
+
+        allow_join = get_config_or_model_meta("API_ALLOW_JOIN", model=self.model, default=False)
+        join_models = get_models_for_join(args_dict, self.fetch_related_model_by_name) if allow_join else {}
+
         all_columns, all_models = get_all_columns_and_hybrids(self.model, join_models)
 
         conditions = [condition for condition in generate_conditions_from_args(args_dict, self.model, all_columns, all_models, join_models) if condition is not None]
 
-        query = self.initialize_query(args_dict, all_columns, query)
+        allow_select = get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model=self.model, default=True)
+        select_fields = get_select_fields(args_dict, self.model, all_columns) if allow_select else []
+
+        allow_group = get_config_or_model_meta("API_ALLOW_GROUPBY", model=self.model, default=False)
+        group_by_fields = get_group_by_fields(args_dict, all_columns, self.model) if allow_group else []
+
+        allow_agg = get_config_or_model_meta("API_ALLOW_AGGREGATION", model=self.model, default=False)
+        aggregate_conditions = create_aggregate_conditions(args_dict) if allow_agg else {}
+        agg_fields = []
+        for key, label in aggregate_conditions.items():
+            column_name, table_name, func_name = parse_column_table_and_operator(key, self.model)
+            model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
+            agg_func = AGGREGATE_FUNCS.get(func_name)
+            if agg_func:
+                agg_label = label or f"{column_name}_{func_name}"
+                agg_fields.append(agg_func(model_column).label(agg_label))
+
+        query = query or self.session.query(self.model)
+
+        if allow_join and join_models:
+            for mdl in join_models.values():
+                query = query.join(mdl)
+
+        if agg_fields or group_by_fields:
+            query = query.with_entities(*(group_by_fields + agg_fields))
+        elif select_fields:
+            query = query.with_entities(*select_fields)
 
         if conditions and get_config_or_model_meta("API_ALLOW_FILTER", model=self.model, default=True):
             query = query.filter(and_(*conditions))
+
+        if group_by_fields:
+            query = query.group_by(*group_by_fields)
 
         return query
 
@@ -205,33 +243,6 @@ class CrudService:
         if get_config_or_model_meta("API_ALLOW_ORDER_BY", model=self.model, default=True):
             query = apply_sorting_to_query(args_dict, query, self.model)
         return query
-
-    def initialize_query(
-        self,
-        args_dict: dict[str, str | int],
-        all_columns: dict[str, Column],
-        query=None,
-    ) -> Query:
-        """Helper function to initialize the query based on select fields.
-
-        Args:
-            args_dict (Dict[str, Union[str, int]]): Dictionary containing filtering, sorting, pagination, and aggregation conditions.
-            all_columns (Dict[str, Column]): Dictionary of all columns and hybrids.
-
-        Returns:
-            Query: Initialized query.
-        """
-        allow_select = get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model=self.model, default=True)
-        select_fields = get_select_fields(args_dict, self.model, all_columns) if allow_select else []
-
-        if select_fields:
-            if query:
-                return query.select_from(*select_fields)
-            return self.session.query(*select_fields)
-
-        if query:
-            return query
-        return self.session.query(self.model)
 
     def apply_soft_delete_filter(self, query: Query) -> Query:
         """Adds a soft delete filter to the query if applicable.

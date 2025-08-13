@@ -922,7 +922,7 @@ def make_endpoint_params_description(schema: Schema, data: dict[str, Any]) -> li
     if get_config_or_model_meta("API_ALLOW_JOIN", getattr(schema.Meta, "model", None), default=False):
         params.append(
             {
-                "name": "joins",
+                "name": "join",
                 "in": "query",
                 "schema": {"type": "string"},
                 "description": generate_x_description(data, "redoc_templates/joins.html"),
@@ -932,7 +932,7 @@ def make_endpoint_params_description(schema: Schema, data: dict[str, Any]) -> li
     if get_config_or_model_meta("API_ALLOW_GROUPBY", getattr(schema.Meta, "model", None), default=False):
         params.append(
             {
-                "name": "group by",
+                "name": "groupby",
                 "in": "query",
                 "schema": {"type": "string"},
                 "description": generate_x_description(data, "redoc_templates/group.html"),
