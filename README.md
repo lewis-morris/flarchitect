@@ -1,5 +1,7 @@
 # flarchitect
 
+[![Tests](https://github.com/arched-dev/flarchitect/actions/workflows/tests.yml/badge.svg)](https://github.com/arched-dev/flarchitect/actions/workflows/tests.yml)
+
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
 
 ## Features
@@ -36,9 +38,28 @@ if __name__ == "__main__":
     app.run(debug=True)
 ```
 
+## Running Tests
+
+To run the test suite locally:
+
+```bash
+pytest
+```
+
 ## Documentation & help
 
 - Browse the [full documentation](docs/source/index.rst) for tutorials and API reference.
 - Explore runnable examples in the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory.
 - Questions? Join the [GitHub discussions](https://github.com/arched-dev/flarchitect/discussions) or open an [issue](https://github.com/arched-dev/flarchitect/issues).
+
+## Contributing
+
+Contributions are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+Before submitting a pull request, ensure that linters and tests pass locally:
+
+```bash
+ruff --fix .
+pytest
+```
 
