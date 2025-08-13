@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Can I change the case of the output? Be default url endpoints are pluralized kebab-case, resources are camelCase and resource fields are snake_case. You can change the default behaviour easily by a..." />
 <meta name="description" content="Can I change the case of the output? Be default url endpoints are pluralized kebab-case, resources are camelCase and resource fields are snake_case. You can change the default behaviour easily by a..." />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="Config by Method Models" href="config_locations/model_method.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="OpenAPI Specification" href="openapi.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
@@ -210,7 +210,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -246,6 +246,7 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
 </ul>
@@ -282,7 +283,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -355,7 +356,37 @@ as a <a class="reference external" href="https://flask.palletsprojects.com/en/la
 <p class="sd-card-text"><a class="reference external" href="configuration.html#SOFT_DELETE_VALUES">API_SOFT_DELETE_VALUES</a></p>
 </div></blockquote>
 </div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">Can I generate an OpenAPI specification document?</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Yes. When <code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code> is enabled the schema is automatically
+generated at start-up and served at <code class="docutils literal notranslate"><span class="pre">/openapi.json</span></code>. See
+<a class="reference internal" href="openapi.html"><span class="doc">OpenAPI Specification</span></a> for examples on exporting or customising the document.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">How do I update documentation after adding new models?</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Restart your application. The specification is rebuilt on boot and will
+include any newly registered models or routes.</p>
+</div>
+</details><section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">The documentation endpoint returns 404</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Ensure <code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code> is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> and that the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">flarchitect.core.architect.Architect</span></code> has been initialised. If
+you mount the app under a prefix, check <code class="docutils literal notranslate"><span class="pre">documentation_url_prefix</span></code>.</p>
+</div>
+</details><details class="sd-sphinx-override sd-dropdown sd-card sd-mb-3">
+<summary class="sd-summary-title sd-card-header">
+<span class="sd-summary-text">A route is missing from the spec</span><span class="sd-summary-state-marker sd-summary-chevron-right"><svg version="1.1" width="1.5em" height="1.5em" class="sd-octicon sd-octicon-chevron-right" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.72 18.78a.75.75 0 0 1 0-1.06L14.44 12 8.72 6.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0Z"></path></svg></span></summary><div class="sd-summary-content sd-card-body docutils">
+<p class="sd-card-text">Confirm the model has a <code class="docutils literal notranslate"><span class="pre">Meta</span></code> class and the endpoint isn’t blocked by
+<code class="docutils literal notranslate"><span class="pre">API_BLOCK_METHODS</span></code>. Rebuilding the application will refresh the
+specification.</p>
+</div>
 </details></section>
+</section>
 
         </article>
       </div>
@@ -363,14 +394,14 @@ as a <a class="reference external" href="https://flask.palletsprojects.com/en/la
         
         <div class="related-pages">
           
-          <a class="prev-page" href="config_locations/model_method.html">
+          <a class="prev-page" href="openapi.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Config by Method Models</div>
+                <div class="title">OpenAPI Specification</div>
                 
               </div>
             </a>
@@ -392,8 +423,27 @@ as a <a class="reference external" href="https://flask.palletsprojects.com/en/la
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">FAQ</a><ul>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

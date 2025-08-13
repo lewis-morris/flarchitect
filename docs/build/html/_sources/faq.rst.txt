@@ -82,3 +82,29 @@ FAQ
         `API_SOFT_DELETE_ATTRIBUTE <configuration.html#SOFT_DELETE_ATTRIBUTE>`_
 
         `API_SOFT_DELETE_VALUES <configuration.html#SOFT_DELETE_VALUES>`_
+
+.. dropdown:: Can I generate an OpenAPI specification document?
+
+    Yes. When ``API_CREATE_DOCS`` is enabled the schema is automatically
+    generated at start-up and served at ``/openapi.json``. See
+    :doc:`openapi` for examples on exporting or customising the document.
+
+.. dropdown:: How do I update documentation after adding new models?
+
+    Restart your application. The specification is rebuilt on boot and will
+    include any newly registered models or routes.
+
+Troubleshooting
+---------------
+
+.. dropdown:: The documentation endpoint returns 404
+
+    Ensure ``API_CREATE_DOCS`` is set to ``True`` and that the
+    :class:`flarchitect.core.architect.Architect` has been initialised. If
+    you mount the app under a prefix, check ``documentation_url_prefix``.
+
+.. dropdown:: A route is missing from the spec
+
+    Confirm the model has a ``Meta`` class and the endpoint isn't blocked by
+    ``API_BLOCK_METHODS``. Rebuilding the application will refresh the
+    specification.
