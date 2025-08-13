@@ -23,6 +23,7 @@ flarchitect
    openapi
    soft_delete
    faq
+   roadmap
 
 .. toctree::
    :maxdepth: 2
@@ -40,6 +41,10 @@ flarchitect
 
 .. image:: https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master
    :alt: Tests
+
+.. image:: https://img.shields.io/pypi/v/flarchitect.svg
+   :alt: PyPI Version
+   :target: https://pypi.org/project/flarchitect/
 
 .. image:: https://img.shields.io/github/license/lewis-morris/flarchitect
    :alt: GitHub License
