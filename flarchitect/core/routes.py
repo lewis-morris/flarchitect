@@ -759,7 +759,17 @@ class RouteCreator(AttributeInitializerMixin):
             output_schema=kwargs.get("output_schema"),
         )
 
-        unique_route_function = self._create_unique_route_function(route_function, kwargs["url"], http_method, kwargs.get("many", False))
+        unique_route_function = self._create_unique_route_function(
+            route_function,
+            kwargs["url"],
+            http_method,
+            kwargs.get("many", False),
+        )
+
+        if http_method == "GET" and self.architect.cache:
+            timeout = self.architect.get_config("API_CACHE_TIMEOUT", 300)
+            unique_route_function = self.architect.cache.cached(timeout=timeout)(unique_route_function)
+
         kwargs["function"] = unique_route_function
 
         # Register the route with Flask

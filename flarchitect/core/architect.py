@@ -5,13 +5,17 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from flask import Flask, Response, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
+
+
+if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
+    from flask_caching import Cache
 
 from flarchitect.authentication.jwt import get_user_from_token
 from flarchitect.authentication.user import set_current_user
@@ -72,6 +76,7 @@ class Architect(AttributeInitializerMixin):
     base_dir: str = os.path.dirname(os.path.abspath(__file__))
     route_spec: list = []
     limiter: Limiter
+    cache: "Cache | None" = None
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
         """
@@ -81,6 +86,10 @@ class Architect(AttributeInitializerMixin):
             app (Flask): The flask app.
             *args (list): List of arguments.
             **kwargs (dict): Dictionary of keyword arguments.
+
+        Notes:
+            Configures optional integrations such as caching and CORS based on
+            application settings.
         """
         if app is not None:
             self.init_app(app, *args, **kwargs)
@@ -99,6 +108,20 @@ class Architect(AttributeInitializerMixin):
         self._register_app(app)
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
+
+        cache_type = self.get_config("API_CACHE_TYPE")
+        if cache_type:
+            try:
+                from flask_caching import Cache
+            except ModuleNotFoundError as exc:
+                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set") from exc
+
+            cache_config = {
+                "CACHE_TYPE": cache_type,
+                "CACHE_DEFAULT_TIMEOUT": self.get_config("API_CACHE_TIMEOUT", 300),
+            }
+            self.cache = Cache(config=cache_config)
+            self.cache.init_app(app)
 
         if self.get_config("API_ENABLE_CORS", False):
             try:
@@ -401,26 +424,32 @@ class Architect(AttributeInitializerMixin):
         model: DeclarativeBase | None = None,
         group_tag: str | None = None,
         many: bool | None = False,
+        roles: bool | list[str] | tuple[str, ...] | None = False,
         **kwargs,
     ) -> Callable:
-        """Decorate an endpoint with schema and OpenAPI metadata.
+        """Decorate an endpoint with schema, role, and OpenAPI metadata.
 
         Args:
-            output_schema (Optional[Type[Schema]], optional):
-                Output schema. Defaults to ``None``.
-            input_schema (Optional[Type[Schema]], optional):
-                Input schema. Defaults to ``None``.
-            model (Optional[DeclarativeBase], optional):
-                Database model. Defaults to ``None``.
-            group_tag (Optional[str], optional):
-                Group name. Defaults to ``None``.
-            many (Optional[Bool], optional):
-                Indicates if multiple items are returned. Defaults to ``False``.
-            kwargs (dict): Additional keyword arguments.
+            output_schema: Output schema. Defaults to ``None``.
+            input_schema: Input schema. Defaults to ``None``.
+            model: Database model. Defaults to ``None``.
+            group_tag: Group name. Defaults to ``None``.
+            many: Indicates if multiple items are returned. Defaults to ``False``.
+            roles: Roles required to access the endpoint. When truthy and
+                authentication is enabled, the :func:`roles_required` decorator
+                is applied. Defaults to ``False``.
+            kwargs: Additional keyword arguments.
 
         Returns:
             Callable: The decorated function.
         """
+
+        auth_flag = kwargs.get("auth")
+        roles_tuple: tuple[str, ...] = ()
+        if roles and roles is not True:
+            roles_tuple = (
+                tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
+            )
 
         def decorator(f: Callable) -> Callable:
             @wraps(f)
@@ -429,7 +458,7 @@ class Architect(AttributeInitializerMixin):
                     model=model,
                     output_schema=output_schema,
                     input_schema=input_schema,
-                    auth_flag=kwargs.get("auth"),
+                    auth_flag=auth_flag,
                 )
 
                 f_decorated = self._apply_schemas(f, output_schema, input_schema, bool(many))
@@ -440,7 +469,19 @@ class Architect(AttributeInitializerMixin):
                     input_schema=input_schema,
                 )
 
+                if roles and auth_flag is not False:
+                    f_decorated = roles_required(*roles_tuple)(f_decorated)
+
                 return f_decorated(*_args, **_kwargs)
+
+            if roles and auth_flag is not False:
+                def _marker() -> None:
+                    """Marker function for roles documentation."""
+
+                _marker.__name__ = "roles_required"
+                _marker._args = roles_tuple  # type: ignore[attr-defined]
+                wrapped._decorators = getattr(wrapped, "_decorators", [])
+                wrapped._decorators.append(_marker)  # type: ignore[attr-defined]
 
             # Store route information for OpenAPI documentation
             route_info = {
