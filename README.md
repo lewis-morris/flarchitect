@@ -64,6 +64,8 @@ def openapi() -> Response:
 See the [OpenAPI docs](docs/source/openapi.rst) for exporting or customising
 the document.
 
+Read about hiding and restoring records with the [soft delete guide](docs/source/soft_delete.rst).
+
 ## Running Tests
 
 To run the test suite locally:

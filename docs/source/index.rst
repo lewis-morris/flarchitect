@@ -14,6 +14,7 @@ flarchitect
    callbacks
    configuration
    advanced_configuration
+   soft_delete
    openapi
    faq
    genindex
