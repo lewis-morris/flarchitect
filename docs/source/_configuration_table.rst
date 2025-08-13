@@ -380,7 +380,9 @@
         - Rate limit string using Flask-Limiter syntax (e.g., ``100/minute``) to throttle requests. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_RATE_LIMIT_CALLBACK``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Custom callback executed when a rate limit is hit, enabling logging or alternative responses.
     * - ``API_RATE_LIMIT_STORAGE_URI``
@@ -392,23 +394,30 @@
         - Storage backend for rate limit data such as ``redis://`` or ``memory://``.
     * - ``IGNORE_FIELDS``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Fields to exclude entirely from both input and output payloads.
     * - ``IGNORE_OUTPUT_FIELDS``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Fields removed from output serialization while still accepted on input.
     * - ``IGNORE_INPUT_FIELDS``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Input-only fields stripped from response bodies but required on create or update.
     * - ``API_BLUEPRINT_NAME``
 
           :bdg:`default:` ``None``
-          :bdg-secondary:`Optional` 
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Name given to the Flask blueprint that houses the API routes. Useful for namespacing.
     * - ``API_SOFT_DELETE``
@@ -448,21 +457,29 @@
         - Permits deletion of dependent objects that rely on the target record.
     * - ``GET_MANY_SUMMARY``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Short description for list endpoints used in generated docs.
     * - ``GET_SINGLE_SUMMARY``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Summary shown in docs for retrieving a single record.
     * - ``POST_SUMMARY``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Brief explanation of the create operation in documentation.
     * - ``PATCH_SUMMARY``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Short description for partial update operations.
