@@ -3,6 +3,7 @@
 [![Docs](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml)
 [![Tests](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml)
 ![Coverage](https://lewis-morris.github.io/flarchitect/_static/coverage.svg)
+[![PyPI version](https://img.shields.io/pypi/v/flarchitect.svg)](https://pypi.org/project/flarchitect/)
 
 
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
@@ -81,6 +82,10 @@ pytest
 - Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory.
 - Questions? Join the [GitHub discussions](https://github.com/lewis-morris/flarchitect/discussions) or open an [issue](https://github.com/lewis-morris/flarchitect/issues).
 - See the [changelog](CHANGES.rst) for release history.
+
+## Roadmap
+
+Check out the [project roadmap](docs/source/roadmap.rst) for upcoming features and enhancements.
 
 ## Contributing
 
