@@ -9,7 +9,7 @@
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="flarchitect provides several helpers so you can secure your API quickly. Enable one or more strategies via API_AUTHENTICATE_METHOD. Available methods are jwt, basic, api_key and custom. Each exampl..." />
 <meta name="description" content="flarchitect provides several helpers so you can secure your API quickly. Enable one or more strategies via API_AUTHENTICATE_METHOD. Available methods are jwt, basic, api_key and custom. Each exampl..." />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Callbacks" href="callbacks.html" /><link rel="prev" title="SQLAlchemy Models" href="models.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Callbacks" href="callbacks.html" /><link rel="prev" title="Validation" href="validation.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
     <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
@@ -237,6 +237,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -246,6 +247,8 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
 <li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
 </ul>
@@ -349,6 +352,12 @@ strongly recommended.</p>
     <span class="n">API_CREDENTIAL_CHECK_METHOD</span> <span class="o">=</span> <span class="s2">&quot;check_password&quot;</span>
 </pre></div>
 </div>
+<p>flarchitect also provides a simple login route for this strategy. POST to
+<code class="docutils literal notranslate"><span class="pre">/auth/login</span></code> with a <code class="docutils literal notranslate"><span class="pre">Basic</span></code> <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header to verify
+credentials and receive basic user information:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-u<span class="w"> </span>username:password<span class="w"> </span>http://localhost:5000/auth/login
+</pre></div>
+</div>
 <p>You can then access endpoints with tools such as <code class="docutils literal notranslate"><span class="pre">curl</span></code>:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-u<span class="w"> </span>username:password<span class="w"> </span>http://localhost:5000/api/books
 </pre></div>
@@ -372,6 +381,12 @@ also call <code class="docutils literal notranslate"><span class="pre">set_curre
 <span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
     <span class="n">API_AUTHENTICATE_METHOD</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;api_key&quot;</span><span class="p">]</span>
     <span class="n">API_KEY_AUTH_AND_RETURN_METHOD</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">lookup_user_by_token</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When this method is enabled flarchitect exposes a companion login route. POST
+an <code class="docutils literal notranslate"><span class="pre">Api-Key</span></code> <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header to <code class="docutils literal notranslate"><span class="pre">/auth/login</span></code> to validate the key
+and retrieve basic user details:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Api-Key &lt;token&gt;&quot;</span><span class="w"> </span>http://localhost:5000/auth/login
 </pre></div>
 </div>
 <p>Example request:</p>
@@ -421,14 +436,14 @@ call <code class="docutils literal notranslate"><span class="pre">set_current_us
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="models.html">
+          <a class="prev-page" href="validation.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">SQLAlchemy Models</div>
+                <div class="title">Validation</div>
                 
               </div>
             </a>

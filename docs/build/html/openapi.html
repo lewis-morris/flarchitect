@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="openapi.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be reused with external tools like Postman..." />
-<meta name="description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be reused with external tools like Postman..." />
+<meta property="og:description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be rendered with Swagger UI by setting API..." />
+<meta name="description" content="flarchitect automatically generates an OpenAPI 3.0.2 document for every registered model. The specification powers the interactive Redoc page and can also be rendered with Swagger UI by setting API..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="FAQ" href="faq.html" /><link rel="prev" title="Advanced Configuration" href="advanced_configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
@@ -295,7 +295,9 @@
 <h1>OpenAPI Specification<a class="headerlink" href="#openapi-specification" title="Link to this heading">¶</a></h1>
 <p>flarchitect automatically generates an OpenAPI 3.0.2 document for every
 registered model. The specification powers the interactive Redoc page and
-can also be reused with external tools like Postman or Swagger UI.</p>
+can also be rendered with Swagger UI by setting <code class="docutils literal notranslate"><span class="pre">API_DOCS_STYLE</span> <span class="pre">=</span> <span class="pre">'swagger'</span></code>
+in your Flask configuration. The raw spec can also be reused with external
+tools like Postman.</p>
 <section id="automatic-generation">
 <h2>Automatic generation<a class="headerlink" href="#automatic-generation" title="Link to this heading">¶</a></h2>
 <p>When <code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code> is enabled (it is <code class="docutils literal notranslate"><span class="pre">True</span></code> by default) the

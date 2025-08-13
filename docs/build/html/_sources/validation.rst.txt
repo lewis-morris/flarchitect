@@ -25,7 +25,7 @@ When invalid data is sent to the API a ``400`` response is returned:
 .. code-block:: json
 
     {
-      "errors": {"error": {"email": ["Email address is not valid."]}},
+      "errors": {"email": ["Email address is not valid."]},
       "status_code": 400,
       "value": null
     }

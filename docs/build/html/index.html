@@ -7,8 +7,8 @@
 <meta property="og:type" content="website" />
 <meta property="og:url" content="index.html" />
 <meta property="og:site_name" content="flarchitect" />
-<meta property="og:description" content="Coverage Report Tests GitHub License PyPI - Downloads GitHub Repo flarchitect turns your SQLAlchemy models into a polished RESTful API complete with interactive Redoc documentation. Hook it into yo..." />
-<meta name="description" content="Coverage Report Tests GitHub License PyPI - Downloads GitHub Repo flarchitect turns your SQLAlchemy models into a polished RESTful API complete with interactive Redoc documentation. Hook it into yo..." />
+<meta property="og:description" content="Coverage Report Tests GitHub License PyPI - Downloads GitHub Repo flarchitect turns your SQLAlchemy models into a polished RESTful API complete with interactive Redoc or Swagger UI documentation. H..." />
+<meta name="description" content="Coverage Report Tests GitHub License PyPI - Downloads GitHub Repo flarchitect turns your SQLAlchemy models into a polished RESTful API complete with interactive Redoc or Swagger UI documentation. H..." />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
@@ -301,7 +301,7 @@
 <img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dm/flarchitect" />
 <a class="reference external image-reference" href="https://github.com/arched-dev/flarchitect"><img alt="GitHub Repo" src="https://badgen.net/static/Repo/Github/blue?icon=github&amp;link=https%3A%2F%2Fgithub.com%2Farched-dev%2Fflarchitect" /></a>
 <hr class="docutils" />
-<p><strong>flarchitect</strong> turns your <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> models into a polished RESTful API complete with interactive <a class="reference external" href="https://redocly.github.io/redoc/">Redoc</a> documentation.
+<p><strong>flarchitect</strong> turns your <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> models into a polished RESTful API complete with interactive <a class="reference external" href="https://redocly.github.io/redoc/">Redoc</a> or Swagger UI documentation.
 Hook it into your <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a> application and you’ll have endpoints, schemas and docs in moments.</p>
 <p>What can it do?</p>
 <ul class="simple">
@@ -310,7 +310,7 @@ Hook it into your <a class="reference external" href="https://flask.palletsproje
 <li><p>Authenticate users with JWT access and refresh tokens.</p></li>
 <li><p>Add configurable rate limits backed by Redis, Memcached or MongoDB.</p></li>
 <li><p>Be configured globally in <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a> or per model via <code class="docutils literal notranslate"><span class="pre">Meta</span></code> attributes.</p></li>
-<li><p>Generate <a class="reference external" href="https://redocly.github.io/redoc/">Redoc</a> documentation on the fly.</p></li>
+<li><p>Generate <a class="reference external" href="https://redocly.github.io/redoc/">Redoc</a> or Swagger UI documentation on the fly.</p></li>
 </ul>
 <p>What are you waiting for…?</p>
 <p>Turn this.</p>
@@ -332,7 +332,7 @@ Hook it into your <a class="reference external" href="https://flask.palletsproje
 <span class="w">  </span><span class="nt">&quot;total_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;next_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/api/authors?limit=2&amp;page=3&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;previous_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/api/authors?limit=2&amp;page=1&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;error&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;null&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
 <span class="w">      </span><span class="nt">&quot;author&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="p">,</span>
