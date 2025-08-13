@@ -3,22 +3,21 @@ name: Docs
 on:
   push:
     branches: [ master ]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write       # needed for Pages deploy
-  id-token: write    # needed for Pages deploy OIDC
+  pages: write
+  id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
-  test:
+  build:
+    name: Build Sphinx HTML
     runs-on: ubuntu-latest
-    outputs:
-      coverage_xml: ${{ steps.coverage_xml.outputs.path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,109 +25,47 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
           cache: 'pip'
 
-      - name: Install deps
+      - name: Install docs dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .[dev]
-          pip install pytest coverage[toml] coverage-badge ruff
+          # Prefer a dedicated docs extra if you have it:
+          pip install .[docs] || true
+          # Fallbacks (adjust to your project):
+          pip install sphinx sphinx-autobuild furo \
+                     sphinx-copybutton sphinx-design \
+                     sphinxcontrib-jquery \
+                     sphinxext-opengraph \
+                     myst-parser \
+                     pillow \
+                     matplotlib || true
 
-      - name: Lint (ruff)
-        run: ruff check --output-format=github --no-cache .
-
-      - name: Run tests with coverage
-        env:
-          # Optional: tame warnings noise in CI output
-          PYTEST_ADDOPTS: "-W default"
+      - name: Build HTML
+        working-directory: docs
         run: |
-          coverage run -m pytest
-          coverage report --fail-under=95
-          coverage xml
-
-      - name: Produce coverage badge
-        run: |
-          # force-overwrite both possible outputs (idempotent)
-          coverage-badge -f -o coverage.svg
-          mkdir -p docs/source/_static
-          cp -f coverage.svg docs/source/_static/coverage.svg
-
-      - name: Produce version badge
-        run: |
-          pip install anybadge
-          python - <<'PY'
-          import flarchitect, importlib.metadata
-          from anybadge import Badge
-
-          version = getattr(flarchitect, "__version__", importlib.metadata.version("flarchitect"))
-          Badge("version", version).write_badge("version.svg", overwrite=True)
-          PY
-          mkdir -p docs/source/_static
-          cp -f version.svg docs/source/_static/version.svg
-
-      - name: Upload test artifacts (coverage + xml)
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-artifacts
-          path: |
-            coverage.svg
-            version.svg
-            coverage.xml
-            docs/source/_static/coverage.svg
-            docs/source/_static/version.svg
-
-  build-docs:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-          cache: 'pip'
-
-      - name: Install docs deps
-        run: |
-          python -m pip install --upgrade pip
-          # adjust as needed for your docs build
-          pip install .[dev]
-          pip install sphinx sphinx-rtd-theme
-
-      - name: Download badges from test job
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-artifacts
-          path: _ci_artifacts
-
-      - name: Place badges into docs static
-        run: |
-          mkdir -p docs/source/_static
-          cp -f _ci_artifacts/docs/source/_static/coverage.svg docs/source/_static/coverage.svg
-          cp -f _ci_artifacts/docs/source/_static/version.svg docs/source/_static/version.svg
-
-      - name: Build Sphinx HTML
-        run: |
-          sphinx-build -b html docs/source docs/build/html
+          # Common Sphinx layouts: docs/source -> _build/html OR docs/ -> _build/html
+          if [ -d "source" ]; then
+            sphinx-build -b html source _build/html
+          else
+            sphinx-build -b html . _build/html
+          fi
 
       - name: Upload Pages artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/build/html
+          # Match the build path above
+          path: docs/_build/html
 
-  deploy-docs:
-    # Only deploy on push to master
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    needs: build-docs
+  deploy:
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

@@ -666,6 +666,50 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CACHE_TYPE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Flask-Caching backend used for caching GET responses. Examples include <code class="docutils literal notranslate"><span class="pre">SimpleCache</span></code> and <code class="docutils literal notranslate"><span class="pre">RedisCache</span></code>. Requires the <code class="docutils literal notranslate"><span class="pre">flask-caching</span></code> package.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_CACHE_TIMEOUT</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">300</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Expiry time in seconds for cached responses. Only applicable when <code class="docutils literal notranslate"><span class="pre">API_CACHE_TYPE</span></code> is set.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ENABLE_CORS</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Enables Cross-Origin Resource Sharing using <code class="docutils literal notranslate"><span class="pre">flask-cors</span></code> so browser clients from other origins can access the API.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_XML_AS_TEXT</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>When <code class="docutils literal notranslate"><span class="pre">True</span></code>, XML responses are served with <code class="docutils literal notranslate"><span class="pre">text/xml</span></code> instead of <code class="docutils literal notranslate"><span class="pre">application/xml</span></code> for broader client compatibility.</p></li>
+</ul>
+</td>
+</tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_VERBOSITY_LEVEL</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">1</span></code>
@@ -732,7 +776,18 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_BASE_SCHEMA</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_BASE_MODEL</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">Model</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Root SQLAlchemy model used for generating documentation and inferring defaults. Typically the base <code class="docutils literal notranslate"><span class="pre">db.Model</span></code> class.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_BASE_SCHEMA</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">AutoSchema</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">Schema</span></code>
@@ -743,7 +798,29 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTO_VALIDATE</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Automatically validate incoming data against field types and formats. Disable for maximum performance at the risk of accepting invalid data.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_GLOBAL_PRE_DESERIALIZE_HOOK</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Callable run on the raw request body before deserialization. Use it to normalise or sanitize payloads globally.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
@@ -752,7 +829,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_IGNORE_UNDERSCORE_ATTRIBUTES</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_IGNORE_UNDERSCORE_ATTRIBUTES</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -763,16 +840,16 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_TYPE</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_TYPE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Output format for serialized data, such as <code class="docutils literal notranslate"><span class="pre">json</span></code> or <code class="docutils literal notranslate"><span class="pre">xml</span></code>. Determines how responses are rendered. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
+<li><p>Output format for serialized data. Options include <code class="docutils literal notranslate"><span class="pre">url</span></code> (default), <code class="docutils literal notranslate"><span class="pre">json</span></code>, <code class="docutils literal notranslate"><span class="pre">dynamic</span></code> and <code class="docutils literal notranslate"><span class="pre">hybrid</span></code>. Determines how responses are rendered. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_DEPTH</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SERIALIZATION_DEPTH</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
@@ -781,7 +858,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_HYBRID_PROPERTIES</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_HYBRID_PROPERTIES</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -792,7 +869,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADD_RELATIONS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADD_RELATIONS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -803,7 +880,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_DEFAULT</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_DEFAULT</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">20</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
@@ -814,7 +891,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_MAX</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_PAGINATION_SIZE_MAX</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">100</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">int</span></code>
@@ -825,7 +902,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_READ_ONLY</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_READ_ONLY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -836,7 +913,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -847,18 +924,18 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Allows filtering using query parameters. Useful for building rich search functionality. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
+<li><p>Allows filtering using query parameters. Useful for building rich search functionality. Also recognised as <code class="docutils literal notranslate"><span class="pre">API_ALLOW_FILTERS</span></code>. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_JOIN</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_JOIN</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -869,7 +946,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_GROUPBY</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_GROUPBY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -880,7 +957,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_AGGREGATION</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_AGGREGATION</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -891,7 +968,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -902,27 +979,29 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOWED_METHODS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOWED_METHODS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">[]</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Whitelist of HTTP methods permitted on routes. Only methods in this list are enabled.</p></li>
+<li><p>Explicit list of HTTP methods permitted on routes. Only methods in this list are enabled.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_block_methods</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_BLOCK_METHODS</span></code></p>
 <blockquote>
-<div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">[]</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>List of HTTP methods to block for this API, such as <code class="docutils literal notranslate"><span class="pre">[&quot;DELETE&quot;,</span> <span class="pre">&quot;POST&quot;]</span></code>. Useful for read-only endpoints.</p></li>
+<li><p>Methods that should be disabled even if allowed elsewhere, e.g., <code class="docutils literal notranslate"><span class="pre">[&quot;DELETE&quot;,</span> <span class="pre">&quot;POST&quot;]</span></code> for read-only APIs.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
@@ -931,7 +1010,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE_METHOD</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE_METHOD</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
@@ -940,7 +1019,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CREDENTIAL_HASH_FIELD</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_CREDENTIAL_HASH_FIELD</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -951,7 +1030,51 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_USER_MODEL</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_CREDENTIAL_CHECK_METHOD</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Name of the method on the user model that validates a plaintext credential, such as <code class="docutils literal notranslate"><span class="pre">check_password</span></code>.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_KEY_AUTH_AND_RETURN_METHOD</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Custom function for API key auth that receives a key and returns the matching user object.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_USER_LOOKUP_FIELD</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Attribute used to locate a user, e.g., <code class="docutils literal notranslate"><span class="pre">username</span></code> or <code class="docutils literal notranslate"><span class="pre">email</span></code>.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_CUSTOM_AUTH</span></code></p>
+<blockquote>
+<div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
+<span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
+<span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Callable invoked when <code class="docutils literal notranslate"><span class="pre">API_AUTHENTICATE_METHOD</span></code> includes <code class="docutils literal notranslate"><span class="pre">&quot;custom&quot;</span></code>. It must return the authenticated user or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_USER_MODEL</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span></p>
 </div></blockquote>
@@ -960,7 +1083,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_GLOBAL_SETUP_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_GLOBAL_SETUP_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -971,7 +1094,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_FILTER_CALLBACK</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_FILTER_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -982,7 +1105,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADD_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADD_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -993,7 +1116,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_UPDATE_CALLBACK</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_UPDATE_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1004,7 +1127,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_REMOVE_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_REMOVE_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1015,7 +1138,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1026,7 +1149,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1037,7 +1160,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1048,7 +1171,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1059,7 +1182,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_FINAL_CALLBACK</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_FINAL_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1070,7 +1193,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADDITIONAL_QUERY_PARAMS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ADDITIONAL_QUERY_PARAMS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code>
@@ -1081,7 +1204,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_DATETIME</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_DATETIME</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1092,7 +1215,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_VERSION</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_VERSION</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1103,7 +1226,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_STATUS_CODE</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_STATUS_CODE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1114,29 +1237,29 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_RESPONSE_TIME</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_RESPONSE_MS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Adds the elapsed processing time in milliseconds to the response, enabling performance monitoring.</p></li>
+<li><p>Adds the elapsed request processing time in milliseconds to each response.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_COUNT</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_TOTAL_COUNT</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Includes the total count of items returned, aiding pagination UX.</p></li>
+<li><p>Includes the total number of available records in list responses, aiding pagination UX.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_NEXT_URL</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_NEXT_URL</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1147,7 +1270,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_PREVIOUS_URL</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_PREVIOUS_URL</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1158,18 +1281,18 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_ERROR</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_DUMP_NULL_ERRORS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Provides a consistent <code class="docutils literal notranslate"><span class="pre">error</span></code> field in responses, defaulting to <code class="docutils literal notranslate"><span class="pre">null</span></code> when no error occurred. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
+<li><p>Ensures an <code class="docutils literal notranslate"><span class="pre">errors</span></code> key is always present in responses, defaulting to <code class="docutils literal notranslate"><span class="pre">null</span></code> when no errors occurred. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py">tests/test_flask_config.py</a>.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1180,7 +1303,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_CALLBACK</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_CALLBACK</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">callable</span></code>
@@ -1191,7 +1314,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_STORAGE_URI</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_RATE_LIMIT_STORAGE_URI</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1202,7 +1325,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_FIELDS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_FIELDS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>
@@ -1213,7 +1336,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_OUTPUT_FIELDS</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_OUTPUT_FIELDS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>
@@ -1224,7 +1347,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_INPUT_FIELDS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IGNORE_INPUT_FIELDS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">list[str]</span></code>
@@ -1235,7 +1358,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_BLUEPRINT_NAME</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_BLUEPRINT_NAME</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1246,7 +1369,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">False</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1257,7 +1380,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1268,7 +1391,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">tuple</span></code>
@@ -1279,7 +1402,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1290,7 +1413,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_DEPENDENTS</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">True</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
@@ -1301,7 +1424,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET_MANY_SUMMARY</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET_MANY_SUMMARY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1312,7 +1435,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET_SINGLE_SUMMARY</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET_SINGLE_SUMMARY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1323,7 +1446,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST_SUMMARY</span></code></p>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POST_SUMMARY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
@@ -1334,7 +1457,7 @@ URL exposed by the automatic endpoint.</p></li>
 </ul>
 </td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PATCH_SUMMARY</span></code></p>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PATCH_SUMMARY</span></code></p>
 <blockquote>
 <div><p><span class="sd-sphinx-override sd-badge">default:</span> <code class="docutils literal notranslate"><span class="pre">None</span></code>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>

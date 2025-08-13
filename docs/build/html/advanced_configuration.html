@@ -447,6 +447,32 @@ example, helps client developers cache against the correct release:</p>
 </div>
 </section>
 </section>
+<section id="nested-model-creation">
+<h2>Nested model creation<a class="headerlink" href="#nested-model-creation" title="Link to this heading">¶</a></h2>
+<p>Nested writes are disabled by default. Enable them globally with
+<code class="docutils literal notranslate"><span class="pre">API_ALLOW_NESTED_WRITES</span> <span class="pre">=</span> <span class="pre">True</span></code> or per model via <code class="docutils literal notranslate"><span class="pre">Meta.allow_nested_writes</span></code>.
+Once enabled, <code class="docutils literal notranslate"><span class="pre">AutoSchema</span></code> can deserialize nested relationship data during
+POST or PUT requests. Include related objects under the relationship name in
+your payload:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;My Book&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;isbn&quot;</span><span class="p">:</span> <span class="s2">&quot;12345&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_date&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-01-01&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;author_id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;first_name&quot;</span><span class="p">:</span> <span class="s2">&quot;John&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;last_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Doe&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;biography&quot;</span><span class="p">:</span> <span class="s2">&quot;Bio&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;date_of_birth&quot;</span><span class="p">:</span> <span class="s2">&quot;1980-01-01&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nationality&quot;</span><span class="p">:</span> <span class="s2">&quot;US&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The nested <code class="docutils literal notranslate"><span class="pre">author</span></code> object is deserialized into an <code class="docutils literal notranslate"><span class="pre">Author</span></code> instance while
+responses continue to use the configured serialization type (URL, JSON, or
+dynamic).</p>
+</section>
 <section id="cors">
 <h2>CORS<a class="headerlink" href="#cors" title="Link to this heading">¶</a></h2>
 <p>To enable <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">Cross-Origin Resource Sharing (CORS)</a>
@@ -745,6 +771,7 @@ return callbacks in configuration or on a model’s <code class="docutils litera
 <li><a class="reference internal" href="#example">Example</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#nested-model-creation">Nested model creation</a></li>
 <li><a class="reference internal" href="#cors">CORS</a><ul>
 <li><a class="reference internal" href="#id1">Example</a></li>
 </ul>

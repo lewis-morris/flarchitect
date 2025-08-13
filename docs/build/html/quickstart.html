@@ -318,13 +318,14 @@ configure a Flask application, spin up the server, and test the endpoints.</p>
 </section>
 <section id="define-your-models">
 <h2>Define your models<a class="headerlink" href="#define-your-models" title="Link to this heading">¶</a></h2>
-<p>Create a base class that returns a database session and define any models you want to expose.</p>
+<p>Define your models using SQLAlchemy. <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> automatically resolves
+the active database session, whether you’re using Flask-SQLAlchemy or plain
+SQLAlchemy, so no special <code class="docutils literal notranslate"><span class="pre">get_session</span></code> method is required.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask_sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLAlchemy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span>
+    <span class="k">pass</span>
 
 <span class="n">db</span> <span class="o">=</span> <span class="n">SQLAlchemy</span><span class="p">(</span><span class="n">model_class</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
 
@@ -336,7 +337,9 @@ configure a Flask application, spin up the server, and test the endpoints.</p>
         <span class="n">tag_group</span> <span class="o">=</span> <span class="s2">&quot;People/Companies&quot;</span>
 </pre></div>
 </div>
-<p>This setup gives <strong>flarchitect</strong> access to your session and metadata so it can generate CRUD endpoints.</p>
+<p>This setup gives <strong>flarchitect</strong> access to your models. The library automatically
+locates the active SQLAlchemy session. For non-Flask setups, a custom session
+resolver can be supplied via <code class="docutils literal notranslate"><span class="pre">API_SESSION_GETTER</span></code> in the Flask config.</p>
 </section>
 <section id="configure-flask">
 <h2>Configure Flask<a class="headerlink" href="#configure-flask" title="Link to this heading">¶</a></h2>
