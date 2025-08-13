@@ -59,6 +59,7 @@ What can it do?
 * Automatically detect and create endpoints, including nested relationships.
 * Standardise responses with a consistent structure.
 * Authenticate users with JWT access and refresh tokens.
+* Restrict endpoints to specific roles with :ref:`roles-required`.
 * Add configurable rate limits backed by Redis, Memcached or MongoDB.
 * Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
 * Generate `Redoc`_ or Swagger UI documentation on the fly.

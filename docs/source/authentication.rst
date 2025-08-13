@@ -5,6 +5,8 @@ flarchitect provides several helpers so you can secure your API quickly.
 Enable one or more strategies via ``API_AUTHENTICATE_METHOD``. Available
 methods are ``jwt``, ``basic``, ``api_key`` and ``custom``. Each example below
 uses the common setup defined in ``demo/authentication/app_base.py``.
+You can also protect routes based on user roles using the
+:ref:`roles-required` decorator.
 
 Error responses
 ---------------
@@ -189,6 +191,36 @@ Clients can then call your API with whatever headers your function expects:
    curl -H "X-Token: <token>" http://localhost:5000/api/books
 
 See ``demo/authentication/custom_auth.py`` for this approach in context.
+
+.. _roles-required:
+
+Role-based access
+-----------------
+
+Use the ``roles_required`` decorator to allow only users with specific roles to
+access an endpoint. The decorator checks the ``roles`` attribute on
+``current_user`` which is populated by the active authentication method.
+
+.. code-block:: python
+
+   from flarchitect.authentication import roles_required
+
+   @app.get("/admin")
+   @roles_required("admin")
+   def admin_dashboard():
+       return {"status": "ok"}
+
+You can require multiple roles by passing more than one name:
+
+.. code-block:: python
+
+   @roles_required("admin", "editor")
+   def update_post():
+       ...
+
+Ensure your user model exposes a list of role names, for example
+``User.roles = ["admin", "editor"]``. If the authenticated user lacks any of
+the required roles—or if no user is authenticated—a ``403`` response is raised.
 
 Troubleshooting
 ---------------
