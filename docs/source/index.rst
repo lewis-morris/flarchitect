@@ -18,6 +18,9 @@ flarchitect
 .. image:: /_static/coverage.svg
    :alt: Coverage Report
 
+.. image:: https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master
+   :alt: Tests
+
 .. image:: https://img.shields.io/github/license/arched-dev/flarchitect
    :alt: GitHub License
 

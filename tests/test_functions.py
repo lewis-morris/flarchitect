@@ -1,6 +1,13 @@
 import pytest
 
-from flarchitect.utils.core_utils import convert_case, dict_to_xml, get_count
+from flarchitect.utils.core_utils import (
+    convert_camel_to_snake,
+    convert_case,
+    convert_kebab_to_snake,
+    convert_snake_to_camel,
+    dict_to_xml,
+    get_count,
+)
 from flarchitect.utils.general import (
     pluralize_last_word,
     validate_flask_limiter_rate_limit_string,
@@ -143,6 +150,11 @@ class TestConvertCase:
         # Assert
         assert result == expected_result
 
+    def test_unknown_case_returns_original(self):
+        """Unknown ``target_case`` returns the original string."""
+
+        assert convert_case("hello", "unknown") == "hello"
+
 
 class TestPluralizeLastWord:
     #  pluralizes last word in camelCase
@@ -207,10 +219,7 @@ class TestXml:
     def test_simple_dict(self):
         # Arrange
         input_dict = {"person": {"name": "John", "age": 30}}
-        expected_xml = (
-            '<?xml version="1.0" encoding="UTF-8" ?>'
-            "<root><person><name>John</name><age>30</age></person></root>"
-        )
+        expected_xml = '<?xml version="1.0" encoding="UTF-8" ?><root><person><name>John</name><age>30</age></person></root>'
 
         # Act
         result = dict_to_xml(input_dict)
@@ -220,14 +229,8 @@ class TestXml:
 
     def test_nested_dict(self):
         # Arrange
-        input_dict = {
-            "person": {"name": "John", "address": {"city": "New York", "zip": "10001"}}
-        }
-        expected_xml = (
-            '<?xml version="1.0" encoding="UTF-8" ?>'
-            "<root><person><name>John</name><address><city>New York</city>"
-            "<zip>10001</zip></address></person></root>"
-        )
+        input_dict = {"person": {"name": "John", "address": {"city": "New York", "zip": "10001"}}}
+        expected_xml = '<?xml version="1.0" encoding="UTF-8" ?><root><person><name>John</name><address><city>New York</city><zip>10001</zip></address></person></root>'
 
         # Act
         result = dict_to_xml(input_dict)
@@ -238,11 +241,7 @@ class TestXml:
     def test_list_in_dict(self):
         # Arrange
         input_dict = {"fruits": {"fruit": ["apple", "banana", "cherry"]}}
-        expected_xml = (
-            '<?xml version="1.0" encoding="UTF-8" ?>'
-            "<root><fruits><fruit><item>apple</item><item>banana</item>"
-            "<item>cherry</item></fruit></fruits></root>"
-        )
+        expected_xml = '<?xml version="1.0" encoding="UTF-8" ?><root><fruits><fruit><item>apple</item><item>banana</item><item>cherry</item></fruit></fruits></root>'
 
         # Act
         result = dict_to_xml(input_dict)
@@ -253,10 +252,7 @@ class TestXml:
     def test_root_tag_for_multiple_keys(self):
         # Arrange
         input_dict = {"name": "John", "age": 30}
-        expected_xml = (
-            '<?xml version="1.0" encoding="UTF-8" ?>'
-            "<root><name>John</name><age>30</age></root>"
-        )
+        expected_xml = '<?xml version="1.0" encoding="UTF-8" ?><root><name>John</name><age>30</age></root>'
 
         # Act
         result = dict_to_xml(input_dict)
@@ -280,9 +276,7 @@ class TestXmlDict:
     def test_nested_xml_to_dict(self):
         # Arrange
         xml_data = """<?xml version='1.0' encoding='UTF-8' standalone='no'?><person><name>John</name><address><city>New York</city><zip>10001</zip></address></person>"""  # noqa: E501
-        expected_dict = {
-            "person": {"name": "John", "address": {"city": "New York", "zip": "10001"}}
-        }
+        expected_dict = {"person": {"name": "John", "address": {"city": "New York", "zip": "10001"}}}
 
         # Act
         result = xml_to_dict(xml_data)
@@ -358,3 +352,14 @@ class TestGetCount:
 
         result: dict[str, int] = {}
         assert get_count(result, None) == 0
+
+
+class TestCaseHelperFunctions:
+    """Tests for helper functions wrapping :func:`convert_case`."""
+
+    def test_wrapper_conversions(self):
+        """Wrapper functions should delegate to :func:`convert_case`."""
+
+        assert convert_snake_to_camel("hello_world") == "helloWorld"
+        assert convert_camel_to_snake("helloWorld") == "hello_world"
+        assert convert_kebab_to_snake("hello-world") == "hello_world"
