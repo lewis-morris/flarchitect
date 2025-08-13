@@ -51,3 +51,67 @@ storage URI:
 If no backend is available, the limiter falls back to in-memory storage
 with rate-limit headers enabled by default.
 
+Soft deletes
+------------
+
+Rather than removing records from the database, models can be "soft"
+deleted by toggling an attribute value.
+
+.. code:: python
+
+    class Config:
+        API_SOFT_DELETE = True
+        API_SOFT_DELETE_ATTRIBUTE = "deleted"
+        API_SOFT_DELETE_VALUES = (False, True)
+
+    class Book(db.Model):
+        __tablename__ = "book"
+        deleted = db.Column(db.Boolean, default=False)
+
+.. tip::
+
+    The ``API_SOFT_DELETE_VALUES`` tuple should hold the active and deleted
+    states respectively.
+
+Callbacks
+---------
+
+Custom callbacks let you hook into the request lifecycle to run your own
+logic.
+
+.. code:: python
+
+    def setup_hook(model, **kwargs):
+        return kwargs
+
+    def return_hook(model, output, **kwargs):
+        output["meta"] = {"source": "api"}
+        return output
+
+    class Config:
+        API_SETUP_CALLBACK = setup_hook
+        API_RETURN_CALLBACK = return_hook
+
+.. tip::
+
+    Method-specific callbacks (e.g. ``API_GET_RETURN_CALLBACK``) override
+    their global counterparts.
+
+Custom naming conventions
+-------------------------
+
+Endpoint paths, field names and schema identifiers can be transformed to
+different case styles.
+
+.. code:: python
+
+    class Config:
+        API_ENDPOINT_CASE = "snake"
+        API_FIELD_CASE = "kebab"
+        API_SCHEMA_CASE = "pascal"
+
+.. tip::
+
+    Choose case styles that match the conventions of your existing code
+    base or client applications.
+
