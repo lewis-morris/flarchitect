@@ -14,6 +14,14 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - URL path where documentation is served. Useful for mounting docs under a custom route such as ``/redoc``. Accepts any valid path string. Example: `tests/test_flask_config.py <https://github.com/arched-dev/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_SPEC_ROUTE``
+
+          :bdg:`default:` ``/openapi.json``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Path where the raw OpenAPI document is served. Override to change the
+          URL exposed by the automatic endpoint.
     * - ``API_TITLE``
 
           :bdg:`default:` ``None``

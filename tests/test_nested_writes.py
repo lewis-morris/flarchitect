@@ -116,3 +116,28 @@ def test_post_book_with_author_and_publisher(client):
     }
     resp = client.post("/api/books", json=data)
     assert resp.status_code == 200
+
+
+def test_nested_write_missing_required_field(client):
+    """A nested write missing required fields should return an error response."""
+
+    data = {
+        "first_name": "Bad",
+        "last_name": "Author",
+        "biography": "Bio",
+        "date_of_birth": "1990-01-01",
+        "nationality": "US",
+        "books": [
+            {
+                # missing title field
+                "isbn": "55555",
+                "publication_date": "2024-01-01",
+                "publisher_id": 1,
+                "author_id": 0,
+            }
+        ],
+    }
+    resp = client.post("/api/authors", json=data)
+    body = resp.get_json()
+    assert resp.status_code == 400
+    assert body["errors"]["error"]["books"]["0"]["title"][0] == "Missing data for required field."

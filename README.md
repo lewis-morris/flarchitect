@@ -51,19 +51,16 @@ config. Either way you can serve the raw specification to integrate with
 tooling such as Postman:
 
 ```python
-from flask import Flask, Response, jsonify
+from flask import Flask
 from flarchitect import Architect
 
 app = Flask(__name__)
-architect = Architect(app)
-
-@app.get("/openapi.json")
-def openapi() -> Response:
-    return jsonify(architect.api_spec.to_dict())
+architect = Architect(app)  # OpenAPI served at /openapi.json
 ```
 
-See the [OpenAPI docs](docs/source/openapi.rst) for exporting or customising
-the document.
+The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
+[OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
+document.
 
 Read about hiding and restoring records with the [soft delete guide](docs/source/soft_delete.rst).
 

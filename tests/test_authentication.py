@@ -238,7 +238,10 @@ def client_custom() -> Generator[FlaskClient, None, None]:
 def assert_unauthorized(resp: Response) -> None:
     """Assert unauthorized response and cleared user context.
 
-    Args:
+    Args:<<<<<<< arched/add-test-cases-for-authentication-errors
+329
+ 
+
         resp (Response): Flask response object to verify.
     """
     assert resp.status_code == 401
