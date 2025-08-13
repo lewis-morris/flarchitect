@@ -36,6 +36,9 @@ flarchitect
 .. image:: /_static/coverage.svg
    :alt: Coverage Report
 
+.. image:: /_static/version.svg
+   :alt: Package Version
+
 .. image:: https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master
    :alt: Tests
 
