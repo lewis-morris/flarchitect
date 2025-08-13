@@ -18,7 +18,7 @@ flarchitect
    models
    authentication
    validation
-   callbacks
+   extensions
    openapi
 
 =======
@@ -67,10 +67,11 @@ What can it do?
 
 * Automatically create CRUD endpoints for your models, including nested relationships.
 * Authenticate users with JWT access and refresh tokens.
-* Generate interactive `Redoc`_ or Swagger UI documentation on the fly.
-* Configure behaviour globally in `Flask`_ or per model via ``Meta`` attributes.
-* Extend behaviour with extensibility hooks, custom validators and per-route hooks (:ref:`advanced-callbacks`).
-* Hide records instead of deleting them with soft deletes.
+* Restrict endpoints to specific roles with :ref:`roles-required`.
+* Add configurable rate limits backed by Redis, Memcached or MongoDB.
+* Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
+* Generate `Redoc`_ or Swagger UI documentation on the fly.
+* Extend behaviour with response callbacks, custom validators and per-route hooks (:ref:`advanced-extensions`).
 
 Advanced Configuration
 ----------------------

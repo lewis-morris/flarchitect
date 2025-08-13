@@ -442,9 +442,9 @@ maintain a consistent style across paths, schemas and payloads, combine
 casing pairs naturally with ``kebab`` field names.
 
 
-.. _advanced-callbacks:
+.. _advanced-extensions:
 
-Callbacks, validators and hooks
+Extensions, validators and hooks
 -------------------------------
 
 ``flarchitect`` offers several extension points for tailoring behaviour beyond
@@ -512,5 +512,5 @@ return callbacks in configuration or on a model's ``Meta`` class.
     class Config:
         API_POST_SETUP_CALLBACK = ensure_admin
 
-For more examples see the :doc:`callbacks` page.
+For more examples see the :doc:`extensions` page.
 
