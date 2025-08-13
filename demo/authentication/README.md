@@ -83,7 +83,8 @@ integrating `flarchitect` into your Flask application.
 
 The `demo/authentication` directory contains runnable snippets for each
 built-in authentication strategy. Each example shares a common setup defined in
-[`app_base.py`](app_base.py).
+[`app_base.py`](app_base.py). For guidance on securing custom routes with JWT,
+see the [authentication docs](../../docs/source/authentication.rst#protecting-manual-routes).
 
 To try a demo:
 
