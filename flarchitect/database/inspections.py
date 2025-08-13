@@ -14,9 +14,7 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import DeclarativeBase
 
 
-def get_model_relationships(
-    model: DeclarativeBase, randomise: bool = True
-) -> list[type[DeclarativeBase]]:
+def get_model_relationships(model: DeclarativeBase, randomise: bool = True) -> list[type[DeclarativeBase]]:
     """Extract relationship models from a SQLAlchemy model.
 
     Args:
