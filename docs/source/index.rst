@@ -20,6 +20,7 @@ flarchitect
    validation
    extensions
    openapi
+   error_handling
 
 =======
    soft_delete
