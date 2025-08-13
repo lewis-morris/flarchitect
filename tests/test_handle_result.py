@@ -5,6 +5,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Store existing module references so later tests can import the real package
+ORIGINAL_MODULES = {
+    name: sys.modules.get(name)
+    for name in [
+        "flarchitect",
+        "flarchitect.utils",
+        "flarchitect.utils.core_utils",
+        "flarchitect.utils.config_helpers",
+        "flarchitect.utils.general",
+    ]
+}
+
 # Create stub packages to avoid executing flarchitect.__init__
 flarchitect_pkg = types.ModuleType("flarchitect")
 flarchitect_pkg.__path__ = [str(ROOT / "flarchitect")]
@@ -37,6 +49,13 @@ spec_general.loader.exec_module(general)
 handle_result = general.handle_result
 HTTP_OK = general.HTTP_OK
 HTTP_INTERNAL_SERVER_ERROR = general.HTTP_INTERNAL_SERVER_ERROR
+
+# Restore any original modules so later imports see the real package
+for name, module in ORIGINAL_MODULES.items():
+    if module is not None:
+        sys.modules[name] = module
+    else:
+        sys.modules.pop(name, None)
 
 
 def test_handle_result_with_dict():
