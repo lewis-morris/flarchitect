@@ -377,8 +377,8 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
 
     Args:
         architect: The :class:`~flarchitect.Architect` instance.
-        route_spec: Routes and schemas to register with the apispec. ``None`` is
-            accepted to gracefully skip registration.
+        route_spec: Optional list of routes and schemas to register with the
+            apispec. Defaults to no action when ``None`` or empty.
 
     Returns:
         None
