@@ -16,7 +16,6 @@ from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import (
     HTTP_BAD_REQUEST,
     HTTP_INTERNAL_SERVER_ERROR,
-    handle_result,
 )
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.responses import serialize_output_with_mallow
@@ -209,16 +208,11 @@ def standardize_response(func: Callable) -> Callable:
 
         try:
             result = func(*args, **kwargs)
-            status_code, value, count, next_url, previous_url = handle_result(result)
-            error = None if status_code < HTTP_BAD_REQUEST else value
-            out_resp = create_response(
-                value=value if not error else None,
-                errors=error,
-                status=status_code,
-                count=count,
-                next_url=next_url,
-                previous_url=previous_url,
-            )
+            out_resp = create_response(result=result)
+            status_code = out_resp.status_code
+            payload = out_resp.get_json(silent=True) or {}
+            value = payload.get("value")
+            error = payload.get("errors")
             if error or status_code > 299:
                 had_error = True
 

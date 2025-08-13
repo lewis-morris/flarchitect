@@ -11,7 +11,7 @@ from flask import Flask
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.core_utils import convert_case, get_count
+from flarchitect.utils.core_utils import convert_case
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"
@@ -399,44 +399,6 @@ def xml_to_dict(xml_data: str | bytes) -> dict[str, Any]:
     except ET.ParseError as e:
         raise ValueError("Invalid XML data provided") from e
     return {root.tag: element_to_dict(root)}
-
-
-def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
-    """
-    Processes the result of a route function
-    and prepares it for the standardised response.
-    """
-
-    # todo really not sure why this is here again.
-    # Its a relic from the past, a lot of this needs looking at.
-
-    from flarchitect.utils.responses import CustomResponse
-
-    status_code, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
-
-    if isinstance(result, tuple):
-        status_code, result = (
-            (
-                result[1],
-                result[0],
-            )
-            if len(result) == 2 and isinstance(result[1], int)
-            else (HTTP_OK, result)
-        )
-    if isinstance(result, dict):
-        value, count = (
-            result.get("query", result),
-            get_count(result, result.get("query")),
-        )
-        next_url, previous_url = result.get("next_url"), result.get("previous_url")
-    elif isinstance(result, CustomResponse):
-        next_url, previous_url, count = (
-            result.next_url,
-            result.previous_url,
-            result.count,
-        )
-
-    return status_code, value, count, next_url, previous_url
 
 
 HTTP_OK = 200

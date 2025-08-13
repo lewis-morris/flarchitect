@@ -8,12 +8,7 @@ from flarchitect.utils.core_utils import get_count
 
 
 class CustomResponse:
-    """
-    Custom response class to be used for serializing output.
-    """
-
-    # TODO: Not sure why this is here anymore and it needs reviewing.
-    # It once had a purpose but doesn't appear to any longer.
+    """Custom response class used for serializing output."""
 
     def __init__(
         self,
@@ -55,17 +50,11 @@ def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> Cust
         value = dump_schema_if_exists(output_schema, dump_data, is_list)
         count = get_count(data, value)
 
-        # Added this is the create_response function as errors were
-        # missing the response time
-        # response_ms = (time.time() - g.start_time) * 1000
-        # if g.get("start_time") else "n/a"
-
         return CustomResponse(
             value=value,
             count=count,
             next_url=data.get("next_url") if isinstance(data, dict) else None,
             previous_url=data.get("previous_url") if isinstance(data, dict) else None,
-            # response_ms=response_ms,
             many=is_list,
         )
 
