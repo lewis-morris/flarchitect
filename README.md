@@ -3,9 +3,15 @@
 [![Docs](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml)
 [![Tests](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml)
 ![Coverage](https://lewis-morris.github.io/flarchitect/_static/coverage.svg)
+[![PyPI version](https://img.shields.io/pypi/v/flarchitect.svg)](https://pypi.org/project/flarchitect/)
+
 
 
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
+
+## Why flarchitect?
+
+If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, letting you focus on the features that matter rather than plumbing.
 
 ## Features
 
@@ -23,9 +29,16 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 
 ## Installation
 
+flarchitect supports Python 3.10 and newer. Set up a virtual environment, install the package and verify the install:
+
 ```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install flarchitect
+python -c "import flarchitect; print(flarchitect.__version__)"
 ```
+
+The final command prints the version number to confirm everything installed correctly.
 
 ## Quick Start
 
@@ -44,6 +57,12 @@ architect = Architect(app)
 
 if __name__ == "__main__":
     app.run(debug=True)
+```
+
+With the application running, try your new API in another terminal window:
+
+```bash
+curl http://localhost:5000/api/authors
 ```
 
 ## OpenAPI specification
@@ -80,8 +99,13 @@ pytest
 - Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
 - Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory.
 - Authentication demos: [JWT](demo/authentication/jwt_auth.py), [Basic](demo/authentication/basic_auth.py) and [API key](demo/authentication/api_key_auth.py) snippets showcase the built-in strategies.
+- Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory, including a [validators example](demo/validators/README.md) showcasing email and URL validation.
 - Questions? Join the [GitHub discussions](https://github.com/lewis-morris/flarchitect/discussions) or open an [issue](https://github.com/lewis-morris/flarchitect/issues).
 - See the [changelog](CHANGES.rst) for release history.
+
+## Roadmap
+
+Check out the [project roadmap](docs/source/roadmap.rst) for upcoming features and enhancements.
 
 ## Contributing
 
