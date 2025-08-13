@@ -30,6 +30,8 @@ html_css_files = [
     "custom.css",
     "https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap",
 ]
+html_favicon = "_static/favicon.ico"
+
 colors = {
     "bg0": " #fbf1c7",
     "bg1": " #ebdbb2",
