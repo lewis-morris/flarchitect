@@ -1,13 +1,21 @@
 Advanced Configuration
 ======================
 
-Beyond the basics, **flarchitect** offers several advanced options for fine-
-tuning API behaviour. This guide covers rate limiting and cache configuration.
+When your API grows, you might need tools for shaping traffic, offloading
+storage and refining responses. Beyond the basics, **flarchitect** offers
+several options for these scenarios. The following sections walk through
+common patterns such as rate limiting, cache configuration and response
+metadata.
+
+As traffic increases, managing how often clients can hit your API becomes
+critical.
 
 Rate limiting
 -------------
 
-Rate limits can be applied globally, per HTTP method or per model.
+Rate limits can be applied globally, per HTTP method or per model. For
+example, to shield a public search endpoint from abuse, you might allow only
+``100`` GET requests per minute.
 
 **Global limit**
 
@@ -35,6 +43,9 @@ Rate limits can be applied globally, per HTTP method or per model.
             rate_limit = "5 per minute"      # becomes API_RATE_LIMIT
             get_rate_limit = "10 per minute"  # becomes API_GET_RATE_LIMIT
 
+Because limits depend on counting requests, those counts must live
+somewhere.
+
 Caching backends
 ----------------
 
@@ -49,13 +60,19 @@ storage URI:
         API_RATE_LIMIT_STORAGE_URI = "redis://redis.example.com:6379"
 
 If no backend is available, the limiter falls back to in-memory storage
-with rate-limit headers enabled by default.
+with rate-limit headers enabled by default. In production, you might point
+to a shared Redis cluster so that multiple application servers enforce the
+same limits.
+
+After securing throughput, you can also shape what your clients see in each
+payload.
 
 Response metadata
 -----------------
 
 ``flarchitect`` can attach additional metadata to every response. These
-keys let you toggle each field individually:
+keys let you toggle each field individually. Including version numbers, for
+example, helps client developers cache against the correct release:
 
 .. list-table::
    :header-rows: 1
