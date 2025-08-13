@@ -25,7 +25,7 @@ Config Hierarchy
 To offer flexibility and control, **flarchitect** follows a hierarchy of configuration priorities:
 
 - **Lowest Priority** – Global `Flask`_ config options apply to all requests and are overridden by any more specific configuration.
-- **Method-based** – Method-specific options can override global settings for particular `HTTP method`_s.
+- **Method-based** – Method-specific options can override global settings for particular HTTP methods.
 - **Model-based** – `SQLAlchemy`_ model ``Meta`` attributes override both global and method-based configurations.
 - **Highest Priority** – Model-specific configurations suffixed with an `HTTP method`_ allow the most detailed customization per model and method.
 
@@ -142,4 +142,4 @@ Please note the badge for each configuration value, as it defines where the valu
 Complete Configuration Reference
 --------------------------------
 
-.. include:: configuration_table.rst
+.. include:: _configuration_table.rst

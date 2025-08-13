@@ -6,6 +6,39 @@ Enable one or more strategies via ``API_AUTHENTICATE_METHOD``. Available
 methods are ``jwt``, ``basic``, ``api_key`` and ``custom``. Each example below
 uses the common setup defined in ``demo/authentication/app_base.py``.
 
+Error responses
+---------------
+
+Missing or invalid credentials return a ``401`` response:
+
+.. code-block:: json
+
+    {
+      "errors": {"error": "Authorization header missing"},
+      "status_code": 401,
+      "value": null
+    }
+
+Expired tokens also yield a ``401``:
+
+.. code-block:: json
+
+    {
+      "errors": {"error": "Token has expired"},
+      "status_code": 401,
+      "value": null
+    }
+
+Refresh failures, such as an invalid refresh token, respond with ``403``:
+
+.. code-block:: json
+
+    {
+      "errors": {"error": "Invalid or expired refresh token"},
+      "status_code": 403,
+      "value": null
+    }
+
 JWT authentication
 ------------------
 
@@ -156,3 +189,18 @@ Clients can then call your API with whatever headers your function expects:
    curl -H "X-Token: <token>" http://localhost:5000/api/books
 
 See ``demo/authentication/custom_auth.py`` for this approach in context.
+
+Troubleshooting
+---------------
+
+.. list-table::
+   :header-rows: 1
+
+   * - Problem
+     - Solution
+   * - Missing Authorization header
+     - Include the appropriate ``Authorization`` header with your credentials.
+   * - Token has expired
+     - Use the refresh token to obtain a new access token.
+   * - Invalid or expired refresh token
+     - Log in again to receive a new access/refresh token pair.
