@@ -69,7 +69,9 @@ dev = [
 [project.optional-dependencies]
 dev = [
   "ruff",
-  "isort"
+  "isort",
+  "pytest>=7.4.4",
+  "pytest-cov>=4.1.0"
 ]
 cache = [
   "flask-caching>=2.1.0",
