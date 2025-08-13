@@ -30,7 +30,9 @@ from flarchitect.utils.general import (
     check_rate_services,
     validate_flask_limiter_rate_limit_string,
 )
-from flarchitect.utils.session import get_session
+
+from flarchitect.utils.response_helpers import create_response
+
 
 FLASK_APP_NAME = "flarchitect"
 
@@ -166,6 +168,24 @@ class Architect(AttributeInitializerMixin):
             key_func=get_remote_address,
             storage_uri=storage_uri if storage_uri else None,
         )
+
+        @app.before_request
+        def _global_authentication() -> None:
+            """Authenticate requests for routes without ``schema_constructor``.
+
+            Routes decorated with :meth:`schema_constructor` handle
+            authentication themselves. This hook covers any additional view
+            functions so developers can rely on global configuration without
+            manual decoration.
+            """
+
+            view = app.view_functions.get(request.endpoint)
+            if not view or getattr(view, "_auth_disabled", False) or getattr(view, "_has_schema_constructor", False):
+                return
+            try:
+                self._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
+            except CustomHTTPException as exc:  # pragma: no cover - integration behaviour
+                return create_response(status=exc.status_code, errors=exc.reason)
 
         @app.teardown_request
         def clear_current_user(exception: BaseException | None = None) -> None:
@@ -496,6 +516,10 @@ class Architect(AttributeInitializerMixin):
                     f_decorated = local_roles_required(*roles_tuple)(f_decorated)
 
                 return f_decorated(*_args, **_kwargs)
+
+            wrapped._has_schema_constructor = True
+            if auth_flag is False:
+                wrapped._auth_disabled = True
 
             if roles and auth_flag is not False:
 
