@@ -99,8 +99,3 @@ Let's get started!
 
 `View Demos <https://github.com/arched-dev/flarchitect/tree/master/demo>`__
 
-
-.. image:: /_static/one_does_not.png
-   :alt: One does not simply generate API's
-   :align: center
-   :width: 100%
