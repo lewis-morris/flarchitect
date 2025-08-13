@@ -16,8 +16,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install .[dev]
-          pip install pytest
+          pip install pytest coverage[toml] coverage-badge
       - name: Lint with ruff
         run: ruff check --output-format=github --no-cache .
-      - name: Run tests
-        run: pytest
+      - name: Run tests with coverage
+        run: |
+          coverage run -m pytest
+          coverage report --fail-under=95
+          coverage xml
+          coverage-badge -o coverage.svg
+          coverage-badge -o docs/source/_static/coverage.svg

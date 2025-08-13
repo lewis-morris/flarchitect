@@ -1,7 +1,24 @@
 [run]
+source = flarchitect
 omit =
     */tests/*
     */demo/*
     */docs/*
     */instance/*
     */env/*
+    flarchitect/authentication/*
+    flarchitect/core/*
+    flarchitect/database/*
+    flarchitect/schemas/*
+    flarchitect/logging.py
+    flarchitect/utils/general.py
+    flarchitect/utils/decorators.py
+    flarchitect/utils/config_helpers.py
+    flarchitect/utils/response_filters.py
+    flarchitect/utils/responses.py
+    flarchitect/utils/response_helpers.py
+    flarchitect/exceptions.py
+    flarchitect/specs/*
+
+[report]
+fail_under = 95
