@@ -223,7 +223,7 @@ def create_route_function(
 
 
 class RouteCreator(AttributeInitializerMixin):
-    created_routes: dict[str, dict[str, Any]] = {}
+    created_routes: dict[str, dict[str, Any]] | None = None
     architect: Architect
     api_full_auto: bool | None = True
     api_base_model: Callable | list[Callable] | None = None
@@ -242,6 +242,7 @@ class RouteCreator(AttributeInitializerMixin):
         """
         super().__init__(*args, **kwargs)
         self.architect = architect
+        self.created_routes: dict[str, dict[str, Any]] = {}
         if self.api_full_auto:
             self.setup_models()
             self.validate()
@@ -892,6 +893,10 @@ class RouteCreator(AttributeInitializerMixin):
         """
         model = kwargs.get("child_model", kwargs.get("model"))
         route_key = kwargs["name"]
+
+        if self.created_routes is None:
+            self.created_routes = {}
+
         self.created_routes[route_key] = {
             "function": route_key,
             "model": model,
