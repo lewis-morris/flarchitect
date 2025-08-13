@@ -82,6 +82,15 @@ def test_invalid_type_datatype_two(client_models):
     patch_resp = client_models.patch("/api/publishers/1", json=data)
 
     assert patch_resp.status_code == 400
-    assert (
-        patch_resp.json["errors"]["error"]["email"][0] == "Email address is not valid."
-    )
+    assert patch_resp.json["errors"]["error"]["email"][0] == "Email address is not valid."
+
+
+def test_invalid_url(client_models):
+    """Invalid URLs return a clear validation error."""
+    publisher = client_models.get("/api/publishers/1").json
+    data = publisher["value"]
+    data["website"] = "not-a-url"
+    resp = client_models.patch("/api/publishers/1", json=data)
+
+    assert resp.status_code == 400
+    assert resp.json["errors"]["error"]["website"][0] == "URL is not valid."
