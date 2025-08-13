@@ -1,4 +1,6 @@
 # Schema for loading login data (username and password)
+from typing import Any
+
 from marshmallow import Schema, ValidationError, fields, validates
 
 
@@ -13,6 +15,7 @@ class LoginSchema(Schema):
 
         Args:
             value: The username provided by the user.
+            _ (Any): Additional keyword arguments supplied by Marshmallow.
 
         Raises:
             ValidationError: If ``value`` is empty or shorter than three characters.
@@ -29,6 +32,7 @@ class LoginSchema(Schema):
 
         Args:
             value: The password supplied by the user.
+            _ (Any): Additional keyword arguments supplied by Marshmallow.
 
         Raises:
             ValidationError: If ``value`` is empty or shorter than six characters.

@@ -1,4 +1,3 @@
-
 """Integration tests for demo authentication strategies."""
 
 from __future__ import annotations
@@ -7,9 +6,16 @@ import base64
 from collections.abc import Callable
 
 from flask.testing import FlaskClient
+from marshmallow import Schema, fields
 
-from demo.authentication.app_base import BaseConfig, User, create_app, db
+from demo.authentication.app_base import BaseConfig, User, create_app, db, schema
 from flarchitect.authentication.user import get_current_user, set_current_user
+
+
+class ProfileSchema(Schema):
+    """Minimal schema exposing the authenticated user's username."""
+
+    username = fields.String(required=True)
 
 
 def _prepare_app(config: type[BaseConfig], setup: Callable[[FlaskClient], None]) -> FlaskClient:
@@ -18,7 +24,10 @@ def _prepare_app(config: type[BaseConfig], setup: Callable[[FlaskClient], None])
     app = create_app(config)
 
     @app.get("/profile")
-    def profile() -> dict[str, str]:  # type: ignore[unused-variable]
+    @schema.schema_constructor(output_schema=ProfileSchema, auth=True)
+    def profile() -> dict[str, str]:
+        """Return the authenticated user's profile."""
+
         user = get_current_user()
         return {"username": user.username}
 
@@ -90,6 +99,7 @@ def test_basic_demo_login_and_profile() -> None:
     assert profile.status_code == 200
     assert profile.get_json()["username"] == "bob"
 
+
     bad_creds = base64.b64encode(b"bob:wrongpwd").decode("utf-8")
     bad_login = client.post(
         "/auth/login", headers={"Authorization": f"Basic {bad_creds}"}
@@ -110,6 +120,7 @@ def test_api_key_demo_login_and_profile() -> None:
         API_AUTHENTICATE_METHOD = ["api_key"]
         API_USER_MODEL = User
         API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
+        API_USER_LOOKUP_FIELD = "username"
 
     def seed(_: FlaskClient) -> None:
         user = User(username="carol", password="pw", api_key="secret")
@@ -125,7 +136,5 @@ def test_api_key_demo_login_and_profile() -> None:
     assert profile.status_code == 200
     assert profile.get_json()["username"] == "carol"
 
-    bad_login = client.post(
-        "/auth/login", headers={"Authorization": "Api-Key bad"}
-    )
+    bad_login = client.post("/auth/login", headers={"Authorization": "Api-Key bad"})
     assert bad_login.status_code == 401

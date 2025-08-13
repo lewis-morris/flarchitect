@@ -402,13 +402,13 @@ class RouteCreator(AttributeInitializerMixin):
         def basic_login() -> dict[str, Any]:
             auth_header = request.headers.get("Authorization", "")
             if not auth_header.startswith("Basic "):
-                raise CustomHTTPException(401, "Invalid credentials")
+                return create_response(status=401, errors={"error": "Invalid credentials"})
 
             try:
                 encoded = auth_header.split(" ", 1)[1]
                 username, password = base64.b64decode(encoded).decode("utf-8").split(":", 1)
-            except (ValueError, binascii.Error, UnicodeDecodeError) as exc:  # pragma: no cover - bad header
-                raise CustomHTTPException(401, "Invalid credentials") from exc
+            except (ValueError, binascii.Error, UnicodeDecodeError):  # pragma: no cover - bad header
+                return create_response(status=401, errors={"error": "Invalid credentials"})
 
             lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user, default=None)
             check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
@@ -418,7 +418,7 @@ class RouteCreator(AttributeInitializerMixin):
                 pk, lookup = get_pk_and_lookups()
                 return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
 
-            raise CustomHTTPException(401, "Invalid credentials")
+            return create_response(status=401, errors={"error": "Invalid credentials"})
 
     def _make_api_key_auth_routes(self, user: Callable) -> None:
         """Create API key authentication login route.
@@ -433,7 +433,7 @@ class RouteCreator(AttributeInitializerMixin):
             header = request.headers.get("Authorization", "")
             scheme, _, token = header.partition(" ")
             if scheme.lower() != "api-key" or not token:
-                raise CustomHTTPException(401, "Invalid credentials")
+                return create_response(status=401, errors={"error": "Invalid credentials"})
 
             custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", model=user, default=None)
             if callable(custom_method):
@@ -464,7 +464,7 @@ class RouteCreator(AttributeInitializerMixin):
                     data[lookup] = getattr(usr, lookup)
                 return create_response(data)
 
-            raise CustomHTTPException(401, "Invalid credentials")
+            return create_response(status=401, errors={"error": "Invalid credentials"})
 
     def _make_jwt_auth_routes(self, user: Callable):
         """Create JWT authentication routes."""
