@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
@@ -33,12 +35,15 @@ from flarchitect.utils.general import (
     search_all_keys,
 )
 
+if TYPE_CHECKING:  # pragma: no cover - imported only for type hints
+    from flarchitect.core.architect import Architect
+
 
 class CustomSpec(APISpec, AttributeInitializerMixin):
     """A subclass of APISpec for specifying tag groups with extended features."""
 
     app: Flask
-    architect: "Architect"  # The architect object
+    architect: Architect  # The architect object
 
     spec_groups: dict[str, list[dict[str, str | list[str]]]] = {"x-tagGroups": []}
     api_title: str | None = ""
@@ -51,7 +56,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
     documentation_url_prefix: str | None = "/"
     documentation_url: str | None = "/docs"
 
-    def __init__(self, app: Flask, architect: "Architect", *args, **kwargs):
+    def __init__(self, app: Flask, architect: Architect, *args, **kwargs):
         """Initializes the CustomSpec object.
 
         Args:
@@ -353,6 +358,12 @@ def register_schemas(
 
     put_input_schema = _prepare_patch_schema(input_schema)
 
+    # ``MarshmallowPlugin`` keeps track of registered schemas. Inspect the
+    # plugin to avoid adding the same schema class twice, which would trigger
+    # warnings from ``apispec``.
+    plugin = next((p for p in spec.plugins if isinstance(p, MarshmallowPlugin)), None)
+    registered_refs = getattr(plugin, "refs", set()) if plugin else set()
+
     for schema in [input_schema, output_schema, put_input_schema]:
         if schema:
             model = schema.get_model() if hasattr(schema, "get_model") else None
@@ -367,6 +378,11 @@ def register_schemas(
             )
             schema.__name__ = schema_name
 
+            schema_cls = schema if isinstance(schema, type) else schema.__class__
+            schema_key = f"{schema_cls.__module__}.{schema_cls.__name__}"
+            if schema_key in registered_refs and not force_update:
+                continue
+
             existing_schema = spec.components.schemas.get(schema_name)
             if existing_schema and force_update:
                 spec.components.schemas[schema_name] = schema
@@ -374,12 +390,13 @@ def register_schemas(
                 spec.components.schema(schema_name, schema=schema)
 
 
-def register_routes_with_spec(architect: "Architect", route_spec: list[dict[str, Any]]):
+def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]]):
     """Registers all flarchitect with the apispec object.
 
     Args:
         architect (Architect): The architect object.
-        route_spec (List[Dict[str, Any]]): List of routes/schemas to register with the apispec.
+        route_spec (List[Dict[str, Any]]): Routes and schemas to register with
+            the apispec.
 
     Returns:
         None
