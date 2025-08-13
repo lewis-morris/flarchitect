@@ -184,6 +184,200 @@ class Architect(AttributeInitializerMixin):
         if self.app:
             return self.app.config.get(key, default)
 
+    def _handle_auth(
+        self,
+        *,
+        model: DeclarativeBase | None,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+        auth_flag: bool | None,
+    ) -> None:
+        """Authenticate the current request based on configuration.
+
+        Args:
+            model: Database model associated with the endpoint.
+            output_schema: Schema used to serialize responses.
+            input_schema: Schema used to deserialize requests.
+            auth_flag: Optional flag to disable authentication when ``False``.
+
+        Raises:
+            CustomHTTPException: If authentication is required but no method
+                succeeds.
+        """
+
+        auth_method = get_config_or_model_meta(
+            "API_AUTHENTICATE_METHOD",
+            model=model,
+            output_schema=output_schema,
+            input_schema=input_schema,
+            method=request.method,
+            default=False,
+        )
+
+        if auth_method and auth_flag is not False:
+            if not isinstance(auth_method, list):
+                auth_method = [auth_method]
+
+            for method_name in auth_method:
+                auth_func = getattr(self, f"_authenticate_{method_name}", None)
+                if callable(auth_func) and auth_func():
+                    return
+
+            raise CustomHTTPException(status_code=401)
+
+    def _apply_schemas(
+        self,
+        func: Callable,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+        many: bool,
+    ) -> Callable:
+        """Apply input and output schema decorators to a view function.
+
+        Args:
+            func: The view function to decorate.
+            output_schema: Schema used to serialize responses.
+            input_schema: Schema used to deserialize requests.
+            many: ``True`` if the route returns multiple objects.
+
+        Returns:
+            Callable: The decorated function.
+        """
+
+        decorator = handle_many(output_schema, input_schema) if many else handle_one(output_schema, input_schema)
+        return decorator(func)
+
+    def _apply_rate_limit(
+        self,
+        func: Callable,
+        *,
+        model: DeclarativeBase | None,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+    ) -> Callable:
+        """Wrap a function with rate limiting if configured.
+
+        Args:
+            func: The function to wrap.
+            model: Database model associated with the endpoint.
+            output_schema: Schema used to serialize responses.
+            input_schema: Schema used to deserialize requests.
+
+        Returns:
+            Callable: The rate-limited function or the original ``func`` if no
+            rate limiting is applied.
+        """
+
+        rl = get_config_or_model_meta(
+            "API_RATE_LIMIT",
+            model=model,
+            input_schema=input_schema,
+            output_schema=output_schema,
+            default=False,
+        )
+        if rl and isinstance(rl, str) and validate_flask_limiter_rate_limit_string(rl):
+            return self.limiter.limit(rl)(func)
+        if rl:
+            rule = find_rule_by_function(self, func).rule
+            logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
+        return func
+
+    def _authenticate_jwt(self) -> bool:
+        """Authenticate the request using a JSON Web Token."""
+
+        try:
+            auth = request.headers.get("Authorization")
+            if auth and auth.startswith("Bearer "):
+                token = auth.split(" ")[1]
+                usr = get_user_from_token(token, secret_key=None)
+                if usr:
+                    set_current_user(usr)
+                    return True
+        except CustomHTTPException:
+            pass
+        return False
+
+    def _authenticate_basic(self) -> bool:
+        """Authenticate the request using HTTP Basic auth."""
+
+        auth = request.headers.get("Authorization")
+        if not auth or not auth.startswith("Basic "):
+            return False
+
+        encoded_credentials = auth.split(" ", 1)[1]
+        try:
+            decoded = base64.b64decode(encoded_credentials).decode("utf-8")
+        except (ValueError, binascii.Error, UnicodeDecodeError):
+            return False
+
+        username, _, password = decoded.partition(":")
+        if not username or not password:
+            return False
+
+        user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
+        lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", default=None)
+        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
+
+        if not (user_model and lookup_field and check_method):
+            return False
+
+        try:
+            user = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
+        except Exception:  # pragma: no cover
+            return False
+
+        if user and getattr(user, check_method)(password):
+            set_current_user(user)
+            return True
+
+        return False
+
+    def _authenticate_api_key(self) -> bool:
+        """Authenticate the request using an API key."""
+
+        header = request.headers.get("Authorization", "")
+        scheme, _, token = header.partition(" ")
+        if scheme.lower() != "api-key" or not token:
+            return False
+
+        custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
+        if callable(custom_method):
+            user = custom_method(token)
+            if user:
+                set_current_user(user)
+                return True
+            return False
+
+        user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
+        hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
+        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
+
+        if not (user_model and hash_field and check_method):
+            return False
+
+        query = getattr(user_model, "query", None)
+        if query is None:
+            session = getattr(user_model, "get_session", lambda: None)()
+            if session is None:
+                return False
+            query = session.query(user_model)
+
+        for usr in query.all():
+            stored = getattr(usr, hash_field, None)
+            if stored and getattr(usr, check_method)(token):
+                set_current_user(usr)
+                return True
+
+        return False
+
+    def _authenticate_custom(self) -> bool:
+        """Authenticate the request using a custom method."""
+
+        custom_auth_func = get_config_or_model_meta("API_CUSTOM_AUTH")
+        if callable(custom_auth_func):
+            return custom_auth_func()
+        return False
+
     def schema_constructor(
         self,
         output_schema: type[Schema] | None = None,
@@ -215,166 +409,22 @@ class Architect(AttributeInitializerMixin):
         def decorator(f: Callable) -> Callable:
             @wraps(f)
             def wrapped(*_args, **_kwargs):
-                # Fetch the authentication methods
-                auth_method = get_config_or_model_meta(
-                    "API_AUTHENTICATE_METHOD",
+                self._handle_auth(
                     model=model,
                     output_schema=output_schema,
                     input_schema=input_schema,
-                    method=request.method,
-                    default=False,
+                    auth_flag=kwargs.get("auth"),
                 )
 
-                # Ensure auth_method is a list
-                if auth_method and kwargs.get("auth") is not False:
-                    if not isinstance(auth_method, list):
-                        auth_method = [auth_method]
-
-                    auth_succeeded = False  # Flag to check if any auth method succeeded
-
-                    # Iterate over the authentication methods
-                    for method in auth_method:
-                        if method == "jwt":
-                            if authenticate_jwt():
-                                auth_succeeded = True
-                                break
-                        elif method == "basic":
-                            if authenticate_basic():
-                                auth_succeeded = True
-                                break
-                        elif method == "api_key":
-                            if authenticate_api_key():
-                                auth_succeeded = True
-                                break
-                        elif method == "custom" and authenticate_custom():
-                            auth_succeeded = True
-                            break
-
-                    # If all authentication methods failed
-                    if not auth_succeeded:
-                        raise CustomHTTPException(status_code=401)
-
-                # Apply the input/output schema handlers
-                f_decorated = handle_many(output_schema, input_schema)(f) if many else handle_one(output_schema, input_schema)(f)
-
-                # Apply rate limiting if configured
-                rl = get_config_or_model_meta(
-                    "API_RATE_LIMIT",
+                f_decorated = self._apply_schemas(f, output_schema, input_schema, bool(many))
+                f_decorated = self._apply_rate_limit(
+                    f_decorated,
                     model=model,
-                    input_schema=input_schema,
                     output_schema=output_schema,
-                    default=False,
+                    input_schema=input_schema,
                 )
-                if rl and isinstance(rl, str) and validate_flask_limiter_rate_limit_string(rl):
-                    f_decorated = self.limiter.limit(rl)(f_decorated)
-                elif rl:
-                    rule = find_rule_by_function(self, f).rule
-                    logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
 
-                # Call the decorated function
-                result = f_decorated(*_args, **_kwargs)
-                return result
-
-            # Authentication functions
-            def authenticate_jwt() -> bool:
-                try:
-                    auth = request.headers.get("Authorization")
-                    if auth and auth.startswith("Bearer "):
-                        token = auth.split(" ")[1]
-                        usr = get_user_from_token(token, secret_key=None)
-                        if usr:
-                            set_current_user(usr)
-                            return True
-                except CustomHTTPException:
-                    pass
-                return False
-
-            def authenticate_basic() -> bool:
-                """Authenticate the request using HTTP Basic auth.
-
-                Returns:
-                    bool: ``True`` if authentication succeeds, otherwise ``False``.
-                """
-
-                auth = request.headers.get("Authorization")
-                if not auth or not auth.startswith("Basic "):
-                    return False
-
-                encoded_credentials = auth.split(" ", 1)[1]
-                try:
-                    decoded = base64.b64decode(encoded_credentials).decode("utf-8")
-                except (ValueError, binascii.Error, UnicodeDecodeError):
-                    return False
-
-                username, _, password = decoded.partition(":")
-                if not username or not password:
-                    return False
-
-                user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
-                lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", default=None)
-                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
-
-                if not (user_model and lookup_field and check_method):
-                    return False
-
-                try:
-                    user = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
-                except Exception:  # pragma: no cover
-                    return False
-
-                if user and getattr(user, check_method)(password):
-                    set_current_user(user)
-                    return True
-
-                return False
-
-            def authenticate_api_key() -> bool:
-                """Authenticate the request using an API key.
-
-                Returns:
-                    bool: ``True`` if authentication succeeds, otherwise ``False``.
-                """
-
-                header = request.headers.get("Authorization", "")
-                scheme, _, token = header.partition(" ")
-                if scheme.lower() != "api-key" or not token:
-                    return False
-
-                custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
-                if callable(custom_method):
-                    user = custom_method(token)
-                    if user:
-                        set_current_user(user)
-                        return True
-                    return False
-
-                user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
-                hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
-
-                if not (user_model and hash_field and check_method):
-                    return False
-
-                query = getattr(user_model, "query", None)
-                if query is None:
-                    session = getattr(user_model, "get_session", lambda: None)()
-                    if session is None:
-                        return False
-                    query = session.query(user_model)
-
-                for usr in query.all():
-                    stored = getattr(usr, hash_field, None)
-                    if stored and getattr(usr, check_method)(token):
-                        set_current_user(usr)
-                        return True
-
-                return False
-
-            def authenticate_custom() -> bool:
-                custom_auth_func = get_config_or_model_meta("API_CUSTOM_AUTH")
-                if callable(custom_auth_func):
-                    return custom_auth_func()
-                return False
+                return f_decorated(*_args, **_kwargs)
 
             # Store route information for OpenAPI documentation
             route_info = {
