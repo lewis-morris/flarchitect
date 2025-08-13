@@ -18,7 +18,7 @@ flarchitect
    models
    validation
    authentication
-   callbacks
+   extensions
    configuration
    openapi
    soft_delete

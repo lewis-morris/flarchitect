@@ -1,4 +1,4 @@
-Callbacks
+Extensions
 =========================================
 
 Callbacks let you hook into the request lifecycle to run custom logic around

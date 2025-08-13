@@ -440,5 +440,5 @@ return callbacks in configuration or on a model's ``Meta`` class.
     class Config:
         API_POST_SETUP_CALLBACK = ensure_admin
 
-For more examples see the :doc:`callbacks` page.
+For more examples see the :doc:`extensions` page.
 
