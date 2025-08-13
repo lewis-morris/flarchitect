@@ -7,6 +7,10 @@
 
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
 
+## Why flarchitect?
+
+If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, letting you focus on the features that matter rather than plumbing.
+
 ## Features
 
 - **Zero-configuration endpoints** – expose models as RESTful resources by adding a simple `Meta` class.
@@ -23,9 +27,16 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 
 ## Installation
 
+flarchitect supports Python 3.10 and newer. Set up a virtual environment, install the package and verify the install:
+
 ```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install flarchitect
+python -c "import flarchitect; print(flarchitect.__version__)"
 ```
+
+The final command prints the version number to confirm everything installed correctly.
 
 ## Quick Start
 
@@ -44,6 +55,12 @@ architect = Architect(app)
 
 if __name__ == "__main__":
     app.run(debug=True)
+```
+
+With the application running, try your new API in another terminal window:
+
+```bash
+curl http://localhost:5000/api/authors
 ```
 
 ## OpenAPI specification
