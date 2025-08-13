@@ -130,6 +130,7 @@ API key auth associates a user with a single token. Clients send the token in
 each request, usually via a header like ``X-API-Key`` or as a query string
 parameter. flarchitect passes the token to a function you provide, and the
 function returns the matching user.
+If you store hashed tokens on the model, set ``API_CREDENTIAL_HASH_FIELD`` to the attribute holding the hash so flarchitect can validate keys.
 
 Attach a function that accepts an API key and returns a user. The function can
 also call ``set_current_user``:

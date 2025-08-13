@@ -7,6 +7,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Controls whether ReDoc documentation is generated automatically. Set to ``False`` to disable docs in production or when using an external documentation tool. Accepts ``True`` or ``False``. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_DOCUMENTATION_HEADERS``
+
+          :bdg:`default:` ````
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Extra HTML placed in the <head> of the docs page. Supply meta tags or script includes as a string or template.
     * - ``API_DOCUMENTATION_URL``
 
           :bdg:`default:` ``/docs``
@@ -14,6 +21,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - URL path where documentation is served. Useful for mounting docs under a custom route such as ``/redoc``. Accepts any valid path string. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_DOCS_STYLE``
+
+          :bdg:`default:` ``redoc``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Selects the documentation UI style. Use ``redoc`` (default) or ``swagger`` to render with Swagger UI.
     * - ``API_SPEC_ROUTE``
 
           :bdg:`default:` ``/openapi.json``
@@ -139,6 +153,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Case style for generated endpoint URLs such as ``kebab`` or ``snake``. Choose to match your project's conventions. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_ENDPOINT_NAMER``
+
+          :bdg:`default:` ``endpoint_namer``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Function that generates endpoint names from models. Override to customise URL naming behaviour.
     * - ``API_FIELD_CASE``
 
           :bdg:`default:` ``snake``
@@ -266,6 +287,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - Allows clients to specify which fields to return, reducing payload size. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_ALLOWED_METHODS``
+
+          :bdg:`default:` ``[]``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Whitelist of HTTP methods permitted on routes. Only methods in this list are enabled.
     * - ``API_block_methods``
 
           :bdg-secondary:`Optional` 
@@ -281,6 +309,13 @@
           :bdg-secondary:`Optional` 
 
         - Name of the authentication method used, such as ``jwt`` or ``basic``. Determines which auth backend to apply. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - ``API_CREDENTIAL_HASH_FIELD``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Field on the user model storing a hashed credential for API key auth. Required when using ``api_key`` authentication.
     * - ``API_USER_MODEL``
 
           :bdg-secondary:`Optional`
