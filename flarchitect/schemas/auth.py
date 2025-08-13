@@ -43,13 +43,15 @@ class LoginSchema(Schema):
             raise ValidationError("Password must be at least 6 characters long.")
 
 
-# Schema for dumping tokens (auth and refresh tokens)
 class TokenSchema(Schema):
+    """Serializes access and refresh tokens with the user primary key."""
+
     access_token = fields.String(required=True)
     refresh_token = fields.String(required=True)
     user_pk = fields.String(required=True)
 
 
-# Schema for dumping tokens (auth and refresh tokens)
 class RefreshSchema(Schema):
+    """Validates refresh-token payloads."""
+
     refresh_token = fields.String(required=True)
