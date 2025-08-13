@@ -15,17 +15,18 @@ If you're new here, welcome! flarchitect gets you from data models to a fully fl
 
 ## Features
 
-- **Zero-configuration endpoints** – expose models as RESTful resources by adding a simple `Meta` class.
-- **Automatic documentation** – comprehensive Redoc or Swagger UI docs are generated at runtime and stay in sync with your models.
-- **SQLAlchemy integration** – works with plain SQLAlchemy or Flask-SQLAlchemy.
-- **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, each exposing a simple `/auth/login` endpoint for credential validation, or plug in your own authentication.
-- **Rate limiting & structured responses** – configurable throttling and responses with a consistent schema.
-- **Highly configurable** – tweak behaviour globally via Flask config or per model with `Meta` attributes.
-- **Field validation** – built-in validators for emails, URLs, IPs and more.
-- **Nested writes** – opt-in support for sending related objects in POST/PUT payloads. Enable with `API_ALLOW_NESTED_WRITES = True` and let `AutoSchema` deserialize them automatically.
-- **CORS support** – enable cross-origin requests with `API_ENABLE_CORS`. See the [advanced configuration guide](docs/source/advanced_configuration.rst#cors) for an example.
+- **Automatic CRUD endpoints** – expose SQLAlchemy models as RESTful resources with a simple `Meta` class.
+- **Interactive documentation** – Redoc or Swagger UI generated at runtime and kept in sync with your models.
+- **Built-in authentication** – JWT, basic and API key strategies ship with a ready‑made `/auth/login` endpoint, or plug in your own.
+- **Extensibility hooks** – customise request and response flows.
 - **Soft delete** – hide and restore records without permanently removing them.
-- **Extensible callbacks** – hook into request/response flows to customise behaviour.
+
+### Optional extras
+
+- **Rate limiting & structured responses** – configurable throttling and consistent response schema.
+- **Field validation** – built-in validators for emails, URLs, IPs and more.
+- **Nested writes** – send related objects in POST/PUT payloads when `API_ALLOW_NESTED_WRITES` is `True`.
+- **CORS support** – enable cross-origin requests with `API_ENABLE_CORS`.
 
 ## Installation
 
@@ -97,9 +98,8 @@ pytest
 ## Documentation & help
 
 - Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
-- Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory.
-- Authentication demos: [JWT](demo/authentication/jwt_auth.py), [Basic](demo/authentication/basic_auth.py) and [API key](demo/authentication/api_key_auth.py) snippets showcase the built-in strategies.
 - Explore runnable examples in the [demo](https://github.com/lewis-morris/flarchitect/tree/master/demo) directory, including a [validators example](demo/validators/README.md) showcasing email and URL validation.
+- Authentication demos: [JWT](demo/authentication/jwt_auth.py), [Basic](demo/authentication/basic_auth.py) and [API key](demo/authentication/api_key_auth.py) snippets showcase the built-in strategies.
 - Questions? Join the [GitHub discussions](https://github.com/lewis-morris/flarchitect/discussions) or open an [issue](https://github.com/lewis-morris/flarchitect/issues).
 - See the [changelog](CHANGES.rst) for release history.
 

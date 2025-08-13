@@ -13,7 +13,7 @@
 <meta name="description" content="When your API grows, you might need tools for shaping traffic, offloading storage and refining responses. Beyond the basics, flarchitect offers several options for these scenarios. The following se..." />
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@arched_dev">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Advanced Demo" href="advanced_demo.html" /><link rel="prev" title="Roadmap" href="roadmap.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" />
         <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/advanced_configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
@@ -237,33 +237,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/global_.html">Config Globals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/global_method.html">Config by Method Globals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/model.html">Config Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Advanced Configuration</a></li>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
@@ -473,6 +462,64 @@ your payload:</p>
 responses continue to use the configured serialization type (URL, JSON, or
 dynamic).</p>
 </section>
+<section id="soft-delete">
+<span id="id1"></span><h2>Soft delete<a class="headerlink" href="#soft-delete" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> can mark records as deleted without removing them from the
+database. This allows you to hide data from normal queries while retaining it
+for auditing or future restoration.</p>
+<section id="configuration">
+<h3>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h3>
+<p>Enable soft deletes and define how records are flagged:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+    <span class="n">API_SOFT_DELETE</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">API_SOFT_DELETE_ATTRIBUTE</span> <span class="o">=</span> <span class="s2">&quot;deleted&quot;</span>
+    <span class="n">API_SOFT_DELETE_VALUES</span> <span class="o">=</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code> names the column that stores the deleted flag.
+<code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_VALUES</span></code> is a tuple where the first value represents an
+active record and the second marks it as deleted.</p>
+</section>
+<section id="example-model">
+<h3>Example model<a class="headerlink" href="#example-model" title="Link to this heading">¶</a></h3>
+<p>Add a boolean column to your base model so every table can inherit the flag:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLAlchemy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Boolean</span><span class="p">,</span> <span class="n">DateTime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">Mapped</span><span class="p">,</span> <span class="n">mapped_column</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="n">created</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">)</span>
+    <span class="n">updated</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">,</span> <span class="n">onupdate</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">)</span>
+    <span class="n">deleted</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">Boolean</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">SQLAlchemy</span><span class="p">(</span><span class="n">model_class</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;books&quot;</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">(</span><span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Mapped</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">mapped_column</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="example-queries">
+<h3>Example queries<a class="headerlink" href="#example-queries" title="Link to this heading">¶</a></h3>
+<p>Soft deleted rows are hidden from normal requests:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">GET /api/books        # returns rows where deleted=False</span>
+</pre></div>
+</div>
+<p>Include the <code class="docutils literal notranslate"><span class="pre">include_deleted</span></code> query parameter to return all rows:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">GET /api/books?include_deleted=true</span>
+</pre></div>
+</div>
+<p>Issuing a DELETE request marks the record as deleted. To remove it
+permanently, supply <code class="docutils literal notranslate"><span class="pre">cascade_delete=1</span></code>:</p>
+<div class="highlight-http notranslate"><div class="highlight"><pre><span></span><span class="err">DELETE /api/books/1             # sets deleted=True</span>
+<span class="err">DELETE /api/books/1?cascade_delete=1  # removes row from database</span>
+</pre></div>
+</div>
+</section>
+</section>
 <section id="cors">
 <h2>CORS<a class="headerlink" href="#cors" title="Link to this heading">¶</a></h2>
 <p>To enable <a class="reference external" href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">Cross-Origin Resource Sharing (CORS)</a>
@@ -488,8 +535,8 @@ options, mirroring the format used by <a class="reference external" href="https:
     <span class="p">}</span>
 </pre></div>
 </div>
-<section id="id1">
-<h3>Example<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<section id="id2">
+<h3>Example<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
 <p>The following snippet enables CORS for all API routes:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">flarchitect</span><span class="w"> </span><span class="kn">import</span> <span class="n">Architect</span>
@@ -558,7 +605,7 @@ function to a field name:</p>
 </section>
 </section>
 <section id="cascade-deletes">
-<span id="id2"></span><h2>Cascade deletes<a class="headerlink" href="#cascade-deletes" title="Link to this heading">¶</a></h2>
+<span id="id3"></span><h2>Cascade deletes<a class="headerlink" href="#cascade-deletes" title="Link to this heading">¶</a></h2>
 <p>When removing a record, related rows may block the operation. These
 settings let <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> clean up relationships automatically when
 explicitly requested.</p>
@@ -714,26 +761,8 @@ return callbacks in configuration or on a model’s <code class="docutils litera
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="advanced_demo.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">Advanced Demo</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="roadmap.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">Roadmap</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -772,8 +801,14 @@ return callbacks in configuration or on a model’s <code class="docutils litera
 </ul>
 </li>
 <li><a class="reference internal" href="#nested-model-creation">Nested model creation</a></li>
+<li><a class="reference internal" href="#soft-delete">Soft delete</a><ul>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#example-model">Example model</a></li>
+<li><a class="reference internal" href="#example-queries">Example queries</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#cors">CORS</a><ul>
-<li><a class="reference internal" href="#id1">Example</a></li>
+<li><a class="reference internal" href="#id2">Example</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#query-parameter-controls">Query parameter controls</a><ul>

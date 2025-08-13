@@ -30,9 +30,8 @@ from flarchitect.utils.general import (
     check_rate_services,
     validate_flask_limiter_rate_limit_string,
 )
-
 from flarchitect.utils.response_helpers import create_response
-
+from flarchitect.utils.session import get_session
 
 FLASK_APP_NAME = "flarchitect"
 

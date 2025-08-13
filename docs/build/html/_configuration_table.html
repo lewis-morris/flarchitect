@@ -237,33 +237,22 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="callbacks.html">Callbacks</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="configuration.html">Configuration</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/global_.html">Config Globals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/global_method.html">Config by Method Globals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/model.html">Config Models</a></li>
-<li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
-</ul>
-</li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<p class="caption" role="heading"><span class="caption-text">Advanced Topics</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
@@ -1171,7 +1160,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Custom callback executed when a rate limit is hit, enabling logging or alternative responses.</p></li>
+<li><p>Reserved hook that would fire when a request exceeds its rate limit.
+The callable could log the event or return a bespoke response.
+Currently, <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> does not invoke this callback, so setting it has no effect.</p></li>
 </ul>
 </td>
 </tr>
@@ -1182,7 +1173,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Storage backend for rate limit data such as <code class="docutils literal notranslate"><span class="pre">redis://</span></code> or <code class="docutils literal notranslate"><span class="pre">memory://</span></code>.</p></li>
+<li><p>URI for the rate limiter’s storage backend, e.g., <code class="docutils literal notranslate"><span class="pre">redis://127.0.0.1:6379</span></code>.
+When omitted, <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> probes for Redis, Memcached, or MongoDB and falls back to in-memory storage.
+Use this to pin rate limiting to a specific service instead of auto-detection.</p></li>
 </ul>
 </td>
 </tr>
@@ -1193,7 +1186,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Fields to exclude entirely from both input and output payloads.</p></li>
+<li><p>Intended list of attributes hidden from both requests and responses.
+Use it when a column should never be accepted or exposed, such as <code class="docutils literal notranslate"><span class="pre">internal_notes</span></code>.
+At present the core does not process this flag, so filtering must be handled manually.</p></li>
 </ul>
 </td>
 </tr>
@@ -1204,7 +1199,8 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Fields removed from output serialization while still accepted on input.</p></li>
+<li><p>Fields accepted during writes but stripped from serialized responses—ideal for secrets like <code class="docutils literal notranslate"><span class="pre">password</span></code>.
+This option is not yet wired into the serializer; custom schema logic is required to enforce it.</p></li>
 </ul>
 </td>
 </tr>
@@ -1215,7 +1211,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Input-only fields stripped from response bodies but required on create or update.</p></li>
+<li><p>Attributes the API ignores if clients supply them, while still returning the values when present on the model.
+Useful for server-managed columns such as <code class="docutils literal notranslate"><span class="pre">created_at</span></code>.
+Currently this flag is informational and does not trigger automatic filtering.</p></li>
 </ul>
 </td>
 </tr>
@@ -1226,7 +1224,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Name given to the Flask blueprint that houses the API routes. Useful for namespacing.</p></li>
+<li><p>Proposed name for the Flask blueprint wrapping all API routes.
+The extension presently registers the blueprint as <code class="docutils literal notranslate"><span class="pre">&quot;api&quot;</span></code> regardless of this value.
+Treat it as a placeholder for future namespacing support.</p></li>
 </ul>
 </td>
 </tr>
@@ -1236,8 +1236,15 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">bool</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
-<ul class="simple">
-<li><p>Enables soft deletion by marking records instead of removing them. Pair with corresponding attribute and values. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
+<ul>
+<li><p>Marks records as deleted rather than removing them from the database.
+When enabled, <code class="docutils literal notranslate"><span class="pre">DELETE</span></code> swaps a configured attribute to its “deleted” value unless <code class="docutils literal notranslate"><span class="pre">?cascade_delete=1</span></code> is sent.</p></li>
+<li><p>Example:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+    <span class="n">API_SOFT_DELETE</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </td>
 </tr>
@@ -1247,8 +1254,14 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge">type</span> <code class="docutils literal notranslate"><span class="pre">str</span></code>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
-<ul class="simple">
-<li><p>Column name used to flag soft-deleted records, e.g., <code class="docutils literal notranslate"><span class="pre">status</span></code>. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
+<ul>
+<li><p>Model column that stores the delete state, such as <code class="docutils literal notranslate"><span class="pre">status</span></code> or <code class="docutils literal notranslate"><span class="pre">is_deleted</span></code>.
+<code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> updates this attribute to the “deleted” value during soft deletes.
+Example:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">API_SOFT_DELETE_ATTRIBUTE</span> <span class="o">=</span> <span class="s2">&quot;status&quot;</span>
+</pre></div>
+</div>
+</li>
 </ul>
 </td>
 </tr>
@@ -1259,7 +1272,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Tuple of values representing active and deleted states, such as <code class="docutils literal notranslate"><span class="pre">(&quot;active&quot;,</span> <span class="pre">&quot;deleted&quot;)</span></code>. Example: <a class="reference external" href="https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py">demo/soft_delete/soft_delete/config.py</a>.</p></li>
+<li><p>Two-element tuple defining the active and deleted markers for <code class="docutils literal notranslate"><span class="pre">API_SOFT_DELETE_ATTRIBUTE</span></code>.
+For example, <code class="docutils literal notranslate"><span class="pre">(&quot;active&quot;,</span> <span class="pre">&quot;deleted&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">0)</span></code>.
+The second value is written when a soft delete occurs.</p></li>
 </ul>
 </td>
 </tr>
@@ -1270,7 +1285,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Allows removal of related records when a parent is deleted. Disable to enforce manual cleanup.</p></li>
+<li><p>Historical flag intended to control whether child records are deleted alongside their parent.
+The current deletion engine only honours <code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code>, so this setting is ignored.
+Leave it unset unless future versions reintroduce granular control.</p></li>
 </ul>
 </td>
 </tr>
@@ -1281,7 +1298,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Permits deletion of dependent objects that rely on the target record.</p></li>
+<li><p>Companion flag to <code class="docutils literal notranslate"><span class="pre">API_ALLOW_DELETE_RELATED</span></code> covering association-table entries and similar dependents.
+Not currently evaluated by the code base; cascade behaviour hinges solely on <code class="docutils literal notranslate"><span class="pre">API_ALLOW_CASCADE_DELETE</span></code>.
+Documented for completeness and potential future use.</p></li>
 </ul>
 </td>
 </tr>
@@ -1292,7 +1311,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Short description for list endpoints used in generated docs.</p></li>
+<li><p>Customises the <code class="docutils literal notranslate"><span class="pre">summary</span></code> line for list endpoints in the generated OpenAPI spec.
+Example: <code class="docutils literal notranslate"><span class="pre">get_many_summary</span> <span class="pre">=</span> <span class="pre">&quot;List</span> <span class="pre">all</span> <span class="pre">books&quot;</span></code> produces that phrase on <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/books</span></code>.
+Useful for clarifying collection responses at a glance.</p></li>
 </ul>
 </td>
 </tr>
@@ -1303,7 +1324,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Summary shown in docs for retrieving a single record.</p></li>
+<li><p>Defines the doc summary for single-item <code class="docutils literal notranslate"><span class="pre">GET</span></code> requests.
+<code class="docutils literal notranslate"><span class="pre">get_single_summary</span> <span class="pre">=</span> <span class="pre">&quot;Fetch</span> <span class="pre">one</span> <span class="pre">book</span> <span class="pre">by</span> <span class="pre">ID&quot;</span></code> would appear beside <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/books/{id}</span></code>.
+Helps consumers quickly grasp endpoint intent.</p></li>
 </ul>
 </td>
 </tr>
@@ -1314,7 +1337,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Brief explanation of the create operation in documentation.</p></li>
+<li><p>Short line describing the create operation in documentation.
+For instance, <code class="docutils literal notranslate"><span class="pre">post_summary</span> <span class="pre">=</span> <span class="pre">&quot;Create</span> <span class="pre">a</span> <span class="pre">new</span> <span class="pre">book&quot;</span></code> labels <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/books</span></code> accordingly.
+Particularly handy when auto-generated names need clearer wording.</p></li>
 </ul>
 </td>
 </tr>
@@ -1325,7 +1350,9 @@ URL exposed by the automatic endpoint.</p></li>
 <span class="sd-sphinx-override sd-badge sd-bg-secondary sd-bg-text-secondary">Optional</span> <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Model Method</span></p>
 </div></blockquote>
 <ul class="simple">
-<li><p>Short description for partial update operations.</p></li>
+<li><p>Sets the summary for <code class="docutils literal notranslate"><span class="pre">PATCH</span></code> endpoints used in the OpenAPI docs.
+Example: <code class="docutils literal notranslate"><span class="pre">patch_summary</span> <span class="pre">=</span> <span class="pre">&quot;Update</span> <span class="pre">selected</span> <span class="pre">fields</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">book&quot;</span></code>.
+Provides readers with a concise explanation of partial updates.</p></li>
 </ul>
 </td>
 </tr>
