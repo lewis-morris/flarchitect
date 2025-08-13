@@ -6,15 +6,12 @@ import jwt
 from flask import current_app
 from sqlalchemy.exc import NoResultFound
 
+from flarchitect.authentication.refresh_token import RefreshToken
 from flarchitect.database.utils import get_primary_keys
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 # Secret keys (keep them secure)
-
-
-# In-memory store for refresh tokens (use a persistent database in production)
-refresh_tokens_store: dict[str, dict[str, Any]] = {}
 
 
 def get_pk_and_lookups() -> tuple[str, str]:
@@ -94,12 +91,17 @@ def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
     }
     token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
 
-    # Store the refresh token in the server-side store
-    refresh_tokens_store[token] = {
-        lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
-        pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "expires_at": payload["exp"],
-    }
+    session = RefreshToken.get_session()
+    RefreshToken.metadata.create_all(bind=session.get_bind(), checkfirst=True)
+    session.add(
+        RefreshToken(
+            token=token,
+            user_lookup=str(getattr(usr_model, lookup_field)),
+            user_pk=str(getattr(usr_model, pk)),
+            expires_at=payload["exp"],
+        )
+    )
+    session.commit()
     return token
 
 
@@ -146,17 +148,22 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     if payload is None:
         raise CustomHTTPException(status_code=401, reason="Invalid token")
 
-    # Check if the refresh token is in the store and not expired
-    stored_token = refresh_tokens_store.get(refresh_token)
-    if not stored_token or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]:
+    session = RefreshToken.get_session()
+    try:
+        stored_token = session.query(RefreshToken).filter_by(token=refresh_token).one()
+    except NoResultFound as exc:
+        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token") from exc
+
+    expires_at = stored_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+    if stored_token.revoked or datetime.datetime.now(datetime.timezone.utc) > expires_at:
         raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
 
-    # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
-    lookup_value = stored_token.get(lookup_field)
-    pk_value = stored_token.get(pk_field)
+    lookup_value = stored_token.user_lookup
+    pk_value = stored_token.user_pk
 
-    # Get the user model (this is the SQLAlchemy model)
     usr_model_class = get_config_or_model_meta("API_USER_MODEL")
 
     # Query the user by lookup_field and pk
@@ -173,10 +180,10 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     except NoResultFound as exc:
         raise CustomHTTPException(status_code=404, reason="User not found") from exc
 
-    # Generate new access token
     new_access_token = generate_access_token(user)
 
-    refresh_tokens_store.pop(refresh_token)
+    stored_token.revoked = True
+    session.commit()
 
     return new_access_token, user
 

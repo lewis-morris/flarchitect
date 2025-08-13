@@ -16,6 +16,7 @@ from flarchitect.authentication.jwt import (
     generate_refresh_token,
     refresh_access_token,
 )
+from flarchitect.authentication.refresh_token import RefreshToken
 from flarchitect.authentication.user import (
     current_user,
     get_current_user,
@@ -67,6 +68,8 @@ def client_basic() -> Generator[FlaskClient, None, None]:
     db.init_app(app)
     with app.app_context():
         architect = Architect(app=app)
+        architect.init_api(app=app, api_full_auto=False)
+        architect.api.setup_api_routes()
         architect.init_api(app=app, api_full_auto=False)
         architect.api.make_auth_routes()
 
@@ -172,6 +175,7 @@ def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
             return {"username": current_user.username}
 
         db.create_all()
+        RefreshToken.metadata.create_all(db.engine)
         user = User(
             username="carol",
             password_hash=generate_password_hash("pass"),
@@ -358,6 +362,19 @@ def test_jwt_expired_token(client_jwt: tuple[FlaskClient, str, str]) -> None:
     assert get_current_user() is None
     resp = client.get("/jwt", headers={"Authorization": f"Bearer {expired_token}"})
     assert_unauthorized(resp)
+
+
+def test_revoked_refresh_token_denied(
+    client_jwt: tuple[FlaskClient, str, str]
+) -> None:
+    """Revoked refresh tokens should not grant new access tokens."""
+    _, _, refresh_token = client_jwt
+    session = RefreshToken.get_session()
+    token_obj = session.query(RefreshToken).filter_by(token=refresh_token).one()
+    token_obj.revoked = True
+    session.commit()
+    with pytest.raises(CustomHTTPException):
+        refresh_access_token(refresh_token)
 
 
 def test_custom_success_and_failure(client_custom: FlaskClient) -> None:
