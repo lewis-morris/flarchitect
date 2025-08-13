@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from demo.authentication.app_base import BaseConfig, User, create_app, schema
+from demo.authentication.app_base import BaseConfig, User, create_app
 from flarchitect.authentication.user import get_current_user
 
 
@@ -17,7 +17,6 @@ app = create_app(Config)
 
 
 @app.get("/profile")
-@schema.route(model=User)
 def profile() -> dict[str, str]:
     """Return the current user's profile."""
 

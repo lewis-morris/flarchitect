@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from demo.authentication.app_base import BaseConfig, User, create_app, schema
+from demo.authentication.app_base import BaseConfig, User, create_app
 from flarchitect.authentication.user import get_current_user, set_current_user
 
 
@@ -18,13 +18,13 @@ def lookup_user_by_token(token: str) -> User | None:
 class Config(BaseConfig):
     API_AUTHENTICATE_METHOD = ["api_key"]
     API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
+    API_USER_MODEL = User
 
 
 app = create_app(Config)
 
 
 @app.get("/profile")
-@schema.route(model=User)
 def profile() -> dict[str, str]:
     """Return the current user's profile."""
 
