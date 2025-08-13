@@ -283,9 +283,44 @@
         - Name of the authentication method used, such as ``jwt`` or ``basic``. Determines which auth backend to apply. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
     * - ``API_USER_MODEL``
 
-          :bdg-secondary:`Optional` 
+          :bdg-secondary:`Optional`
 
         - Import path for the user model leveraged during authentication workflows. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - ``API_GLOBAL_SETUP_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Runs before any model-specific processing. Use method-specific variants like ``API_GET_GLOBAL_SETUP_CALLBACK`` to target individual HTTP methods.
+    * - ``API_FILTER_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Adjusts the SQLAlchemy query before filters or pagination are applied.
+    * - ``API_ADD_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Invoked prior to committing a new object to the database.
+    * - ``API_UPDATE_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Called before persisting changes to an existing object.
+    * - ``API_REMOVE_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Executed before deleting an object from the database.
     * - ``API_SETUP_CALLBACK``
 
           :bdg:`default:` ``None``
@@ -304,16 +339,23 @@
 
           :bdg:`default:` ``None``
           :bdg:`type` ``callable``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Error-handling hook allowing custom formatting or logging of exceptions. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_POST_DUMP_CALLBACK``
+    * - ``API_DUMP_CALLBACK``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Post-serialization hook to further transform or audit the output data before it is returned.
+        - Post-serialization hook to adjust data after Marshmallow dumping.
+    * - ``API_FINAL_CALLBACK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Executes just before the response is serialized and returned to the client.
     * - ``API_ADDITIONAL_QUERY_PARAMS``
 
           :bdg:`default:` ``None``
