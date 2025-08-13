@@ -23,6 +23,10 @@ class TestRateLimitServices:
             "flarchitect.utils.general.get_config_or_model_meta",
             lambda key, default=None, model=None: "redis://127.0.0.1:6379",
         )
+        monkeypatch.setattr(
+            "flarchitect.utils.general.check_rate_prerequisites",
+            lambda service: None,
+        )
 
         assert check_rate_services() == "redis://127.0.0.1:6379"
 
@@ -57,3 +61,13 @@ class TestRateLimitServices:
         monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
         with pytest.raises(ImportError):
             check_rate_prerequisites("Redis")
+
+    def test_invalid_storage_uri_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Unsupported URI schemes raise a ``ValueError``."""
+
+        monkeypatch.setattr(
+            "flarchitect.utils.general.get_config_or_model_meta",
+            lambda key, default=None, model=None: "invalid://localhost",
+        )
+        with pytest.raises(ValueError):
+            check_rate_services()

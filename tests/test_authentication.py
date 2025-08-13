@@ -315,6 +315,20 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert get_current_user() is None
 
 
+def test_expired_refresh_token(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """``refresh_access_token`` raises when the token has expired."""
+
+    client, access_token, refresh_token = client_jwt
+    from flarchitect.authentication import jwt as jwt_module
+
+    jwt_module.refresh_tokens_store[refresh_token]["expires_at"] = jwt_module.datetime.datetime.now(jwt_module.datetime.timezone.utc) - jwt_module.datetime.timedelta(seconds=1)
+
+    with pytest.raises(CustomHTTPException) as exc:
+        refresh_access_token(refresh_token)
+    assert exc.value.status_code == 403
+    assert "expired" in exc.value.reason
+
+
 def test_custom_success_and_failure(client_custom: FlaskClient) -> None:
     """Test custom authentication and ensure user context resets."""
     assert get_current_user() is None

@@ -4,6 +4,7 @@ import pprint
 import re
 import socket
 from typing import Any
+from urllib.parse import urlparse
 from xml.etree import ElementTree as ET
 
 import inflect
@@ -11,7 +12,7 @@ from flask import Flask
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.core_utils import convert_case
+from flarchitect.utils.core_utils import convert_case, get_count
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"
@@ -171,6 +172,12 @@ def check_rate_services() -> str | None:
     }
     uri = get_config_or_model_meta("API_RATE_LIMIT_STORAGE_URI", default=None)
     if uri:
+        parsed = urlparse(uri)
+        scheme_map = {"memcached": "Memcached", "redis": "Redis", "mongodb": "MongoDB"}
+        service_name = scheme_map.get(parsed.scheme)
+        if service_name is None:
+            raise ValueError(f"Unsupported rate limit storage backend: {parsed.scheme}")
+        check_rate_prerequisites(service_name)
         return uri
 
     for service, port in services.items():
