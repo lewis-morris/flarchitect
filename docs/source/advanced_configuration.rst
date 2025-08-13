@@ -1,9 +1,8 @@
 Advanced Configuration
 ======================
 
-Beyond the basics, **flarchitect** offers advanced options for fine-tuning
-API behaviour.
-This guide covers rate limiting and cache configuration.
+Beyond the basics, **flarchitect** offers several advanced options for fine-
+tuning API behaviour. This guide covers rate limiting and cache configuration.
 
 Rate limiting
 -------------
@@ -200,41 +199,68 @@ See :doc:`configuration <configuration>` for detailed descriptions of
 Cascade deletes
 ---------------
 
-By default, ``flarchitect`` blocks cascade deletions to protect related data.
-Enabling :data:`API_ALLOW_CASCADE_DELETE` allows a parent record and its
-children to be removed together.
 
-When enabled, clients must opt in using the ``cascade_delete=1`` query flag:
+``flarchitect`` can reshape field and schema names to match different
+case conventions. These options keep the API's payloads, schemas and
+endpoints consistent with the style used by your clients.
 
-.. code-block:: http
+``API_FIELD_CASE``
+^^^^^^^^^^^^^^^^^^
 
-   DELETE /api/authors/1?cascade_delete=1
+Controls the casing for fields in JSON responses. By default, field names
+use ``snake`` case. Setting ``API_FIELD_CASE`` changes the output to match
+other naming styles:
 
-Omitting the flag triggers an error reminding the caller to include
-``cascade_delete=1``. For example usage, see ``tests/test_flask_config.py``.
-
-Cascade deletes permanently remove related data. Use with caution to avoid
-accidental data loss.
-=======
-Nested writes
--------------
-
-Nested writes allow you to create related objects in a single request.
-Enable the behaviour globally:
-
-.. code:: python
+.. code-block:: python
 
     class Config:
-        API_ALLOW_NESTED_WRITES = True
+        API_FIELD_CASE = "camel"
 
-To enable nested writes for a specific model, set the ``allow_nested_writes``
-flag on its ``Meta`` class:
+.. code-block:: json
 
-.. code:: python
+    {
+        "statusCode": 200,
+        "value": {
+            "publicationDate": "2024-05-10"
+        }
+    }
 
-    class Book(db.Model):
-        class Meta:
-            allow_nested_writes = True
+Switching to ``kebab`` case instead renders the same field as
+``publication-date``. Supported options include ``snake``, ``camel``,
+``pascal``, ``kebab`` and ``screaming_snake``.
+
+``API_SCHEMA_CASE``
+^^^^^^^^^^^^^^^^^^^
+
+Defines the naming convention for generated schema names in the OpenAPI
+document. The default, ``camel``, produces schema identifiers such as
+``apiCalls``. Other styles are also available:
+
+.. code-block:: python
+
+    class Config:
+        API_SCHEMA_CASE = "screaming_snake"
+
+.. code-block:: json
+
+    {
+        "components": {
+            "schemas": {
+                "API_CALLS": {
+                    "...": "..."
+                }
+            }
+        }
+    }
+
+Interplay with ``API_ENDPOINT_CASE``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``API_ENDPOINT_CASE`` controls the casing of the generated URL paths. To
+maintain a consistent style across paths, schemas and payloads, combine
+``API_ENDPOINT_CASE`` with the appropriate ``API_FIELD_CASE`` and
+``API_SCHEMA_CASE`` values. For example, selecting ``kebab`` endpoint
+casing pairs naturally with ``kebab`` field names.
 
 
 .. _advanced-callbacks:
@@ -268,6 +294,7 @@ responses are constructed.
 
 Custom validators
 ^^^^^^^^^^^^^^^^^
+
 
 Attach validators to SQLAlchemy columns via the ``info`` mapping.
 Validators are looked up in :mod:`flarchitect.schemas.validators` and
