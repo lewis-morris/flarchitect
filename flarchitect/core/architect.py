@@ -7,7 +7,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Optional, TypeVar, cast
 
-from flask import Flask, request
+from flask import Flask, Response, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
@@ -142,14 +142,22 @@ class Architect(AttributeInitializerMixin):
         self.app = app
 
     def init_apispec(self, app: Flask, **kwargs):
-        """
-        Initializes the api spec object.
+        """Initialise the API specification and serve it via a route.
 
         Args:
-            app (Flask): The flask app.
-            **kwargs (dict): Dictionary of keyword arguments.
+            app (Flask): The Flask app.
+            **kwargs (dict): Additional keyword arguments for ``CustomSpec``.
         """
         self.api_spec = CustomSpec(app=app, architect=self, **kwargs)
+
+        if self.get_config("API_CREATE_DOCS", True):
+            spec_route = self.get_config("API_SPEC_ROUTE", "/openapi.json")
+
+            @app.get(spec_route)
+            def openapi_spec() -> Response:
+                """Return the generated OpenAPI specification as JSON."""
+                assert self.api_spec is not None
+                return jsonify(self.api_spec.to_dict())
 
     def init_api(self, **kwargs):
         """
