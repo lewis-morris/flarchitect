@@ -1,6 +1,6 @@
 # flarchitect
 
-[![Tests](https://github.com/arched-dev/flarchitect/actions/workflows/tests.yml/badge.svg)](https://github.com/arched-dev/flarchitect/actions/workflows/tests.yml)
+[![Docs](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml)
 
 flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
 
