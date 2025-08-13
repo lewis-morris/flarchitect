@@ -52,17 +52,14 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int = 360) -> str:
 
     pk, lookup_field = get_pk_and_lookups()
 
-    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get(
-        "ACCESS_SECRET_KEY"
-    )
+    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
     if ACCESS_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(minutes=expires_in_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expires_in_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, ACCESS_SECRET_KEY, algorithm="HS256")
@@ -83,9 +80,7 @@ def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
         CustomHTTPException: If the refresh secret key is not configured.
     """
 
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
-        "REFRESH_SECRET_KEY"
-    )
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
@@ -94,8 +89,7 @@ def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(days=expires_in_days),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=expires_in_days),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
@@ -147,22 +141,15 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         be found.
     """
     # Verify refresh token
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
-        "REFRESH_SECRET_KEY"
-    )
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
     payload = decode_token(refresh_token, REFRESH_SECRET_KEY)
     if payload is None:
         raise CustomHTTPException(status_code=401, reason="Invalid token")
 
     # Check if the refresh token is in the store and not expired
     stored_token = refresh_tokens_store.get(refresh_token)
-    if (
-        not stored_token
-        or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]
-    ):
-        raise CustomHTTPException(
-            status_code=403, reason="Invalid or expired refresh token"
-        )
+    if not stored_token or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]:
+        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
@@ -209,14 +196,9 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         CustomHTTPException: If the token is invalid or the user is not found.
     """
     # Decode the token
-    if secret_key is None:
-        ACCESS_SECRET_KEY = os.environ.get(
-            "ACCESS_SECRET_KEY"
-        ) or current_app.config.get("ACCESS_SECRET_KEY")
-    else:
-        ACCESS_SECRET_KEY = secret_key
+    access_secret_key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY") if secret_key is None else secret_key
 
-    payload = decode_token(token, ACCESS_SECRET_KEY)
+    payload = decode_token(token, access_secret_key)
 
     # Get user lookup field and primary key
     pk, lookup_field = get_pk_and_lookups()

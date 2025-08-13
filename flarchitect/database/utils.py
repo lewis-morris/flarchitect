@@ -1,5 +1,5 @@
-import inspect
 from collections.abc import Callable
+from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
@@ -55,17 +55,10 @@ def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]
         List[Tuple[str, str]]: A list of tuples containing the relationship's
                                attribute name on the model and the class name of the related model.
     """
-    return [
-        (relation.key, relation.mapper.class_.__name__)
-        for relation in class_mapper(model).relationships
-    ]
+    return [(relation.key, relation.mapper.class_.__name__) for relation in class_mapper(model).relationships]
 
 
-def get_all_columns_and_hybrids(
-    model: DeclarativeBase, join_models: dict[str, DeclarativeBase]
-) -> tuple[
-    dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]
-]:
+def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, DeclarativeBase]) -> tuple[dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]]:
     """
     Retrieves all columns and hybrid properties from the base model and any join models.
 
@@ -79,12 +72,8 @@ def get_all_columns_and_hybrids(
     """
     from flarchitect.utils.general import get_config_or_model_meta
 
-    ignore_underscore = get_config_or_model_meta(
-        key="API_IGNORE_UNDERSCORE_ATTRIBUTES", model=model, default=True
-    )
-    schema_case = get_config_or_model_meta(
-        key="API_SCHEMA_CASE", model=model, default="camel"
-    )
+    ignore_underscore = get_config_or_model_meta(key="API_IGNORE_UNDERSCORE_ATTRIBUTES", model=model, default=True)
+    schema_case = get_config_or_model_meta(key="API_SCHEMA_CASE", model=model, default="camel")
 
     all_columns = {}
     all_models = [model] + list(join_models.values())
@@ -92,10 +81,7 @@ def get_all_columns_and_hybrids(
     for mdl in all_models:
         table_name = convert_case(mdl.__name__, schema_case)
         all_columns[table_name] = {
-            attr: column
-            for attr, column in mdl.__dict__.items()
-            if isinstance(column, (hybrid_property, InstrumentedAttribute))
-            and (not ignore_underscore or not attr.startswith("_"))
+            attr: column for attr, column in mdl.__dict__.items() if isinstance(column, hybrid_property | InstrumentedAttribute) and (not ignore_underscore or not attr.startswith("_"))
         }
 
     return all_columns, all_models
@@ -133,9 +119,7 @@ def extract_pagination_params(args_dict: dict[str, str]) -> tuple[int, int]:
     limit = int(args_dict.get("limit", PAGINATION_DEFAULTS["limit"]))
 
     if limit > PAGINATION_MAX["limit"]:
-        raise CustomHTTPException(
-            400, f"Limit exceeds maximum value of {PAGINATION_MAX['limit']}"
-        )
+        raise CustomHTTPException(400, f"Limit exceeds maximum value of {PAGINATION_MAX['limit']}")
 
     return page, limit
 
@@ -161,17 +145,13 @@ def get_group_by_fields(
         fields = args_dict.get("groupby").split(",")
         for field in fields:
             table_name, column_name = get_table_and_column(field, base_model)
-            model_column, _ = validate_table_and_column(
-                table_name, column_name, all_columns
-            )
+            model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
             group_by_fields.append(model_column)
 
     return group_by_fields
 
 
-def get_join_models(
-    args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]
-) -> dict[str, DeclarativeBase]:
+def get_join_models(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
     """
     Builds a list of SQLAlchemy models to join based on request arguments.
 
@@ -193,9 +173,7 @@ def get_join_models(
     return models
 
 
-def get_table_column(
-    key: str, all_columns: dict[str, dict[str, Any]]
-) -> tuple[str, str, str]:
+def get_table_column(key: str, all_columns: dict[str, dict[str, Any]]) -> tuple[str, str, str]:
     """
     Get the fully qualified column name (i.e., with table name).
 
@@ -241,17 +219,13 @@ def get_select_fields(
         fields = args_dict.get("fields").split(",")
         for field in fields:
             table_name, column_name = get_table_and_column(field, base_model)
-            model_column, _ = validate_table_and_column(
-                table_name, column_name, all_columns
-            )
+            model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
             select_fields.append(model_column)
 
     return select_fields
 
 
-def parse_or_condition_keys_and_values(
-    key: str, val: str
-) -> tuple[list[str], list[str]]:
+def parse_or_condition_keys_and_values(key: str, val: str) -> tuple[list[str], list[str]]:
     """
     Get the 'or' values and keys.
 
@@ -265,10 +239,10 @@ def parse_or_condition_keys_and_values(
     # Extract the initial key, remove 'or[' and strip any whitespace
     keys = []
     values = []
-    for val in (key + "=" + val)[3:-1].split(","):
-        key, val = val.split("=")
-        keys.append(key.strip())
-        values.append(val.strip())
+    for item in (key + "=" + val)[3:-1].split(","):
+        key_part, value_part = item.split("=")
+        keys.append(key_part.strip())
+        values.append(value_part.strip())
 
     return keys, values
 
@@ -301,12 +275,10 @@ def generate_conditions_from_args(
 
     PAGINATION_DEFAULTS, PAGINATION_MAX = create_pagination_defaults()
 
-    for key, value in args_dict.items():
-        if any(op in key for op in OPERATORS) and not any(
-            func in key for func in [*PAGINATION_DEFAULTS, *OTHER_FUNCTIONS]
-        ):
+    for key, _value in args_dict.items():
+        if any(op in key for op in OPERATORS) and not any(func in key for func in [*PAGINATION_DEFAULTS, *OTHER_FUNCTIONS]):
             if key.startswith("or["):
-                or_keys, or_vals = parse_or_condition_keys_and_values(key, value)
+                or_keys, or_vals = parse_or_condition_keys_and_values(key, _value)
                 or_conditions.extend(
                     create_condition(
                         *get_table_column(or_key, all_columns),
@@ -320,9 +292,7 @@ def generate_conditions_from_args(
 
             table, column, operator = get_table_column(key, all_columns)
             if operator:
-                condition = create_condition(
-                    table, column, operator, value, all_columns, base_model
-                )
+                condition = create_condition(table, column, operator, _value, all_columns, base_model)
                 if condition is not None:
                     conditions.append(condition)
 
@@ -332,9 +302,7 @@ def generate_conditions_from_args(
     return conditions
 
 
-def get_models_for_join(
-    args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]
-) -> dict[str, DeclarativeBase]:
+def get_models_for_join(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
     """
     Builds a list of SQLAlchemy models to join based on request arguments.
 
@@ -395,7 +363,7 @@ def create_aggregate_conditions(
     """
     aggregate_conditions = {}
 
-    for key, value in args_dict.items():
+    for key, _value in args_dict.items():
         for func_name in AGGREGATE_FUNCS:
             if f"__{func_name}" in key:
                 key, label = parse_key_and_label(key)
@@ -420,16 +388,12 @@ def get_table_and_column(value: str, main_model: DeclarativeBase) -> tuple[str, 
 
     from flarchitect.utils.general import get_config_or_model_meta
 
-    schema_case = get_config_or_model_meta(
-        "API_SCHEMA_CASE", model=main_model, default="camel"
-    )
+    schema_case = get_config_or_model_meta("API_SCHEMA_CASE", model=main_model, default="camel")
     table_name = convert_case(main_model.__name__, schema_case)
     return table_name, value
 
 
-def parse_column_table_and_operator(
-    key: str, main_model: DeclarativeBase
-) -> tuple[str, str, str]:
+def parse_column_table_and_operator(key: str, main_model: DeclarativeBase) -> tuple[str, str, str]:
     """
     Get the column and table name from the key.
 
@@ -445,9 +409,7 @@ def parse_column_table_and_operator(
     return column_name, table_name, operator_str
 
 
-def validate_table_and_column(
-    table_name: str, column_name: str, all_columns: dict[str, dict[str, Column]]
-) -> tuple[Column, str]:
+def validate_table_and_column(table_name: str, column_name: str, all_columns: dict[str, dict[str, Column]]) -> tuple[Column, str]:
     """
     Get the column from the column dictionary.
 
@@ -499,10 +461,7 @@ def create_condition(
     """
     model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
 
-    if type(model_column) is hybrid_property:
-        column_type = get_type_hint_from_hybrid(model_column)
-    else:
-        column_type = model_column.type
+    column_type = get_type_hint_from_hybrid(model_column) if isinstance(model_column, hybrid_property) else model_column.type
 
     if "in" in operator:
         value = value.strip("()").split(",")
@@ -510,10 +469,8 @@ def create_condition(
     if "like" in operator:
         value = f"%{value}%"
 
-    try:
+    with suppress(ValueError):
         value = convert_value_to_type(value, column_type)
-    except ValueError:
-        pass
 
     operator_func = OPERATORS.get(operator)
     if operator_func is None:
@@ -553,9 +510,7 @@ def get_type_hint_from_hybrid(func: Callable) -> type | None:
     return func.__annotations__.get("return")
 
 
-def convert_value_to_type(
-    value: str | list[str], column_type: Any, is_hybrid: bool = False
-) -> Any:
+def convert_value_to_type(value: str | list[str], column_type: Any, is_hybrid: bool = False) -> Any:
     """
     Convert the given string value or list of string values to its appropriate type based on the provided column_type.
 
@@ -587,14 +542,12 @@ def convert_value_to_type(
             return convert_to_boolean(val)
         return val
 
-    if isinstance(value, (list, set, tuple)):
+    if isinstance(value, list | set | tuple):
         return [convert_single_value(str(v), column_type) for v in value]
     return convert_single_value(value, column_type)
 
 
-def find_matching_relations(
-    model1: Callable, model2: Callable
-) -> list[tuple[str, str]]:
+def find_matching_relations(model1: Callable, model2: Callable) -> list[tuple[str, str]]:
     """Find matching relation fields between two SQLAlchemy models.
 
     Args:
@@ -675,8 +628,7 @@ def get_models_relationships(model: type[DeclarativeBase]) -> list[dict[str, Any
             relationships.append(relationship_info)
             logger.debug(
                 4,
-                f"Added |{model.__name__}| relationship with |{relationship_info['model'].__name__}| "
-                f"via columns {relationship_info['left_column']} to {relationship_info['right_column']}.",
+                f"Added |{model.__name__}| relationship with |{relationship_info['model'].__name__}| via columns {relationship_info['left_column']} to {relationship_info['right_column']}.",
             )
     return relationships
 
@@ -745,12 +697,10 @@ def get_primary_key_filters(base_model, lookup_val):
         return {pks[0].name: lookup_val}
 
     # If there are multiple primary key columns, split the lookup_val and map accordingly
-    if isinstance(lookup_val, (tuple, list)):
+    if isinstance(lookup_val, tuple | list):
         return {pk.name: val for pk, val in zip(pks, lookup_val, strict=False)}
 
-    raise ValueError(
-        f"Multiple primary keys found in {base_model.__name__}, but lookup_val is not a tuple or list."
-    )
+    raise ValueError(f"Multiple primary keys found in {base_model.__name__}, but lookup_val is not a tuple or list.")
 
 
 def list_model_columns(model: type[DeclarativeBase]) -> list[str]:
@@ -813,10 +763,7 @@ def get_related_b_query(model_a, model_b, a_pk_value, session):
     relationship_name = None
     source_model = None
     for rel in mapper_a.relationships:
-        if (
-            rel.mapper.class_ == model_b
-            or rel.mapper.class_.__name__ == model_b.__name__
-        ):
+        if rel.mapper.class_ == model_b or rel.mapper.class_.__name__ == model_b.__name__:
             relationship_property = rel
             relationship_name = rel.key
             source_model = model_a
@@ -825,36 +772,23 @@ def get_related_b_query(model_a, model_b, a_pk_value, session):
     # If not found on model_a, check model_b
     if not relationship_property:
         for rel in mapper_b.relationships:
-            if (
-                rel.mapper.class_ == model_a
-                or rel.mapper.class_.__name__ == model_a.__name__
-            ):
+            if rel.mapper.class_ == model_a or rel.mapper.class_.__name__ == model_a.__name__:
                 relationship_property = rel
                 relationship_name = rel.key
                 source_model = model_b
                 break
 
     if not relationship_property:
-        raise Exception(
-            f"No relationship found between {model_a.__name__} and {model_b.__name__}"
-        )
+        raise Exception(f"No relationship found between {model_a.__name__} and {model_b.__name__}")
 
     # Build the query
     if source_model == model_a:
         # Relationship is from model_a to model_b
         relationship_attr = getattr(model_a, relationship_name)
-        query = (
-            session.query(model_b)
-            .join(relationship_attr)
-            .filter(pk_attr_a == a_pk_value)
-        )
+        query = session.query(model_b).join(relationship_attr).filter(pk_attr_a == a_pk_value)
     else:
         # Relationship is from model_b to model_a
         relationship_attr = getattr(model_b, relationship_name)
-        query = (
-            session.query(model_b)
-            .join(relationship_attr)
-            .filter(pk_attr_a == a_pk_value)
-        )
+        query = session.query(model_b).join(relationship_attr).filter(pk_attr_a == a_pk_value)
 
     return query

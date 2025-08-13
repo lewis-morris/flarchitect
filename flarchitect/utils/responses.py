@@ -2,6 +2,7 @@ from typing import Any
 
 from marshmallow import Schema, ValidationError
 
+from flarchitect.schemas.bases import AutoSchema
 from flarchitect.schemas.utils import dump_schema_if_exists
 from flarchitect.utils.core_utils import get_count
 
@@ -11,7 +12,8 @@ class CustomResponse:
     Custom response class to be used for serializing output.
     """
 
-    # todo Not really sure why this is here anymore - needs really looking at. Was a use for it once, but no loger it seems.
+    # TODO: Not sure why this is here anymore and it needs reviewing.
+    # It once had a purpose but doesn't appear to any longer.
 
     def __init__(
         self,
@@ -34,9 +36,7 @@ class CustomResponse:
         self.many = many
 
 
-def serialize_output_with_mallow(
-    output_schema: type[Schema], data: Any
-) -> CustomResponse:
+def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> CustomResponse:
     """
     Utility function to serialise output using a given Marshmallow schema.
 
@@ -50,12 +50,7 @@ def serialize_output_with_mallow(
     """
 
     try:
-        is_list = isinstance(data, list) or (
-            isinstance(data, dict)
-            and (
-                "value" in data or ("query" in data and isinstance(data["query"], list))
-            )
-        )
+        is_list = isinstance(data, list) or (isinstance(data, dict) and ("value" in data or ("query" in data and isinstance(data["query"], list))))
         dump_data = data.get("query", data) if isinstance(data, dict) else data
         value = dump_schema_if_exists(output_schema, dump_data, is_list)
         count = get_count(data, value)
@@ -75,14 +70,12 @@ def serialize_output_with_mallow(
         )
 
     except ValidationError as err:
-        return CustomResponse(
-            value=None, count=None, error=err.messages, status_code=500
-        )
+        return CustomResponse(value=None, count=None, error=err.messages, status_code=500)
 
 
 def check_serialise_method_and_return(
     result: dict,
-    schema: "AutoSchema",
+    schema: AutoSchema,
     model_columns: list[str],
     schema_columns: list[str],
 ) -> list[dict] | Any:
@@ -102,9 +95,7 @@ def check_serialise_method_and_return(
     output_list = result.pop("dictionary", [])
     if output_list:
         output_keys = list(output_list[0].keys())
-        if any(x not in model_columns for x in output_keys) or any(
-            x not in schema_columns for x in output_keys
-        ):
+        if any(x not in model_columns for x in output_keys) or any(x not in schema_columns for x in output_keys):
             return output_list
 
     return serialize_output_with_mallow(schema, result)

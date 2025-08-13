@@ -8,7 +8,7 @@ from marshmallow.validate import Length, Range
 
 try:
     from numpy.lib.function_base import iterable
-except:
+except Exception:
     from numpy import iterable
 
 import sqlalchemy_utils
@@ -74,9 +74,7 @@ class EnumField(fields.Field):
                 return self.enum[value]
         except (KeyError, ValueError) as e:
             valid = [e.name if not self.by_value else e.value for e in self.enum]
-            raise ValidationError(
-                f"Invalid enum value. Expected one of: {valid}."
-            ) from e
+            raise ValidationError(f"Invalid enum value. Expected one of: {valid}.") from e
 
 
 # Mapping between SQLAlchemy types and Marshmallow fields
@@ -152,9 +150,7 @@ class AutoSchema(Base):
         self.model = self.Meta.model
 
         if self.model:
-            schema_case = get_config_or_model_meta(
-                "API_SCHEMA_CASE", model=self.model, default="camel"
-            )
+            schema_case = get_config_or_model_meta("API_SCHEMA_CASE", model=self.model, default="camel")
             self.__name__ = convert_case(self.model.__name__, schema_case)
             self.generate_fields()
 
@@ -203,19 +199,13 @@ class AutoSchema(Base):
             prop = getattr(mapper_property, "property", None)
 
             if isinstance(prop, RelationshipProperty):
-                self._handle_relationship(
-                    attribute, original_attribute, mapper_property
-                )
+                self._handle_relationship(attribute, original_attribute, mapper_property)
             elif isinstance(prop, ColumnProperty):
                 self._handle_column(attribute, original_attribute, mapper_property)
 
             elif isinstance(mapper_property, hybrid_property):
-                if get_config_or_model_meta(
-                    "API_DUMP_HYBRID_PROPERTIES", model=self.model, default=True
-                ):
-                    self._handle_hybrid_property(
-                        attribute, original_attribute, mapper_property
-                    )
+                if get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=self.model, default=True):
+                    self._handle_hybrid_property(attribute, original_attribute, mapper_property)
             else:
                 pass
         # print("Final fields:", self.fields)
@@ -224,16 +214,12 @@ class AutoSchema(Base):
 
     def _convert_case(self, attribute: str) -> str:
         """Convert the attribute name to the appropriate case."""
-        field_case = get_config_or_model_meta(
-            "API_FIELD_CASE", model=self.model, default="snake_case"
-        )
+        field_case = get_config_or_model_meta("API_FIELD_CASE", model=self.model, default="snake_case")
         return convert_case(attribute, field_case)
 
     def _should_skip_attribute(self, attribute: str) -> bool:
         """Determine if the attribute should be skipped."""
-        return attribute.startswith("_") and get_config_or_model_meta(
-            "API_IGNORE_UNDERSCORE_ATTRIBUTES", model=self.model, default=True
-        )
+        return attribute.startswith("_") and get_config_or_model_meta("API_IGNORE_UNDERSCORE_ATTRIBUTES", model=self.model, default=True)
 
     def _handle_relationship(
         self,
@@ -242,9 +228,7 @@ class AutoSchema(Base):
         mapper_property: RelationshipProperty,
     ):
         """Handle adding a relationship field to the schema."""
-        if not get_config_or_model_meta(
-            "API_ADD_RELATIONS", model=self.model, default=True
-        ):
+        if not get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True):
             return
         try:
             if request.args.get("dump_relationships") in ["false", "False", "0"]:
@@ -256,16 +240,12 @@ class AutoSchema(Base):
 
         self.add_relationship_field(attribute, original_attribute, mapper_property)
 
-    def _handle_column(
-        self, attribute: str, original_attribute: str, mapper_property: ColumnProperty
-    ):
+    def _handle_column(self, attribute: str, original_attribute: str, mapper_property: ColumnProperty):
         """Handle adding a column field to the schema."""
         column_type = mapper_property.property.columns[0].type
         self.add_column_field(attribute, original_attribute, column_type)
 
-    def _handle_hybrid_property(
-        self, attribute: str, original_attribute: str, mapper_property: hybrid_property
-    ):
+    def _handle_hybrid_property(self, attribute: str, original_attribute: str, mapper_property: hybrid_property):
         """Handle adding a hybrid property field to the schema."""
         self.add_hybrid_property_field(
             attribute,
@@ -273,36 +253,26 @@ class AutoSchema(Base):
             mapper_property.__annotations__.get("return"),
         )
 
-    def add_hybrid_property_field(
-        self, attribute: str, original_attribute: str, field_type: Any | None
-    ):
+    def add_hybrid_property_field(self, attribute: str, original_attribute: str, field_type: Any | None):
         """Automatically add a field for a given hybrid property in the SQLAlchemy model."""
         if self._should_skip_attribute(attribute):
             return
 
-        field_type = (
-            type_mapping.get(field_type, fields.Str) if field_type else fields.Str
-        )
+        field_type = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
 
         # Check if the attribute has a setter method
         has_setter = (
-            hasattr(type(self.model), original_attribute)
-            and isinstance(getattr(type(self.model), original_attribute), property)
-            and getattr(type(self.model), original_attribute).fset is not None
+            hasattr(type(self.model), original_attribute) and isinstance(getattr(type(self.model), original_attribute), property) and getattr(type(self.model), original_attribute).fset is not None
         )
 
         # If there's no setter, mark it as dump_only
         field_args = {"dump_only": not has_setter}
 
-        self.add_to_fields(
-            original_attribute, field_type(data_key=attribute, **field_args), load=False
-        )
+        self.add_to_fields(original_attribute, field_type(data_key=attribute, **field_args), load=False)
 
         self._update_field_metadata(original_attribute)
 
-    def add_column_field(
-        self, attribute: str, original_attribute: str, column_type: Any
-    ):
+    def add_column_field(self, attribute: str, original_attribute: str, column_type: Any):
         """Automatically add a field for a given column in the SQLAlchemy model."""
 
         # Check if the attribute should be skipped
@@ -322,9 +292,7 @@ class AutoSchema(Base):
             # Map the SQLAlchemy column type to a Marshmallow field type
             field_type = type_mapping.get(type(column_type))
             if not field_type:
-                logger.error(
-                    1, f"No field mapping for column type: {type(column_type)}"
-                )
+                logger.error(1, f"No field mapping for column type: {type(column_type)}")
                 return
 
             # Get additional attrs for the field based on the column's properties
@@ -358,9 +326,7 @@ class AutoSchema(Base):
         if dump:
             self.dump_fields[attribute] = field
 
-    def _get_column_field_attrs(
-        self, original_attribute: str, column_type: Any
-    ) -> dict:
+    def _get_column_field_attrs(self, original_attribute: str, column_type: Any) -> dict:
         """Get additional arguments for column fields."""
         column = self.model.__table__.columns.get(original_attribute)
 
@@ -371,12 +337,7 @@ class AutoSchema(Base):
         field_args = {}
 
         # Check for non-nullable columns that are not primary keys and auto-increment
-        if (
-            not column.nullable
-            and not column.primary_key
-            and column.autoincrement
-            and column.default is None
-        ):
+        if not column.nullable and not column.primary_key and column.autoincrement and column.default is None:
             field_args["required"] = True
 
         # Handle default values for the column
@@ -408,9 +369,7 @@ class AutoSchema(Base):
         if column.info.get("validate"):
             validator = validate_by_type(column.info.get("validate"))
             if not validator:
-                raise ValueError(
-                    f"Invalid validator type: model {self.model.__name__}.{column.name} - {column.info.get('validate')}"
-                )
+                raise ValueError(f"Invalid validator type: model {self.model.__name__}.{column.name} - {column.info.get('validate')}")
             field_args["validate"].append(validator)
             return field_args
 
@@ -418,50 +377,30 @@ class AutoSchema(Base):
         if hasattr(column.type, "length") and column.type.__class__ is not Enum:
             field_args["validate"].append(Length(max=column.type.length))
 
-        if isinstance(column.type, (Float, Numeric)):
+        if isinstance(column.type, Float | Numeric):
             field_args["validate"].append(Range(min=float("-inf"), max=float("inf")))
 
         if isinstance(column.type, Integer):
             field_args["validate"].append(Range(min=-2147483648, max=2147483647))
 
-        if get_config_or_model_meta(
-            "API_AUTO_VALIDATE", model=self.model, default=True
-        ):
+        if get_config_or_model_meta("API_AUTO_VALIDATE", model=self.model, default=True):
             # todo add more validation and test
             column_name = column.name
             format_name = column.info.get("format")
             try:
-                if (
-                    "email" in column_name and column.type.python_type == str
-                ) or format_name == "email":
+                if ("email" in column_name and column.type.python_type is str) or (format_name == "email"):
                     field_args["validate"].append(validate_by_type("email"))
-                elif (
-                    "url" in column_name and column.type.python_type == str
-                ) or format_name in ["url", "uri", "url_path"]:
+                elif ("url" in column_name and column.type.python_type is str) or (format_name in ["url", "uri", "url_path"]):
                     field_args["validate"].append(validate_by_type("url"))
-                elif (
-                    "date" in column_name
-                    or column.type.python_type == datetime.date
-                    or format_name == "date"
-                ):
+                elif "date" in column_name or column.type.python_type is datetime.date or format_name == "date":
                     field_args["validate"].append(validate_by_type("date"))
-                elif column.type.python_type == datetime.time or format_name == "time":
+                elif column.type.python_type is datetime.time or format_name == "time":
                     field_args["validate"].append(validate_by_type("time"))
-                elif (
-                    "datetime" in column_name
-                    or column.type.python_type == datetime.datetime
-                    or format_name == "datetime"
-                ):
+                elif "datetime" in column_name or column.type.python_type is datetime.datetime or format_name == "datetime":
                     field_args["validate"].append(validate_by_type("datetime"))
-                elif (
-                    "boolean" in column_name
-                    or column.type.python_type == bool
-                    or format_name == "boolean"
-                ):
+                elif "boolean" in column_name or column.type.python_type is bool or format_name == "boolean":
                     field_args["validate"].append(validate_by_type("boolean"))
-                elif (
-                    "domain" in column_name and column.type.python_type == str
-                ) or format_name == "domain":
+                elif ("domain" in column_name and column.type.python_type is str) or (format_name == "domain"):
                     field_args["validate"].append(validate_by_type("domain"))
                 elif format_name == "ipv4":
                     field_args["validate"].append(validate_by_type("ipv4"))
@@ -511,9 +450,7 @@ class AutoSchema(Base):
 
         """
 
-        child_end = get_config_or_model_meta(
-            "API_ENDPOINT_NAMER", other_schema.Meta.model, default=endpoint_namer
-        )(other_schema.Meta.model)
+        child_end = get_config_or_model_meta("API_ENDPOINT_NAMER", other_schema.Meta.model, default=endpoint_namer)(other_schema.Meta.model)
 
         return getattr(obj, child_end.replace("-", "_") + "_to_url")()
 
@@ -524,9 +461,7 @@ class AutoSchema(Base):
         relationship_property: RelationshipProperty,
     ):
         """Automatically add a field for a given relationship in the SQLAlchemy model."""
-        allow_nested_writes = get_config_or_model_meta(
-            "ALLOW_NESTED_WRITES", model=self.model, default=False
-        )
+        allow_nested_writes = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
         max_depth = 2 if allow_nested_writes else 1
         current_depth = self.context.get("current_depth", 0)
 
@@ -553,9 +488,7 @@ class AutoSchema(Base):
             field_args = {"dump_only": not relationship_prop.viewonly}
 
             # Determine the serialization type
-            dump_type = get_config_or_model_meta(
-                "API_SERIALIZATION_TYPE", self.model, default="url"
-            )
+            dump_type = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
 
             if dump_type == "url":
                 if relationship_prop.uselist:
@@ -563,9 +496,7 @@ class AutoSchema(Base):
                     self.add_to_fields(
                         attribute,
                         fields.Function(
-                            lambda obj: self.get_many_url(
-                                obj, original_attribute, input_schema
-                            ),
+                            lambda obj: self.get_many_url(obj, original_attribute, input_schema),
                             **field_args,
                         ),
                         load=False,
@@ -576,9 +507,7 @@ class AutoSchema(Base):
                     self.add_to_fields(
                         attribute,
                         fields.Function(
-                            lambda obj: self.get_url(
-                                obj, original_attribute, input_schema
-                            ),
+                            lambda obj: self.get_url(obj, original_attribute, input_schema),
                             **field_args,
                         ),
                         load=False,
@@ -603,7 +532,7 @@ class AutoSchema(Base):
                     field_name = original_attribute
             elif dump_type == "dynamic":
                 try:
-                    request.args
+                    _ = request.args
                 except RuntimeError:
                     return
 
@@ -685,10 +614,7 @@ class AutoSchema(Base):
         self._update_field_metadata(field_name)
 
         if allow_nested_writes and not relationship_prop.viewonly:
-            if relationship_prop.uselist:
-                load_field = fields.List(fields.Nested(input_schema), load_only=True)
-            else:
-                load_field = fields.Nested(input_schema, load_only=True)
+            load_field = fields.List(fields.Nested(input_schema), load_only=True) if relationship_prop.uselist else fields.Nested(input_schema, load_only=True)
             self.add_to_fields(field_name, load_field, dump=False)
 
     def _update_field_metadata(self, attribute: str):
@@ -705,12 +631,6 @@ class AutoSchema(Base):
 
     def dump(self, obj, *args, **kwargs):
         # print("Data before super().dump:", obj)
-        if self.fields:
-            result = super().dump(obj, *args, **kwargs)
-        else:
-            # todo This really needs looking at, it shouldn't be happening but when we're in a nested schema it is not
-            # generating the fields as expected. It produces an empty dict. This is a dirty fix
-
-            result = self.__class__(context=self.context).dump(obj, *args, **kwargs)
+        result = super().dump(obj, *args, **kwargs) if self.fields else self.__class__(context=self.context).dump(obj, *args, **kwargs)
         # print("Data after super().dump:", result)
         return result

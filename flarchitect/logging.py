@@ -24,9 +24,11 @@ def color_text_with_multiple_patterns(text):
 
     # Iterate over the patterns and apply each one
     for pattern, (color, style) in patterns.items():
-        # Pass both color and style to the lambda function
+        # Pass both color and style to the lambda function with defaults to bind variables
         text = re.sub(
-            pattern, lambda match: replace_with_color(match, color, style), text
+            pattern,
+            lambda match, color=color, style=style: replace_with_color(match, color, style),
+            text,
         )
 
     return text
@@ -60,9 +62,7 @@ class CustomLogger:
     def error(self, level, message):
         """Log a message if its level is less than or equal to the current verbosity level."""
         if level <= self.verbosity_level:
-            self._log(
-                Fore.RED + f"ERROR {level}: ".ljust(10) + Style.RESET_ALL + message
-            )
+            self._log(Fore.RED + f"ERROR {level}: ".ljust(10) + Style.RESET_ALL + message)
 
 
 logger = CustomLogger()
