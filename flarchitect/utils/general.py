@@ -401,6 +401,35 @@ def xml_to_dict(xml_data: str | bytes) -> dict[str, Any]:
     return {root.tag: element_to_dict(root)}
 
 
+def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
+    """Normalise values returned from route handlers.
+
+    Args:
+        result: The value returned by a view function. It may be a
+            raw value, a ``(value, status_code)`` tuple or a dictionary
+            containing ``query`` and pagination metadata.
+
+    Returns:
+        tuple[int, Any, int, str | None, str | None]:
+            A tuple of ``(status_code, value, count, next_url, previous_url)``
+            ready for ``create_response``.
+    """
+
+    status_code, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
+
+    if isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], int):
+        result, status_code = result
+    if isinstance(result, dict):
+        value = result.get("query", result)
+        count = get_count(result, value)
+        next_url = result.get("next_url")
+        previous_url = result.get("previous_url")
+    else:
+        value = result
+
+    return status_code, value, count, next_url, previous_url
+
+
 HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_INTERNAL_SERVER_ERROR = 500
