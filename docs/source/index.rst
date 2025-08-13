@@ -3,7 +3,7 @@ flarchitect
 
 .. toctree::
    :maxdepth: 2
-   :caption: Beginner
+   :caption: Getting Started
    :hidden:
 
    installation
@@ -12,25 +12,25 @@ flarchitect
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: User Guide
    :hidden:
 
    models
-   validation
    authentication
+   validation
    callbacks
-   configuration
    openapi
    soft_delete
+   configuration
+   advanced_configuration
    faq
    roadmap
 
 .. toctree::
    :maxdepth: 2
-   :caption: Advanced
+   :caption: Advanced Topics
    :hidden:
 
-   advanced_configuration
    advanced_demo
 
 .. image:: /_static/coverage.svg
@@ -72,6 +72,11 @@ What can it do?
 * Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
 * Generate `Redoc`_ or Swagger UI documentation on the fly.
 * Extend behaviour with response callbacks, custom validators and per-route hooks (:ref:`advanced-callbacks`).
+
+Advanced Configuration
+----------------------
+
+Need finer control? The :doc:`Advanced Configuration <advanced_configuration>` guide covers features like rate limiting, CORS, and custom cache backends.
 
 What are you waiting for...?
 
