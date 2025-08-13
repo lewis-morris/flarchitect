@@ -80,6 +80,7 @@ pytest
 - Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
 - Explore runnable examples in the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory.
 - Questions? Join the [GitHub discussions](https://github.com/arched-dev/flarchitect/discussions) or open an [issue](https://github.com/arched-dev/flarchitect/issues).
+- See the [changelog](CHANGES.rst) for release history.
 
 ## Contributing
 
