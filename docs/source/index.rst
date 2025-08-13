@@ -2,24 +2,35 @@ flarchitect
 =========================================
 
 .. toctree::
-   :hidden:
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Beginner
+   :hidden:
 
    installation
    quickstart
    getting_started
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Guides
+   :hidden:
+
    models
    validation
    authentication
    callbacks
    configuration
-   advanced_configuration
    openapi
    soft_delete
-   advanced_demo
    faq
-   genindex
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced
+   :hidden:
+
+   advanced_configuration
+   advanced_demo
 
 .. image:: /_static/coverage.svg
    :alt: Coverage Report
