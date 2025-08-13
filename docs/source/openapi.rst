@@ -45,6 +45,21 @@ To generate a static JSON document for deployment or tooling:
     with open("openapi.json", "w") as fh:
         json.dump(architect.api_spec.to_dict(), fh, indent=2)
 
+CLI helper
+----------
+
+The ``flarchitect`` command-line tool can export the specification and run `openapi-generator <https://openapi-generator.tech/>`_ to scaffold a client:
+
+.. code-block:: bash
+
+    $ FLASK_APP=app.py flarchitect client --lang typescript ./client
+
+This writes ``openapi.json`` to the output directory and, when the ``openapi-generator`` executable is available, generates a client library. If the tool is missing, the command still creates ``openapi.json`` and prints a warning. Install it with:
+
+.. code-block:: bash
+
+    $ npm install -g @openapitools/openapi-generator-cli
+
 Customising the document
 ------------------------
 

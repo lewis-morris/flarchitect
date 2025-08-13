@@ -68,6 +68,9 @@ dev = [
   "ruff",
   "isort"
 ]
+[project.scripts]
+flarchitect = "flarchitect.cli:main"
+
 [tool.ruff]
 exclude = ["./tests", ".bzr", ".direnv", ".eggs", ".git", "./frontend/*", ".git-rewrite", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out", "dist", "node_modules", ".venv"]
 fix = true
