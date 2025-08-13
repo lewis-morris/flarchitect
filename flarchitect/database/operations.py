@@ -39,7 +39,7 @@ __all__ = [
 ]
 
 
-def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> Query:
+def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> tuple[Query, int]:
     """Applies pagination to a query.
 
     Args:
@@ -48,10 +48,11 @@ def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None =
         items_per_page (int): Number of items per page.
 
     Returns:
-        Query: Paginated query.
+        tuple[Query, int]:
+            A tuple containing the paginated query and the default pagination size.
     """
 
-    def validate_pagination_params(page: int, items_per_page: int):
+    def validate_pagination_params(page: int, items_per_page: int) -> None:
         """Validate pagination parameters.
 
         Args:
