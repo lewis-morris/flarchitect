@@ -546,102 +546,136 @@
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Custom callback executed when a rate limit is hit, enabling logging or alternative responses.
+        - Reserved hook that would fire when a request exceeds its rate limit.
+          The callable could log the event or return a bespoke response.
+          Currently, ``flarchitect`` does not invoke this callback, so setting it has no effect.
     * - ``API_RATE_LIMIT_STORAGE_URI``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Storage backend for rate limit data such as ``redis://`` or ``memory://``.
+        - URI for the rate limiter's storage backend, e.g., ``redis://127.0.0.1:6379``.
+          When omitted, ``flarchitect`` probes for Redis, Memcached, or MongoDB and falls back to in-memory storage.
+          Use this to pin rate limiting to a specific service instead of auto-detection.
     * - ``IGNORE_FIELDS``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``list[str]``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Fields to exclude entirely from both input and output payloads.
+        - Intended list of attributes hidden from both requests and responses.
+          Use it when a column should never be accepted or exposed, such as ``internal_notes``.
+          At present the core does not process this flag, so filtering must be handled manually.
     * - ``IGNORE_OUTPUT_FIELDS``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``list[str]``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Fields removed from output serialization while still accepted on input.
+        - Fields accepted during writes but stripped from serialized responses—ideal for secrets like ``password``.
+          This option is not yet wired into the serializer; custom schema logic is required to enforce it.
     * - ``IGNORE_INPUT_FIELDS``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``list[str]``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Input-only fields stripped from response bodies but required on create or update.
+        - Attributes the API ignores if clients supply them, while still returning the values when present on the model.
+          Useful for server-managed columns such as ``created_at``.
+          Currently this flag is informational and does not trigger automatic filtering.
     * - ``API_BLUEPRINT_NAME``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Name given to the Flask blueprint that houses the API routes. Useful for namespacing.
+        - Proposed name for the Flask blueprint wrapping all API routes.
+          The extension presently registers the blueprint as ``"api"`` regardless of this value.
+          Treat it as a placeholder for future namespacing support.
     * - ``API_SOFT_DELETE``
 
           :bdg:`default:` ``False``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Enables soft deletion by marking records instead of removing them. Pair with corresponding attribute and values. Example: `demo/soft_delete/soft_delete/config.py <https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py>`_.
+        - Marks records as deleted rather than removing them from the database.
+          When enabled, ``DELETE`` swaps a configured attribute to its "deleted" value unless ``?cascade_delete=1`` is sent.
+        - Example::
+
+              class Config:
+                  API_SOFT_DELETE = True
     * - ``API_SOFT_DELETE_ATTRIBUTE``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Column name used to flag soft-deleted records, e.g., ``status``. Example: `demo/soft_delete/soft_delete/config.py <https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py>`_.
+        - Model column that stores the delete state, such as ``status`` or ``is_deleted``.
+          ``flarchitect`` updates this attribute to the "deleted" value during soft deletes.
+          Example::
+
+              API_SOFT_DELETE_ATTRIBUTE = "status"
     * - ``API_SOFT_DELETE_VALUES``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``tuple``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Tuple of values representing active and deleted states, such as ``("active", "deleted")``. Example: `demo/soft_delete/soft_delete/config.py <https://github.com/lewis-morris/flarchitect/blob/master/demo/soft_delete/soft_delete/config.py>`_.
+        - Two-element tuple defining the active and deleted markers for ``API_SOFT_DELETE_ATTRIBUTE``.
+          For example, ``("active", "deleted")`` or ``(1, 0)``.
+          The second value is written when a soft delete occurs.
     * - ``API_ALLOW_DELETE_RELATED``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Allows removal of related records when a parent is deleted. Disable to enforce manual cleanup.
+        - Historical flag intended to control whether child records are deleted alongside their parent.
+          The current deletion engine only honours ``API_ALLOW_CASCADE_DELETE``, so this setting is ignored.
+          Leave it unset unless future versions reintroduce granular control.
     * - ``API_ALLOW_DELETE_DEPENDENTS``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Permits deletion of dependent objects that rely on the target record.
+        - Companion flag to ``API_ALLOW_DELETE_RELATED`` covering association-table entries and similar dependents.
+          Not currently evaluated by the code base; cascade behaviour hinges solely on ``API_ALLOW_CASCADE_DELETE``.
+          Documented for completeness and potential future use.
     * - ``GET_MANY_SUMMARY``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Short description for list endpoints used in generated docs.
+        - Customises the ``summary`` line for list endpoints in the generated OpenAPI spec.
+          Example: ``get_many_summary = "List all books"`` produces that phrase on ``GET /books``.
+          Useful for clarifying collection responses at a glance.
     * - ``GET_SINGLE_SUMMARY``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Summary shown in docs for retrieving a single record.
+        - Defines the doc summary for single-item ``GET`` requests.
+          ``get_single_summary = "Fetch one book by ID"`` would appear beside ``GET /books/{id}``.
+          Helps consumers quickly grasp endpoint intent.
     * - ``POST_SUMMARY``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Brief explanation of the create operation in documentation.
+        - Short line describing the create operation in documentation.
+          For instance, ``post_summary = "Create a new book"`` labels ``POST /books`` accordingly.
+          Particularly handy when auto-generated names need clearer wording.
     * - ``PATCH_SUMMARY``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Short description for partial update operations.
+        - Sets the summary for ``PATCH`` endpoints used in the OpenAPI docs.
+          Example: ``patch_summary = "Update selected fields of a book"``.
+          Provides readers with a concise explanation of partial updates.
