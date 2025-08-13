@@ -17,6 +17,7 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 - **Highly configurable** – tweak behaviour globally via Flask config or per model with `Meta` attributes.
 - **Field validation** – built-in validators for emails, URLs, IPs and more.
 - **Nested writes** – opt-in support for sending related objects in POST/PUT payloads. Enable with `API_ALLOW_NESTED_WRITES = True` and let `AutoSchema` deserialize them automatically.
+- **CORS support** – enable cross-origin requests with `API_ENABLE_CORS`. See the [advanced configuration guide](docs/source/advanced_configuration.rst#cors) for an example.
 
 ## Installation
 
