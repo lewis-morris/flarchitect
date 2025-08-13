@@ -51,3 +51,25 @@ storage URI:
 If no backend is available, the limiter falls back to in-memory storage
 with rate-limit headers enabled by default.
 
+CORS
+----
+
+To enable `Cross-Origin Resource Sharing (CORS) <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS>`_
+for your API, set :data:`API_ENABLE_CORS` to ``True`` in the application
+configuration. When active, CORS headers are applied to matching routes
+defined in :data:`CORS_RESOURCES`.
+
+``CORS_RESOURCES`` accepts a mapping of URL patterns to their respective
+options, mirroring the format used by `Flask-CORS <https://flask-cors.readthedocs.io/>`_.
+
+.. code:: python
+
+    class Config:
+        API_ENABLE_CORS = True
+        CORS_RESOURCES = {
+            r"/api/*": {"origins": "*"}
+        }
+
+See the :doc:`configuration <configuration>` page for the full list of
+available CORS settings.
+
