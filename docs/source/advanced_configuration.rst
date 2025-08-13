@@ -214,9 +214,52 @@ function to a field name::
 
     GET /api/books?groupby=author_id&id|book_count__count=1
 
+.. _cascade-deletes:
+
 Cascade deletes
 ---------------
 
+When removing a record, related rows may block the operation. These
+settings let ``flarchitect`` clean up relationships automatically when
+explicitly requested.
+
+:data:`API_ALLOW_CASCADE_DELETE` permits clients to trigger cascading
+removal by adding ``?cascade_delete=1`` to the request. Without this
+flag or query parameter, deletes that would orphan related records raise
+``409 Conflict`` instead of proceeding::
+
+    DELETE /api/books/1?cascade_delete=1
+
+.. code-block:: python
+
+    class Config:
+        API_ALLOW_CASCADE_DELETE = True
+
+:data:`API_ALLOW_DELETE_RELATED` governs whether child objects referencing
+the target can be removed automatically. Disable it to require manual
+cleanup of related rows:
+
+.. code-block:: python
+
+    class Book(db.Model):
+        class Meta:
+            delete_related = False  # API_ALLOW_DELETE_RELATED
+
+:data:`API_ALLOW_DELETE_DEPENDENTS` covers dependent objects such as
+association table entries. Turning it off forces clients to delete those
+records explicitly:
+
+.. code-block:: python
+
+    class Book(db.Model):
+        class Meta:
+            delete_dependents = False  # API_ALLOW_DELETE_DEPENDENTS
+
+See :doc:`configuration <configuration>` for default values and additional
+context on these options.
+
+Case conventions
+----------------
 
 ``flarchitect`` can reshape field and schema names to match different
 case conventions. These options keep the API's payloads, schemas and
