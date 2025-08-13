@@ -11,7 +11,7 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 - **Zero-configuration endpoints** – expose models as RESTful resources by adding a simple `Meta` class.
 - **Automatic documentation** – comprehensive Redoc docs are generated at runtime and stay in sync with your models.
 - **SQLAlchemy integration** – works with plain SQLAlchemy or Flask-SQLAlchemy.
-- **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, or plug in your own authentication.
+- **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, each exposing a simple `/auth/login` endpoint for credential validation, or plug in your own authentication.
 - **Rate limiting & structured responses** – configurable throttling and responses with a consistent schema.
 - **Highly configurable** – tweak behaviour globally via Flask config or per model with `Meta` attributes.
 - **Field validation** – built-in validators for emails, URLs, IPs and more.

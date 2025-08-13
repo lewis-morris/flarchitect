@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import os
 import secrets
 import time
@@ -39,6 +41,7 @@ from flarchitect.specs.utils import (
 )
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import AttributeInitializerMixin
+from flarchitect.utils.response_helpers import create_response
 
 if TYPE_CHECKING:
     from flarchitect import Architect
@@ -383,13 +386,75 @@ class RouteCreator(AttributeInitializerMixin):
         def load_user(user_id):
             return user.get(user_id)
 
-    def _make_basic_auth_routes(self, user: Callable):
-        """Create basic authentication routes."""
-        pass  # Implement basic auth routes here
+    def _make_basic_auth_routes(self, user: Callable) -> None:
+        """Create basic authentication login route.
 
-    def _make_api_key_auth_routes(self, user: Callable):
-        """Create API key authentication routes."""
-        pass  # Implement API key auth routes here
+        This route validates the ``Authorization`` header using HTTP Basic
+        credentials. When authentication succeeds, basic user details are
+        returned to the client. No user context is persisted after the request.
+        """
+
+        @self.architect.app.route("/auth/login", methods=["POST"])
+        def basic_login() -> dict[str, Any]:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Basic "):
+                raise CustomHTTPException(401, "Invalid credentials")
+
+            try:
+                encoded = auth_header.split(" ", 1)[1]
+                username, password = base64.b64decode(encoded).decode("utf-8").split(":", 1)
+            except (ValueError, binascii.Error, UnicodeDecodeError) as exc:  # pragma: no cover - bad header
+                raise CustomHTTPException(401, "Invalid credentials") from exc
+
+            lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user, default=None)
+            check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
+            usr = user.query.filter(getattr(user, lookup_field) == username).first()
+
+            if usr and getattr(usr, check_method)(password):
+                pk, lookup = get_pk_and_lookups()
+                return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
+
+            raise CustomHTTPException(401, "Invalid credentials")
+
+    def _make_api_key_auth_routes(self, user: Callable) -> None:
+        """Create API key authentication login route.
+
+        The route expects an ``Authorization`` header using the ``Api-Key``
+        scheme. The provided key is validated against the configured user
+        model and, upon success, basic user information is returned.
+        """
+
+        @self.architect.app.route("/auth/login", methods=["POST"])
+        def api_key_login() -> dict[str, Any]:
+            header = request.headers.get("Authorization", "")
+            scheme, _, token = header.partition(" ")
+            if scheme.lower() != "api-key" or not token:
+                raise CustomHTTPException(401, "Invalid credentials")
+
+            custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", model=user, default=None)
+            if callable(custom_method):
+                usr = custom_method(token)
+            else:
+                hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", model=user, default=None)
+                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
+
+                query = getattr(user, "query", None)
+                if query is None:
+                    session = getattr(user, "get_session", lambda: None)()
+                    query = session.query(user) if session else None
+                usr = None
+                if query is not None:
+                    for candidate in query.all():
+                        stored = getattr(candidate, hash_field, None)
+                        if stored and getattr(candidate, check_method)(token):
+                            usr = candidate
+                            break
+
+            if usr:
+                pk, lookup = get_pk_and_lookups()
+                return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
+
+            raise CustomHTTPException(401, "Invalid credentials")
 
     def _make_jwt_auth_routes(self, user: Callable):
         """Create JWT authentication routes."""

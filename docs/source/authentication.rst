@@ -72,6 +72,14 @@ Provide a lookup field and password check method on your user model:
        API_USER_LOOKUP_FIELD = "username"
        API_CREDENTIAL_CHECK_METHOD = "check_password"
 
+flarchitect also provides a simple login route for this strategy. POST to
+``/auth/login`` with a ``Basic`` ``Authorization`` header to verify
+credentials and receive basic user information:
+
+.. code-block:: bash
+
+   curl -X POST -u username:password http://localhost:5000/auth/login
+
 You can then access endpoints with tools such as ``curl``:
 
 .. code-block:: bash
@@ -102,6 +110,14 @@ also call ``set_current_user``:
    class Config(BaseConfig):
        API_AUTHENTICATE_METHOD = ["api_key"]
        API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
+
+When this method is enabled flarchitect exposes a companion login route. POST
+an ``Api-Key`` ``Authorization`` header to ``/auth/login`` to validate the key
+and retrieve basic user details:
+
+.. code-block:: bash
+
+   curl -X POST -H "Authorization: Api-Key <token>" http://localhost:5000/auth/login
 
 Example request:
 
