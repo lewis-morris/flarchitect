@@ -38,15 +38,12 @@ flarchitect
 .. image:: https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master
    :alt: Tests
 
-.. image:: https://img.shields.io/github/license/arched-dev/flarchitect
+.. image:: https://img.shields.io/github/license/lewis-morris/flarchitect
    :alt: GitHub License
 
-.. image:: https://img.shields.io/pypi/dm/flarchitect
-   :alt: PyPI - Downloads
-
-.. image:: https://badgen.net/static/Repo/Github/blue?icon=github&link=https%3A%2F%2Fgithub.com%2Farched-dev%2Fflarchitect
+.. image:: https://badgen.net/static/Repo/Github/blue?icon=github&link=https%3A%2F%2Fgithub.com%2Flewis-morris%2Fflarchitect
    :alt: GitHub Repo
-   :target: https://github.com/arched-dev/flarchitect
+   :target: https://github.com/lewis-morris/flarchitect
 
 
 
@@ -117,5 +114,5 @@ Let's get started!
 
 :doc:`Quick Start <quickstart>`
 
-`View Demos <https://github.com/arched-dev/flarchitect/tree/master/demo>`__
+`View Demos <https://github.com/lewis-morris/flarchitect/tree/master/demo>`__
 

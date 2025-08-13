@@ -109,8 +109,8 @@ ogp_custom_meta_tags = [
 ]
 
 extlinks = {
-    "github": ("https://github.com/arched-dev/flarchitect", "GitHub "),
-    "issue": ("https://github.com/arched-dev/flarchitect/issues", "issue "),
+    "github": ("https://github.com/lewis-morris/flarchitect", "GitHub "),
+    "issue": ("https://github.com/lewis-morris/flarchitect/issues", "issue "),
 }
 
 autosummary_generate = True
@@ -125,7 +125,7 @@ rst_epilog = """
 .. _ReDoc: https://redocly.github.io/redoc/
 .. _Jinja: https://jinja.palletsprojects.com/en/3.1.x/
 .. _SQLAlchemy ORM: https://docs.sqlalchemy.org/
-.. _repo: https://github.com/arched-dev/flarchitect
+.. _repo: https://github.com/lewis-morris/flarchitect
 .. _HTTP method: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
 .. _Marshmallow: https://marshmallow.readthedocs.io/en/stable/
 """

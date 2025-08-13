@@ -215,6 +215,6 @@ documentation served at ``/docs``.
 Full Example
 -----------------------------------------
 
-To see a full example of this code, please see the ``demo`` directory in our `repo`_ or view the example - `quickstart demo <https://github.com/arched-dev/flarchitect/blob/master/demo/quickstart/load.py>`_
+To see a full example of this code, please see the ``demo`` directory in our `repo`_ or view the example - `quickstart demo <https://github.com/lewis-morris/flarchitect/blob/master/demo/quickstart/load.py>`_
 
-For more indepth example flask application's start with the `basic factory application <https://github.com/arched-dev/flarchitect/tree/master/demo/basic_factory>`_
+For more indepth example flask application's start with the `basic factory application <https://github.com/lewis-morris/flarchitect/tree/master/demo/basic_factory>`_

@@ -17,7 +17,7 @@ Ensure your models derive from a base class that provides a get_session method f
 crucial for the API's ability to generate accurate schemas and perform database queries.
 
 - Extend DeclarativeBase and utilize `flask-SQLAlchemy` for seamless
-  integration. [View Example](https://github.com/arched-dev/flarchitect/blob/master/demo/basic/basic/extensions.py#L10-L25)
+  integration. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/extensions.py#L10-L25)
 
 For `flask-SQLAlchemy` users, the following implementation is recommended:
 
@@ -39,7 +39,7 @@ All models should inherit from `db.Model` as usual, with model_class handling th
 Introduce a few configuration values to Flask to enable `flarchitect` functionalities.
 
 - Set necessary Flask configuration
-  values.  [View Example](https://github.com/arched-dev/flarchitect/blob/master/demo/basic/basic/config.py#L6-L8)
+  values.  [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/config.py#L6-L8)
 
 Your application's Flask configuration must specify the following values:
 
@@ -57,9 +57,9 @@ initialization of other extensions.
 Examples:
 
 - Initialize `flarchitect` in your extensions'
-  setup. [View Example](https://github.com/arched-dev/flarchitect/blob/master/demo/basic/basic/extensions.py#L26)
+  setup. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/extensions.py#L26)
 - Further initialization within your app's
-  context. [View Example](https://github.com/arched-dev/flarchitect/blob/master/demo/basic/basic/__init__.py#L28)
+  context. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/__init__.py#L28)
 
 ## Model Meta Class Attributes
 
