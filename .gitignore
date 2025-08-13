@@ -3,7 +3,6 @@
 /flarchitect.egg-info/
 /dist/
 /build/
-/.github/
 /flarchitect.egg-info/
 /htmlcov/
 /.coverage
@@ -15,7 +14,6 @@
 /rough_readne.MD
 .env
 /.env
-/.github/
 /.venv/
 /dist/
 /flarchitect.egg-info/
