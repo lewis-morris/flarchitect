@@ -18,6 +18,6 @@ jobs:
           pip install .[dev]
           pip install pytest
       - name: Lint with ruff
-        run: ruff --output-format=github --no-cache .
+        run: ruff check --output-format=github --no-cache .
       - name: Run tests
         run: pytest
