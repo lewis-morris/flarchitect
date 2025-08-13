@@ -100,6 +100,14 @@ class Architect(AttributeInitializerMixin):
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
 
+        if self.get_config("API_ENABLE_CORS", False):
+            try:
+                from flask_cors import CORS
+            except ModuleNotFoundError as exc:
+                raise RuntimeError("flask-cors is required when API_ENABLE_CORS is True") from exc
+            # Apply CORS rules from the configuration when enabled.
+            CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
+
         if self.get_config("FULL_AUTO", True):
             self.init_api(app=app, **kwargs)
         if get_config_or_model_meta("API_CREATE_DOCS", default=True):
