@@ -63,6 +63,7 @@ dev = [
     "twine>=4.0.2",
     "sphinx_copybutton",
     "sphinx_design",
+    "pytest-cov"
 ]
 
 [project.optional-dependencies]
