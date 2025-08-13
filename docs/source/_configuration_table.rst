@@ -558,6 +558,18 @@
         - URI for the rate limiter's storage backend, e.g., ``redis://127.0.0.1:6379``.
           When omitted, ``flarchitect`` probes for Redis, Memcached, or MongoDB and falls back to in-memory storage.
           Use this to pin rate limiting to a specific service instead of auto-detection.
+    * - ``API_SESSION_GETTER``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Callable returning a SQLAlchemy :class:`~sqlalchemy.orm.Session`.
+          Provides manual control over session retrieval when automatic
+          resolution is insufficient, such as with custom session factories
+          or multiple database binds. If unset, ``flarchitect`` attempts to
+          locate the session via Flask-SQLAlchemy, model ``query`` attributes,
+          or engine bindings.
     * - ``IGNORE_FIELDS``
 
           :bdg:`default:` ``None``
