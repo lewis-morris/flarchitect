@@ -80,5 +80,3 @@ Available validators
 * ``time``
 * ``boolean``
 * ``decimal``
-
-.. _Marshmallow: https://marshmallow.readthedocs.io/
