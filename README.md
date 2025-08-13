@@ -118,6 +118,17 @@ ruff --fix .
 pytest
 ```
 
+## Versioning & Releases
+
+The package version is defined in `pyproject.toml` and exposed as `flarchitect.__version__`. A GitHub Actions workflow automatically publishes to PyPI when the version changes on `master`.
+
+To publish a new release:
+
+1. Update the `version` field in `pyproject.toml` (for example with `hatch version patch`).
+2. Commit and push to `master`.
+
+Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
+
 ## License
 
 Distributed under the MIT License. See [LICENCE](LICENCE) for details.

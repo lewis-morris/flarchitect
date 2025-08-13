@@ -372,17 +372,20 @@ def register_schemas(
                 spec.components.schema(schema_name, schema=schema)
 
 
-def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]]):
-    """Registers all flarchitect with the apispec object.
+def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None) -> None:
+    """Register routes and schemas with the API spec.
 
     Args:
-        architect (Architect): The architect object.
-        route_spec (List[Dict[str, Any]]): Routes and schemas to register with
-            the apispec.
+        architect: The :class:`~flarchitect.Architect` instance.
+        route_spec: Routes and schemas to register with the apispec. ``None`` is
+            accepted to gracefully skip registration.
 
     Returns:
         None
     """
+
+    if not route_spec:
+        return
 
     for route_info in route_spec:
         with architect.app.test_request_context():
