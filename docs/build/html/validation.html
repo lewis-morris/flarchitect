@@ -318,6 +318,22 @@
 </pre></div>
 </div>
 </section>
+<section id="field-validation">
+<h2>Field validation<a class="headerlink" href="#field-validation" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> inspects the <code class="docutils literal notranslate"><span class="pre">info</span></code> mapping and the optional <code class="docutils literal notranslate"><span class="pre">format</span></code>
+attribute on SQLAlchemy columns to determine which validators to apply.  When
+<code class="docutils literal notranslate"><span class="pre">API_AUTO_VALIDATE</span></code> is enabled, common formats such as <code class="docutils literal notranslate"><span class="pre">email</span></code> or <code class="docutils literal notranslate"><span class="pre">date</span></code>
+are added automatically based on column names.  Any validator supported by
+<code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> can also be assigned manually:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Payment</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">account</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validate&quot;</span><span class="p">:</span> <span class="s2">&quot;iban&quot;</span><span class="p">})</span>
+    <span class="n">cron</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;cron&quot;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>This associates the <code class="docutils literal notranslate"><span class="pre">iban</span></code> and <code class="docutils literal notranslate"><span class="pre">cron</span></code> validators with the <code class="docutils literal notranslate"><span class="pre">account</span></code> and
+<code class="docutils literal notranslate"><span class="pre">cron</span></code> columns respectively.  Invalid values cause Marshmallow to raise a
+<code class="docutils literal notranslate"><span class="pre">ValidationError</span></code> and the API will respond with <code class="docutils literal notranslate"><span class="pre">400</span></code>.</p>
+</section>
 <section id="available-validators">
 <h2>Available validators<a class="headerlink" href="#available-validators" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">validate_by_type</span></code> supports the following names:</p>
@@ -334,8 +350,15 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">domain</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">md5</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sha1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sha224</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sha256</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sha384</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">sha512</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hostname</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iban</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cron</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base64</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">currency</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">date</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">datetime</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">time</span></code></p></li>
@@ -402,6 +425,7 @@
             <ul>
 <li><a class="reference internal" href="#">Validation</a><ul>
 <li><a class="reference internal" href="#basic-usage">Basic usage</a></li>
+<li><a class="reference internal" href="#field-validation">Field validation</a></li>
 <li><a class="reference internal" href="#available-validators">Available validators</a></li>
 </ul>
 </li>
