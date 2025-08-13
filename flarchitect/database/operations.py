@@ -1,4 +1,3 @@
-import random
 from collections.abc import Callable
 from typing import Any
 
@@ -9,6 +8,10 @@ from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from flarchitect.core.utils import get_primary_key_info
+from flarchitect.database.inspections import (
+    get_model_columns,
+    get_model_relationships,
+)
 from flarchitect.database.utils import (
     generate_conditions_from_args,
     get_all_columns_and_hybrids,
@@ -22,39 +25,13 @@ from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
 
-
-def get_model_relationships(model: DeclarativeBase, randomise: bool = True) -> list[type[DeclarativeBase]]:
-    """
-    Extracts relationships from a SQLAlchemy model.
-
-    Args:
-        model (DeclarativeBase): The SQLAlchemy model.
-        randomise (bool, optional): Whether to randomise the order of relationships.
-
-    Returns:
-        List[Type[DeclarativeBase]]: A list of related models.
-    """
-    relationships = [relationship.mapper.class_ for relationship in inspect(model).relationships]
-    if randomise:
-        random.shuffle(relationships)
-    return relationships
-
-
-def get_model_columns(model: DeclarativeBase, randomise: bool = True) -> list[str]:
-    """
-    Extracts column names from a SQLAlchemy model.
-
-    Args:
-        model (DeclarativeBase): The SQLAlchemy model.
-        randomise (bool, optional): Whether to randomize the order of columns.
-
-    Returns:
-        List[str]: A list of column names.
-    """
-    columns = [x.name for x in list(inspect(model).mapper.columns)]
-    if randomise:
-        random.shuffle(columns)
-    return columns
+__all__ = [
+    "paginate_query",
+    "apply_sorting_to_query",
+    "CrudService",
+    "get_model_columns",
+    "get_model_relationships",
+]
 
 
 def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> Query:

@@ -16,7 +16,10 @@ from werkzeug.routing import IntegerConverter, UnicodeConverter
 
 import flarchitect.utils
 import flarchitect.utils.decorators
-from flarchitect.database.operations import get_model_columns, get_model_relationships
+from flarchitect.database.inspections import (
+    get_model_columns,
+    get_model_relationships,
+)
 from flarchitect.database.utils import AGGREGATE_FUNCS
 from flarchitect.logging import logger
 from flarchitect.utils.config_helpers import get_config_or_model_meta
