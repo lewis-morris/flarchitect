@@ -5,7 +5,7 @@ import os
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from flask import Flask, Response, jsonify, request
 from flask_limiter import Limiter
@@ -13,7 +13,10 @@ from flask_limiter.util import get_remote_address
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
-from flarchitect.authentication import roles_required
+
+if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
+    from flask_caching import Cache
+
 from flarchitect.authentication.jwt import get_user_from_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
@@ -73,6 +76,7 @@ class Architect(AttributeInitializerMixin):
     base_dir: str = os.path.dirname(os.path.abspath(__file__))
     route_spec: list = []
     limiter: Limiter
+    cache: "Cache | None" = None
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
         """
@@ -82,6 +86,10 @@ class Architect(AttributeInitializerMixin):
             app (Flask): The flask app.
             *args (list): List of arguments.
             **kwargs (dict): Dictionary of keyword arguments.
+
+        Notes:
+            Configures optional integrations such as caching and CORS based on
+            application settings.
         """
         if app is not None:
             self.init_app(app, *args, **kwargs)
@@ -100,6 +108,20 @@ class Architect(AttributeInitializerMixin):
         self._register_app(app)
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
+
+        cache_type = self.get_config("API_CACHE_TYPE")
+        if cache_type:
+            try:
+                from flask_caching import Cache
+            except ModuleNotFoundError as exc:
+                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set") from exc
+
+            cache_config = {
+                "CACHE_TYPE": cache_type,
+                "CACHE_DEFAULT_TIMEOUT": self.get_config("API_CACHE_TIMEOUT", 300),
+            }
+            self.cache = Cache(config=cache_config)
+            self.cache.init_app(app)
 
         if self.get_config("API_ENABLE_CORS", False):
             try:
