@@ -81,7 +81,7 @@ Into this:
       "total_count": 10,
       "next_url": "/api/authors?limit=2&page=3",
       "previous_url": "/api/authors?limit=2&page=1",
-      "error": "null",
+      "errors": null,
       "value": [
         {
           "author": "John Doe",
