@@ -76,6 +76,8 @@ def validate_date(value: str, formats: Iterable[str] | None = None) -> bool:
     raise ValidationError(
         f"Invalid date format. Acceptable formats are: {', '.join(formats)}"
     )
+
+
 def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
     """Validate that a string represents a time in one of the accepted formats.
 
@@ -114,6 +116,8 @@ def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
     raise ValidationError(
         f"Invalid time format. Acceptable formats are: {', '.join(formats)}"
     )
+
+
 def validate_decimal(value: str | int | float | Decimal) -> bool:
     """Validate that the provided value can be converted to a :class:`Decimal`.
 

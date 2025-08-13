@@ -116,12 +116,15 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
+    title = (
+        pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
+    )
 
     return title
 
 
 # Words related to publishing and printing
+
 
 def generate_company_name() -> str:
     """Generate a random company name."""
@@ -312,7 +315,9 @@ def create_publishers(db) -> list[Publisher]:
     publishers: list[Publisher] = []
     for _ in range(0, 30):
         name = generate_company_name()
-        website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
+        website = (
+            "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
+        )
         foundation_year = generate_random_year(1860, 1920)
 
         company = Publisher(name=name, website=website, foundation_year=foundation_year)
@@ -347,7 +352,9 @@ def create_authors(db) -> list[Author]:
             last_name=last_name,
             biography=biography,
             date_of_birth=datetime(
-                year=date_of_birth, month=random.randint(1, 12), day=random.randint(1, 28)
+                year=date_of_birth,
+                month=random.randint(1, 12),
+                day=random.randint(1, 28),
             ),
             nationality=rand_nationality,
             website=website,

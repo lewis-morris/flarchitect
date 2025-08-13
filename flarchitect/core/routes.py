@@ -304,7 +304,9 @@ class RouteCreator(AttributeInitializerMixin):
         authenticate = get_config_or_model_meta("API_AUTHENTICATE", default=False)
         custom_auth = get_config_or_model_meta("API_CUSTOM_AUTH", default=False)
         hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-        check_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
+        check_method = get_config_or_model_meta(
+            "API_KEY_AUTH_AND_RETURN_METHOD", default=None
+        )
 
         if not self.architect.app.config.get("SECRET_KEY") and auth_method:
             raise ValueError(
@@ -314,7 +316,7 @@ class RouteCreator(AttributeInitializerMixin):
                 f"{secrets.token_urlsafe(32)}\n"
             )
 
-        if auth_method and 'custom' not in auth_method and not user:
+        if auth_method and "custom" not in auth_method and not user:
             raise ValueError(
                 "If API_AUTHENTICATE_METHOD is set to a callable, API_USER_MODEL must be set to the user model."
             )
@@ -340,7 +342,8 @@ class RouteCreator(AttributeInitializerMixin):
         if authenticate and "api_key" in auth_method:
             if not user:
                 raise ValueError(
-                    "If API_AUTHENTICATE_METHOD is set to 'api_key', API_USER_MODEL must be set to the user model.")
+                    "If API_AUTHENTICATE_METHOD is set to 'api_key', API_USER_MODEL must be set to the user model."
+                )
             if not hash_field or not check_method:
                 raise ValueError(
                     "If API_AUTHENTICATE_METHOD is set to 'api_key', API_CREDENTIAL_HASH_FIELD must be set "
@@ -348,9 +351,10 @@ class RouteCreator(AttributeInitializerMixin):
                     "hash fields "
                     ""
                     ""
-                    "which must use  OR a valid API_KEY_AUTH_AND_RETURN_METHOD callable that validates the key and returns the user model must be supplied.")
+                    "which must use  OR a valid API_KEY_AUTH_AND_RETURN_METHOD callable that validates the key and returns the user model must be supplied."
+                )
 
-        if authenticate and 'custom' in auth_method:
+        if authenticate and "custom" in auth_method:
             if not custom_auth:
                 raise ValueError(
                     "If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be set to True."

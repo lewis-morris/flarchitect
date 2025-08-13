@@ -686,9 +686,7 @@ class AutoSchema(Base):
 
         if allow_nested_writes and not relationship_prop.viewonly:
             if relationship_prop.uselist:
-                load_field = fields.List(
-                    fields.Nested(input_schema), load_only=True
-                )
+                load_field = fields.List(fields.Nested(input_schema), load_only=True)
             else:
                 load_field = fields.Nested(input_schema, load_only=True)
             self.add_to_fields(field_name, load_field, dump=False)

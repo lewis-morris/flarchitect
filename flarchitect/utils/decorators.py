@@ -269,9 +269,7 @@ def standardize_response(func: Callable) -> Callable:
             error = str(e)
             status_code = HTTP_INTERNAL_SERVER_ERROR
             value = None
-            out_resp = _handle_exception(
-                f"Internal Server Error: {error}", status_code
-            )
+            out_resp = _handle_exception(f"Internal Server Error: {error}", status_code)
 
         finally:
             error_callback = get_config_or_model_meta("API_ERROR_CALLBACK")
