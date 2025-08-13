@@ -74,7 +74,7 @@ class Architect(AttributeInitializerMixin):
     api_spec: CustomSpec | None = None
     api: Optional["RouteCreator"] = None
     base_dir: str = os.path.dirname(os.path.abspath(__file__))
-    route_spec: list = []
+    route_spec: list[dict[str, Any]] | None = None
     limiter: Limiter
     cache: "Cache | None" = None
 
@@ -91,6 +91,8 @@ class Architect(AttributeInitializerMixin):
             Configures optional integrations such as caching and CORS based on
             application settings.
         """
+        self.route_spec: list[dict[str, Any]] = []
+
         if app is not None:
             self.init_app(app, *args, **kwargs)
             logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
@@ -564,4 +566,8 @@ class Architect(AttributeInitializerMixin):
             route["function"]._decorators = []
 
         route["function"]._decorators.append(self.schema_constructor)
+
+        if self.route_spec is None:
+            self.route_spec = []
+
         self.route_spec.append(route)
