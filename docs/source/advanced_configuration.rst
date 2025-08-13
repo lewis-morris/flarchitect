@@ -64,10 +64,17 @@ with rate-limit headers enabled by default. In production, you might point
 to a shared Redis cluster so that multiple application servers enforce the
 same limits.
 
+You can also cache ``GET`` responses by choosing a backend with
+``API_CACHE_TYPE``. When `flask-caching <https://flask-caching.readthedocs.io/>`_
+is installed, set ``API_CACHE_TYPE`` to any supported backend such as
+``RedisCache``. If the extension is missing, specifying ``SimpleCache``
+activates a small in-memory cache bundled with ``flarchitect``; any other
+value will raise a :class:`RuntimeError`. Use ``API_CACHE_TIMEOUT`` to control
+how long items remain cached.
+For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
+
 After securing throughput, you can also shape what your clients see in each
 payload.
-
-For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
 
 Response metadata
 -----------------
@@ -260,6 +267,18 @@ options, mirroring the format used by `Flask-CORS <https://flask-cors.readthedoc
         CORS_RESOURCES = {
             r"/api/*": {"origins": "*"}
         }
+
+If ``flask-cors`` is installed, these settings are passed through to that
+extension. Without it, ``flarchitect`` compiles the patterns in
+``CORS_RESOURCES`` and adds an ``Access-Control-Allow-Origin`` header for
+matching requests. Only origin checking is performed; other CORS headers are
+left untouched.
+
+``flask-cors``\ -free minimal configuration::
+
+    class Config:
+        API_ENABLE_CORS = True
+        CORS_RESOURCES = {r"/api/*": {"origins": ["https://example.com"]}}
 
 Example
 ^^^^^^^
