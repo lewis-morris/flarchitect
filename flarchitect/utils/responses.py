@@ -1,3 +1,12 @@
+"""Utilities for serialising and wrapping API responses.
+
+This module provides helper types and functions used to construct consistent
+responses throughout the project.  The :class:`CustomResponse` data class allows
+endpoints to supply additional pagination metadata that
+``create_response`` understands.
+"""
+
+from dataclasses import dataclass
 from typing import Any
 
 from marshmallow import Schema, ValidationError
@@ -6,6 +15,23 @@ from flarchitect.schemas.bases import AutoSchema
 from flarchitect.schemas.utils import dump_schema_if_exists
 from flarchitect.utils.core_utils import get_count
 from flarchitect.utils.general import HTTP_INTERNAL_SERVER_ERROR
+
+
+@dataclass
+class CustomResponse:
+    """Container for API response data and pagination metadata.
+
+    Attributes:
+        value: The primary payload to return to the client.
+        next_url: Link to the next page of results, if available.
+        previous_url: Link to the previous page of results, if available.
+        count: Total number of objects available.
+    """
+
+    value: Any
+    next_url: str | None = None
+    previous_url: str | None = None
+    count: int | None = None
 
 
 def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> dict[str, Any] | tuple[dict[str, Any], int]:
