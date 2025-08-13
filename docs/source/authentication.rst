@@ -4,7 +4,9 @@ Authentication
 flarchitect provides several helpers so you can secure your API quickly.
 Enable one or more strategies via ``API_AUTHENTICATE_METHOD``. Available
 methods are ``jwt``, ``basic``, ``api_key`` and ``custom``. Each example below
-uses the common setup defined in ``demo/authentication/app_base.py``.
+uses the common setup defined in ``demo/authentication/app_base.py``. Runnable
+snippets demonstrating each strategy live in the project repository:
+`jwt_auth.py`_, `basic_auth.py`_ and `api_key_auth.py`_.
 You can also protect routes based on user roles using the
 :ref:`roles-required` decorator.
 
@@ -234,6 +236,11 @@ Troubleshooting
    * - Missing Authorization header
      - Include the appropriate ``Authorization`` header with your credentials.
    * - Token has expired
-     - Use the refresh token to obtain a new access token.
+      - Use the refresh token to obtain a new access token.
    * - Invalid or expired refresh token
-     - Log in again to receive a new access/refresh token pair.
+      - Log in again to receive a new access/refresh token pair.
+
+
+.. _jwt_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/jwt_auth.py
+.. _basic_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/basic_auth.py
+.. _api_key_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/api_key_auth.py

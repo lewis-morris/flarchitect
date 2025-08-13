@@ -259,6 +259,7 @@
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
 <ul>
@@ -314,37 +315,38 @@ configuration or on individual SQLAlchemy models.</p>
 <p>flarchitect recognises a number of callback hooks that allow you to run custom
 logic at various stages of processing:</p>
 <ul class="simple">
-<li><p><strong>Global setup</strong> – runs before any model-specific processing.</p></li>
+<li><p><strong>Global setup</strong> – runs before any model-specific processing. <code class="docutils literal notranslate"><span class="pre">GLOBAL_SETUP_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_GLOBAL_SETUP_CALLBACK</span></code>)</p></li>
 <li><p><strong>Setup</strong> – runs before database operations. Useful for validation, logging
-or altering incoming data.</p></li>
+or altering incoming data. <code class="docutils literal notranslate"><span class="pre">SETUP_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code>)</p></li>
 <li><p><strong>Filter</strong> – lets you adjust the SQLAlchemy query object before filtering and
-pagination are applied.</p></li>
-<li><p><strong>Add</strong> – called before a new object is committed to the database.</p></li>
-<li><p><strong>Update</strong> – invoked prior to persisting updates to an existing object.</p></li>
-<li><p><strong>Remove</strong> – executed before an object is deleted.</p></li>
+pagination are applied. <code class="docutils literal notranslate"><span class="pre">FILTER_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_FILTER_CALLBACK</span></code>)</p></li>
+<li><p><strong>Add</strong> – called before a new object is committed to the database. <code class="docutils literal notranslate"><span class="pre">ADD_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_ADD_CALLBACK</span></code>)</p></li>
+<li><p><strong>Update</strong> – invoked prior to persisting updates to an existing object. <code class="docutils literal notranslate"><span class="pre">UPDATE_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_UPDATE_CALLBACK</span></code>)</p></li>
+<li><p><strong>Remove</strong> – executed before an object is deleted. <code class="docutils literal notranslate"><span class="pre">REMOVE_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_REMOVE_CALLBACK</span></code>)</p></li>
 <li><p><strong>Return</strong> – runs after the database operation but before the response is
-returned. Ideal for adjusting the output or adding headers.</p></li>
+returned. Ideal for adjusting the output or adding headers. <code class="docutils literal notranslate"><span class="pre">RETURN_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code>)</p></li>
 <li><p><strong>Dump</strong> – executes after Marshmallow serialisation allowing you to modify
-the dumped data.</p></li>
-<li><p><strong>Final</strong> – runs immediately before the response is sent to the client.</p></li>
+the dumped data. <code class="docutils literal notranslate"><span class="pre">DUMP_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_DUMP_CALLBACK</span></code>)</p></li>
+<li><p><strong>Final</strong> – runs immediately before the response is sent to the client. <code class="docutils literal notranslate"><span class="pre">FINAL_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_FINAL_CALLBACK</span></code>)</p></li>
 <li><p><strong>Error</strong> – triggered when an exception bubbles up; handle logging or
-notifications here.</p></li>
+notifications here. <code class="docutils literal notranslate"><span class="pre">ERROR_CALLBACK</span></code> (global: <code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code>)</p></li>
 </ul>
 </section>
 <section id="configuration">
 <h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
-<p>Callbacks are referenced by the following configuration keys:</p>
+<p>Callbacks are referenced by the following configuration keys (global variants
+use <code class="docutils literal notranslate"><span class="pre">API_&lt;KEY&gt;</span></code>):</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">GLOBAL_SETUP_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">SETUP_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ADD_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">UPDATE_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">REMOVE_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">RETURN_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FINAL_CALLBACK</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ERROR_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GLOBAL_SETUP_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_GLOBAL_SETUP_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SETUP_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_SETUP_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILTER_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_FILTER_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ADD_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_ADD_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UPDATE_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_UPDATE_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">REMOVE_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_REMOVE_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RETURN_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_RETURN_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DUMP_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_DUMP_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FINAL_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_FINAL_CALLBACK</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ERROR_CALLBACK</span></code> / <code class="docutils literal notranslate"><span class="pre">API_ERROR_CALLBACK</span></code></p></li>
 </ul>
 <p>You can apply these keys in several places:</p>
 <ol class="arabic">
@@ -583,7 +585,7 @@ a return callback. The value is a list of OpenAPI parameter objects.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=92734c54"></script>
+</div><script src="_static/documentation_options.js?v=50d0ae8a"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

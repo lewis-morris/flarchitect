@@ -2,27 +2,30 @@
 
 from __future__ import annotations
 
+import pytest
 from flask.testing import FlaskClient
 
-from demo.validators.app import app
+from demo.validators import create_app
 
-VALID_PAYLOAD = {
-    "name": "Test Publisher",
-    "website": "https://example.com",
-    "email": "publisher@example.com",
-    "foundation_year": 1999,
-}
+@pytest.fixture()
+def client() -> FlaskClient:
+    """Provide a test client for the validator demo app."""
+
+    app = create_app()
+    with app.test_client() as client:
+        yield client
 
 
-def test_author_email_validation() -> None:
-    """Valid data succeeds while invalid email triggers a 400 response."""
-    client: FlaskClient = app.test_client()
+def test_validation_errors(client: FlaskClient) -> None:
+    """Invalid field data returns a 400 with error details."""
 
-    good = client.post("/api/publishers", json=VALID_PAYLOAD)
-    assert good.status_code == 200
-    assert good.get_json()["value"]["email"] == VALID_PAYLOAD["email"]
-
-    bad_payload = dict(VALID_PAYLOAD)
-    bad_payload["email"] = "not-an-email"
-    bad = client.post("/api/publishers", json=bad_payload)
-    assert bad.status_code == 400
+    response = client.post(
+        "/api/users",
+        json={"email": "not-email", "homepage": "not-url", "slug": "Bad Slug"},
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    error_fields = data["errors"]["error"]
+    assert "email" in error_fields
+    assert "homepage" in error_fields
+    assert "slug" in error_fields

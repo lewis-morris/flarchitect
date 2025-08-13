@@ -59,8 +59,8 @@ def create_app(config: type[BaseConfig]) -> Flask:
 
     app = Flask(__name__)
     app.config.from_object(config)
-    db.init_app(app)
+
     with app.app_context():
-        db.create_all()
+        db.init_app(app)
         schema.init_app(app)
     return app

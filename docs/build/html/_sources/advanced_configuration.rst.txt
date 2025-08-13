@@ -1,13 +1,21 @@
 Advanced Configuration
 ======================
 
-Beyond the basics, **flarchitect** offers several advanced options for fine-
-tuning API behaviour. This guide covers rate limiting and cache configuration.
+When your API grows, you might need tools for shaping traffic, offloading
+storage and refining responses. Beyond the basics, **flarchitect** offers
+several options for these scenarios. The following sections walk through
+common patterns such as rate limiting, cache configuration and response
+metadata.
+
+As traffic increases, managing how often clients can hit your API becomes
+critical.
 
 Rate limiting
 -------------
 
-Rate limits can be applied globally, per HTTP method or per model.
+Rate limits can be applied globally, per HTTP method or per model. For
+example, to shield a public search endpoint from abuse, you might allow only
+``100`` GET requests per minute.
 
 **Global limit**
 
@@ -35,6 +43,9 @@ Rate limits can be applied globally, per HTTP method or per model.
             rate_limit = "5 per minute"      # becomes API_RATE_LIMIT
             get_rate_limit = "10 per minute"  # becomes API_GET_RATE_LIMIT
 
+Because limits depend on counting requests, those counts must live
+somewhere.
+
 Caching backends
 ----------------
 
@@ -49,13 +60,21 @@ storage URI:
         API_RATE_LIMIT_STORAGE_URI = "redis://redis.example.com:6379"
 
 If no backend is available, the limiter falls back to in-memory storage
-with rate-limit headers enabled by default.
+with rate-limit headers enabled by default. In production, you might point
+to a shared Redis cluster so that multiple application servers enforce the
+same limits.
+
+After securing throughput, you can also shape what your clients see in each
+payload.
+
+For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
 
 Response metadata
 -----------------
 
 ``flarchitect`` can attach additional metadata to every response. These
-keys let you toggle each field individually:
+keys let you toggle each field individually. Including version numbers, for
+example, helps client developers cache against the correct release:
 
 .. list-table::
    :header-rows: 1
@@ -196,9 +215,70 @@ See :doc:`configuration <configuration>` for detailed descriptions of
 :data:`API_ALLOW_FILTER`, :data:`API_ALLOW_ORDER_BY` and
 :data:`API_ALLOW_SELECT_FIELDS`.
 
+Joining related resources
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Enable :data:`API_ALLOW_JOIN` to allow clients to join related models using
+the ``join`` query parameter::
+
+    GET /api/books?join=author&fields=books.title,author.first_name
+
+Grouping and aggregation
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+:data:`API_ALLOW_GROUPBY` enables the ``groupby`` parameter for SQL
+``GROUP BY`` clauses. Use :data:`API_ALLOW_AGGREGATION` alongside it to
+compute aggregates. Aggregates are expressed by appending a label and
+function to a field name::
+
+    GET /api/books?groupby=author_id&id|book_count__count=1
+
+.. _cascade-deletes:
+
 Cascade deletes
 ---------------
 
+When removing a record, related rows may block the operation. These
+settings let ``flarchitect`` clean up relationships automatically when
+explicitly requested.
+
+:data:`API_ALLOW_CASCADE_DELETE` permits clients to trigger cascading
+removal by adding ``?cascade_delete=1`` to the request. Without this
+flag or query parameter, deletes that would orphan related records raise
+``409 Conflict`` instead of proceeding::
+
+    DELETE /api/books/1?cascade_delete=1
+
+.. code-block:: python
+
+    class Config:
+        API_ALLOW_CASCADE_DELETE = True
+
+:data:`API_ALLOW_DELETE_RELATED` governs whether child objects referencing
+the target can be removed automatically. Disable it to require manual
+cleanup of related rows:
+
+.. code-block:: python
+
+    class Book(db.Model):
+        class Meta:
+            delete_related = False  # API_ALLOW_DELETE_RELATED
+
+:data:`API_ALLOW_DELETE_DEPENDENTS` covers dependent objects such as
+association table entries. Turning it off forces clients to delete those
+records explicitly:
+
+.. code-block:: python
+
+    class Book(db.Model):
+        class Meta:
+            delete_dependents = False  # API_ALLOW_DELETE_DEPENDENTS
+
+See :doc:`configuration <configuration>` for default values and additional
+context on these options.
+
+Case conventions
+----------------
 
 ``flarchitect`` can reshape field and schema names to match different
 case conventions. These options keep the API's payloads, schemas and

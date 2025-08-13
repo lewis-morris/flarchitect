@@ -54,14 +54,29 @@ jobs:
           mkdir -p docs/source/_static
           cp -f coverage.svg docs/source/_static/coverage.svg
 
+      - name: Produce version badge
+        run: |
+          pip install anybadge
+          python - <<'PY'
+          import flarchitect, importlib.metadata
+          from anybadge import Badge
+
+          version = getattr(flarchitect, "__version__", importlib.metadata.version("flarchitect"))
+          Badge("version", version).write_badge("version.svg", overwrite=True)
+          PY
+          mkdir -p docs/source/_static
+          cp -f version.svg docs/source/_static/version.svg
+
       - name: Upload test artifacts (coverage + xml)
         uses: actions/upload-artifact@v4
         with:
           name: coverage-artifacts
           path: |
             coverage.svg
+            version.svg
             coverage.xml
             docs/source/_static/coverage.svg
+            docs/source/_static/version.svg
 
   build-docs:
     runs-on: ubuntu-latest
@@ -83,16 +98,17 @@ jobs:
           pip install .[dev]
           pip install sphinx sphinx-rtd-theme
 
-      - name: Download coverage badge from test job
+      - name: Download badges from test job
         uses: actions/download-artifact@v4
         with:
           name: coverage-artifacts
           path: _ci_artifacts
 
-      - name: Place coverage.svg into docs static
+      - name: Place badges into docs static
         run: |
           mkdir -p docs/source/_static
           cp -f _ci_artifacts/docs/source/_static/coverage.svg docs/source/_static/coverage.svg
+          cp -f _ci_artifacts/docs/source/_static/version.svg docs/source/_static/version.svg
 
       - name: Build Sphinx HTML
         run: |

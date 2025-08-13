@@ -4,7 +4,11 @@ Authentication
 flarchitect provides several helpers so you can secure your API quickly.
 Enable one or more strategies via ``API_AUTHENTICATE_METHOD``. Available
 methods are ``jwt``, ``basic``, ``api_key`` and ``custom``. Each example below
-uses the common setup defined in ``demo/authentication/app_base.py``.
+uses the common setup defined in ``demo/authentication/app_base.py``. Runnable
+snippets demonstrating each strategy live in the project repository:
+`jwt_auth.py`_, `basic_auth.py`_ and `api_key_auth.py`_.
+You can also protect routes based on user roles using the
+:ref:`roles-required` decorator.
 
 Error responses
 ---------------
@@ -128,6 +132,7 @@ API key auth associates a user with a single token. Clients send the token in
 each request, usually via a header like ``X-API-Key`` or as a query string
 parameter. flarchitect passes the token to a function you provide, and the
 function returns the matching user.
+If you store hashed tokens on the model, set ``API_CREDENTIAL_HASH_FIELD`` to the attribute holding the hash so flarchitect can validate keys.
 
 Attach a function that accepts an API key and returns a user. The function can
 also call ``set_current_user``:
@@ -190,6 +195,36 @@ Clients can then call your API with whatever headers your function expects:
 
 See ``demo/authentication/custom_auth.py`` for this approach in context.
 
+.. _roles-required:
+
+Role-based access
+-----------------
+
+Use the ``roles_required`` decorator to allow only users with specific roles to
+access an endpoint. The decorator checks the ``roles`` attribute on
+``current_user`` which is populated by the active authentication method.
+
+.. code-block:: python
+
+   from flarchitect.authentication import roles_required
+
+   @app.get("/admin")
+   @roles_required("admin")
+   def admin_dashboard():
+       return {"status": "ok"}
+
+You can require multiple roles by passing more than one name:
+
+.. code-block:: python
+
+   @roles_required("admin", "editor")
+   def update_post():
+       ...
+
+Ensure your user model exposes a list of role names, for example
+``User.roles = ["admin", "editor"]``. If the authenticated user lacks any of
+the required roles—or if no user is authenticated—a ``403`` response is raised.
+
 Troubleshooting
 ---------------
 
@@ -201,6 +236,11 @@ Troubleshooting
    * - Missing Authorization header
      - Include the appropriate ``Authorization`` header with your credentials.
    * - Token has expired
-     - Use the refresh token to obtain a new access token.
+      - Use the refresh token to obtain a new access token.
    * - Invalid or expired refresh token
-     - Log in again to receive a new access/refresh token pair.
+      - Log in again to receive a new access/refresh token pair.
+
+
+.. _jwt_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/jwt_auth.py
+.. _basic_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/basic_auth.py
+.. _api_key_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/api_key_auth.py

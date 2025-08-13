@@ -1,19 +1,11 @@
-"""Tests for the caching demo application."""
-
-from __future__ import annotations
-
 import time
 
-from flask.testing import FlaskClient
-
-from demo.caching.app import app
-from demo.model_extension.model.extensions import db
-from demo.model_extension.model.models import Author
+from demo.caching.app import Author, create_app, db
 
 
-def test_author_endpoint_is_cached() -> None:
-    """Responses are cached for the configured timeout."""
-    client: FlaskClient = app.test_client()
+def test_cached_endpoint_stores_and_invalidates_response():
+    app = create_app({"API_CACHE_TIMEOUT": 1})
+    client = app.test_client()
 
     first = client.get("/api/authors/1").get_json()["value"]["first_name"]
 
@@ -26,5 +18,6 @@ def test_author_endpoint_is_cached() -> None:
     assert second == first
 
     time.sleep(1.1)
+
     third = client.get("/api/authors/1").get_json()["value"]["first_name"]
     assert third == "Cached"

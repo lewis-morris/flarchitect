@@ -81,11 +81,43 @@ integrating `flarchitect` into your Flask application.
 
 ## Authentication Examples
 
-The `demo/authentication` directory contains runnable snippets for each built-in authentication strategy:
+The `demo/authentication` directory contains runnable snippets for each
+built-in authentication strategy. Each example shares a common setup defined in
+[`app_base.py`](app_base.py).
 
-- `jwt_auth.py` – JSON Web Token authentication
-- `basic_auth.py` – HTTP Basic authentication
-- `api_key_auth.py` – API key authentication
-- `custom_auth.py` – Custom callable authentication
+To try a demo:
 
-All examples share a common setup defined in `app_base.py`.
+1. Insert a user into the in-memory database using the `User` model.
+2. Start the desired script with `python <file>` (the app listens on port
+   ``5000``).
+3. Use the sample curl commands below to authenticate and access the protected
+   `/profile` endpoint.
+
+### JWT – [jwt_auth.py](jwt_auth.py)
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"wonderland"}' \
+  http://localhost:5000/auth/login
+curl -H "Authorization: Bearer <access-token>" \
+  http://localhost:5000/profile
+```
+
+### HTTP Basic – [basic_auth.py](basic_auth.py)
+
+```bash
+curl -X POST -u alice:wonderland http://localhost:5000/auth/login
+curl -u alice:wonderland http://localhost:5000/profile
+```
+
+### API key – [api_key_auth.py](api_key_auth.py)
+
+```bash
+curl -X POST -H "Authorization: Api-Key secret" \
+  http://localhost:5000/auth/login
+curl -H "Authorization: Api-Key secret" \
+  http://localhost:5000/profile
+```
+
+An additional [custom_auth.py](custom_auth.py) example shows how to plug in a
+bespoke authentication callable.

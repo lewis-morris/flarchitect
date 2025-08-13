@@ -259,6 +259,7 @@
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
 <ul>
@@ -309,8 +310,9 @@
 <p>flarchitect automatically generates an OpenAPI 3.0.2 document for every
 registered model. The specification powers the interactive Redoc page and
 can also be rendered with Swagger UI by setting <code class="docutils literal notranslate"><span class="pre">API_DOCS_STYLE</span> <span class="pre">=</span> <span class="pre">'swagger'</span></code>
-in your Flask configuration. The raw spec can also be reused with external
-tools like Postman.</p>
+in your Flask configuration. You can inject additional <cite>&lt;head&gt;</cite> tags into
+the documentation with <code class="docutils literal notranslate"><span class="pre">API_DOCUMENTATION_HEADERS</span></code>. The raw spec can also be
+reused with external tools like Postman.</p>
 <section id="automatic-generation">
 <h2>Automatic generation<a class="headerlink" href="#automatic-generation" title="Link to this heading">¶</a></h2>
 <p>When <code class="docutils literal notranslate"><span class="pre">API_CREATE_DOCS</span></code> is enabled (it is <code class="docutils literal notranslate"><span class="pre">True</span></code> by default) the
@@ -337,6 +339,8 @@ the URL with <code class="docutils literal notranslate"><span class="pre">API_SP
 <h2>Customising the document<a class="headerlink" href="#customising-the-document" title="Link to this heading">¶</a></h2>
 <p>A number of configuration keys let you tailor the output:</p>
 <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">API_DOCS_STYLE</span></code> – choose between Redoc and Swagger UI</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">API_DOCUMENTATION_HEADERS</span></code> – inject extra HTML into the docs page</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">API_TITLE</span></code> – title displayed in the document</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">API_VERSION</span></code> – semantic version string</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">API_DESCRIPTION</span></code> – path to a README-style file rendered into the
@@ -418,7 +422,7 @@ the URL with <code class="docutils literal notranslate"><span class="pre">API_SP
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=92734c54"></script>
+</div><script src="_static/documentation_options.js?v=50d0ae8a"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
