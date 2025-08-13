@@ -430,6 +430,10 @@ class AutoSchema(Base):
                     field_args["validate"].append(validate_by_type("sha384"))
                 elif format_name == "currency":
                     field_args["validate"].append(validate_by_type("currency"))
+                elif ("phone" in column_name and column.type.python_type is str) or (format_name in ["phone", "phone_number"]):
+                    field_args["validate"].append(validate_by_type("phone"))
+                elif "postal" in column_name or "zip" in column_name or (format_name in ["postal_code", "zip", "zipcode"]):
+                    field_args["validate"].append(validate_by_type("postal_code"))
             except Exception:
                 pass
 

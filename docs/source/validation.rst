@@ -75,6 +75,8 @@ Available validators
 * ``cron``
 * ``base64``
 * ``currency``
+* ``phone``
+* ``postal_code``
 * ``date``
 * ``datetime``
 * ``time``

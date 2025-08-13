@@ -1,4 +1,5 @@
 import time
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -21,8 +22,7 @@ def create_response(
     response_ms: float | None = None,
     result: Any | None = None,
 ) -> Response:
-    """
-    Create a standardized response.
+    """Create a standardized Flask :class:`~flask.Response`.
 
     Args:
         value (Optional[Any]): The value to be returned.
@@ -34,6 +34,12 @@ def create_response(
         response_ms (Optional[float]): The time taken to generate the response.
         result (Optional[Any]): Raw result to be processed into a response. When
             provided, other parameters are ignored.
+
+    Notes:
+        If the application configuration defines ``API_FINAL_CALLBACK`` it will
+        be invoked with the assembled response payload prior to serialization.
+        This allows custom mutation of the outgoing data, such as injecting
+        additional metadata.
 
     Returns:
         Response: A standardized response object.
@@ -76,9 +82,14 @@ def create_response(
     data = _filter_response_data(data)
     data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")): v for k, v in data.items()}
 
-    final_hook = get_config_or_model_meta("API_FINAL_CALLBACK")
-    if final_hook:
-        data = final_hook(data)
+
+    # Optional hook allowing applications to post-process the outgoing payload.
+    # ``API_FINAL_CALLBACK`` should be a callable that accepts the response
+    # dictionary and returns the modified dictionary. This can be used to inject
+    # custom metadata or otherwise mutate the payload before serialization.
+    final_callback: Callable[[dict[str, Any]], dict[str, Any]] | None = get_config_or_model_meta("API_FINAL_CALLBACK")
+    if final_callback:
+        data = final_callback(data)
 
     if is_xml():
         type_ = "text/xml" if get_config_or_model_meta("API_XML_AS_TEXT", default=False) else "application/xml"
