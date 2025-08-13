@@ -408,6 +408,8 @@ class AutoSchema(Base):
                     field_args["validate"].append(validate_by_type("ipv6"))
                 elif format_name == "mac":
                     field_args["validate"].append(validate_by_type("mac"))
+                elif format_name == "hostname":
+                    field_args["validate"].append(validate_by_type("hostname"))
                 elif format_name == "slug":
                     field_args["validate"].append(validate_by_type("slug"))
                 elif format_name == "uuid" or column.type.python_type == uuid.UUID:
@@ -416,6 +418,18 @@ class AutoSchema(Base):
                     field_args["validate"].append(validate_by_type("card"))
                 elif format_name == "country_code":
                     field_args["validate"].append(validate_by_type("country_code"))
+                elif format_name == "iban":
+                    field_args["validate"].append(validate_by_type("iban"))
+                elif format_name == "cron":
+                    field_args["validate"].append(validate_by_type("cron"))
+                elif format_name == "base64":
+                    field_args["validate"].append(validate_by_type("base64"))
+                elif format_name == "sha224":
+                    field_args["validate"].append(validate_by_type("sha224"))
+                elif format_name == "sha384":
+                    field_args["validate"].append(validate_by_type("sha384"))
+                elif format_name == "currency":
+                    field_args["validate"].append(validate_by_type("currency"))
             except Exception:
                 pass
 
