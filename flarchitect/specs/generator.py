@@ -259,7 +259,10 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 str: The HTML documentation page.
             """
             custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
-            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()<<<<<<< arched/update-register_routes_with_spec-signature
+381
+ 
+
             template_name = "swagger.html" if docs_style == "swagger" else "apispec.html"
             return manual_render_absolute_template(
                 os.path.join(self.architect.get_templates_path(), template_name),
@@ -372,7 +375,7 @@ def register_schemas(
                 spec.components.schema(schema_name, schema=schema)
 
 
-def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None) -> None:
+def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None = None) -> None:
     """Register routes and schemas with the API spec.
 
     Args:

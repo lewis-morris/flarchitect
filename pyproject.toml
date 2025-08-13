@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flarchitect"
-version = "0.0.9.4"
+version = "0.1.0.1"
 description = "Automatic RESTful API generator with redoc"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -63,12 +63,15 @@ dev = [
     "twine>=4.0.2",
     "sphinx_copybutton",
     "sphinx_design",
+    "pytest-cov"
 ]
 
 [project.optional-dependencies]
 dev = [
   "ruff",
-  "isort"
+  "isort",
+  "pytest>=7.4.4",
+  "pytest-cov>=4.1.0"
 ]
 cache = [
   "flask-caching>=2.1.0",
