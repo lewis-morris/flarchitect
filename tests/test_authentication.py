@@ -10,6 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from flarchitect import Architect
 from flarchitect.authentication.jwt import (
     generate_access_token,
     generate_refresh_token,
@@ -20,7 +21,6 @@ from flarchitect.authentication.user import (
     get_current_user,
     set_current_user,
 )
-from flarchitect import Architect
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.response_helpers import create_response
 
@@ -67,6 +67,8 @@ def client_basic() -> Generator[FlaskClient, None, None]:
     db.init_app(app)
     with app.app_context():
         architect = Architect(app=app)
+        architect.init_api(app=app, api_full_auto=False)
+        architect.api.make_auth_routes()
 
         @app.errorhandler(CustomHTTPException)
         def handle_custom(exc: CustomHTTPException):
@@ -105,10 +107,13 @@ def client_api_key() -> Generator[FlaskClient, None, None]:
         API_USER_MODEL=User,
         API_CREDENTIAL_HASH_FIELD="api_key_hash",
         API_CREDENTIAL_CHECK_METHOD="check_api_key",
+        API_USER_LOOKUP_FIELD="username",
     )
     db.init_app(app)
     with app.app_context():
         architect = Architect(app=app)
+        architect.init_api(app=app, api_full_auto=False)
+        architect.api.make_auth_routes()
 
         @app.errorhandler(CustomHTTPException)
         def handle_custom(exc: CustomHTTPException):
@@ -241,11 +246,22 @@ def test_basic_success_and_failure(client_basic: FlaskClient) -> None:
     assert get_current_user() is None
 
     bad_credentials = base64.b64encode(b"alice:wrong").decode("utf-8")
-    resp_bad = client_basic.get(
-        "/basic", headers={"Authorization": f"Basic {bad_credentials}"}
-    )
+    resp_bad = client_basic.get("/basic", headers={"Authorization": f"Basic {bad_credentials}"})
     assert resp_bad.status_code == 401
     assert get_current_user() is None
+
+
+def test_basic_login(client_basic: FlaskClient) -> None:
+    """Validate basic login endpoint with correct and incorrect credentials."""
+
+    credentials = base64.b64encode(b"alice:wonderland").decode("utf-8")
+    resp = client_basic.post("/auth/login", headers={"Authorization": f"Basic {credentials}"})
+    assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "alice"
+
+    bad_credentials = base64.b64encode(b"alice:bad").decode("utf-8")
+    resp_bad = client_basic.post("/auth/login", headers={"Authorization": f"Basic {bad_credentials}"})
+    assert resp_bad.status_code == 401
 
 
 def test_api_key_success_and_failure(client_api_key: FlaskClient) -> None:
@@ -262,6 +278,17 @@ def test_api_key_success_and_failure(client_api_key: FlaskClient) -> None:
     assert get_current_user() is None
 
 
+def test_api_key_login(client_api_key: FlaskClient) -> None:
+    """Validate API key login endpoint."""
+
+    resp = client_api_key.post("/auth/login", headers={"Authorization": "Api-Key secret"})
+    assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "bob"
+
+    resp_bad = client_api_key.post("/auth/login", headers={"Authorization": "Api-Key wrong"})
+    assert resp_bad.status_code == 401
+
+
 def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> None:
     """Test JWT authentication, refresh, and ensure user context resets."""
     client, access_token, refresh_token = client_jwt
@@ -274,9 +301,7 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
 
     new_access_token, user = refresh_access_token(refresh_token)
     assert user.username == "carol"
-    resp_new = client.get(
-        "/jwt", headers={"Authorization": f"Bearer {new_access_token}"}
-    )
+    resp_new = client.get("/jwt", headers={"Authorization": f"Bearer {new_access_token}"})
     assert resp_new.status_code == 200
     assert resp_new.get_json()["value"]["username"] == "carol"
     assert get_current_user() is None
