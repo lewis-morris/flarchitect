@@ -90,6 +90,25 @@ The following snippet enables CORS for all API routes::
 See the :doc:`configuration <configuration>` page for the full list of
 available CORS settings.
 
+Cascade deletes
+---------------
+
+By default, ``flarchitect`` blocks cascade deletions to protect related data.
+Enabling :data:`API_ALLOW_CASCADE_DELETE` allows a parent record and its
+children to be removed together.
+
+When enabled, clients must opt in using the ``cascade_delete=1`` query flag:
+
+.. code-block:: http
+
+   DELETE /api/authors/1?cascade_delete=1
+
+Omitting the flag triggers an error reminding the caller to include
+``cascade_delete=1``. For example usage, see ``tests/test_flask_config.py``.
+
+Cascade deletes permanently remove related data. Use with caution to avoid
+accidental data loss.
+
 .. _advanced-callbacks:
 
 Callbacks, validators and hooks
