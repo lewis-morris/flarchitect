@@ -21,29 +21,23 @@ Example::
 
 That's all that's required to make the model available through the generated API.
 
-Nested model creation
----------------------
+Dump types
+----------
 
-Nested writes are disabled by default. Enable them globally with
-``API_ALLOW_NESTED_WRITES = True`` or per model via ``Meta.allow_nested_writes``.
-Once enabled, ``AutoSchema`` can deserialize nested relationship data during
-POST or PUT requests. Include related objects under the relationship name in
-your payload::
+``flarchitect`` can serialize model responses in different formats, controlled
+by ``API_SERIALIZATION_TYPE`` or ``Meta.serialization_type``. Supported dump
+types are:
 
-    {
-        "title": "My Book",
-        "isbn": "12345",
-        "publication_date": "2024-01-01",
-        "author_id": 1,
-        "author": {
-            "first_name": "John",
-            "last_name": "Doe",
-            "biography": "Bio",
-            "date_of_birth": "1980-01-01",
-            "nationality": "US"
-        }
-    }
+* ``url`` (default) – represent related objects only by their URL links.
+* ``json`` – embed related objects as JSON objects.
+* ``dynamic`` – choose between ``url`` and ``json`` using the ``dump`` query
+  parameter.
+* ``hybrid`` – include both URL links and embedded JSON for related objects.
 
-The nested ``author`` object is deserialized into an ``Author`` instance while
-responses continue to use the configured serialization type (URL, JSON, or
-dynamic).
+Example::
+
+    class Config:
+        API_SERIALIZATION_TYPE = "json"
+
+Clients can override ``dynamic`` dumps per request with
+``?dump=url`` or ``?dump=json``.

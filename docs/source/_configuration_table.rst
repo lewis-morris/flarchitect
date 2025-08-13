@@ -202,9 +202,9 @@
         - Ignores attributes prefixed with ``_`` during serialization to keep internal fields hidden. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_TYPE``
 
-          :bdg-secondary:`Optional` 
+          :bdg-secondary:`Optional`
 
-        - Output format for serialized data, such as ``json`` or ``xml``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Output format for serialized data. Options include ``url`` (default), ``json``, ``dynamic`` and ``hybrid``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_DEPTH``
 
           :bdg-secondary:`Optional` 
