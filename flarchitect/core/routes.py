@@ -453,7 +453,10 @@ class RouteCreator(AttributeInitializerMixin):
 
             if usr:
                 pk, lookup = get_pk_and_lookups()
-                return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
+                data: dict[str, Any] = {"user_pk": getattr(usr, pk)}
+                if lookup:
+                    data[lookup] = getattr(usr, lookup)
+                return create_response(data)
 
             raise CustomHTTPException(401, "Invalid credentials")
 
