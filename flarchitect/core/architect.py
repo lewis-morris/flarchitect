@@ -2,6 +2,7 @@ import base64
 import binascii
 import importlib
 import os
+import re
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
@@ -16,7 +17,6 @@ from sqlalchemy.orm import DeclarativeBase
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
 
-from flarchitect.authentication import roles_required
 from flarchitect.authentication.jwt import get_user_from_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
@@ -109,27 +109,44 @@ class Architect(AttributeInitializerMixin):
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
 
+        self.cache = None
         cache_type = self.get_config("API_CACHE_TYPE")
         if cache_type:
-            try:
+            cache_timeout = self.get_config("API_CACHE_TIMEOUT", 300)
+            if importlib.util.find_spec("flask_caching") is not None:
                 from flask_caching import Cache
-            except ModuleNotFoundError as exc:
-                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set") from exc
 
-            cache_config = {
-                "CACHE_TYPE": cache_type,
-                "CACHE_DEFAULT_TIMEOUT": self.get_config("API_CACHE_TIMEOUT", 300),
-            }
-            self.cache = Cache(config=cache_config)
-            self.cache.init_app(app)
+                cache_config = {"CACHE_TYPE": cache_type, "CACHE_DEFAULT_TIMEOUT": cache_timeout}
+                self.cache = Cache(config=cache_config)
+                self.cache.init_app(app)
+            elif cache_type == "SimpleCache":
+                from flarchitect.core.simple_cache import SimpleCache
+
+                self.cache = SimpleCache(default_timeout=cache_timeout)
+                self.cache.init_app(app)
+            else:
+                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set")
 
         if self.get_config("API_ENABLE_CORS", False):
-            try:
+            if importlib.util.find_spec("flask_cors") is not None:
                 from flask_cors import CORS
-            except ModuleNotFoundError as exc:
-                raise RuntimeError("flask-cors is required when API_ENABLE_CORS is True") from exc
-            # Apply CORS rules from the configuration when enabled.
-            CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
+
+                CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
+            else:
+                resources = app.config.get("CORS_RESOURCES", {})
+                compiled = [(re.compile(pattern), opts.get("origins", "*")) for pattern, opts in resources.items()]
+
+                @app.after_request
+                def apply_cors_headers(response: Response) -> Response:
+                    path = request.path
+                    origin = request.headers.get("Origin")
+                    for pattern, origins in compiled:
+                        if pattern.match(path):
+                            allowed = [origins] if isinstance(origins, str) else list(origins)
+                            if "*" in allowed or (origin and origin in allowed):
+                                response.headers["Access-Control-Allow-Origin"] = "*" if "*" in allowed else origin
+                            break
+                    return response
 
         if self.get_config("FULL_AUTO", True):
             self.init_api(app=app, **kwargs)
@@ -450,6 +467,10 @@ class Architect(AttributeInitializerMixin):
             roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
 
         def decorator(f: Callable) -> Callable:
+            local_roles_required = None
+            if roles and auth_flag is not False:
+                from flarchitect.authentication import roles_required as local_roles_required
+
             @wraps(f)
             def wrapped(*_args, **_kwargs):
                 self._handle_auth(
@@ -467,8 +488,8 @@ class Architect(AttributeInitializerMixin):
                     input_schema=input_schema,
                 )
 
-                if roles and auth_flag is not False:
-                    f_decorated = roles_required(*roles_tuple)(f_decorated)
+                if roles and auth_flag is not False and local_roles_required:
+                    f_decorated = local_roles_required(*roles_tuple)(f_decorated)
 
                 return f_decorated(*_args, **_kwargs)
 
