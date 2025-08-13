@@ -1,4 +1,6 @@
 # Schema for loading login data (username and password)
+from typing import Any
+
 from marshmallow import Schema, ValidationError, fields, validates
 
 
@@ -8,11 +10,12 @@ class LoginSchema(Schema):
 
     # Optional: Add custom validations for username or password, if needed
     @validates("username")
-    def validate_username(self, value: str) -> None:
+    def validate_username(self, value: str, **_: Any) -> None:
         """Ensure the username is present and sufficiently long.
 
         Args:
             value: The username provided by the user.
+            _ (Any): Additional keyword arguments supplied by Marshmallow.
 
         Raises:
             ValidationError: If ``value`` is empty or shorter than three characters.
@@ -24,11 +27,12 @@ class LoginSchema(Schema):
             raise ValidationError("Username must be at least 3 characters long.")
 
     @validates("password")
-    def validate_password(self, value: str) -> None:
+    def validate_password(self, value: str, **_: Any) -> None:
         """Ensure the password meets minimum requirements.
 
         Args:
             value: The password supplied by the user.
+            _ (Any): Additional keyword arguments supplied by Marshmallow.
 
         Raises:
             ValidationError: If ``value`` is empty or shorter than six characters.
