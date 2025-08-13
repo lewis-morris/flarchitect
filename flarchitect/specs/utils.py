@@ -962,12 +962,12 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
     Returns:
         None
     """
-    roles_required = None
+    required_roles = None
 
     if hasattr(f, "_decorators"):
         for decorator in f._decorators:
-            if decorator.__name__ == "auth_required":
-                roles_required = decorator._args
+            if decorator.__name__ == "roles_required":
+                required_roles = decorator._args
                 spec_template["parameters"].append(
                     {
                         "name": "Authorization",
@@ -979,8 +979,8 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
                 )
                 break
 
-    if roles_required:
-        roles_desc = ", ".join(roles_required)
+    if required_roles:
+        roles_desc = ", ".join(required_roles)
         spec_template["responses"]["401"]["description"] += f" Roles required: {roles_desc}."
 
 
