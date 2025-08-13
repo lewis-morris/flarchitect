@@ -23,9 +23,7 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
 
 
-def get_model_relationships(
-    model: DeclarativeBase, randomise: bool = True
-) -> list[type[DeclarativeBase]]:
+def get_model_relationships(model: DeclarativeBase, randomise: bool = True) -> list[type[DeclarativeBase]]:
     """
     Extracts relationships from a SQLAlchemy model.
 
@@ -36,9 +34,7 @@ def get_model_relationships(
     Returns:
         List[Type[DeclarativeBase]]: A list of related models.
     """
-    relationships = [
-        relationship.mapper.class_ for relationship in inspect(model).relationships
-    ]
+    relationships = [relationship.mapper.class_ for relationship in inspect(model).relationships]
     if randomise:
         random.shuffle(relationships)
     return relationships
@@ -61,9 +57,7 @@ def get_model_columns(model: DeclarativeBase, randomise: bool = True) -> list[st
     return columns
 
 
-def paginate_query(
-    sql_query: Query, page: int = 0, items_per_page: int | None = None
-) -> Query:
+def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> Query:
     """Applies pagination to a query.
 
     Args:
@@ -90,9 +84,7 @@ def paginate_query(
         if not str(items_per_page).isnumeric():
             raise CustomHTTPException(400, "Items per page must be an integer.")
 
-    default_pagination_size = get_config_or_model_meta(
-        "API_PAGINATION_SIZE_DEFAULT", default=20
-    )
+    default_pagination_size = get_config_or_model_meta("API_PAGINATION_SIZE_DEFAULT", default=20)
 
     if items_per_page is None:
         items_per_page = default_pagination_size
@@ -100,16 +92,12 @@ def paginate_query(
     validate_pagination_params(page, items_per_page)
 
     return (
-        sql_query.paginate(
-            page=int(page), per_page=int(items_per_page), error_out=False
-        ),
+        sql_query.paginate(page=int(page), per_page=int(items_per_page), error_out=False),
         default_pagination_size,
     )
 
 
-def apply_sorting_to_query(
-    args_dict: dict[str, str | int], query: Query, base_model: Callable
-) -> Query:
+def apply_sorting_to_query(args_dict: dict[str, str | int], query: Query, base_model: Callable) -> Query:
     """Applies order_by conditions to a query.
 
     Args:
@@ -155,9 +143,7 @@ class CrudService:
         self.model = model
         self.session = session
 
-    def _process_nested_relationships(
-        self, model: DeclarativeBase, data: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _process_nested_relationships(self, model: DeclarativeBase, data: dict[str, Any]) -> dict[str, Any]:
         """Recursively build related model instances from nested dictionaries.
 
         Args:
@@ -176,16 +162,9 @@ class CrudService:
             value = data[key]
 
             if relationship.uselist and isinstance(value, list):
-                data[key] = [
-                    related_model(
-                        **self._process_nested_relationships(related_model, item)
-                    )
-                    for item in value
-                ]
+                data[key] = [related_model(**self._process_nested_relationships(related_model, item)) for item in value]
             elif not relationship.uselist and isinstance(value, dict):
-                data[key] = related_model(
-                    **self._process_nested_relationships(related_model, value)
-                )
+                data[key] = related_model(**self._process_nested_relationships(related_model, value))
 
             for col in relationship.local_columns:
                 data.pop(col.name, None)
@@ -215,9 +194,7 @@ class CrudService:
 
         return related_model.mapper.class_
 
-    def filter_query_from_args(
-        self, args_dict: dict[str, str | int], query=None
-    ) -> Query:
+    def filter_query_from_args(self, args_dict: dict[str, str | int], query=None) -> Query:
         """Filters a query based on request arguments.
 
         Args:
@@ -229,19 +206,11 @@ class CrudService:
         join_models = get_models_for_join(args_dict, self.fetch_related_model_by_name)
         all_columns, all_models = get_all_columns_and_hybrids(self.model, join_models)
 
-        conditions = [
-            condition
-            for condition in generate_conditions_from_args(
-                args_dict, self.model, all_columns, all_models, join_models
-            )
-            if condition is not None
-        ]
+        conditions = [condition for condition in generate_conditions_from_args(args_dict, self.model, all_columns, all_models, join_models) if condition is not None]
 
         query = self.initialize_query(args_dict, all_columns, query)
 
-        if conditions and get_config_or_model_meta(
-            "API_ALLOW_FILTER", model=self.model, default=True
-        ):
+        if conditions and get_config_or_model_meta("API_ALLOW_FILTER", model=self.model, default=True):
             query = query.filter(and_(*conditions))
 
         return query
@@ -256,9 +225,7 @@ class CrudService:
         Returns:
 
         """
-        if get_config_or_model_meta(
-            "API_ALLOW_ORDER_BY", model=self.model, default=True
-        ):
+        if get_config_or_model_meta("API_ALLOW_ORDER_BY", model=self.model, default=True):
             query = apply_sorting_to_query(args_dict, query, self.model)
         return query
 
@@ -277,14 +244,8 @@ class CrudService:
         Returns:
             Query: Initialized query.
         """
-        allow_select = get_config_or_model_meta(
-            "API_ALLOW_SELECT_FIELDS", model=self.model, default=True
-        )
-        select_fields = (
-            get_select_fields(args_dict, self.model, all_columns)
-            if allow_select
-            else []
-        )
+        allow_select = get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model=self.model, default=True)
+        select_fields = get_select_fields(args_dict, self.model, all_columns) if allow_select else []
 
         if select_fields:
             if query:
@@ -308,19 +269,11 @@ class CrudService:
             return query
 
         show_deleted = request.args.get("include_deleted", None)
-        deleted_attr = get_config_or_model_meta(
-            "API_SOFT_DELETE_ATTRIBUTE", default=None
-        )
-        soft_delete_values = get_config_or_model_meta(
-            "API_SOFT_DELETE_VALUES", default=False
-        )
+        deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", default=None)
+        soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", default=False)
 
         if not show_deleted and deleted_attr:
-            models = {
-                getattr(inspect(desc["entity"]).mapper, "class_", None)
-                for desc in query.column_descriptions
-                if desc["entity"]
-            }
+            models = {getattr(inspect(desc["entity"]).mapper, "class_", None) for desc in query.column_descriptions if desc["entity"]}
 
             for model in models:
                 if hasattr(model, deleted_attr):
@@ -360,33 +313,18 @@ class CrudService:
 
             else:
                 query = self.session.query(base_model)
-                callback = get_config_or_model_meta(
-                    "API_FILTER_CALLBACK", model=base_model, default=None
-                )
+                callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
                 if callback:
                     query = callback(query, self.model, args_dict)
 
-            if alt_field:
-                query = query.filter(getattr(base_model, alt_field) == lookup_val)
-            else:
-                query = query.filter_by(
-                    **get_primary_key_filters(base_model, lookup_val)
-                )
+            query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
 
-            if get_config_or_model_meta(
-                "API_SOFT_DELETE", model=base_model, default=False
-            ):
+            if get_config_or_model_meta("API_SOFT_DELETE", model=base_model, default=False):
                 show_deleted = request.args.get("include_deleted", None)
-                deleted_attr = get_config_or_model_meta(
-                    "API_SOFT_DELETE_ATTRIBUTE", model=base_model, default=None
-                )
-                soft_delete_values = get_config_or_model_meta(
-                    "API_SOFT_DELETE_VALUES", model=base_model, default=None
-                )
+                deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", model=base_model, default=None)
+                soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", model=base_model, default=None)
                 if not show_deleted and deleted_attr:
-                    query = query.filter(
-                        getattr(base_model, deleted_attr) == soft_delete_values[0]
-                    )
+                    query = query.filter(getattr(base_model, deleted_attr) == soft_delete_values[0])
 
             result = query.one_or_none()
 
@@ -400,23 +338,17 @@ class CrudService:
 
             lookup_val = kwargs.get(get_primary_key_info(kwargs.get("join_model"))[0])
 
-            query = get_related_b_query(
-                kwargs.get("join_model"), self.model, lookup_val, self.session
-            )
+            query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
 
             # relationships i.e /authors/1/books was returning a 200 when author is None. This fixes it.
             if query.count() == 0:
-                raise CustomHTTPException(
-                    404, f"{kwargs.get('join_model').__name__} not found."
-                )
+                raise CustomHTTPException(404, f"{kwargs.get('join_model').__name__} not found.")
 
             query = self.filter_query_from_args(args_dict, query)
         else:
             query = self.filter_query_from_args(args_dict)
 
-        callback = get_config_or_model_meta(
-            "API_FILTER_CALLBACK", model=base_model, default=None
-        )
+        callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
         if callback:
             query = callback(query, self.model, args_dict)
 
@@ -428,23 +360,11 @@ class CrudService:
         # ``column_descriptions``.
         filtered_query = self.apply_soft_delete_filter(order_query)
 
-        paginated_query, default_pagination_size = paginate_query(
-            filtered_query, args_dict.get("page", 1), args_dict.get("limit")
-        )
+        paginated_query, default_pagination_size = paginate_query(filtered_query, args_dict.get("page", 1), args_dict.get("limit"))
 
         return {
-            "query": (
-                paginated_query.all()
-                if hasattr(paginated_query, "all")
-                else paginated_query.items
-                if hasattr(paginated_query, "items")
-                else paginated_query
-            ),
-            "limit": (
-                int(args_dict.get("limit"))
-                if args_dict.get("limit")
-                else default_pagination_size
-            ),
+            "query": (paginated_query.all() if hasattr(paginated_query, "all") else paginated_query.items if hasattr(paginated_query, "items") else paginated_query),
+            "limit": (int(args_dict.get("limit")) if args_dict.get("limit") else default_pagination_size),
             "page": int(args_dict.get("page")) if args_dict.get("page") else 1,
             "total_count": count,
         }
@@ -463,19 +383,11 @@ class CrudService:
             DataError: If there is a data type error.
         """
         try:
-            allow_nested = get_config_or_model_meta(
-                "ALLOW_NESTED_WRITES", model=self.model, default=False
-            )
-            payload = (
-                self._process_nested_relationships(self.model, data_dict.copy())
-                if allow_nested
-                else data_dict
-            )
+            allow_nested = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
+            payload = self._process_nested_relationships(self.model, data_dict.copy()) if allow_nested else data_dict
             obj = self.model(**payload)
 
-            callback = get_config_or_model_meta(
-                "API_ADD_CALLBACK", model=self.model, default=None
-            )
+            callback = get_config_or_model_meta("API_ADD_CALLBACK", model=self.model, default=None)
             if callback:
                 obj = callback(obj, self.model)
 
@@ -486,9 +398,7 @@ class CrudService:
             self.session.rollback()
             raise CustomHTTPException(422, str(e.orig)) from e
 
-    def update_object(
-        self, lookup_val: int | str, data_dict: dict[str, Any], *args, **kwargs
-    ) -> Callable:
+    def update_object(self, lookup_val: int | str, data_dict: dict[str, Any], *args, **kwargs) -> Callable:
         """Updates an existing object in the database.
 
         Args:
@@ -503,28 +413,16 @@ class CrudService:
             DataError: If there is a data type error.
         """
         try:
-            obj = (
-                self.session.query(self.model)
-                .filter_by(**get_primary_key_filters(self.model, lookup_val))
-                .one_or_none()
-            )
+            obj = self.session.query(self.model).filter_by(**get_primary_key_filters(self.model, lookup_val)).one_or_none()
             if obj is None:
                 raise CustomHTTPException(404, f"{self.model.__name__} not found.")
 
-            allow_nested = get_config_or_model_meta(
-                "ALLOW_NESTED_WRITES", model=self.model, default=False
-            )
-            update_payload = (
-                self._process_nested_relationships(self.model, data_dict.copy())
-                if allow_nested
-                else data_dict
-            )
+            allow_nested = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
+            update_payload = self._process_nested_relationships(self.model, data_dict.copy()) if allow_nested else data_dict
             for key, value in update_payload.items():
                 setattr(obj, key, value)
 
-            callback = get_config_or_model_meta(
-                "API_UPDATE_CALLBACK", model=self.model, default=None
-            )
+            callback = get_config_or_model_meta("API_UPDATE_CALLBACK", model=self.model, default=None)
             if callback:
                 obj = callback(obj, self.model)
 
@@ -547,32 +445,19 @@ class CrudService:
         # Fetch cascade_delete flag from request args
         cascade_delete = int(request.args.get("cascade_delete", 0)) == 1
 
-        obj = (
-            self.session.query(self.model)
-            .filter_by(**get_primary_key_filters(self.model, lookup_val))
-            .one_or_none()
-        )
+        obj = self.session.query(self.model).filter_by(**get_primary_key_filters(self.model, lookup_val)).one_or_none()
 
         if obj is None:
             raise CustomHTTPException(404, f"{self.model.__name__} not found.")
 
-        callback = get_config_or_model_meta(
-            "API_REMOVE_CALLBACK", model=self.model, default=None
-        )
+        callback = get_config_or_model_meta("API_REMOVE_CALLBACK", model=self.model, default=None)
         if callback:
             obj = callback(obj, self.model)
 
         # Handle soft deletes when configured.
-        if (
-            get_config_or_model_meta("API_SOFT_DELETE", model=self.model, default=False)
-            and not cascade_delete
-        ):
-            deleted_attr = get_config_or_model_meta(
-                "API_SOFT_DELETE_ATTRIBUTE", model=self.model, default=None
-            )
-            soft_delete_values = get_config_or_model_meta(
-                "API_SOFT_DELETE_VALUES", model=self.model, default=None
-            )
+        if get_config_or_model_meta("API_SOFT_DELETE", model=self.model, default=False) and not cascade_delete:
+            deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", model=self.model, default=None)
+            soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", model=self.model, default=None)
 
             if not deleted_attr or not soft_delete_values:
                 raise CustomHTTPException(500, "Soft delete misconfigured")
@@ -584,12 +469,7 @@ class CrudService:
         with self.session.no_autoflush:
             self.session.delete(obj)
             try:
-                if (
-                    not get_config_or_model_meta(
-                        "API_ALLOW_CASCADE_DELETE", model=self.model, default=True
-                    )
-                    or request.args.get("cascade_delete") != "1"
-                ):
+                if not get_config_or_model_meta("API_ALLOW_CASCADE_DELETE", model=self.model, default=True) or request.args.get("cascade_delete") != "1":
                     self.session.commit()
                     return None, 200
 
@@ -600,9 +480,7 @@ class CrudService:
 
             except SQLAlchemyError as e:
                 self.session.rollback()
-                if get_config_or_model_meta(
-                    "API_ALLOW_CASCADE_DELETE", model=self.model, default=False
-                ):
+                if get_config_or_model_meta("API_ALLOW_CASCADE_DELETE", model=self.model, default=False):
                     error_msg = "Error deleting object, use url parameter `cascade_delete=1` to attempt cascade delete"
                 else:
                     error_msg = "Error deleting object"
@@ -612,9 +490,7 @@ class CrudService:
         return None, 200
 
 
-def recursive_delete(
-    obj, cascade_delete=True, visited=None, objects_touched=None, parent=None
-):
+def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=None, parent=None):
     """
     Recursively delete related objects based on foreign key constraints, optimized for performance.
 
@@ -658,9 +534,7 @@ def recursive_delete(
 
     # Log the source object when it's first called and add it to the touched list
     objects_touched.append((obj.__class__.__name__, obj_identifier[1]))
-    print(
-        f"Processing deletion for object: {obj.__class__.__name__} with ID: {obj_identifier[1]}"
-    )
+    print(f"Processing deletion for object: {obj.__class__.__name__} with ID: {obj_identifier[1]}")
 
     # Iterate through relationships of the object
     for relationship in mapper.relationships:
@@ -680,9 +554,7 @@ def recursive_delete(
             for related_obj in related_objects:
                 related_obj_id = get_obj_id(related_obj)
                 if related_obj_id not in visited:
-                    recursive_delete(
-                        related_obj, cascade_delete, visited, objects_touched, obj
-                    )
+                    recursive_delete(related_obj, cascade_delete, visited, objects_touched, obj)
         else:
             # It's a scalar relationship (one-to-one or many-to-one)
             related_obj = related_objects
@@ -690,14 +562,10 @@ def recursive_delete(
             if related_obj_id not in visited:
                 # For many-to-one, we generally don't delete the parent object
                 if relationship.direction.name == "MANYTOONE":
-                    print(
-                        f"Skipping deletion of parent object {related_obj.__class__.__name__}"
-                    )
+                    print(f"Skipping deletion of parent object {related_obj.__class__.__name__}")
                     continue
                 else:
-                    recursive_delete(
-                        related_obj, cascade_delete, visited, objects_touched, obj
-                    )
+                    recursive_delete(related_obj, cascade_delete, visited, objects_touched, obj)
 
     # Log the actual deletion of the source object
     print(f"Deleting object: {obj.__class__.__name__} with ID: {obj_identifier[1]}")

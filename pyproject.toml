@@ -72,6 +72,7 @@ dev = [
 exclude = ["./tests", ".bzr", ".direnv", ".eggs", ".git", "./frontend/*", ".git-rewrite", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out", "dist", "node_modules", ".venv"]
 fix = true
 target-version = "py310"
+line-length = 200
 
 
 [tool.ruff.lint]

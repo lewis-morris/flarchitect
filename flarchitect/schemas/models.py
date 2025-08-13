@@ -1,6 +1,8 @@
 from marshmallow import Schema, fields, post_load, pre_load
 from sqlalchemy.testing.pickleable import User
 
+from flarchitect.schemas.bases import AutoSchema
+
 
 class DeleteSuccessfulSchema(Schema):
     class Meta:

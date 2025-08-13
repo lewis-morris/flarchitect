@@ -22,13 +22,8 @@ def create_app(config: dict = None):
     db.init_app(app)
 
     with app.app_context():
-        from demo.basic_factory.basic_factory.models import (
-            Author,
-            Book,
-            Category,
-            Publisher,
-            Review,
-        )
+        # Import models for their side effects so SQLAlchemy can register them
+        import demo.basic_factory.basic_factory.models  # noqa: F401
 
         db.create_all()
         load_dummy_database(db)
