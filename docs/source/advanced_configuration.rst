@@ -70,6 +70,23 @@ options, mirroring the format used by `Flask-CORS <https://flask-cors.readthedoc
             r"/api/*": {"origins": "*"}
         }
 
+Example
+^^^^^^^
+
+The following snippet enables CORS for all API routes::
+
+    from flask import Flask
+    from flarchitect import Architect
+
+    app = Flask(__name__)
+    app.config["API_ENABLE_CORS"] = True
+    app.config["CORS_RESOURCES"] = {r"/api/*": {"origins": "*"}}
+
+    architect = Architect(app)
+
+    if __name__ == "__main__":
+        app.run()
+
 See the :doc:`configuration <configuration>` page for the full list of
 available CORS settings.
 
