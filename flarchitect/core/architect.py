@@ -30,7 +30,9 @@ from flarchitect.utils.general import (
     check_rate_services,
     validate_flask_limiter_rate_limit_string,
 )
+
 from flarchitect.utils.response_helpers import create_response
+
 
 FLASK_APP_NAME = "flarchitect"
 
@@ -434,8 +436,9 @@ class Architect(AttributeInitializerMixin):
 
         query = getattr(user_model, "query", None)
         if query is None:
-            session = getattr(user_model, "get_session", lambda: None)()
-            if session is None:
+            try:
+                session = get_session(user_model)
+            except Exception:
                 return False
             query = session.query(user_model)
 

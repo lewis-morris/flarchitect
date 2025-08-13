@@ -139,6 +139,34 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Base path prefix applied to all API routes. Adjust when mounting the API under a subpath such as ``/v1``. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_CACHE_TYPE``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Flask-Caching backend used for caching GET responses. Examples include ``SimpleCache`` and ``RedisCache``. Requires the ``flask-caching`` package.
+    * - ``API_CACHE_TIMEOUT``
+
+          :bdg:`default:` ``300``
+          :bdg:`type` ``int``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Expiry time in seconds for cached responses. Only applicable when ``API_CACHE_TYPE`` is set.
+    * - ``API_ENABLE_CORS``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Enables Cross-Origin Resource Sharing using ``flask-cors`` so browser clients from other origins can access the API.
+    * - ``API_XML_AS_TEXT``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True``, XML responses are served with ``text/xml`` instead of ``application/xml`` for broader client compatibility.
     * - ``API_VERBOSITY_LEVEL``
 
           :bdg:`default:` ``1``
@@ -181,6 +209,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Toggles Flask's exception printing in responses. Disable in production for cleaner error messages. Options: ``True`` or ``False``.
+    * - ``API_BASE_MODEL``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``Model``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Root SQLAlchemy model used for generating documentation and inferring defaults. Typically the base ``db.Model`` class.
     * - ``API_BASE_SCHEMA``
 
           :bdg:`default:` ``AutoSchema``
@@ -188,6 +223,20 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Base schema class used for model serialization. Override with a custom schema to adjust marshmallow behaviour. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_AUTO_VALIDATE``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
+
+        - Automatically validate incoming data against field types and formats. Disable for maximum performance at the risk of accepting invalid data.
+    * - ``API_GLOBAL_PRE_DESERIALIZE_HOOK``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Callable run on the raw request body before deserialization. Use it to normalise or sanitize payloads globally.
     * - ``API_ALLOW_CASCADE_DELETE``
 
           :bdg-secondary:`Optional` 
@@ -202,9 +251,9 @@
         - Ignores attributes prefixed with ``_`` during serialization to keep internal fields hidden. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_TYPE``
 
-          :bdg-secondary:`Optional` 
+          :bdg-secondary:`Optional`
 
-        - Output format for serialized data, such as ``json`` or ``xml``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Output format for serialized data. Options include ``url`` (default), ``json``, ``dynamic`` and ``hybrid``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_DEPTH``
 
           :bdg-secondary:`Optional` 
@@ -258,7 +307,7 @@
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Allows filtering using query parameters. Useful for building rich search functionality. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Allows filtering using query parameters. Useful for building rich search functionality. Also recognised as ``API_ALLOW_FILTERS``. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_ALLOW_JOIN``
 
           :bdg:`default:` ``False``
@@ -293,12 +342,14 @@
           :bdg:`type` ``list[str]``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Whitelist of HTTP methods permitted on routes. Only methods in this list are enabled.
-    * - ``API_block_methods``
+        - Explicit list of HTTP methods permitted on routes. Only methods in this list are enabled.
+    * - ``API_BLOCK_METHODS``
 
-          :bdg-secondary:`Optional` 
+          :bdg:`default:` ``[]``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - List of HTTP methods to block for this API, such as ``["DELETE", "POST"]``. Useful for read-only endpoints.
+        - Methods that should be disabled even if allowed elsewhere, e.g., ``["DELETE", "POST"]`` for read-only APIs.
     * - ``API_AUTHENTICATE``
 
           :bdg-secondary:`Optional` 
@@ -316,6 +367,34 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Field on the user model storing a hashed credential for API key auth. Required when using ``api_key`` authentication.
+    * - ``API_CREDENTIAL_CHECK_METHOD``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Name of the method on the user model that validates a plaintext credential, such as ``check_password``.
+    * - ``API_KEY_AUTH_AND_RETURN_METHOD``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Custom function for API key auth that receives a key and returns the matching user object.
+    * - ``API_USER_LOOKUP_FIELD``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Attribute used to locate a user, e.g., ``username`` or ``email``.
+    * - ``API_CUSTOM_AUTH``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Callable invoked when ``API_AUTHENTICATE_METHOD`` includes ``"custom"``. It must return the authenticated user or ``None``.
     * - ``API_USER_MODEL``
 
           :bdg-secondary:`Optional`
@@ -419,20 +498,20 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Adds the HTTP status code to the serialized output, clarifying request outcomes. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_DUMP_RESPONSE_TIME``
+    * - ``API_DUMP_RESPONSE_MS``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Adds the elapsed processing time in milliseconds to the response, enabling performance monitoring.
-    * - ``API_DUMP_COUNT``
+        - Adds the elapsed request processing time in milliseconds to each response.
+    * - ``API_DUMP_TOTAL_COUNT``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Includes the total count of items returned, aiding pagination UX.
+        - Includes the total number of available records in list responses, aiding pagination UX.
     * - ``API_DUMP_NULL_NEXT_URL``
 
           :bdg:`default:` ``True``
@@ -447,13 +526,13 @@
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Ensures ``previous`` URLs are present even when no prior page exists by returning ``null``. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_DUMP_NULL_ERROR``
+    * - ``API_DUMP_NULL_ERRORS``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Provides a consistent ``error`` field in responses, defaulting to ``null`` when no error occurred. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Ensures an ``errors`` key is always present in responses, defaulting to ``null`` when no errors occurred. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_RATE_LIMIT``
 
           :bdg:`default:` ``None``

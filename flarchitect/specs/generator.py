@@ -45,13 +45,13 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
     app: Flask
     architect: Architect  # The architect object
 
-    spec_groups: dict[str, list[dict[str, str | list[str]]]] = {"x-tagGroups": []}
+    spec_groups: dict[str, list[dict[str, str | list[str]]]] | None = None
     api_title: str | None = ""
     api_version: str | None = ""
     api_description: str | None = None
     api_logo_url: str | None = None
     api_logo_background: str | None = None
-    api_keywords: list[str] | None = []
+    api_keywords: list[str] | None = None
     create_docs: bool | None = True
     documentation_url_prefix: str | None = "/"
     documentation_url: str | None = "/docs"
@@ -67,6 +67,9 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         """
         self.app = app
         self.architect = architect
+        # initialize per-instance containers to avoid shared mutable defaults
+        self.spec_groups: dict[str, list[dict[str, str | list[str]]]] = {"x-tagGroups": []}
+        self.api_keywords: list[str] = []
         super().__init__(*args, **self._prepare_api_spec_data(**kwargs))
 
         if self._should_create_docs():
@@ -81,7 +84,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             dict: The API specification as a dictionary.
         """
         spec_dict = super().to_dict()
-        spec_dict.update(self.spec_groups)
+        if self.spec_groups:
+            spec_dict.update(self.spec_groups)
         return spec_dict
 
     def _prepare_api_spec_data(self, **kwargs) -> dict:
@@ -212,12 +216,17 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Example:
             >>> spec.set_xtags_group("Users", "Authentication")
         """
-        for group in self.spec_groups["x-tagGroups"]:
+        if self.spec_groups is None:
+            self.spec_groups = {"x-tagGroups": []}
+
+        tag_groups = self.spec_groups.setdefault("x-tagGroups", [])
+
+        for group in tag_groups:
             if group["name"] == group_name:
                 if tag_name not in group["tags"]:
                     group["tags"].append(tag_name)
                 return
-        self.spec_groups["x-tagGroups"].append({"name": group_name, "tags": [tag_name]})
+        tag_groups.append({"name": group_name, "tags": [tag_name]})
 
     def _create_specification_blueprint(self) -> None:
         """Sets up the blueprint to serve the API specification and documentation."""
@@ -363,20 +372,17 @@ def register_schemas(
                 spec.components.schema(schema_name, schema=schema)
 
 
-def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None) -> None:
-    """Register all routes with the :mod:`apispec` object.
+def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]]):
+    """Registers all flarchitect with the apispec object.
 
     Args:
         architect (Architect): The architect object.
-        route_spec (List[Dict[str, Any]] | None): Routes and schemas to
-            register with the apispec. If ``None`` no action is taken.
+        route_spec (List[Dict[str, Any]]): Routes and schemas to register with
+            the apispec.
 
     Returns:
         None
     """
-
-    if not route_spec:
-        return
 
     for route_info in route_spec:
         with architect.app.test_request_context():

@@ -16,7 +16,9 @@ Install the package via pip.
 Define your models
 ----------------------------------------
 
-Create a base class that returns a database session and define any models you want to expose.
+Define your models using SQLAlchemy. ``flarchitect`` automatically resolves
+the active database session, whether you're using Flask-SQLAlchemy or plain
+SQLAlchemy, so no special ``get_session`` method is required.
 
 .. code:: python
 
@@ -24,8 +26,7 @@ Create a base class that returns a database session and define any models you wa
     from sqlalchemy.orm import DeclarativeBase
 
     class BaseModel(DeclarativeBase):
-        def get_session(*args):
-            return db.session
+        pass
 
     db = SQLAlchemy(model_class=BaseModel)
 
@@ -36,7 +37,9 @@ Create a base class that returns a database session and define any models you wa
             tag = "Author"
             tag_group = "People/Companies"
 
-This setup gives **flarchitect** access to your session and metadata so it can generate CRUD endpoints.
+This setup gives **flarchitect** access to your models. The library automatically
+locates the active SQLAlchemy session. For non-Flask setups, a custom session
+resolver can be supplied via ``API_SESSION_GETTER`` in the Flask config.
 
 Configure Flask
 ----------------------------------------

@@ -39,10 +39,6 @@ class User(db.Model):
     def check_api_key(self, key: str) -> bool:
         return check_password_hash(self.api_key_hash, key)
 
-    @staticmethod
-    def get_session():
-        return db.session
-
 
 class UsernameSchema(Schema):
     """Schema for serializing responses containing a username."""
@@ -238,11 +234,11 @@ def client_custom() -> Generator[FlaskClient, None, None]:
 def assert_unauthorized(resp: Response) -> None:
     """Assert unauthorized response and cleared user context.
 
-    Args:<<<<<<< arched/add-test-cases-for-authentication-errors
-329
- 
+        Args:<<<<<<< arched/add-test-cases-for-authentication-errors
+    329
 
-        resp (Response): Flask response object to verify.
+
+            resp (Response): Flask response object to verify.
     """
     assert resp.status_code == 401
     assert get_current_user() is None

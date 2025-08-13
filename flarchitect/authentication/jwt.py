@@ -9,6 +9,7 @@ from sqlalchemy.exc import NoResultFound
 from flarchitect.database.utils import get_primary_keys
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
+from flarchitect.utils.session import get_session
 
 # Secret keys (keep them secure)
 
@@ -162,7 +163,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     # Query the user by lookup_field and pk
     try:
         user = (
-            usr_model_class.get_session()
+            get_session(usr_model_class)
             .query(usr_model_class)
             .filter(
                 getattr(usr_model_class, lookup_field) == lookup_value,
@@ -209,7 +210,7 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
     # Query the user by primary key or lookup field (like username)
     try:
         user = (
-            usr_model_class.get_session()
+            get_session(usr_model_class)
             .query(usr_model_class)
             .filter(
                 getattr(usr_model_class, lookup_field) == payload[lookup_field],

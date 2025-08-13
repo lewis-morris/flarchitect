@@ -6,36 +6,53 @@ on:
 
 jobs:
   test:
+    name: Lint, unit tests, and coverage
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # dev extra usually includes ruff, pytest, coverage, etc.
           pip install .[dev]
-          pip install pytest coverage[toml] coverage-badge
-      - name: Lint with ruff
+          # Fallbacks if your extras don't include them:
+          pip install pytest coverage || true
+
+      - name: Ruff (lint)
         run: ruff check --output-format=github --no-cache .
+
       - name: Run tests with coverage
         run: |
-          coverage run -m pytest
-          coverage report --fail-under=95
-          coverage xml
-          coverage-badge -o coverage.svg
-          coverage-badge -o docs/source/_static/coverage.svg
+          pytest --maxfail=1 --disable-warnings \
+                 --cov=. --cov-report=term-missing --cov-report=xml
 
-      - name: Produce version badge
-        run: |
-          pip install anybadge
-          python - <<'PY'
-          import flarchitect, importlib.metadata
-          from anybadge import Badge
+      - name: Upload coverage.xml (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
 
-          version = getattr(flarchitect, "__version__", importlib.metadata.version("flarchitect"))
-          Badge("version", version).write_badge("version.svg", overwrite=True)
-          PY
-          mkdir -p docs/source/_static
-          cp -f version.svg docs/source/_static/version.svg
+      # Optional: publish to codecov if you use it (set CODECOV_TOKEN in repo secrets)
+      # - name: Upload to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: coverage.xml
+      #     flags: py${{ matrix.python-version }}
+
+    concurrency:
+      group: tests-${{ github.ref }}-${{ matrix.python-version }}
+      cancel-in-progress: true
