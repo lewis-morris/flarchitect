@@ -100,7 +100,7 @@ Troubleshooting
 .. dropdown:: The documentation endpoint returns 404
 
     Ensure ``API_CREATE_DOCS`` is set to ``True`` and that the
-    :class:`flarchitect.core.architect.Architect` has been initialised. If
+    :class:`flarchitect.Architect` has been initialised. If
     you mount the app under a prefix, check ``documentation_url_prefix``.
 
 .. dropdown:: A route is missing from the spec
