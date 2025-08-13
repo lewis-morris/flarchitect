@@ -52,6 +52,7 @@ What can it do?
 * Add configurable rate limits backed by Redis, Memcached or MongoDB.
 * Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
 * Generate `Redoc`_ or Swagger UI documentation on the fly.
+* Extend behaviour with response callbacks, custom validators and per-route hooks (:ref:`advanced-callbacks`).
 
 What are you waiting for...?
 
