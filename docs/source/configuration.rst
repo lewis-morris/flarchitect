@@ -162,6 +162,14 @@ Please note the badge for each configuration value, as it defines where the valu
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
 
+Cascade delete settings
+-----------------------
+
+See :ref:`cascade-deletes` in the advanced configuration guide for usage examples of
+:data:`API_ALLOW_CASCADE_DELETE`, :data:`API_ALLOW_DELETE_RELATED` and
+:data:`API_ALLOW_DELETE_DEPENDENTS`.
+
+
 Complete Configuration Reference
 --------------------------------
 
