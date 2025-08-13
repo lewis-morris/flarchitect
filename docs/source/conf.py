@@ -9,6 +9,7 @@ import datetime
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
+from importlib.metadata import version as _get_version
 
 sys.path.insert(0, os.path.abspath("../.."))
 
@@ -18,7 +19,7 @@ html_baseurl = "https://lewis-morris.github.io/flarchitect/"
 project = "flarchitect"
 copyright = f"{datetime.datetime.now().year}, arched.dev (Lewis Morris)"
 author = "arched.dev (Lewis Morris)"
-release = "0.1.2"
+release = _get_version("flarchitect")
 
 html_logo = "../logo.png"
 
