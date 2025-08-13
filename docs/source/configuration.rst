@@ -246,3 +246,17 @@ Documentation Configuration Values
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
         - Enable POST/PATCH requests to include nested related objects.
+    * - .. data:: ENABLE_CORS
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+        - Enable Cross-Origin Resource Sharing by calling ``flask_cors.CORS``.
+          Resources may be customised via :data:`CORS_RESOURCES`.
+
+    * - .. data:: CORS_RESOURCES
+          :bdg:`default:` ``None``
+          :bdg:`type` ``dict | list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+        - Resource patterns passed to :func:`flask_cors.CORS`.
+          Follows the ``resources`` parameter format from ``flask-cors``.
+

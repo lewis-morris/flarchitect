@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Optional, TypeVar, cast
 
 from flask import Flask, request
+from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
@@ -86,7 +87,7 @@ class Architect(AttributeInitializerMixin):
             self.init_app(app, *args, **kwargs)
             logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
 
-    def init_app(self, app: Flask, *args, **kwargs):
+    def init_app(self, app: Flask, *args, **kwargs) -> None:
         """
         Initializes the Architect object.
 
@@ -97,6 +98,8 @@ class Architect(AttributeInitializerMixin):
         """
         super().__init__(app, *args, **kwargs)
         self._register_app(app)
+        if self.get_config("API_ENABLE_CORS", False):
+            CORS(app, resources=app.config.get("CORS_RESOURCES"))
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
         self.api_spec = None
 
