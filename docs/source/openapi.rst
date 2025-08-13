@@ -3,7 +3,9 @@ OpenAPI Specification
 
 flarchitect automatically generates an OpenAPI 3.0.2 document for every
 registered model. The specification powers the interactive Redoc page and
-can also be reused with external tools like Postman or Swagger UI.
+can also be rendered with Swagger UI by setting ``API_DOCS_STYLE = 'swagger'``
+in your Flask configuration. The raw spec can also be reused with external
+tools like Postman.
 
 Automatic generation
 --------------------

@@ -45,7 +45,9 @@ if __name__ == "__main__":
 ## OpenAPI specification
 
 An OpenAPI 3 schema is generated automatically and powers the Redoc UI. You
-can serve the raw specification to integrate with tooling such as Postman:
+can switch to Swagger‑UI by setting ``API_DOCS_STYLE = 'swagger'`` in your Flask
+config. Either way you can serve the raw specification to integrate with
+tooling such as Postman:
 
 ```python
 from flask import Flask, Response, jsonify

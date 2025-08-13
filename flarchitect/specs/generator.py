@@ -249,10 +249,11 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             Returns:
                 str: The HTML documentation page.
             """
-
             custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
+            template_name = "swagger.html" if docs_style == "swagger" else "apispec.html"
             return manual_render_absolute_template(
-                os.path.join(self.architect.get_templates_path(), "apispec.html"),
+                os.path.join(self.architect.get_templates_path(), template_name),
                 config=self.app.config,
                 custom_headers=custom_headers,
             )
