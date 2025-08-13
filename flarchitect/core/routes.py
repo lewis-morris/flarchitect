@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import secrets
 import time
 from collections.abc import Callable
 from types import FunctionType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flask import Blueprint, abort, g, request
 from marshmallow import Schema
@@ -39,6 +41,9 @@ from flarchitect.specs.utils import (
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import AttributeInitializerMixin
 
+if TYPE_CHECKING:  # pragma: no cover - imported for type checking only
+    from flarchitect.core.architect import Architect
+
 
 def create_params_from_rule(
     model: DeclarativeBase, rule, schema: Schema
@@ -51,7 +56,8 @@ def create_params_from_rule(
         schema (Schema): The schema associated with the rule.
 
     Returns:
-        List[Dict[str, Any]]: List of path parameters with enhanced type checks and descriptions.
+        List[Dict[str, Any]]: List of path parameters with enhanced type
+        checks and descriptions.
     """
     path_params = []
 
@@ -83,7 +89,7 @@ def create_query_params_from_rule(
     schema: Schema,
     many: bool,
     model: DeclarativeBase,
-    custom_query_params: list[dict[str, Any]] = [],
+    custom_query_params: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Generates query parameters from a rule.
 
@@ -93,14 +99,18 @@ def create_query_params_from_rule(
         schema (Schema): Schema to generate query parameters from.
         many (bool): Whether the endpoint returns multiple items.
         model (DeclarativeBase): Model to generate query parameters from.
-        custom_query_params (List[Dict[str, Any]]): Custom query parameters to append to the generated query parameters.
+        custom_query_params (List[Dict[str, Any]]): Custom query parameters
+            to append to the generated query parameters.
 
     Returns:
         List[Dict[str, Any]]: List of query parameters.
     """
-    query_params = (
-        generate_delete_query_params(schema, model) if "DELETE" in methods else []
-    )
+    if custom_query_params is None:
+        custom_query_params = []
+
+    query_params = []
+    if "DELETE" in methods:
+        query_params = generate_delete_query_params(schema, model)
 
     if "GET" in methods and many:
         query_params.extend(generate_get_query_params(schema, model))
@@ -234,7 +244,7 @@ def create_route_function(
 
 class RouteCreator(AttributeInitializerMixin):
     created_routes: dict[str, dict[str, Any]] = {}
-    architect: "Architect"
+    architect: Architect
     api_full_auto: bool | None = True
     api_base_model: Callable | list[Callable] | None = None
     api_base_schema: Callable | None = None
@@ -242,7 +252,7 @@ class RouteCreator(AttributeInitializerMixin):
     session: Session | list[Session] | None = None
     blueprint: Blueprint | None = None
 
-    def __init__(self, architect: "Architect", *args, **kwargs):
+    def __init__(self, architect: Architect, *args, **kwargs):
         """Initialize the RouteCreator object.
 
         Args:
@@ -266,8 +276,8 @@ class RouteCreator(AttributeInitializerMixin):
         )
 
         for base in self.api_base_model:
-            for model_class in base.__subclasses__():
-                # Add any necessary setup here for model_class
+            for _model_class in base.__subclasses__():
+                # Add any necessary setup here for _model_class
                 pass
 
     def validate(self):
@@ -281,7 +291,8 @@ class RouteCreator(AttributeInitializerMixin):
         """Validate the base model setup for the API."""
         if not self.api_base_model:
             raise ValueError(
-                "If FULL_AUTO is True, API_BASE_MODEL must be set to a SQLAlchemy model."
+                "If FULL_AUTO is True, API_BASE_MODEL must be set to a "
+                "SQLAlchemy model."
             )
 
         self.api_base_model = (
@@ -293,8 +304,9 @@ class RouteCreator(AttributeInitializerMixin):
         for base in self.api_base_model:
             if not hasattr(base, "get_session"):
                 raise ValueError(
-                    "If FULL_AUTO is True, API_BASE_MODEL must have a `get_session` function that returns"
-                    "the database session for that model."
+                    "If FULL_AUTO is True, API_BASE_MODEL must have a "
+                    "`get_session` function that returns the database session "
+                    "for that model."
                 )
 
     def _validate_authentication_setup(self):
@@ -304,24 +316,29 @@ class RouteCreator(AttributeInitializerMixin):
         authenticate = get_config_or_model_meta("API_AUTHENTICATE", default=False)
         custom_auth = get_config_or_model_meta("API_CUSTOM_AUTH", default=False)
         hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-        check_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
+        check_method = get_config_or_model_meta(
+            "API_KEY_AUTH_AND_RETURN_METHOD", default=None
+        )
 
         if not self.architect.app.config.get("SECRET_KEY") and auth_method:
             raise ValueError(
-                "SECRET_KEY must be set in the Flask app config. You can use this randomly generated key:\n"
+                "SECRET_KEY must be set in the Flask app config. You can use "
+                "this randomly generated key:\n"
                 f"{secrets.token_urlsafe(48)}\n"
                 f"And this SALT key\n"
                 f"{secrets.token_urlsafe(32)}\n"
             )
 
-        if auth_method and 'custom' not in auth_method and not user:
+        if auth_method and "custom" not in auth_method and not user:
             raise ValueError(
-                "If API_AUTHENTICATE_METHOD is set to a callable, API_USER_MODEL must be set to the user model."
+                "If API_AUTHENTICATE_METHOD is set to a callable, "
+                "API_USER_MODEL must be set to the user model."
             )
 
         if authenticate and not auth_method:
             raise ValueError(
-                "If API_AUTHENTICATE is set to True, API_AUTHENTICATE_METHOD must be set to either 'basic', 'jwt', 'api_key' or custom."
+                "If API_AUTHENTICATE is set to True, API_AUTHENTICATE_METHOD "
+                "must be set to either 'basic', 'jwt', 'api_key' or custom."
             )
 
         if authenticate and "jwt" in auth_method:
@@ -333,31 +350,37 @@ class RouteCreator(AttributeInitializerMixin):
             ) or self.architect.app.config.get("REFRESH_SECRET_KEY")
             if not ACCESS_SECRET_KEY or not REFRESH_SECRET_KEY:
                 raise ValueError(
-                    """If API_AUTHENTICATE_METHOD is set to 'jwt' you must set ACCESS_SECRET_KEY and REFRESH_SECRET_KEY in the
-                    Flask app config or as environment variables."""
+                    "If API_AUTHENTICATE_METHOD is set to 'jwt' you must set "
+                    "ACCESS_SECRET_KEY and REFRESH_SECRET_KEY in the Flask app "
+                    "config or as environment variables."
                 )
 
         if authenticate and "api_key" in auth_method:
             if not user:
                 raise ValueError(
-                    "If API_AUTHENTICATE_METHOD is set to 'api_key', API_USER_MODEL must be set to the user model.")
+                    "If API_AUTHENTICATE_METHOD is set to 'api_key', "
+                    "API_USER_MODEL must be set to the user model."
+                )
             if not hash_field or not check_method:
                 raise ValueError(
-                    "If API_AUTHENTICATE_METHOD is set to 'api_key', API_CREDENTIAL_HASH_FIELD must be set "
-                    "to the name of the models field that holds the hashed API key \n\n"
-                    "hash fields "
-                    ""
-                    ""
-                    "which must use  OR a valid API_KEY_AUTH_AND_RETURN_METHOD callable that validates the key and returns the user model must be supplied.")
+                    "If API_AUTHENTICATE_METHOD is set to 'api_key', "
+                    "API_CREDENTIAL_HASH_FIELD must be set to the name of the "
+                    "model's field that holds the hashed API key, or a valid "
+                    "API_KEY_AUTH_AND_RETURN_METHOD callable that validates "
+                    "the key and returns the user model must be supplied."
+                )
 
-        if authenticate and 'custom' in auth_method:
+        if authenticate and "custom" in auth_method:
             if not custom_auth:
                 raise ValueError(
-                    "If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be set to True."
+                    "If API_AUTHENTICATE_METHOD is set to 'custom', "
+                    "API_CUSTOM_AUTH must be set to True."
                 )
             if not callable(custom_auth):
                 raise ValueError(
-                    "If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be a callable that takes the request and returns a user object."
+                    "If API_AUTHENTICATE_METHOD is set to 'custom', "
+                    "API_CUSTOM_AUTH must be a callable that takes the "
+                    "request and returns a user object."
                 )
 
     def _validate_soft_delete_setup(self):
@@ -373,7 +396,8 @@ class RouteCreator(AttributeInitializerMixin):
 
             if not deleted_attr:
                 raise ValueError(
-                    "If API_SOFT_DELETE is set to True, API_SOFT_DELETE_ATTRIBUTE must be set to the name of the "
+                    "If API_SOFT_DELETE is set to True, "
+                    "API_SOFT_DELETE_ATTRIBUTE must be set to the name of the "
                     "attribute that holds the soft delete value."
                 )
 
@@ -383,7 +407,8 @@ class RouteCreator(AttributeInitializerMixin):
                 or len(soft_delete_values) != 2
             ):
                 raise ValueError(
-                    "API_SOFT_DELETE_VALUES must be a tuple of two values that represent the soft delete state (not deleted, deleted)."
+                    "API_SOFT_DELETE_VALUES must be a tuple of two values "
+                    "that represent the soft delete state (not deleted, deleted)."
                 )
 
     def setup_api_routes(self):
@@ -395,10 +420,13 @@ class RouteCreator(AttributeInitializerMixin):
         self.architect.app.register_blueprint(self.blueprint)
 
     def make_exception_routes(self):
-        for code in default_exceptions.keys():
+        for code in default_exceptions:
             logger.debug(
                 4,
-                f"Setting up custom error handler for blueprint |{self.blueprint.name}| with http code +{code}+.",
+                (
+                    "Setting up custom error handler for blueprint "
+                    f"|{self.blueprint.name}| with http code +{code}+."
+                ),
             )
             self.architect.app.register_error_handler(code, handle_http_exception)
 
@@ -412,7 +440,11 @@ class RouteCreator(AttributeInitializerMixin):
                 else:
                     logger.debug(
                         4,
-                        f"Skipping model |{model_class.__name__}| because it does not have a table or Meta class.",
+                        (
+                            "Skipping model "
+                            f"|{model_class.__name__}| because it does not have a "
+                            "table or Meta class."
+                        ),
                     )
 
     def make_auth_routes(self):
@@ -471,7 +503,7 @@ class RouteCreator(AttributeInitializerMixin):
             username = data.get("username")
             password = data.get("password")
 
-            hash_field = get_config_or_model_meta(
+            get_config_or_model_meta(
                 "API_CREDENTIAL_HASH_FIELD", model=user, default=None
             )
             lookup_field = get_config_or_model_meta(
@@ -702,7 +734,12 @@ class RouteCreator(AttributeInitializerMixin):
             model
         )
 
-        base_url = f"/{self._get_url_naming_function(model, input_schema_class, output_schema_class)}"
+        name_func = self._get_url_naming_function(
+            model,
+            input_schema_class,
+            output_schema_class,
+        )
+        base_url = f"/{name_func}"
         method = http_method
 
         if http_method == "GET" and not many or http_method in ["DELETE", "PATCH"]:
@@ -713,7 +750,10 @@ class RouteCreator(AttributeInitializerMixin):
 
         logger.debug(
             4,
-            f"Collecting main model data for --{model.__name__}-- with expected url |{method}|:`{base_url}`.",
+            (
+                f"Collecting main model data for --{model.__name__}-- "
+                f"with expected url |{method}|:`{base_url}`."
+            ),
         )
 
         return {
@@ -753,14 +793,24 @@ class RouteCreator(AttributeInitializerMixin):
 
         key = get_primary_key_info(parent_model)
 
-        relation_url = (
-            f"/{self._get_url_naming_function(parent_model, pinput_schema_class, poutput_schema_class)}"
-            f"/<{key[1]}:{key[0]}>"
-            f"/{self._get_url_naming_function(child_model, input_schema_class, output_schema_class)}"
+        parent_name = self._get_url_naming_function(
+            parent_model,
+            pinput_schema_class,
+            poutput_schema_class,
         )
+        child_name = self._get_url_naming_function(
+            child_model,
+            input_schema_class,
+            output_schema_class,
+        )
+        relation_url = f"/{parent_name}/<{key[1]}:{key[0]}>/{child_name}"
         logger.debug(
             4,
-            f"Collecting parent/child model relationship for --{parent_model.__name__}-- and --{child_model.__name__}-- with expected url `{relation_url}`.",
+            (
+                "Collecting parent/child model relationship for "
+                f"--{parent_model.__name__}-- and "
+                f"--{child_model.__name__}-- with expected url `{relation_url}`."
+            ),
         )
 
         return {
@@ -772,7 +822,10 @@ class RouteCreator(AttributeInitializerMixin):
             "method": "GET",
             "relation_name": relation_data["relationship"],
             "url": relation_url,
-            "name": f"{child_model.__name__.lower()}_join_to_{parent_model.__name__.lower()}",
+            "name": (
+                f"{child_model.__name__.lower()}_join_to_"
+                f"{parent_model.__name__.lower()}"
+            ),
             "join_key": relation_data["right_column"],
             "output_schema": output_schema_class,
             "session": session,
@@ -782,9 +835,10 @@ class RouteCreator(AttributeInitializerMixin):
         """Generate the route for this method/model.
 
         Args:
-            **kwargs (Dict[str, Any]): Dictionary of keyword arguments for route generation.
+            **kwargs (Dict[str, Any]): Dictionary of keyword arguments for
+                route generation.
         """
-        description = get_description(kwargs)
+        kwargs["description"] = get_description(kwargs)
         kwargs["group_tag"] = get_tag_group(kwargs)
         model = kwargs.get("model", kwargs.get("child_model"))
         service = CrudService(model=model, session=kwargs["session"])
@@ -859,7 +913,8 @@ class RouteCreator(AttributeInitializerMixin):
         Returns:
             Callable: The unique route function.
         """
-        # Ensure the function name is unique by differentiating between collection and single item routes
+        # Ensure the function name is unique by differentiating between
+        # collection and single item routes
         if is_many:
             unique_function_name = (
                 f"route_wrapper_{http_method}_collection_{url.replace('/', '_')}"
@@ -900,7 +955,10 @@ class RouteCreator(AttributeInitializerMixin):
         if len(primary_keys) > 1:
             logger.error(
                 1,
-                f"Composite primary keys are not supported, failed to set method $to_url$ on --{model.__name__}--",
+                (
+                    "Composite primary keys are not supported, failed to set "
+                    f"method $to_url$ on --{model.__name__}--"
+                ),
             )
             return
 
@@ -910,7 +968,10 @@ class RouteCreator(AttributeInitializerMixin):
         )
 
         def to_url(self):
-            return f"{api_prefix}/{url_naming_function(model)}/{getattr(self, primary_keys[0])}"
+            return (
+                f"{api_prefix}/{url_naming_function(model)}/"
+                f"{getattr(self, primary_keys[0])}"
+            )
 
         logger.log(3, f"Adding method $to_url$ to model --{model.__name__}--")
         model.to_url = to_url
@@ -935,11 +996,17 @@ class RouteCreator(AttributeInitializerMixin):
 
         def to_url(self):
             parent_pk = get_primary_keys(parent).key
-            return f"{api_prefix}/{parent_endpoint}/{getattr(self, parent_pk)}/{child_endpoint}"
+            return (
+                f"{api_prefix}/{parent_endpoint}/"
+                f"{getattr(self, parent_pk)}/{child_endpoint}"
+            )
 
         logger.log(
             3,
-            f"Adding relation method ${child_endpoint}_to_url$ to parent model --{parent.__name__}-- linking to --{child.__name__}--.",
+            (
+                f"Adding relation method ${child_endpoint}_to_url$ to parent model "
+                f"--{parent.__name__}-- linking to --{child.__name__}--."
+            ),
         )
         setattr(parent, f"{child_endpoint.replace('-', '_')}_to_url", to_url)
 
