@@ -22,11 +22,6 @@ class BaseModel(DeclarativeBase):
     updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    @staticmethod
-    def get_session(*args):  # type: ignore[override]
-        """Return the active database session."""
-        return db.session
-
 
 db = SQLAlchemy(model_class=BaseModel)
 

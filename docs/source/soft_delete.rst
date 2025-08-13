@@ -38,9 +38,6 @@ Add a boolean column to your base model so every table can inherit the flag:
        updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
        deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-       def get_session(*args):
-           return db.session
-
    db = SQLAlchemy(model_class=BaseModel)
 
    class Book(db.Model):
