@@ -20,11 +20,12 @@ flarchitect
    validation
    callbacks
    openapi
+
+=======
    soft_delete
    configuration
    advanced_configuration
-   faq
-   roadmap
+
 
 .. toctree::
    :maxdepth: 2
