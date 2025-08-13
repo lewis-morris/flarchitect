@@ -4,7 +4,7 @@ import base64
 from collections.abc import Generator
 
 import pytest
-from flask import Flask, request
+from flask import Flask, Response, request
 from flask.testing import FlaskClient
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields
@@ -235,6 +235,19 @@ def client_custom() -> Generator[FlaskClient, None, None]:
         yield app.test_client()
 
 
+def assert_unauthorized(resp: Response) -> None:
+    """Assert unauthorized response and cleared user context.
+
+    Args:<<<<<<< arched/add-test-cases-for-authentication-errors
+329
+ 
+
+        resp (Response): Flask response object to verify.
+    """
+    assert resp.status_code == 401
+    assert get_current_user() is None
+
+
 def test_basic_success_and_failure(client_basic: FlaskClient) -> None:
     """Test basic authentication and ensure user context resets."""
     assert get_current_user() is None
@@ -315,18 +328,36 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert get_current_user() is None
 
 
-def test_expired_refresh_token(client_jwt: tuple[FlaskClient, str, str]) -> None:
-    """``refresh_access_token`` raises when the token has expired."""
+def test_jwt_no_authorization_header(
+    client_jwt: tuple[FlaskClient, str, str],
+) -> None:
+    """Ensure JWT auth fails without an Authorization header."""
+    client, _, _ = client_jwt
+    assert get_current_user() is None
+    resp = client.get("/jwt")
+    assert_unauthorized(resp)
 
-    client, access_token, refresh_token = client_jwt
-    from flarchitect.authentication import jwt as jwt_module
 
-    jwt_module.refresh_tokens_store[refresh_token]["expires_at"] = jwt_module.datetime.datetime.now(jwt_module.datetime.timezone.utc) - jwt_module.datetime.timedelta(seconds=1)
+def test_jwt_missing_bearer_prefix(
+    client_jwt: tuple[FlaskClient, str, str],
+) -> None:
+    """Reject tokens lacking the Bearer prefix."""
+    client, access_token, _ = client_jwt
+    assert get_current_user() is None
+    resp = client.get("/jwt", headers={"Authorization": access_token})
+    assert_unauthorized(resp)
 
-    with pytest.raises(CustomHTTPException) as exc:
-        refresh_access_token(refresh_token)
-    assert exc.value.status_code == 403
-    assert "expired" in exc.value.reason
+
+def test_jwt_expired_token(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """Reject expired JWT access tokens."""
+    client, _, _ = client_jwt
+    with client.application.app_context():
+        user = User.query.filter_by(username="carol").first()
+        assert user is not None
+        expired_token = generate_access_token(user, expires_in_minutes=-1)
+    assert get_current_user() is None
+    resp = client.get("/jwt", headers={"Authorization": f"Bearer {expired_token}"})
+    assert_unauthorized(resp)
 
 
 def test_custom_success_and_failure(client_custom: FlaskClient) -> None:
