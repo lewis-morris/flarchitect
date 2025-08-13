@@ -59,8 +59,7 @@ def create_app(config: type[BaseConfig]) -> Flask:
 
     app = Flask(__name__)
     app.config.from_object(config)
-    # Initializing extensions requires an application context so configuration
-    # values are available during setup.
+
     with app.app_context():
         db.init_app(app)
         schema.init_app(app)

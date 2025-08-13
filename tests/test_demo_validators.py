@@ -7,7 +7,6 @@ from flask.testing import FlaskClient
 
 from demo.validators import create_app
 
-
 @pytest.fixture()
 def client() -> FlaskClient:
     """Provide a test client for the validator demo app."""

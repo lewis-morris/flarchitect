@@ -1,3 +1,4 @@
+
 """Integration tests for demo authentication strategies."""
 
 from __future__ import annotations

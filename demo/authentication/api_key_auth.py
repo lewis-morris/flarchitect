@@ -35,6 +35,7 @@ class Config(BaseConfig):
 
     API_AUTHENTICATE_METHOD = ["api_key"]
     API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
+    API_USER_MODEL = User
 
 
 app = create_app(Config)
