@@ -68,9 +68,11 @@ def test_jwt_demo_login_and_profile() -> None:
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
     assert profile.status_code == 200
-    assert profile.get_json()["value"]["username"] == "alice"
+    assert profile.get_json()["username"] == "alice"
 
-    bad_login = client.post("/auth/login", json={"username": "alice", "password": "badpwd"})
+    bad_login = client.post(
+        "/auth/login", json={"username": "alice", "password": "badpass"}
+    )
     assert bad_login.status_code == 401
 
 
@@ -95,10 +97,13 @@ def test_basic_demo_login_and_profile() -> None:
 
     profile = client.get("/profile", headers={"Authorization": f"Basic {creds}"})
     assert profile.status_code == 200
-    assert profile.get_json()["value"]["username"] == "bob"
+    assert profile.get_json()["username"] == "bob"
 
-    bad_creds = base64.b64encode(b"bob:wrongp").decode("utf-8")
-    bad_login = client.post("/auth/login", headers={"Authorization": f"Basic {bad_creds}"})
+
+    bad_creds = base64.b64encode(b"bob:wrongpwd").decode("utf-8")
+    bad_login = client.post(
+        "/auth/login", headers={"Authorization": f"Basic {bad_creds}"}
+    )
     assert bad_login.status_code == 401
 
 
@@ -129,7 +134,7 @@ def test_api_key_demo_login_and_profile() -> None:
 
     profile = client.get("/profile", headers=headers)
     assert profile.status_code == 200
-    assert profile.get_json()["value"]["username"] == "carol"
+    assert profile.get_json()["username"] == "carol"
 
     bad_login = client.post("/auth/login", headers={"Authorization": "Api-Key bad"})
     assert bad_login.status_code == 401

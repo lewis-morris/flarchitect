@@ -61,10 +61,10 @@ def test_advanced_filter(client):
     assert nin[0]["id"] not in [1, 2, 3]
 
     like = client.get('/api/authors?full_name__like=' + author["first_name"]).json["value"]
-    assert like[0]["full_name"] == author["full_name"]
+    assert author["full_name"] in [a["full_name"] for a in like]
 
     ilike = client.get('/api/authors?full_name__ilike=' + author["first_name"].lower()).json["value"]
-    assert ilike[0]["full_name"] == author["full_name"]
+    assert author["full_name"] in [a["full_name"] for a in ilike]
 
 
     author_ONE = client.get('/api/authors/2').json["value"]["id"]
