@@ -10,7 +10,7 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 ## Features
 
 - **Zero-configuration endpoints** – expose models as RESTful resources by adding a simple `Meta` class.
-- **Automatic documentation** – comprehensive Redoc docs are generated at runtime and stay in sync with your models.
+- **Automatic documentation** – comprehensive Redoc or Swagger UI docs are generated at runtime and stay in sync with your models.
 - **SQLAlchemy integration** – works with plain SQLAlchemy or Flask-SQLAlchemy.
 - **Built-in authentication** – ship with JWT, basic and API key strategies out of the box, each exposing a simple `/auth/login` endpoint for credential validation, or plug in your own authentication.
 - **Rate limiting & structured responses** – configurable throttling and responses with a consistent schema.
@@ -18,6 +18,8 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 - **Field validation** – built-in validators for emails, URLs, IPs and more.
 - **Nested writes** – opt-in support for sending related objects in POST/PUT payloads. Enable with `API_ALLOW_NESTED_WRITES = True` and let `AutoSchema` deserialize them automatically.
 - **CORS support** – enable cross-origin requests with `API_ENABLE_CORS`. See the [advanced configuration guide](docs/source/advanced_configuration.rst#cors) for an example.
+- **Soft delete** – hide and restore records without permanently removing them.
+- **Extensible callbacks** – hook into request/response flows to customise behaviour.
 
 ## Installation
 
@@ -75,7 +77,7 @@ pytest
 
 ## Documentation & help
 
-- Browse the [full documentation](docs/source/index.rst) for tutorials and API reference.
+- Browse the [full documentation](https://lewis-morris.github.io/flarchitect/) for tutorials and API reference.
 - Explore runnable examples in the [demo](https://github.com/arched-dev/flarchitect/tree/master/demo) directory.
 - Questions? Join the [GitHub discussions](https://github.com/arched-dev/flarchitect/discussions) or open an [issue](https://github.com/arched-dev/flarchitect/issues).
 
@@ -89,4 +91,8 @@ Before submitting a pull request, ensure that linters and tests pass locally:
 ruff --fix .
 pytest
 ```
+
+## License
+
+Distributed under the MIT License. See [LICENCE](LICENCE) for details.
 
