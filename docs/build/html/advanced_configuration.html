@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Advanced Configuration" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="advanced_configuration.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/advanced_configuration.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Beyond the basics, flarchitect offers several advanced options for fine- tuning API behaviour. This guide covers rate limiting and cache configuration. Rate limiting: Rate limits can be applied glo..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="Beyond the basics, flarchitect offers several advanced options for fine- tuning API behaviour. This guide covers rate limiting and cache configuration. Rate limiting: Rate limits can be applied glo..." />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="OpenAPI Specification" href="openapi.html" /><link rel="prev" title="Config by Method Models" href="config_locations/model_method.html" />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Advanced Demo" href="advanced_demo.html" /><link rel="prev" title="FAQ" href="faq.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/advanced_configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Advanced Configuration - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,11 +237,14 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
@@ -248,12 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Advanced Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -302,21 +312,21 @@ tuning API behaviour. This guide covers rate limiting and cache configuration.</
 <h2>Rate limiting<a class="headerlink" href="#rate-limiting" title="Link to this heading">¶</a></h2>
 <p>Rate limits can be applied globally, per HTTP method or per model.</p>
 <p><strong>Global limit</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;200 per day&quot;</span>
 </pre></div>
 </div>
 <p><strong>Method specific</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_GET_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;100 per minute&quot;</span>
     <span class="n">API_POST_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>
 </pre></div>
 </div>
 <p><strong>Model specific</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;book&quot;</span>
 
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">rate_limit</span> <span class="o">=</span> <span class="s2">&quot;5 per minute&quot;</span>      <span class="c1"># becomes API_RATE_LIMIT</span>
         <span class="n">get_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>  <span class="c1"># becomes API_GET_RATE_LIMIT</span>
 </pre></div>
@@ -328,7 +338,7 @@ tuning API behaviour. This guide covers rate limiting and cache configuration.</
 <code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> will automatically use a locally running Memcached,
 Redis or MongoDB instance. To point to a specific backend, supply a
 storage URI:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_RATE_LIMIT_STORAGE_URI</span> <span class="o">=</span> <span class="s2">&quot;redis://redis.example.com:6379&quot;</span>
 </pre></div>
 </div>
@@ -404,7 +414,7 @@ keys let you toggle each field individually:</p>
 </pre></div>
 </div>
 <p>Disabling all metadata:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_DUMP_DATETIME</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">API_DUMP_VERSION</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">API_DUMP_STATUS_CODE</span> <span class="o">=</span> <span class="kc">False</span>
@@ -429,7 +439,7 @@ configuration. When active, CORS headers are applied to matching routes
 defined in <code class="xref py py-data docutils literal notranslate"><span class="pre">CORS_RESOURCES</span></code>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">CORS_RESOURCES</span></code> accepts a mapping of URL patterns to their respective
 options, mirroring the format used by <a class="reference external" href="https://flask-cors.readthedocs.io/">Flask-CORS</a>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_ENABLE_CORS</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">CORS_RESOURCES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="sa">r</span><span class="s2">&quot;/api/*&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;origins&quot;</span><span class="p">:</span> <span class="s2">&quot;*&quot;</span><span class="p">}</span>
@@ -439,8 +449,8 @@ options, mirroring the format used by <a class="reference external" href="https:
 <section id="id1">
 <h3>Example<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
 <p>The following snippet enables CORS for all API routes:</p>
-<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
-<span class="kn">from</span> <span class="nn">flarchitect</span> <span class="kn">import</span> <span class="n">Architect</span>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flarchitect</span><span class="w"> </span><span class="kn">import</span> <span class="n">Architect</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;API_ENABLE_CORS&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -456,8 +466,39 @@ options, mirroring the format used by <a class="reference external" href="https:
 available CORS settings.</p>
 </section>
 </section>
-<section id="case-style-configuration">
-<h2>Case style configuration<a class="headerlink" href="#case-style-configuration" title="Link to this heading">¶</a></h2>
+<section id="query-parameter-controls">
+<h2>Query parameter controls<a class="headerlink" href="#query-parameter-controls" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> can expose several query parameters that let clients tailor
+responses. These toggles may be disabled to enforce fixed behaviour.</p>
+<section id="filtering">
+<h3>Filtering<a class="headerlink" href="#filtering" title="Link to this heading">¶</a></h3>
+<p>The <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code> flag enables a <code class="docutils literal notranslate"><span class="pre">filter</span></code> query parameter for
+constraining results. For example:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="err">?</span><span class="nb">filter</span><span class="o">=</span><span class="n">author_id__eq</span><span class="p">:</span><span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+<section id="ordering">
+<h3>Ordering<a class="headerlink" href="#ordering" title="Link to this heading">¶</a></h3>
+<p>Activate <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code> to allow sorting via <code class="docutils literal notranslate"><span class="pre">order_by</span></code>:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="err">?</span><span class="n">order_by</span><span class="o">=-</span><span class="n">published_date</span>
+</pre></div>
+</div>
+</section>
+<section id="selecting-fields">
+<h3>Selecting fields<a class="headerlink" href="#selecting-fields" title="Link to this heading">¶</a></h3>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code> lets clients whitelist response columns with
+the <code class="docutils literal notranslate"><span class="pre">fields</span></code> parameter:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">GET</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">books</span><span class="err">?</span><span class="n">fields</span><span class="o">=</span><span class="n">title</span><span class="p">,</span><span class="n">author_id</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="configuration.html"><span class="doc">configuration</span></a> for detailed descriptions of
+<code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_FILTER</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_ORDER_BY</span></code> and
+<code class="xref py py-data docutils literal notranslate"><span class="pre">API_ALLOW_SELECT_FIELDS</span></code>.</p>
+</section>
+</section>
+<section id="cascade-deletes">
+<h2>Cascade deletes<a class="headerlink" href="#cascade-deletes" title="Link to this heading">¶</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">flarchitect</span></code> can reshape field and schema names to match different
 case conventions. These options keep the API’s payloads, schemas and
 endpoints consistent with the style used by your clients.</p>
@@ -466,7 +507,7 @@ endpoints consistent with the style used by your clients.</p>
 <p>Controls the casing for fields in JSON responses. By default, field names
 use <code class="docutils literal notranslate"><span class="pre">snake</span></code> case. Setting <code class="docutils literal notranslate"><span class="pre">API_FIELD_CASE</span></code> changes the output to match
 other naming styles:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_FIELD_CASE</span> <span class="o">=</span> <span class="s2">&quot;camel&quot;</span>
 </pre></div>
 </div>
@@ -487,7 +528,7 @@ other naming styles:</p>
 <p>Defines the naming convention for generated schema names in the OpenAPI
 document. The default, <code class="docutils literal notranslate"><span class="pre">camel</span></code>, produces schema identifiers such as
 <code class="docutils literal notranslate"><span class="pre">apiCalls</span></code>. Other styles are also available:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_SCHEMA_CASE</span> <span class="o">=</span> <span class="s2">&quot;screaming_snake&quot;</span>
 </pre></div>
 </div>
@@ -521,13 +562,13 @@ additional field validation and tweak responses on a per-route basis.</p>
 <h3>Response callbacks<a class="headerlink" href="#response-callbacks" title="Link to this heading">¶</a></h3>
 <p>Return callbacks run after database operations but before the response is
 serialised. Use them to adjust the output or append metadata.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="k">def</span> <span class="nf">add_timestamp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_timestamp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">output</span><span class="p">[</span><span class="s2">&quot;generated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">}</span>
 
-<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_GET_RETURN_CALLBACK</span> <span class="o">=</span> <span class="n">add_timestamp</span>
 </pre></div>
 </div>
@@ -539,7 +580,7 @@ responses are constructed.</p>
 <p>Attach validators to SQLAlchemy columns via the <code class="docutils literal notranslate"><span class="pre">info</span></code> mapping.
 Validators are looked up in <code class="xref py py-mod docutils literal notranslate"><span class="pre">flarchitect.schemas.validators</span></code> and
 applied automatically.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">User</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">email</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">Column</span><span class="p">(</span>
         <span class="n">db</span><span class="o">.</span><span class="n">String</span><span class="p">,</span>
         <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;validator&quot;</span><span class="p">:</span> <span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;validator_message&quot;</span><span class="p">:</span> <span class="s2">&quot;Invalid email&quot;</span><span class="p">},</span>
@@ -552,19 +593,19 @@ applied automatically.</p>
 <h3>Per-route hooks<a class="headerlink" href="#per-route-hooks" title="Link to this heading">¶</a></h3>
 <p>Execute custom logic before or after a specific route by defining setup or
 return callbacks in configuration or on a model’s <code class="docutils literal notranslate"><span class="pre">Meta</span></code> class.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">abort</span>
-<span class="kn">from</span> <span class="nn">flask_login</span> <span class="kn">import</span> <span class="n">current_user</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">abort</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_login</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_user</span>
 
-<span class="k">def</span> <span class="nf">ensure_admin</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_admin</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">current_user</span><span class="o">.</span><span class="n">is_admin</span><span class="p">:</span>
         <span class="n">abort</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">kwargs</span>
 
-<span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Book</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">post_return_callback</span> <span class="o">=</span> <span class="n">add_timestamp</span>
 
-<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_POST_SETUP_CALLBACK</span> <span class="o">=</span> <span class="n">ensure_admin</span>
 </pre></div>
 </div>
@@ -578,23 +619,23 @@ return callbacks in configuration or on a model’s <code class="docutils litera
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="openapi.html">
+          <a class="next-page" href="advanced_demo.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">OpenAPI Specification</div>
+                <div class="title">Advanced Demo</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="config_locations/model_method.html">
+          <a class="prev-page" href="faq.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Config by Method Models</div>
+                <div class="title">FAQ</div>
                 
               </div>
             </a>
@@ -639,7 +680,13 @@ return callbacks in configuration or on a model’s <code class="docutils litera
 <li><a class="reference internal" href="#id1">Example</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#case-style-configuration">Case style configuration</a><ul>
+<li><a class="reference internal" href="#query-parameter-controls">Query parameter controls</a><ul>
+<li><a class="reference internal" href="#filtering">Filtering</a></li>
+<li><a class="reference internal" href="#ordering">Ordering</a></li>
+<li><a class="reference internal" href="#selecting-fields">Selecting fields</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cascade-deletes">Cascade deletes</a><ul>
 <li><a class="reference internal" href="#api-field-case"><code class="docutils literal notranslate"><span class="pre">API_FIELD_CASE</span></code></a></li>
 <li><a class="reference internal" href="#api-schema-case"><code class="docutils literal notranslate"><span class="pre">API_SCHEMA_CASE</span></code></a></li>
 <li><a class="reference internal" href="#interplay-with-api-endpoint-case">Interplay with <code class="docutils literal notranslate"><span class="pre">API_ENDPOINT_CASE</span></code></a></li>

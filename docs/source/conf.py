@@ -12,6 +12,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
+html_baseurl = "https://lewis-morris.github.io/flarchitect/"
+
+
 project = "flarchitect"
 copyright = f"{datetime.datetime.now().year}, arched.dev (Lewis Morris)"
 author = "arched.dev (Lewis Morris)"
@@ -92,6 +95,17 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx_design",
+]
+
+
+# sphinxext-opengraph config
+ogp_site_url = html_baseurl
+ogp_image = "https://lewis-morris.github.io/flarchitect/_static/social-card.png"  # 1200x630
+ogp_description_length = 200
+ogp_type = "website"
+ogp_custom_meta_tags = [
+    '<meta name="twitter:card" content="summary_large_image">',
+    '<meta name="twitter:site" content="@arched_dev">',  # or remove if you don’t want it
 ]
 
 extlinks = {

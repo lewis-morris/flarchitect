@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Config by Method Globals" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="config_locations/global_method.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/config_locations/global_method.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config and are constrained to a specific HTTP method. They should always be uppercase, They..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="Global &lt; Global Method&lt; Model &lt; Model Method Global Method These values are defined in the Flask config and are constrained to a specific HTTP method. They should always be uppercase, They..." />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Config Models" href="model.html" /><link rel="prev" title="Config Globals" href="global_.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/config_locations/global_method.html" />
         <link rel="prefetch" href="../_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Config by Method Globals - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,11 +237,16 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../models.html">SQLAlchemy Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../authentication.html">Authentication</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../callbacks.html">Callbacks</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../configuration.html">Configuration</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Configuration</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
@@ -246,8 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../openapi.html">OpenAPI Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -305,7 +321,7 @@ value when present.</p>
 <p>Overrides <span class="sd-sphinx-override sd-badge sd-outline-dark sd-text-dark">Global</span></p>
 <section id="example">
 <h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="c1"># the rate limit for `POST` requests across all endpoints in your API</span>
     <span class="n">API_POST_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;1 per minute&quot;</span>
     <span class="c1"># the rate limit for `GET` requests across all endpoints in your API</span>

@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Quick Start" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="quickstart.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/quickstart.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Installation: Install the package via pip Model Definition: To enable flarchitect to automatically generate API endpoints, it’s necessary to provide a valid SQLAlchemy session and ensure it can int..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="Installation: Install the package via pip Model Definition: To enable flarchitect to automatically generate API endpoints, it’s necessary to provide a valid SQLAlchemy session and ensure it can int..." />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Getting Started Sample Project" href="getting_started.html" /><link rel="prev" title="Installation" href="installation.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/quickstart.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Quick Start - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,11 +237,14 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
@@ -248,12 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -317,10 +327,10 @@ flask-sqlalchemy</label><div class="sd-tab-content docutils">
 <p><strong>Base Model</strong></p>
 <p>First you will need a base class that returns a session with a <code class="docutils literal notranslate"><span class="pre">get_session</span></code> method.</p>
 <p>When using flask-sqlalchemy, you can return <code class="docutils literal notranslate"><span class="pre">db.session</span></code> in your base model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">DeclarativeBase</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span>
 
-<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">session</span>
 </pre></div>
 </div>
@@ -332,9 +342,9 @@ flask-sqlalchemy</label><div class="sd-tab-content docutils">
 </ul>
 <p>Don’t inherit from your base model, but from <code class="docutils literal notranslate"><span class="pre">db.Model</span></code> as you normally would. When using <a class="reference external" href="https://flask-sqlalchemy.palletsprojects.com/en/">Flask-SQLAlchemy</a>,
 you set the base model when initializing the extension, we will cover that shortly…</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">__table__</span> <span class="o">=</span> <span class="s2">&quot;author&quot;</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;Author&#39;</span>
         <span class="n">tag_group</span> <span class="o">=</span> <span class="s2">&quot;People/Companies&quot;</span>
 
@@ -346,16 +356,16 @@ you set the base model when initializing the extension, we will cover that short
 <label class="sd-tab-label" data-sync-group="tab" data-sync-id="key2" for="sd-tab-item-1">
 vanilla sqlalchemy</label><div class="sd-tab-content docutils">
 <p>When using sqlalchemy, you will have to create a session object and return this in your base model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">sessionmaker</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeclarativeBase</span><span class="p">,</span> <span class="n">sessionmaker</span>
 
 <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s2">&quot;sqlite:///example.db&quot;</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">Session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">engine</span><span class="p">)</span>
 <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">()</span>
 </pre></div>
 </div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BaseModel</span><span class="p">(</span><span class="n">DeclarativeBase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_session</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">session</span>
 </pre></div>
 </div>
@@ -365,9 +375,9 @@ the following attributes:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">tag</span></code>: The tag that will be used to identify the model in the API and documentation.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tag_group</span></code>: The tag group that the model will be placed in in the API Documentation.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">__table__</span> <span class="o">=</span> <span class="s2">&quot;author&quot;</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">tag</span> <span class="o">=</span> <span class="s1">&#39;Author&#39;</span>
         <span class="n">tag_group</span> <span class="o">=</span> <span class="s2">&quot;People/Companies&quot;</span>
 
@@ -403,9 +413,9 @@ but pass in <code class="docutils literal notranslate"><span class="pre">db.Mode
 </div></blockquote>
 <p>This will mean that <code class="docutils literal notranslate"><span class="pre">db.Model</span></code> will inherit from your <code class="docutils literal notranslate"><span class="pre">BaseModel</span></code> and all related methods will be available
 to your models.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
-<span class="kn">from</span> <span class="nn">flask_sqlalchemy</span> <span class="kn">import</span> <span class="n">SQLAlchemy</span>
-<span class="kn">from</span> <span class="nn">flarchitect</span> <span class="kn">import</span> <span class="n">Architect</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLAlchemy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flarchitect</span><span class="w"> </span><span class="kn">import</span> <span class="n">Architect</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -431,8 +441,8 @@ to your models.</p>
 <label class="sd-tab-label" data-sync-group="tab" data-sync-id="key1" for="sd-tab-item-3">
 vanilla sqlalchemy</label><div class="sd-tab-content docutils">
 <p>When using <a class="reference external" href="https://docs.sqlalchemy.org/en/latest/">SQLAlchemy</a> you will have to set the <cite>API_BASE_MODEL</cite> in the <a class="reference external" href="https://flask.palletsprojects.com/en/latest/">Flask</a> config.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
-<span class="kn">from</span> <span class="nn">flarchitect</span> <span class="kn">import</span> <span class="n">Architect</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flarchitect</span><span class="w"> </span><span class="kn">import</span> <span class="n">Architect</span>
 
 <span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 

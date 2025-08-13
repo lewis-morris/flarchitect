@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Callbacks" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="callbacks.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/callbacks.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Callbacks let you hook into the request lifecycle to run custom logic around database operations and responses. They can be declared globally in the Flask configuration or on individual SQLAlchemy ..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="Callbacks let you hook into the request lifecycle to run custom logic around database operations and responses. They can be declared globally in the Flask configuration or on individual SQLAlchemy ..." />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Configuration" href="configuration.html" /><link rel="prev" title="Authentication" href="authentication.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/callbacks.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Callbacks - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,11 +237,14 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
@@ -248,12 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -340,14 +350,14 @@ notifications here.</p></li>
 <ol class="arabic">
 <li><p><strong>Global Flask config</strong></p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">API_&lt;KEY&gt;</span></code> to apply a callback to all endpoints.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_SETUP_CALLBACK</span> <span class="o">=</span> <span class="n">my_setup</span>
 </pre></div>
 </div>
 </li>
 <li><p><strong>HTTP method specific config</strong></p>
 <p>Override the global value for a specific method with <code class="docutils literal notranslate"><span class="pre">API_&lt;METHOD&gt;_&lt;KEY&gt;</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_GET_RETURN_CALLBACK</span> <span class="o">=</span> <span class="n">my_get_return</span>
 </pre></div>
 </div>
@@ -355,8 +365,8 @@ notifications here.</p></li>
 <li><p><strong>Model config</strong></p>
 <p>Set lowercase attributes on a model’s <code class="docutils literal notranslate"><span class="pre">Meta</span></code> class to apply callbacks to
 all endpoints for that model.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">setup_callback</span> <span class="o">=</span> <span class="n">my_setup</span>
 </pre></div>
 </div>
@@ -364,8 +374,8 @@ all endpoints for that model.</p>
 <li><p><strong>Model method config</strong></p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">&lt;method&gt;_&lt;key&gt;</span></code> on the <code class="docutils literal notranslate"><span class="pre">Meta</span></code> class for the highest level of
 specificity.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">get_return_callback</span> <span class="o">=</span> <span class="n">my_get_return</span>
 </pre></div>
 </div>
@@ -378,11 +388,11 @@ specificity.</p>
 <h3>Setup, Global setup and filter<a class="headerlink" href="#setup-global-setup-and-filter" title="Link to this heading">¶</a></h3>
 <p>Setup-style callbacks should accept <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> and return the
 modified kwargs:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_setup_callback</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_setup_callback</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># modify kwargs as needed</span>
     <span class="k">return</span> <span class="n">kwargs</span>
 
-<span class="k">def</span> <span class="nf">my_filter_callback</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">my_filter_callback</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -390,7 +400,7 @@ modified kwargs:</p>
 <section id="add-update-and-remove">
 <h3>Add, update and remove<a class="headerlink" href="#add-update-and-remove" title="Link to this heading">¶</a></h3>
 <p>These callbacks receive the SQLAlchemy object instance and must return it:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_add_callback</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_add_callback</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
     <span class="n">obj</span><span class="o">.</span><span class="n">created_by</span> <span class="o">=</span> <span class="s2">&quot;system&quot;</span>
     <span class="k">return</span> <span class="n">obj</span>
 </pre></div>
@@ -400,7 +410,7 @@ modified kwargs:</p>
 <h3>Return<a class="headerlink" href="#return" title="Link to this heading">¶</a></h3>
 <p>Return callbacks receive <code class="docutils literal notranslate"><span class="pre">model</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> and must return a dictionary
 containing the <code class="docutils literal notranslate"><span class="pre">output</span></code> key:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_return_callback</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_return_callback</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">output</span><span class="p">}</span>
 </pre></div>
 </div>
@@ -408,7 +418,7 @@ containing the <code class="docutils literal notranslate"><span class="pre">outp
 <section id="dump">
 <h3>Dump<a class="headerlink" href="#dump" title="Link to this heading">¶</a></h3>
 <p>Dump callbacks accept <code class="docutils literal notranslate"><span class="pre">data</span></code> and <code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> and must return the data:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_dump_callback</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_dump_callback</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">data</span>
 </pre></div>
@@ -417,7 +427,7 @@ containing the <code class="docutils literal notranslate"><span class="pre">outp
 <section id="final">
 <h3>Final<a class="headerlink" href="#final" title="Link to this heading">¶</a></h3>
 <p>Final callbacks receive the response dictionary before it is serialised:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_final_callback</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_final_callback</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
     <span class="n">data</span><span class="p">[</span><span class="s2">&quot;processed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="n">data</span>
 </pre></div>
@@ -426,7 +436,7 @@ containing the <code class="docutils literal notranslate"><span class="pre">outp
 <section id="error">
 <h3>Error<a class="headerlink" href="#error" title="Link to this heading">¶</a></h3>
 <p>Error callbacks receive the error message, status code and original value:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">my_error_callback</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">status_code</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">my_error_callback</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">status_code</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
     <span class="n">log_exception</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -436,7 +446,7 @@ containing the <code class="docutils literal notranslate"><span class="pre">outp
 <h2>Extending query parameters<a class="headerlink" href="#extending-query-parameters" title="Link to this heading">¶</a></h2>
 <p>Use <code class="docutils literal notranslate"><span class="pre">ADDITIONAL_QUERY_PARAMS</span></code> to document extra query parameters introduced in
 a return callback. The value is a list of OpenAPI parameter objects.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_ADDITIONAL_QUERY_PARAMS</span> <span class="o">=</span> <span class="p">[{</span>
         <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span>
         <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span>
@@ -444,8 +454,8 @@ a return callback. The value is a list of OpenAPI parameter objects.</p>
         <span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
     <span class="p">}]</span>
 
-<span class="k">class</span> <span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Author</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">get_additional_query_params</span> <span class="o">=</span> <span class="p">[{</span>
             <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span>
             <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span>

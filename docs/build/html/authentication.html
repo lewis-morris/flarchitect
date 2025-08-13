@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Authentication" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="authentication.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/authentication.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="flarchitect provides several helpers so you can secure your API quickly. Enable one or more strategies via API_AUTHENTICATE_METHOD. Available methods are jwt, basic, api_key and custom. Each exampl..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="flarchitect provides several helpers so you can secure your API quickly. Enable one or more strategies via API_AUTHENTICATE_METHOD. Available methods are jwt, basic, api_key and custom. Each exampl..." />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Callbacks" href="callbacks.html" /><link rel="prev" title="Validation" href="validation.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/authentication.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Authentication - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,10 +237,14 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Authentication</a></li>
@@ -247,11 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -335,7 +347,7 @@ and then send the access token in the <code class="docutils literal notranslate"
 <p>To enable JWT support you must provide <code class="docutils literal notranslate"><span class="pre">ACCESS_SECRET_KEY</span></code> and
 <code class="docutils literal notranslate"><span class="pre">REFRESH_SECRET_KEY</span></code> values along with a user model. A minimal configuration
 looks like:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
     <span class="n">API_AUTHENTICATE_METHOD</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;jwt&quot;</span><span class="p">]</span>
     <span class="n">ACCESS_SECRET_KEY</span> <span class="o">=</span> <span class="s2">&quot;access-secret&quot;</span>
     <span class="n">REFRESH_SECRET_KEY</span> <span class="o">=</span> <span class="s2">&quot;refresh-secret&quot;</span>
@@ -346,14 +358,14 @@ looks like:</p>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">demo/authentication/jwt_auth.py</span></code> contains a full example including a login
 route:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">abort</span><span class="p">,</span> <span class="n">request</span>
-<span class="kn">from</span> <span class="nn">flask_jwt_extended</span> <span class="kn">import</span> <span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">flask</span><span class="w"> </span><span class="kn">import</span> <span class="n">abort</span><span class="p">,</span> <span class="n">request</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">flask_jwt_extended</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">create_access_token</span><span class="p">,</span>
     <span class="n">create_refresh_token</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/login&quot;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">login</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">login</span><span class="p">():</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;username&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">user</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">json</span><span class="p">[</span><span class="s2">&quot;password&quot;</span><span class="p">]):</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -373,7 +385,7 @@ username and password in the <code class="docutils literal notranslate"><span cl
 credentials are base64 encoded but otherwise sent in plain text, so HTTPS is
 strongly recommended.</p>
 <p>Provide a lookup field and password check method on your user model:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
     <span class="n">API_AUTHENTICATE_METHOD</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;basic&quot;</span><span class="p">]</span>
     <span class="n">API_USER_MODEL</span> <span class="o">=</span> <span class="n">User</span>
     <span class="n">API_USER_LOOKUP_FIELD</span> <span class="o">=</span> <span class="s2">&quot;username&quot;</span>
@@ -400,13 +412,13 @@ parameter. flarchitect passes the token to a function you provide, and the
 function returns the matching user.</p>
 <p>Attach a function that accepts an API key and returns a user. The function can
 also call <code class="docutils literal notranslate"><span class="pre">set_current_user</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">lookup_user_by_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">lookup_user_by_token</span><span class="p">(</span><span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">User</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
         <span class="n">set_current_user</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">user</span>
 
-<span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
     <span class="n">API_AUTHENTICATE_METHOD</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;api_key&quot;</span><span class="p">]</span>
     <span class="n">API_KEY_AUTH_AND_RETURN_METHOD</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">lookup_user_by_token</span><span class="p">)</span>
 </pre></div>
@@ -429,7 +441,7 @@ and retrieve basic user details:</p>
 authentication strategy you like: session cookies, HMAC signatures or
 third-party OAuth flows. Your callable should return <code class="docutils literal notranslate"><span class="pre">True</span></code> on success and may
 call <code class="docutils literal notranslate"><span class="pre">set_current_user</span></code> to attach the authenticated user to the request.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">custom_auth</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">custom_auth</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="n">token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;X-Token&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
     <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">filter_by</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">user</span><span class="p">:</span>
@@ -437,7 +449,7 @@ call <code class="docutils literal notranslate"><span class="pre">set_current_us
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
-<span class="k">class</span> <span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">(</span><span class="n">BaseConfig</span><span class="p">):</span>
     <span class="n">API_AUTHENTICATE_METHOD</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;custom&quot;</span><span class="p">]</span>
     <span class="n">API_CUSTOM_AUTH</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">custom_auth</span><span class="p">)</span>
 </pre></div>

@@ -5,16 +5,21 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta property="og:title" content="Configuration" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="configuration.html" />
+<meta property="og:url" content="https://lewis-morris.github.io/flarchitect/configuration.html" />
 <meta property="og:site_name" content="flarchitect" />
 <meta property="og:description" content="Intro: In flarchitect, configuration options are essential for customizing the API and its accompanying documentation. These settings can be provided through Flask config values or directly within ..." />
+<meta property="og:image" content="https://lewis-morris.github.io/flarchitect/_static/social-card.png" />
+<meta property="og:image:alt" content="flarchitect" />
 <meta name="description" content="Intro: In flarchitect, configuration options are essential for customizing the API and its accompanying documentation. These settings can be provided through Flask config values or directly within ..." />
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@arched_dev">
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Config Globals" href="config_locations/global_.html" /><link rel="prev" title="Callbacks" href="callbacks.html" />
+        <link rel="canonical" href="https://lewis-morris.github.io/flarchitect/configuration.html" />
         <link rel="prefetch" href="_static/logo.png" as="image" />
 
-    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.2.3 and Furo 2025.07.19 -->
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.1.3 and Furo 2025.07.19 -->
         <title>Configuration - flarchitect</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=85e76eac" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5f771d8e" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=25af2a20" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
@@ -232,11 +237,14 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul class="current">
+  <p class="caption" role="heading"><span class="caption-text">Beginner</span></p>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started Sample Project</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="models.html">SQLAlchemy Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="validation.html">Validation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="authentication.html">Authentication</a></li>
@@ -248,12 +256,14 @@
 <li class="toctree-l2"><a class="reference internal" href="config_locations/model_method.html">Config by Method Models</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="openapi.html">OpenAPI Specification</a></li>
 <li class="toctree-l1"><a class="reference internal" href="soft_delete.html">Soft delete</a></li>
-<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
-<li class="toctree-l1"><a class="reference internal" href="genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Advanced</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="advanced_configuration.html">Advanced Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="advanced_demo.html">Advanced Demo</a></li>
 </ul>
 
 </div>
@@ -350,7 +360,7 @@ global <code class="docutils literal notranslate"><span class="pre">API_</span><
 booleans, lists, or dictionaries depending on the option.</p>
 <p>Use this level when you need a single setting to apply consistently across all models and methods.</p>
 <p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_TITLE</span> <span class="o">=</span> <span class="s2">&quot;My API&quot;</span>
 </pre></div>
 </div>
@@ -367,7 +377,7 @@ applying tighter rate limits to mutating requests or disabling a verb globally. 
 key that supports method scoping can be used here by inserting the method name (e.g. <code class="docutils literal notranslate"><span class="pre">API_GET_RATE_LIMIT</span></code>),
 with value types mirroring their global counterparts.</p>
 <p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
     <span class="n">API_GET_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;100 per minute&quot;</span>
     <span class="n">API_POST_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>
     <span class="n">API_PATCH_RATE_LIMIT</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>
@@ -386,10 +396,10 @@ such as marking a model read only, changing its serialization depth, or blocking
 Options correspond directly to the global keys but in lowercase without the prefix (for example <code class="docutils literal notranslate"><span class="pre">rate_limit</span></code>
 or <code class="docutils literal notranslate"><span class="pre">pagination_size_default</span></code>) and accept the same data types noted in the configuration table.</p>
 <p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;my_model&quot;</span>
 
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per second&quot;</span>        <span class="c1"># shown as API_RATE_LIMIT in Flask config</span>
         <span class="n">blocked_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;POST&quot;</span><span class="p">]</span>  <span class="c1"># shown as API_BLOCK_METHODS in Flask config</span>
 </pre></div>
@@ -408,10 +418,10 @@ customise serialization only for <code class="docutils literal notranslate"><spa
 HTTP method name (such as <code class="docutils literal notranslate"><span class="pre">get_rate_limit</span></code> or <code class="docutils literal notranslate"><span class="pre">post_blocked</span></code>) and follows the same value types as the
 corresponding model option.</p>
 <p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
     <span class="n">__tablename__</span> <span class="o">=</span> <span class="s2">&quot;my_model&quot;</span>
 
-    <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
         <span class="n">get_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;10 per minute&quot;</span>   <span class="c1"># shown as API_GET_RATE_LIMIT in Flask config</span>
         <span class="n">post_rate_limit</span> <span class="o">=</span> <span class="s2">&quot;5 per minute&quot;</span>   <span class="c1"># shown as API_POST_RATE_LIMIT in Flask config</span>
 </pre></div>
