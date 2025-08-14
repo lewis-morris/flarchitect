@@ -192,28 +192,56 @@ Nested model creation
 ---------------------
 
 Nested writes are disabled by default. Enable them globally with
-``API_ALLOW_NESTED_WRITES = True`` or per model via ``Meta.allow_nested_writes``.
+``API_ALLOW_NESTED_WRITES = True`` or per model via
+``Meta.allow_nested_writes``.
+
+Depth limits
+^^^^^^^^^^^^
+
 Once enabled, ``AutoSchema`` can deserialize nested relationship data during
-POST or PUT requests. Include related objects under the relationship name in
-your payload::
+``POST`` or ``PUT`` requests. Each related model must also opt in with
+``Meta.allow_nested_writes`` and nesting is capped at **two levels** to avoid
+unbounded recursion. Any relationships beyond this depth are ignored.
+
+Validation errors
+^^^^^^^^^^^^^^^^^
+
+Errors raised within nested objects bubble up under their relationship path.
+In the following request, the invalid email on the ``author`` is reported in
+the error response::
+
+    POST /api/book
+    {
+        "title": "My Book",
+        "author": {"email": "not-an-email"}
+    }
+
+    {
+        "errors": {"author": {"email": ["Not a valid email address."]}}
+    }
+
+Example: multiple nested levels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With nested writes enabled you can create several related objects at once,
+up to two levels deep::
 
     {
         "title": "My Book",
         "isbn": "12345",
         "publication_date": "2024-01-01",
-        "author_id": 1,
         "author": {
             "first_name": "John",
             "last_name": "Doe",
-            "biography": "Bio",
-            "date_of_birth": "1980-01-01",
-            "nationality": "US"
+            "publisher": {
+                "name": "Acme Publishing"
+            }
         }
     }
 
-The nested ``author`` object is deserialized into an ``Author`` instance while
-responses continue to use the configured serialization type (URL, JSON, or
-dynamic).
+The nested ``author`` and ``publisher`` objects are deserialized into their
+respective models while responses continue to use the configured serialization
+type (URL, JSON, or dynamic).
 
 .. _soft-delete:
 
