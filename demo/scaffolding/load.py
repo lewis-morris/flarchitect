@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from module import create_app
 
 if __name__ == "__main__":
