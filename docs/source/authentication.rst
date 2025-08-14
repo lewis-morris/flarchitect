@@ -59,13 +59,17 @@ looks like:
 
 .. code-block:: python
 
-   class Config(BaseConfig):
-       API_AUTHENTICATE_METHOD = ["jwt"]
-       ACCESS_SECRET_KEY = "access-secret"
-       REFRESH_SECRET_KEY = "refresh-secret"
-       API_USER_MODEL = User
-       API_USER_LOOKUP_FIELD = "username"
-       API_CREDENTIAL_CHECK_METHOD = "check_password"
+    class Config(BaseConfig):
+        API_AUTHENTICATE_METHOD = ["jwt"]
+        ACCESS_SECRET_KEY = "access-secret"
+        REFRESH_SECRET_KEY = "refresh-secret"
+        API_USER_MODEL = User
+        API_USER_LOOKUP_FIELD = "username"
+        API_CREDENTIAL_CHECK_METHOD = "check_password"
+
+Token lifetimes default to ``360`` minutes for access tokens and ``2880``
+minutes (two days) for refresh tokens. Override these durations with
+``API_JWT_EXPIRY_TIME`` and ``API_JWT_REFRESH_EXPIRY_TIME`` respectively.
 
 ``demo/authentication/jwt_auth.py`` contains a full example including a login
 route:

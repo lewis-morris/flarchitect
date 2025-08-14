@@ -21,6 +21,8 @@ class Config(BaseConfig):
         API_USER_LOOKUP_FIELD (str): Field used to look up users by credential.
         API_CREDENTIAL_CHECK_METHOD (str): Name of the method that validates a
             user's password.
+        API_JWT_EXPIRY_TIME (int): Minutes an access token remains valid.
+        API_JWT_REFRESH_EXPIRY_TIME (int): Minutes a refresh token remains valid.
     """
 
     API_AUTHENTICATE_METHOD = ["jwt"]
@@ -29,6 +31,8 @@ class Config(BaseConfig):
     API_USER_MODEL = User
     API_USER_LOOKUP_FIELD = "username"
     API_CREDENTIAL_CHECK_METHOD = "check_password"
+    API_JWT_EXPIRY_TIME = 30
+    API_JWT_REFRESH_EXPIRY_TIME = 1440
 
 
 app = create_app(Config)

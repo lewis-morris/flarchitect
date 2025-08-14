@@ -93,7 +93,7 @@ it will become invalid, necessitating a refresh. To refresh your JWT, issue a PO
 are created using the HS256 algorithm, ensuring robust security.
 
 Please note, refresh tokens remain valid for approximately {{ (config.API_JWT_REFRESH_EXPIRY_TIME / 60 / 24) | int }}
-hours.
+days.
 Upon expiration, you'll need to authenticate again to obtain a new JWT.
 
 ## Basic Authentication
