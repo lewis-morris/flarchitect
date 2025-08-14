@@ -190,7 +190,7 @@ To publish a new release:
 
 Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
 
-## License
+## Licence
 
-Distributed under the MIT License. See [LICENCE](LICENCE) for details.
+Distributed under the MIT Licence. See [LICENCE](LICENCE) for details.
 
