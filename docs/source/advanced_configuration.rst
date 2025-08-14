@@ -192,10 +192,11 @@ Nested model creation
 ---------------------
 
 Nested writes are disabled by default. Enable them globally with
-``API_ALLOW_NESTED_WRITES = True`` or per model via ``Meta.allow_nested_writes``.
+``API_ALLOW_NESTED_WRITES = True`` or per model via :attr:`Meta.allow_nested_writes`.
 Once enabled, ``AutoSchema`` can deserialize nested relationship data during
-POST or PUT requests. Include related objects under the relationship name in
-your payload::
+POST, PUT or PATCH requests. All writable methods honour
+:attr:`Meta.allow_nested_writes`. Include related objects under the relationship
+name in your payload::
 
     {
         "title": "My Book",
@@ -208,6 +209,17 @@ your payload::
             "biography": "Bio",
             "date_of_birth": "1980-01-01",
             "nationality": "US"
+        }
+    }
+
+To partially update a nested relationship, send only the fields you want to
+change in a ``PATCH`` request::
+
+    PATCH /books/1
+    {
+        "author": {
+            "id": 1,
+            "biography": "Updated bio"
         }
     }
 
