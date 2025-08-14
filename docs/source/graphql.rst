@@ -19,8 +19,8 @@ architect:
    architect.init_graphql(schema=schema)
 
 The generated schema provides CRUD-style queries and mutations for each model.
-An ``items`` query returns every ``Item`` and a ``createItem`` mutation adds a
-new record.
+An ``all_items`` query returns every ``Item`` and a ``create_item`` mutation adds
+a new record.
 
 Example mutation
 ~~~~~~~~~~~~~~~~
@@ -44,7 +44,7 @@ Example query
 .. code-block:: graphql
 
    query {
-       items {
+       all_items {
            id
            name
        }
