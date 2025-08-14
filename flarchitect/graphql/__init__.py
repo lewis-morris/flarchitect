@@ -1,7 +1,6 @@
-from __future__ import annotations
-
 """Utilities for converting SQLAlchemy models into GraphQL schemas."""
 
+from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
