@@ -78,7 +78,8 @@ from flask import Flask
 from flarchitect import Architect
 
 app = Flask(__name__)
-architect = Architect(app)  # OpenAPI served at /openapi.json
+architect = Architect(app)  # OpenAPI served at /openapi.json, docs serverd at /docs
+
 ```
 
 The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
