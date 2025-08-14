@@ -12,22 +12,22 @@ Open `http://localhost:5000/graphql` in your browser to explore the schema with 
 
 ## Sample queries
 
-Fetch all items:
+Fetch all items via the `all_items` query:
 
 ```graphql
 query {
-    items {
+    all_items {
         id
         name
     }
 }
 ```
 
-Create a new item:
+Create a new item with the `create_item` mutation:
 
 ```graphql
 mutation {
-    createItem(name: "Biscuit") {
+    create_item(name: "Biscuit") {
         id
         name
     }
