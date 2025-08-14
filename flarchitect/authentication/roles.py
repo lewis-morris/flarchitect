@@ -44,3 +44,41 @@ def roles_required(*roles: str) -> Callable[[F], F]:
         return cast(F, wrapper)
 
     return decorator
+
+
+def roles_accepted(*roles: str) -> Callable[[F], F]:
+    """Allow access when the user has any matching role.
+
+    Args:
+        *roles: Variable length argument list of role names any of which
+            will grant access to the decorated endpoint.
+
+    Returns:
+        Callable[[F], F]: A decorator enforcing role-based access control.
+
+    Raises:
+        CustomHTTPException: Raised with status code ``403`` when the current
+            user lacks all of the provided roles or no user is authenticated.
+    """
+
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            user_roles = getattr(current_user, "roles", None)
+            if user_roles is None:
+                raise CustomHTTPException(status_code=403, reason="Roles accepted")
+
+            if roles and not set(roles).intersection(set(user_roles)):
+                raise CustomHTTPException(status_code=403, reason="Roles accepted")
+
+            return func(*args, **kwargs)
+
+        if not hasattr(wrapper, "_decorators"):
+            wrapper._decorators = []  # type: ignore[attr-defined]
+        decorator.__name__ = "roles_accepted"
+        decorator._args = roles  # type: ignore[attr-defined]
+        wrapper._decorators.append(decorator)  # type: ignore[attr-defined]
+
+        return cast(F, wrapper)
+
+    return decorator
