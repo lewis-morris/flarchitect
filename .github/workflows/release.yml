@@ -21,27 +21,35 @@ jobs:
           fetch-depth: 2
       - name: Detect version change in pyproject.toml
         id: diff
+        shell: bash
         run: |
-          set -euo pipefail
-          NEW_VERSION=$(python - <<'PY'
-          import pathlib, tomllib
-          data = tomllib.loads(pathlib.Path('pyproject.toml').read_text())
-          print(data['project']['version'])
-          PY
-          )
-                    # OLD_VERSION from previous commit (may be empty on first run)
-                    OLD_VERSION=$(git show HEAD^:pyproject.toml 2>/dev/null | python - <<'PY' || true
-          import sys, tomllib
-          print(tomllib.loads(sys.stdin.read())['project']['version'])
-          PY
-          )
-          CHANGED=false
-          if [ "${NEW_VERSION}" != "${OLD_VERSION}" ]; then
-            CHANGED=true
-          fi
-          echo "new=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "old=${OLD_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "changed=${CHANGED}" >> "$GITHUB_OUTPUT"
+            set -euo pipefail
+        
+            NEW_VERSION=$(python - <<'PY'
+            import pathlib, tomllib
+            print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+            PY
+                )
+            
+                # Try to read version from previous commit; leave empty if no parent/file
+                OLD_VERSION=$(
+                  python - <<'PY'
+            import subprocess, tomllib
+            try:
+                blob = subprocess.check_output(["git", "show", "HEAD^:pyproject.toml"])
+                print(tomllib.loads(blob.decode())["project"]["version"])
+            except Exception:
+                pass
+            PY
+                )
+            
+                if [[ "${NEW_VERSION}" != "${OLD_VERSION:-}" ]]; then
+                  echo "changed=true" >> "$GITHUB_OUTPUT"
+                else
+                  echo "changed=false" >> "$GITHUB_OUTPUT"
+                fi
+                echo "new=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+                echo "old=${OLD_VERSION}" >> "$GITHUB_OUTPUT"
       - name: Summary
         run: |
           echo "New:   ${{ steps.diff.outputs.new }}"
