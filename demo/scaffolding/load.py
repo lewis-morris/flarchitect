@@ -7,7 +7,7 @@ from flask import Flask
 from .module import create_app
 
 
-def load(config_class: str = "Scaffolding.config.Config") -> Flask:
+def load(config_class: str = "demo.scaffolding.config.Config") -> Flask:
     """Create and return a configured Flask application.
 
     Args:
@@ -16,7 +16,7 @@ def load(config_class: str = "Scaffolding.config.Config") -> Flask:
             this package.
 
     Returns:
-        Configured :class:`flask.Flask` application.
+        Configured ``flask.Flask`` application.
     """
 
     if config_class.startswith("Scaffolding."):
@@ -26,6 +26,5 @@ def load(config_class: str = "Scaffolding.config.Config") -> Flask:
 
 
 if __name__ == "__main__":
-    """Run the application if this module is executed directly."""
     app = load()
     app.run(host="0.0.0.0", port=5000, debug=True)

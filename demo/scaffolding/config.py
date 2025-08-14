@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
-from datetime import timedelta
+
+from demo.scaffolding.module.extensions import db
+from demo.scaffolding.module.models import User
 
 
 class Config:
@@ -13,19 +15,40 @@ class Config:
     possible values and defaults for clarity.
     """
 
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev")  # str: secret for session and JWT; default "dev"
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///:memory:")  # str: any SQLAlchemy-supported URI; default in-memory SQLite
-    SQLALCHEMY_TRACK_MODIFICATIONS = False  # bool: enable change tracking; default False
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")  # str: secret used to sign JWTs; default "dev-jwt-secret"
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=15)  # timedelta: token lifetime; default 15 minutes
-    JWT_TOKEN_LOCATION = ["headers"]  # list[str]: where to read JWTs ("headers", "cookies", "json"); default ["headers"]
-    DEBUG = os.getenv("DEBUG", False)  # bool: enable debug mode; default False
-    USERNAME_MIN_LENGTH = 3  # int: minimum username length; default 3
+    # Flask settings
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///:memory:")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DEBUG = os.getenv("DEBUG", False)
+
+    # flarchitect configuration
+    API_BASE_MODEL = db.Model
+    API_TITLE = "Scaffolding API"
+    API_VERSION = "0.1.0"
+    API_VERBOSITY_LEVEL = 4
+    API_ALLOW_NESTED_WRITES = False
+    API_CREATE_DOCS = True
+    API_ENABLE_CORS = False
+
+    # Authentication configuration
+    API_AUTHENTICATE = True
+    API_AUTHENTICATE_METHOD = ["jwt"]
+    API_USER_MODEL = User
+    API_USER_LOOKUP_FIELD = "username"
+    API_CREDENTIAL_CHECK_METHOD = "check_password"
+    ACCESS_SECRET_KEY = os.getenv("ACCESS_SECRET_KEY", "access-secret")
+    REFRESH_SECRET_KEY = os.getenv("REFRESH_SECRET_KEY", "refresh-secret")
+    API_JWT_EXPIRY_TIME = 15
+    API_JWT_REFRESH_EXPIRY_TIME = 1440
+
+    # Demo-specific options
+    USERNAME_MIN_LENGTH = 3
 
 
 class TestingConfig(Config):
     """Configuration used during unit tests."""
 
-    TESTING = True  # bool: put Flask in testing mode
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"  # use in-memory DB for tests
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=1)  # shorter token lifetime for tests
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    API_JWT_EXPIRY_TIME = 1
+    API_JWT_REFRESH_EXPIRY_TIME = 2
