@@ -22,6 +22,22 @@ The generated schema provides CRUD-style queries and mutations for each model.
 An ``items`` query returns every ``Item`` and a ``createItem`` mutation adds a
 new record.
 
+Example mutation
+~~~~~~~~~~~~~~~~
+
+``create_schema_from_models`` automatically generates a ``create_<table>``
+mutation for each model. The mutation accepts all non-primary-key columns as
+arguments. The example below creates a new ``Item``:
+
+.. code-block:: graphql
+
+   mutation {
+       create_item(name: "Foo") {
+           id
+           name
+       }
+   }
+
 Example query
 ~~~~~~~~~~~~~
 
