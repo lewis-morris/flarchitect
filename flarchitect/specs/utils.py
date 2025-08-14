@@ -57,7 +57,16 @@ def scrape_extra_info_from_spec_data(
     function = spec_data.get("function")
 
     if not all([model, output_schema or input_schema, method, function]):
-        logger.log(1, "Missing data for documentation generation")
+        missing = []
+        if not model:
+            missing.append("model")
+        if not (output_schema or input_schema):
+            missing.append("schema")
+        if not method:
+            missing.append("method")
+        if not function:
+            missing.append("function")
+        logger.log(1, f"Missing data for documentation generation: {', '.join(missing)}")
 
     if spec_data.get("tag") is None:
         new_tag = get_config_or_model_meta("tag", model, output_schema, input_schema, "Unknown")

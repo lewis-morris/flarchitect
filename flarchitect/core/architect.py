@@ -81,23 +81,46 @@ class Architect(AttributeInitializerMixin):
     cache: "Cache | None" = None
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
-        """
-        Initializes the Architect object.
+        """Initialize the Architect extension.
+
+        The Flask development server runs the application twice when the
+        automatic reloader is enabled. To avoid duplicate initialisation and
+        the noisy log output that comes with it, setup is skipped during the
+        reloader's parent process and only performed for the serving process.
 
         Args:
-            app (Flask): The flask app.
-            *args (list): List of arguments.
-            **kwargs (dict): Dictionary of keyword arguments.
-
-        Notes:
-            Configures optional integrations such as caching and CORS based on
-            application settings.
+            app: The Flask application instance.
+            *args: Positional arguments forwarded to :meth:`init_app`.
+            **kwargs: Keyword arguments forwarded to :meth:`init_app`.
         """
         self.route_spec: list[dict[str, Any]] = []
 
         if app is not None:
-            self.init_app(app, *args, **kwargs)
-            logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
+            if self._is_reloader_start():
+                logger.debug(4, "Skipping Architect initialisation in reloader parent process")
+            else:
+                self.init_app(app, *args, **kwargs)
+                logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
+
+    @staticmethod
+    def _is_reloader_start() -> bool:
+        """Return ``True`` when executing in the reloader's parent process.
+
+        Flask's development reloader spawns a supervisory process that imports
+        the application before starting a child process to serve requests. The
+        parent process exposes a ``WERKZEUG_SERVER_FD`` environment variable
+        while the child sets ``WERKZEUG_RUN_MAIN`` to ``"true"``. By combining
+        these signals we can skip one-time setup during the parent's initial
+        import without affecting production deployments where neither variable
+        is present.
+
+        Returns:
+            bool: ``True`` if running as the reloader parent, otherwise ``False``.
+        """
+
+        run_main = os.environ.get("WERKZEUG_RUN_MAIN")
+        server_fd = os.environ.get("WERKZEUG_SERVER_FD")
+        return server_fd is not None and run_main != "true"
 
     def init_app(self, app: Flask, *args, **kwargs):
         """
