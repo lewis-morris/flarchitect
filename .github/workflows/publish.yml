@@ -23,15 +23,15 @@ jobs:
         id: version
         run: |
           NEW_VERSION=$(python - <<'PY'
-import pathlib, tomllib
-print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
-PY
-)
-          OLD_VERSION=$(git show HEAD^:pyproject.toml 2>/dev/null | python - <<'PY'
-import sys, tomllib
-print(tomllib.loads(sys.stdin.read())['project']['version'])
-PY
- || echo '')
+          import pathlib, tomllib
+          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+          PY
+          )
+                    OLD_VERSION=$(git show HEAD^:pyproject.toml 2>/dev/null | python - <<'PY'
+          import sys, tomllib
+          print(tomllib.loads(sys.stdin.read())['project']['version'])
+          PY
+           || echo '')
           echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "old=$OLD_VERSION" >> $GITHUB_OUTPUT
           if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
