@@ -239,6 +239,21 @@ Clients can then call your API with whatever headers your function expects:
 
 See ``demo/authentication/custom_auth.py`` for this approach in context.
 
+Clearing the user context
+-------------------------
+
+flarchitect ensures the ``current_user`` does not leak between requests.
+During authentication setup a Flask ``teardown_request`` handler calls
+``set_current_user(None)`` after each request. If you integrate
+authentication manually, register the handler with
+``register_user_teardown(app)``:
+
+.. code-block:: python
+
+   from flarchitect.authentication.user import register_user_teardown
+
+   register_user_teardown(app)
+
 .. _roles-required:
 
 Role-based access
