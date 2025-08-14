@@ -62,16 +62,7 @@ You can apply these keys in several places:
       class Config:
           API_SETUP_CALLBACK = my_setup
 
-2. **HTTP method specific config**
-
-   Override the global value for a specific method with ``API_<METHOD>_<KEY>``.
-
-   .. code-block:: python
-
-      class Config:
-          API_GET_RETURN_CALLBACK = my_get_return
-
-3. **Model config**
+2. **Model config**
 
    Set lowercase attributes on a model's ``Meta`` class to apply callbacks to
    all endpoints for that model.
@@ -82,7 +73,7 @@ You can apply these keys in several places:
           class Meta:
               setup_callback = my_setup
 
-4. **Model method config**
+3. **Model method config**
 
    Use ``<method>_<key>`` on the ``Meta`` class for the highest level of
    specificity.

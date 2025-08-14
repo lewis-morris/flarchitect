@@ -508,7 +508,7 @@ Callback Hooks
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Runs before any model-specific processing. Use method-specific variants like ``API_GET_GLOBAL_SETUP_CALLBACK`` to target individual HTTP methods.
+        - Runs before any model-specific processing.
     * - ``API_FILTER_CALLBACK``
 
           :bdg:`default:` ``None``

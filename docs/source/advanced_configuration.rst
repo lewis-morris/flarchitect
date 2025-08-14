@@ -46,14 +46,6 @@ example, to shield a public search endpoint from abuse, you might allow only
     class Config:
         API_RATE_LIMIT = "200 per day"
 
-**Method specific**
-
-.. code:: python
-
-    class Config:
-        API_GET_RATE_LIMIT = "100 per minute"
-        API_POST_RATE_LIMIT = "10 per minute"
-
 **Model specific**
 
 .. code:: python
@@ -63,7 +55,6 @@ example, to shield a public search endpoint from abuse, you might allow only
 
         class Meta:
             rate_limit = "5 per minute"      # becomes API_RATE_LIMIT
-            get_rate_limit = "10 per minute"  # becomes API_GET_RATE_LIMIT
 
 Because limits depend on counting requests, those counts must live
 somewhere.
@@ -552,7 +543,7 @@ serialised. Use them to adjust the output or append metadata.
         return {"output": output}
 
     class Config:
-        API_GET_RETURN_CALLBACK = add_timestamp
+        API_RETURN_CALLBACK = add_timestamp
 
 See :func:`flarchitect.core.routes.create_route_function` for details on how
 responses are constructed.
@@ -593,10 +584,10 @@ return callbacks in configuration or on a model's ``Meta`` class.
 
     class Book(db.Model):
         class Meta:
-            post_return_callback = add_timestamp
+            return_callback = add_timestamp
 
     class Config:
-        API_POST_SETUP_CALLBACK = ensure_admin
+        API_SETUP_CALLBACK = ensure_admin
 
 For more examples see the :doc:`extensions` page.
 
