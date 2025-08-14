@@ -68,9 +68,10 @@ flarchitect
 --------------------------------------------
 
 
+**Build APIs fast, customise at will.**
 
 **flarchitect** turns your `SQLAlchemy`_ models into a polished RESTful API complete with interactive `Redoc`_ or Swagger UI documentation.
-Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments.
+Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments. It reduces boilerplate while letting you tailor behaviour to your needs.
 
 What can it do?
 
