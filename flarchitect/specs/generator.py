@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec.ext.marshmallow.common import make_schema_key, resolve_schema_instance
 from flask import Blueprint, Flask, Response, current_app, request
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
@@ -388,28 +389,28 @@ def register_schemas(
     # plugin to avoid adding the same schema class twice, which would trigger
     # warnings from ``apispec``.
     plugin = next((p for p in spec.plugins if isinstance(p, MarshmallowPlugin)), None)
-    registered_refs = getattr(plugin, "refs", set()) if plugin else set()
+    registered_refs = getattr(getattr(plugin, "converter", None), "refs", {}) if plugin else {}
 
     for schema in [input_schema, output_schema, put_input_schema]:
         if schema:
             model = schema.get_model() if hasattr(schema, "get_model") else None
 
+            schema_instance = resolve_schema_instance(schema)
             schema_name = convert_case(
-                schema.__name__.replace("Schema", "") if hasattr(schema, "__name__") else schema.__class__.__name__.replace("Schema", ""),
+                schema_instance.__class__.__name__.replace("Schema", ""),
                 get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"),
             )
-            schema.__name__ = schema_name
+            schema_instance.__class__.__name__ = schema_name
 
-            schema_cls = schema if isinstance(schema, type) else schema.__class__
-            schema_key = f"{schema_cls.__module__}.{schema_cls.__name__}"
+            schema_key = make_schema_key(schema_instance)
             if schema_key in registered_refs and not force_update:
                 continue
 
             existing_schema = spec.components.schemas.get(schema_name)
             if existing_schema and force_update:
-                spec.components.schemas[schema_name] = schema
+                spec.components.schemas[schema_name] = schema_instance
             elif not existing_schema:
-                spec.components.schema(schema_name, schema=schema)
+                spec.components.schema(schema_name, schema=schema_instance)
 
 
 def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None = None) -> None:
