@@ -66,6 +66,41 @@ With the application running, try your new API in another terminal window:
 curl http://localhost:5000/api/authors
 ```
 
+## Authentication
+
+flarchitect ships with ready-to-use JWT, Basic and API key authentication. Choose strategies with
+`API_AUTHENTICATE_METHOD`.
+
+### JWT
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["jwt"]
+app.config["ACCESS_SECRET_KEY"] = "access-secret"
+app.config["REFRESH_SECRET_KEY"] = "refresh-secret"
+app.config["API_USER_MODEL"] = User
+app.config["API_USER_LOOKUP_FIELD"] = "username"
+app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+```
+
+### Basic
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["basic"]
+app.config["API_USER_MODEL"] = User
+app.config["API_USER_LOOKUP_FIELD"] = "username"
+app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+```
+
+### API key
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["api_key"]
+app.config["API_KEY_AUTH_AND_RETURN_METHOD"] = lookup_user_by_token
+# app.config["API_CREDENTIAL_HASH_FIELD"] = "api_key_hash"  # optional
+```
+
+See the [authentication docs](docs/source/authentication.rst) for full configuration details and custom strategies.
+
 ## OpenAPI specification
 
 An OpenAPI 3 schema is generated automatically and powers the Redoc UI. You
