@@ -81,23 +81,45 @@ class Architect(AttributeInitializerMixin):
     cache: "Cache | None" = None
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
-        """
-        Initializes the Architect object.
+        """Initialize the Architect extension.
+
+        The Flask development server runs the application twice when the
+        automatic reloader is enabled. To avoid duplicate initialisation and
+        the noisy log output that comes with it, setup is skipped during the
+        reloader's parent process and only performed for the serving process.
 
         Args:
-            app (Flask): The flask app.
-            *args (list): List of arguments.
-            **kwargs (dict): Dictionary of keyword arguments.
-
-        Notes:
-            Configures optional integrations such as caching and CORS based on
-            application settings.
+            app: The Flask application instance.
+            *args: Positional arguments forwarded to :meth:`init_app`.
+            **kwargs: Keyword arguments forwarded to :meth:`init_app`.
         """
         self.route_spec: list[dict[str, Any]] = []
 
         if app is not None:
-            self.init_app(app, *args, **kwargs)
-            logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
+            if self._is_reloader_start(app):
+                logger.debug(4, "Skipping Architect initialisation in reloader parent process")
+            else:
+                self.init_app(app, *args, **kwargs)
+                logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
+
+    @staticmethod
+    def _is_reloader_start(app: Flask) -> bool:
+        """Detect whether the current process is the initial reloader run.
+
+        Flask's built-in development server executes the application code twice
+        when ``debug`` mode is enabled: once in a supervisory process and again
+        in the child process that serves requests. Only the second run should
+        perform expensive setup.
+
+        Args:
+            app: The Flask application instance.
+
+        Returns:
+            bool: ``True`` if running under the reloader's parent process,
+            otherwise ``False``.
+        """
+
+        return app.debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true"
 
     def init_app(self, app: Flask, *args, **kwargs):
         """
