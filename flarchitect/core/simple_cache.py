@@ -20,11 +20,19 @@ class SimpleCache:
 
     Args:
         default_timeout: Default cache timeout in seconds.
+
+    Methods:
+        clear: Remove all entries from the cache.
     """
 
     def __init__(self, default_timeout: int = 300) -> None:
         self.default_timeout = default_timeout
         self._cache: dict[str, tuple[float, Any]] = {}
+
+    def clear(self) -> None:
+        """Clear all data from the cache."""
+
+        self._cache.clear()
 
     def init_app(self, app) -> None:  # type: ignore[no-untyped-def]
         """Initialise the cache for a Flask application.
@@ -46,16 +54,31 @@ class SimpleCache:
 
         return time.time() + (timeout if timeout is not None else self.default_timeout)
 
-    def get(self, key: str) -> Any | None:
-        """Retrieve a cached value if present and not expired."""
+    def _purge(self) -> None:
+        """Remove expired entries from the cache."""
 
-        record = self._cache.get(key)
-        if not record:
-            return None
-        expires, value = record
-        if expires < time.time():
+        now = time.time()
+        expired = [
+            key for key, (expires, _value) in self._cache.items() if expires < now
+        ]
+        for key in expired:
             self._cache.pop(key, None)
+
+    def get(self, key: str) -> Any | None:
+        """Retrieve a cached value if present and not expired.
+
+        Args:
+            key: Cache key to retrieve.
+
+        Returns:
+            The cached value if found and valid; otherwise ``None``.
+        """
+
+        self._purge()
+        record = self._cache.get(key)
+        if record is None:
             return None
+        _expires, value = record
         return value
 
     def set(self, key: str, value: Any, timeout: int | None = None) -> None:
@@ -63,7 +86,9 @@ class SimpleCache:
 
         self._cache[key] = (self._expires(timeout), value)
 
-    def cached(self, timeout: int | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def cached(
+        self, timeout: int | None = None
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to cache view function responses.
 
         Args:
