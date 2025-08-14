@@ -25,7 +25,7 @@ def client(app):
 
 # check to make sure that the title and version are changed
 def test_basic_change_title_and_version(client):
-    response = client.get("/swagger.json")
+    response = client.get("/apispec.json")
 
     assert response.json["info"]["title"] == "Automated test"
     assert response.json["info"]["version"] == "0.2.0"
@@ -120,7 +120,7 @@ def test_change_spec_description_and_others():
     )
 
     client = app.test_client()
-    resp = client.get("/swagger.json")
+    resp = client.get("/apispec.json")
 
     assert resp.json["info"]["description"] == "This is a test description"
     assert resp.json["info"]["x-logo"]["url"] == "http://test.com/logo.png"
@@ -184,7 +184,7 @@ def test_docs_extra_info():
     )
 
     client = app.test_client()
-    resp = client.get("/swagger.json")
+    resp = client.get("/apispec.json")
 
     assert resp.json["info"]["contact"] == {
         "email": "help@test.com",
@@ -239,7 +239,7 @@ def test_change_to_camel_output():
     api_calls = client_camel.get("/api/api-calls").json
     assert api_calls["status_code"] == 200
 
-    swagger_oas = client_camel.get("/swagger.json").json
+    swagger_oas = client_camel.get("/apispec.json").json
     assert "apiCalls" in swagger_oas["components"]["schemas"].keys()
 
 
@@ -259,7 +259,7 @@ def test_change_to_pascal_output():
     apiCalls = client_pascal.get("/api/api_calls").json
     assert apiCalls["status-code"] == 200
 
-    swaggerOas = client_pascal.get("/swagger.json").json
+    swaggerOas = client_pascal.get("/apispec.json").json
     assert "ApiCalls" in swaggerOas["components"]["schemas"].keys()
 
 
@@ -279,7 +279,7 @@ def test_change_to_snake_output():
     api_calls = client_snake.get("/api/apiCalls").json
     assert api_calls["StatusCode"] == 200
 
-    swagger_oas = client_snake.get("/swagger.json").json
+    swagger_oas = client_snake.get("/apispec.json").json
     assert "api_calls" in swagger_oas["components"]["schemas"].keys()
 
 
@@ -299,7 +299,7 @@ def test_change_to_screaming_snake_output():
     api_calls = client_screaming_snake.get("/api/api-calls").json
     assert api_calls["statusCode"] == 200
 
-    swagger_oas = client_screaming_snake.get("/swagger.json").json
+    swagger_oas = client_screaming_snake.get("/apispec.json").json
     assert "API_CALLS" in swagger_oas["components"]["schemas"].keys()
 
 
@@ -319,7 +319,7 @@ def test_change_to_kebab_output():
     api_calls = client_kebab.get("/api/ApiCalls").json
     assert api_calls["status_code"] == 200
 
-    swagger_oas = client_kebab.get("/swagger.json").json
+    swagger_oas = client_kebab.get("/apispec.json").json
     assert "api-calls" in swagger_oas["components"]["schemas"].keys()
 
 
@@ -473,7 +473,7 @@ def test_disable_docs():
     app_docs = create_app({"API_CREATE_DOCS": False})
     client_docs = app_docs.test_client()
     docs = client_docs.get("/docs")
-    swagger = client_docs.get("/swagger.json")
+    swagger = client_docs.get("/apispec.json")
     books = client_docs.get("/api/books")
 
     assert docs.status_code == 404
@@ -676,14 +676,14 @@ def test_callbacks(client_two):
 
 
 def test_global_query_param(client_two):
-    swagger = client_two.get("/swagger.json").json
+    swagger = client_two.get("/apispec.json").json
 
     params = [x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]]
     assert "log" in params
 
 
 def test_post_specific_query_param(client_two):
-    swagger = client_two.get("/swagger.json").json
+    swagger = client_two.get("/apispec.json").json
 
     post_params = [x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]]
     get_params = [x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]]

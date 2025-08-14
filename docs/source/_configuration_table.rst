@@ -84,7 +84,7 @@ Documentation Settings
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Protects docs and ``swagger.json`` with a simple password prompt. Users must enter this password on the docs login screen.
+        - Protects docs and ``apispec.json`` with a simple password prompt. Users must enter this password on the docs login screen.
     * - ``API_DOCUMENTATION_REQUIRE_AUTH``
 
           :bdg:`default:` ``False``

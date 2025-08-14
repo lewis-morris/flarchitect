@@ -61,7 +61,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
     documentation_url: str | None = "/docs"
 
     def __init__(self, app: Flask, architect: Architect, *args, **kwargs):
-        """Initializes the CustomSpec object.
+        """Initialises the CustomSpec object.
 
         Args:
             app (Flask): The Flask application.
@@ -71,7 +71,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         """
         self.app = app
         self.architect = architect
-        # initialize per-instance containers to avoid shared mutable defaults
+        # initialise per-instance containers to avoid shared mutable defaults
         self.spec_groups: dict[str, list[dict[str, str | list[str]]]] = {
             "x-tagGroups": []
         }
@@ -95,10 +95,10 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         return spec_dict
 
     def _prepare_api_spec_data(self, **kwargs) -> dict:
-        """Prepares the data required to initialize the API spec.
+        """Prepares the data required to initialise the API spec.
 
         Returns:
-            dict: Data for initializing the API spec.
+            dict: Data for initialising the API spec.
         """
         api_description = self._get_api_description()
         api_spec_data = {
@@ -226,7 +226,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         return get_config_or_model_meta("API_CREATE_DOCS", default=True)
 
     def validate_init_apispec_args(self) -> None:
-        """Validates the initialization arguments for the API spec.
+        """Validates the initialisation arguments for the API spec.
 
         Raises:
             ValueError: If any required argument is invalid.
@@ -347,7 +347,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             )
             return html, 200
 
-        @specification.route("swagger.json")
+        @specification.route("apispec.json")
         def get_swagger_spec() -> dict | Response | tuple[str, int]:
             """Serve the Swagger spec as JSON.
 

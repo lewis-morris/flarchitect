@@ -280,8 +280,11 @@ def _add_response_to_spec_template(spec_template: dict[str, Any], output_schema:
     )
 
 
-def _initialize_base_responses(method: str, many: bool, error_responses: list[int]) -> dict[str, dict[str, Any]]:
-    """Helper function to initialize base responses.
+
+def _initialize_base_responses(
+    method: str, many: bool, error_responses: list[int]
+) -> dict[str, dict[str, Any]]:
+    """Helper function to initialise base responses.
 
     Args:
         method (str): The HTTP method.
@@ -306,7 +309,7 @@ def _initialize_base_responses(method: str, many: bool, error_responses: list[in
 
 
 def _initialize_auth_responses(error_responses: list[int]) -> dict[str, dict[str, Any]]:
-    """Helper function to initialize authentication responses.
+    """Helper function to initialise authentication responses.
 
     Args:
         error_responses (List[int]): List of error response status codes.
@@ -327,7 +330,7 @@ def _initialize_auth_responses(error_responses: list[int]) -> dict[str, dict[str
 
 
 def _initialize_rate_limit_responses(rate_limit: bool) -> dict[str, dict[str, Any]]:
-    """Helper function to initialize rate limit responses.
+    """Helper function to initialise rate limit responses.
 
     Args:
         rate_limit (bool): Whether the endpoint has a rate limit.
@@ -556,7 +559,7 @@ def _prepare_patch_schema(input_schema: Schema | None) -> Schema | None:
     if not input_schema:
         return None
 
-    # Initialize a dictionary to hold the new class's fields
+    # Initialise a dictionary to hold the new class's fields
     class_fields = {}
 
     # Iterate over all fields in the input schema
@@ -739,7 +742,7 @@ def initialize_spec_template(
     rate_limit: bool = False,
     error_responses: list[int] | None = None,
 ) -> dict[str, Any]:
-    """Initializes the spec template with optional rate limiting headers for successful and rate-limited responses.
+    """Initialises the spec template with optional rate limiting headers for successful and rate-limited responses.
 
     Args:
         method (str): The HTTP method.

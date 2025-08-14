@@ -32,13 +32,23 @@ You can also protect routes based on user roles using the
 Error responses
 ---------------
 
-Missing or invalid credentials return a ``401`` response:
+Authentication failures are serialised with :func:`create_response`, so each
+payload includes standard metadata like the API version, timestamp and response
+time.
+
+Missing or invalid credentials return a ``401``:
 
 .. code-block:: json
 
     {
-      "errors": {"error": "Authorization header missing"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 401,
+      "errors": {"error": "Unauthorized", "reason": "Authorization header missing"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
@@ -47,8 +57,14 @@ Expired tokens also yield a ``401``:
 .. code-block:: json
 
     {
-      "errors": {"error": "Token has expired"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 401,
+      "errors": {"error": "Unauthorized", "reason": "Token has expired"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
@@ -57,8 +73,14 @@ Refresh failures, such as an invalid refresh token, respond with ``403``:
 .. code-block:: json
 
     {
-      "errors": {"error": "Invalid or expired refresh token"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 403,
+      "errors": {"error": "Forbidden", "reason": "Invalid or expired refresh token"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
@@ -134,6 +156,41 @@ the same protection:
 This decorator reads the ``Authorization`` header, validates the token and sets
 ``current_user``. Automatically created endpoints do not need it because global
 settings already apply authentication.
+
+Refresh token storage
+~~~~~~~~~~~~~~~~~~~~~
+
+By default, flarchitect persists JWT refresh tokens in an SQL table named
+``refresh_tokens``. The table contains four columns:
+
+* ``token`` – the encoded refresh token (primary key)
+* ``user_pk`` – the user's primary key as a string
+* ``user_lookup`` – the configured user lookup value
+* ``expires_at`` – the token's expiry timestamp
+
+The table is created automatically when a refresh token is stored. You can
+manage tokens directly using helpers from
+``flarchitect.authentication.token_store``:
+
+.. code-block:: python
+
+   from datetime import datetime, timedelta, timezone
+   from flarchitect.authentication.token_store import (
+       delete_refresh_token,
+       get_refresh_token,
+       store_refresh_token,
+   )
+
+   expires = datetime.now(timezone.utc) + timedelta(days=1)
+   store_refresh_token(
+       "encoded-token", user_pk="1", user_lookup="alice", expires_at=expires
+   )
+
+   stored = get_refresh_token("encoded-token")
+   if stored:
+       print(stored.user_pk, stored.expires_at)
+
+   delete_refresh_token("encoded-token")
 
 Basic authentication
 --------------------

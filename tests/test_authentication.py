@@ -10,6 +10,7 @@ from flask import Flask, Response, request
 from flask.testing import FlaskClient
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields
+from sqlalchemy.pool import StaticPool
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flarchitect import Architect
@@ -19,7 +20,7 @@ from flarchitect.authentication.jwt import (
     generate_refresh_token,
     refresh_access_token,
 )
-from flarchitect.authentication.token_store import RefreshToken
+from flarchitect.authentication.token_store import RefreshToken, get_refresh_token
 from flarchitect.authentication.user import (
     current_user,
     get_current_user,
@@ -29,7 +30,6 @@ from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.generator import register_routes_with_spec
 from flarchitect.utils.general import generate_readme_html
 from flarchitect.utils.response_helpers import create_response
-from flarchitect.utils.session import get_session
 
 db = SQLAlchemy()
 
@@ -148,6 +148,7 @@ def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
     app = Flask(__name__)
     app.config.update(
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+        SQLALCHEMY_ENGINE_OPTIONS={"poolclass": StaticPool},
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         FULL_AUTO=False,
         API_CREATE_DOCS=False,
@@ -176,6 +177,7 @@ def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
             return {"username": current_user.username}
 
         db.create_all()
+        RefreshToken.metadata.create_all(bind=db.engine)
         user = User(
             username="carol",
             password_hash=generate_password_hash("pass"),
@@ -193,6 +195,7 @@ def _create_app_with_docs() -> Flask:
     app = Flask(__name__)
     app.config.update(
         SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+        SQLALCHEMY_ENGINE_OPTIONS={"poolclass": StaticPool},
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         FULL_AUTO=False,
         API_CREATE_DOCS=True,
@@ -217,7 +220,7 @@ def test_auth_routes_in_spec() -> None:
         architect.api.make_auth_routes()
         register_routes_with_spec(architect, architect.route_spec)
         client = app.test_client()
-        spec = client.get("/swagger.json").get_json()
+        spec = client.get("/apispec.json").get_json()
 
     assert spec["paths"]["/auth/login"]["post"]["tags"] == ["Authentication"]
     assert (
@@ -368,8 +371,10 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert resp.get_json()["value"]["username"] == "carol"
     assert get_current_user() is None
 
-    new_access_token, user = refresh_access_token(refresh_token)
-    assert user.username == "carol"
+    with client.application.app_context():
+        new_access_token, user = refresh_access_token(refresh_token)
+        assert user.username == "carol"
+        assert get_refresh_token(refresh_token) is None
     resp_new = client.get(
         "/jwt", headers={"Authorization": f"Bearer {new_access_token}"}
     )
@@ -381,7 +386,7 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert resp_bad.status_code == 401
     assert get_current_user() is None
 
-    with pytest.raises(CustomHTTPException):
+    with client.application.app_context(), pytest.raises(CustomHTTPException):
         refresh_access_token(refresh_token)
     assert get_current_user() is None
 
@@ -403,7 +408,6 @@ def test_refresh_access_token_missing_key(
 
     assert exc_info.value.status_code == 500
     assert exc_info.value.reason == "REFRESH_SECRET_KEY missing"
-
 
 
 def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:

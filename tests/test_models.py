@@ -28,7 +28,7 @@ def test_examples_data_type_and_desc(client):
     format = info.get("format")
     example = info.get("example")
 
-    swagger_response = client.get("/swagger.json").json
+    swagger_response = client.get("/apispec.json").json
     author_schema = swagger_response["components"]["schemas"]["author"]["properties"][
         "date_of_birth"
     ]

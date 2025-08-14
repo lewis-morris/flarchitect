@@ -7,6 +7,28 @@ several options for these scenarios. The following sections walk through
 common patterns such as rate limiting, cache configuration and response
 metadata.
 
+Initialising with optional features
+-----------------------------------
+
+``Architect.init_app`` accepts keyword arguments that toggle optional
+behaviour like caching, CORS handling and automatic documentation
+generation.
+
+.. code:: python
+
+    from flarchitect import Architect
+
+    architect = Architect()
+    architect.init_app(
+        app,
+        cache={"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 300},
+        enable_cors=True,
+        create_docs=True,
+    )
+
+These keywords mirror their respective ``API_*`` configuration values and
+allow feature flags to be set programmatically during initialisation.
+
 As traffic increases, managing how often clients can hit your API becomes
 critical.
 
@@ -100,6 +122,32 @@ is installed, set ``API_CACHE_TYPE`` to any supported backend such as
 activates a small in-memory cache bundled with ``flarchitect``; any other
 value will raise a :class:`RuntimeError`. Use ``API_CACHE_TIMEOUT`` to control
 how long items remain cached.
+
+Example ``RedisCache`` setup with a ``SimpleCache`` fallback and a cached
+``GET`` request::
+
+    from flask import Flask
+    from flarchitect import Architect
+    import time
+
+    app = Flask(__name__)
+    try:
+        import flask_caching  # requires installing ``flask-caching``
+        app.config["API_CACHE_TYPE"] = "RedisCache"
+        app.config["CACHE_REDIS_URL"] = "redis://localhost:6379/0"
+    except ModuleNotFoundError:
+        app.config["API_CACHE_TYPE"] = "SimpleCache"
+
+    arch = Architect(app)
+
+    @app.get("/time")
+    def get_time():
+        return {"now": time.time()}
+
+    with app.test_client() as client:
+        client.get("/time")  # first call stored in cache
+        client.get("/time")  # second call served from cache
+
 For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
 
 After securing throughput, you can also shape what your clients see in each
@@ -186,6 +234,36 @@ Nested writes are disabled by default. Enable them globally with
 
 ``API_ALLOW_NESTED_WRITES = True`` or per model via
 ``Meta.allow_nested_writes``.
+
+.. code:: python
+
+    class Config:
+        API_ALLOW_NESTED_WRITES = True
+
+    class Parent(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+        children = db.relationship("Child", back_populates="parent")
+
+        class Meta:
+            allow_nested_writes = True
+
+    class Child(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
+        parent = db.relationship("Parent", back_populates="children")
+
+        class Meta:
+            allow_nested_writes = True
+
+With this configuration a nested object can be created in the same request::
+
+    POST /api/parent
+    {
+        "name": "Jane",
+        "children": [{"name": "Junior"}]
+    }
 
 Depth limits
 ^^^^^^^^^^^^
