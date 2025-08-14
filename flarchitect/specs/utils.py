@@ -31,6 +31,22 @@ from flarchitect.utils.general import (
 )
 
 
+def schema_name_resolver(schema: Schema) -> str:
+    """Resolve a schema name based on configuration.
+
+    Args:
+        schema (Schema): Schema instance or class whose name requires resolving.
+
+    Returns:
+        str: The schema name converted using ``API_SCHEMA_CASE``.
+    """
+
+    schema_cls = schema if isinstance(schema, type) else schema.__class__
+    model = getattr(getattr(schema_cls, "Meta", None), "model", None)
+    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
+    return convert_case(schema_cls.__name__.replace("Schema", ""), case)
+
+
 def scrape_extra_info_from_spec_data(
     spec_data: dict[str, Any],
     method: str,
