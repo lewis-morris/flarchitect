@@ -2,8 +2,7 @@
 
 from flask import Flask
 
-from .extensions import db, jwt
-from .routes import api_bp
+from .extensions import db, schema
 
 
 def create_app(config_class: str) -> Flask:
@@ -20,11 +19,12 @@ def create_app(config_class: str) -> Flask:
     app.config.from_object(config_class)
 
     db.init_app(app)
-    jwt.init_app(app)
-
-    app.register_blueprint(api_bp)
 
     with app.app_context():
+        # Import models for their side effects so SQLAlchemy registers them
+        from . import models  # noqa: F401
+
         db.create_all()
+        schema.init_app(app)
 
     return app
