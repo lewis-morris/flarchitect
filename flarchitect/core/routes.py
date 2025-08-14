@@ -348,6 +348,14 @@ class RouteCreator(AttributeInitializerMixin):
         self.architect.app.register_blueprint(self.blueprint)
 
     def make_exception_routes(self):
+        """Register error handlers for standard and custom HTTP exceptions."""
+
+        logger.debug(
+            4,
+            "Setting up custom error handler for CustomHTTPException.",
+        )
+        self.architect.app.register_error_handler(CustomHTTPException, handle_http_exception)
+
         for code in default_exceptions:
             logger.debug(
                 4,

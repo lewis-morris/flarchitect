@@ -9,27 +9,36 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.response_helpers import create_response
 
 
-class CustomHTTPException(Exception):
-    """
-    Custom HTTP Exception class
-    """
+class CustomHTTPException(HTTPException):
+    """Custom HTTP exception that mirrors :class:`werkzeug.exceptions.HTTPException`.
 
-    status_code = None
-    error = None
-    reason = None
+    The class stores a status code and optional reason, exposing them in a
+    dictionary friendly format via :meth:`to_dict`. Subclassing
+    :class:`HTTPException` ensures Flask's error handling machinery treats the
+    exception consistently with built-in HTTP exceptions.
+    """
 
     def __init__(self, status_code: int, reason: str | None = None) -> None:
-        """A custom HTTP exception class.
+        """Initialise the exception.
 
         Args:
-            status_code (int): HTTP status code
-            reason (str | None): Reason for the HTTP status code
+            status_code: HTTP status code associated with the error.
+            reason: Optional human readable reason for the error.
         """
+        self.code = status_code
+        self.description = reason or HTTPStatus(status_code).phrase
         self.status_code = status_code
-        self.error = HTTPStatus(status_code).phrase  # Fetch the standard HTTP status phrase
-        self.reason = reason or self.error  # Use the reason if provided, otherwise use the standard HTTP status phrase
+        self.error = HTTPStatus(status_code).phrase
+        self.reason = self.description
+        super().__init__(description=self.description)
+
+    @property
+    def name(self) -> str:  # pragma: no cover - simple property
+        """Return the HTTP status phrase for the error."""
+        return HTTPStatus(self.code).phrase
 
     def to_dict(self) -> dict[str, int | str | None]:
+        """Serialise the exception to a dictionary."""
         return {
             "status_code": self.status_code,
             "status_text": self.error,
