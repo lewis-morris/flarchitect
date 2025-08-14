@@ -16,7 +16,7 @@ Fetch all items:
 
 ```graphql
 query {
-    items {
+    all_items {
         id
         name
     }
@@ -27,7 +27,7 @@ Create a new item:
 
 ```graphql
 mutation {
-    createItem(name: "Biscuit") {
+    create_item(name: "Biscuit") {
         id
         name
     }

@@ -6,10 +6,13 @@ import requests
 
 
 def main() -> None:
-    """Run a sample query against the demo server."""
-    query = """
+    """Run a sample query against the demo server.
+
+    Fetches all items using the ``all_items`` query.
+    """
+    query: str = """
     query {
-        items {
+        all_items {
             id
             name
         }
