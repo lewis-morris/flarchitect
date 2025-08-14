@@ -18,7 +18,7 @@ if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
 
 from flarchitect.authentication.jwt import get_user_from_token
-from flarchitect.authentication.user import set_current_user
+from flarchitect.authentication.user import register_user_teardown, set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.logging import logger
@@ -268,19 +268,7 @@ class Architect(AttributeInitializerMixin):
             ) as exc:  # pragma: no cover - integration behaviour
                 return create_response(status=exc.status_code, errors=exc.reason)
 
-        @app.teardown_request
-        def clear_current_user(exception: BaseException | None = None) -> None:
-            """Remove the current user from the context after each request.
-
-            Args:
-                exception (BaseException | None): Exception raised during the
-                    request lifecycle, if any.
-
-            Returns:
-                None: Flask ignores the return value of teardown callbacks.
-            """
-
-            set_current_user(None)
+        register_user_teardown(app)
 
     def _register_app(self, app: Flask):
         """
