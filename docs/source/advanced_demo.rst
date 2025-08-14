@@ -25,3 +25,6 @@ Run the demo
         -H "Content-Type: application/json" \
         -d '{"title": "my book", "author": {"name": "Alice"}}'
    curl http://localhost:5000/api/book?include_deleted=true
+
+For authentication strategies and role management, see :doc:`authentication`
+and the :ref:`defining-roles` section.

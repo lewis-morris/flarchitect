@@ -138,3 +138,9 @@ Into this:
       ]
     }
 
+Next steps
+----------------------------------------
+
+To secure the API and define user roles, see :doc:`authentication` and the
+:ref:`defining-roles` section.
+
