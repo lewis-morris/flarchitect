@@ -518,18 +518,6 @@ document. The default, ``camel``, produces schema identifiers such as
     class Config:
         API_SCHEMA_CASE = "screaming_snake"
 
-.. code-block:: json
-
-    {
-        "components": {
-            "schemas": {
-                "API_CALLS": {
-                    "...": "..."
-                }
-            }
-        }
-    }
-
 Interplay with ``API_ENDPOINT_CASE``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
