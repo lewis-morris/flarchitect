@@ -155,6 +155,12 @@ class TestConvertCase:
 
         assert convert_case("hello", "unknown") == "hello"
 
+    def test_handles_non_alphanumeric_string(self) -> None:
+        """Strings lacking letters or numbers remain unchanged."""
+
+        s = "___"
+        assert convert_case(s, "camel") == s
+
 
 class TestPluralizeLastWord:
     #  pluralizes last word in camelCase
