@@ -32,13 +32,23 @@ You can also protect routes based on user roles using the
 Error responses
 ---------------
 
-Missing or invalid credentials return a ``401`` response:
+Authentication failures are serialised with :func:`create_response`, so each
+payload includes standard metadata like the API version, timestamp and response
+time.
+
+Missing or invalid credentials return a ``401``:
 
 .. code-block:: json
 
     {
-      "errors": {"error": "Authorization header missing"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 401,
+      "errors": {"error": "Unauthorized", "reason": "Authorization header missing"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
@@ -47,8 +57,14 @@ Expired tokens also yield a ``401``:
 .. code-block:: json
 
     {
-      "errors": {"error": "Token has expired"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 401,
+      "errors": {"error": "Unauthorized", "reason": "Token has expired"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
@@ -57,8 +73,14 @@ Refresh failures, such as an invalid refresh token, respond with ``403``:
 .. code-block:: json
 
     {
-      "errors": {"error": "Invalid or expired refresh token"},
+      "api_version": "0.1.0",
+      "datetime": "2024-01-01T00:00:00+00:00",
       "status_code": 403,
+      "errors": {"error": "Forbidden", "reason": "Invalid or expired refresh token"},
+      "response_ms": 5.0,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
       "value": null
     }
 
