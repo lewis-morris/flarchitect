@@ -405,9 +405,23 @@
         - Callable invoked when ``API_AUTHENTICATE_METHOD`` includes ``"custom"``. It must return the authenticated user or ``None``.
     * - ``API_USER_MODEL``
 
-          :bdg-secondary:`Optional`
+            :bdg-secondary:`Optional`
 
-        - Import path for the user model leveraged during authentication workflows. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+          - Import path for the user model leveraged during authentication workflows. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - ``API_JWT_EXPIRY_TIME``
+
+          :bdg:`default:` ``360``
+          :bdg:`type` ``int``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Minutes an access token remains valid before requiring a refresh.
+    * - ``API_JWT_REFRESH_EXPIRY_TIME``
+
+          :bdg:`default:` ``2880``
+          :bdg:`type` ``int``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Minutes a refresh token stays valid. Defaults to two days (``2880`` minutes).
     * - ``API_GLOBAL_SETUP_CALLBACK``
 
           :bdg:`default:` ``None``

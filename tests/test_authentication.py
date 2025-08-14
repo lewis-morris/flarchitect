@@ -1,6 +1,7 @@
 """Authentication method integration tests."""
 
 import base64
+import datetime
 from collections.abc import Generator
 
 import pytest
@@ -12,6 +13,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from flarchitect import Architect
 from flarchitect.authentication.jwt import (
+    decode_token,
     generate_access_token,
     generate_refresh_token,
     refresh_access_token,
@@ -322,6 +324,25 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     with pytest.raises(CustomHTTPException):
         refresh_access_token(refresh_token)
     assert get_current_user() is None
+
+
+def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """Tokens honour ``API_JWT_EXPIRY_TIME`` settings."""
+
+    client, _, _ = client_jwt
+    app: Flask = client.application
+    with app.app_context():
+        app.config["API_JWT_EXPIRY_TIME"] = 1
+        app.config["API_JWT_REFRESH_EXPIRY_TIME"] = 2
+        user = User.query.filter_by(username="carol").first()
+        access = generate_access_token(user)
+        refresh = generate_refresh_token(user)
+        access_payload = decode_token(access, app.config["ACCESS_SECRET_KEY"])
+        refresh_payload = decode_token(refresh, app.config["REFRESH_SECRET_KEY"])
+        access_delta = datetime.datetime.fromtimestamp(access_payload["exp"], datetime.timezone.utc) - datetime.datetime.fromtimestamp(access_payload["iat"], datetime.timezone.utc)
+        refresh_delta = datetime.datetime.fromtimestamp(refresh_payload["exp"], datetime.timezone.utc) - datetime.datetime.fromtimestamp(refresh_payload["iat"], datetime.timezone.utc)
+        assert access_delta == datetime.timedelta(minutes=1)
+        assert refresh_delta == datetime.timedelta(minutes=2)
 
 
 def test_jwt_no_authorization_header(

@@ -36,22 +36,25 @@ def get_pk_and_lookups() -> tuple[str, str]:
     return primary_keys.name, lookup_field
 
 
-def generate_access_token(usr_model: Any, expires_in_minutes: int = 360) -> str:
-    """Create a short-lived JSON Web Token for the given user.
+def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None) -> str:
+    """Create a short-lived JSON Web Token for ``usr_model``.
+
+    The expiry time defaults to the value of ``API_JWT_EXPIRY_TIME`` if present
+    on the Flask config. When unset, tokens last ``360`` minutes (six hours).
 
     Args:
-        usr_model (Any): The user model instance for which to create the token.
-        expires_in_minutes (int, optional): Token lifetime in minutes.
-            Defaults to ``360``.
+        usr_model: The user model instance for which to create the token.
+        expires_in_minutes: Optional override for the token lifetime in minutes.
 
     Returns:
-        str: The encoded JWT access token.
+        The encoded JWT access token.
 
     Raises:
         CustomHTTPException: If the access secret key is not configured.
     """
 
     pk, lookup_field = get_pk_and_lookups()
+    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_EXPIRY_TIME", default=360)
 
     ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
     if ACCESS_SECRET_KEY is None:
@@ -60,22 +63,25 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int = 360) -> str:
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expires_in_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, ACCESS_SECRET_KEY, algorithm="HS256")
     return token
 
 
-def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
-    """Create a long-lived refresh token for the given user.
+def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None) -> str:
+    """Create a long-lived refresh token for ``usr_model``.
+
+    The expiry time defaults to ``API_JWT_REFRESH_EXPIRY_TIME`` from the Flask
+    config. When unset, refresh tokens last ``2880`` minutes (two days).
 
     Args:
-        usr_model (Any): The user model instance for which to create the token.
-        expires_in_days (int, optional): Token lifetime in days. Defaults to ``2``.
+        usr_model: The user model instance for which to create the token.
+        expires_in_minutes: Optional override for the token lifetime in minutes.
 
     Returns:
-        str: The encoded JWT refresh token.
+        The encoded JWT refresh token.
 
     Raises:
         CustomHTTPException: If the refresh secret key is not configured.
@@ -86,11 +92,12 @@ def generate_refresh_token(usr_model: Any, expires_in_days: int = 2) -> str:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
     pk, lookup_field = get_pk_and_lookups()
+    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_REFRESH_EXPIRY_TIME", default=2880)
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=expires_in_days),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
