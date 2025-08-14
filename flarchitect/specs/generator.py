@@ -23,10 +23,10 @@ from flarchitect.specs.utils import (
     convert_path_to_openapi,
     handle_authorization,
     initialize_spec_template,
+    schema_name_resolver,
     scrape_extra_info_from_spec_data,
 )
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import (
     AttributeInitializerMixin,
     find_child_from_parent_dir,
@@ -102,7 +102,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         api_description = self._get_api_description()
         api_spec_data = {
             "openapi_version": "3.0.2",
-            "plugins": [MarshmallowPlugin()],
+            "plugins": [MarshmallowPlugin(schema_name_resolver=schema_name_resolver)],
             "title": self._get_config("API_TITLE", "My API"),
             "version": self._get_config("API_VERSION", "1.0.0"),
             "info": {
@@ -499,17 +499,8 @@ def register_schemas(
 
     for schema in [input_schema, output_schema]:
         if schema:
-            model = schema.get_model() if hasattr(schema, "get_model") else None
-
             schema_instance = resolve_schema_instance(schema)
-            original_name = schema_instance.__class__.__name__
-            schema_name = convert_case(
-                original_name.replace("Schema", ""),
-                get_config_or_model_meta(
-                    "API_SCHEMA_CASE", model=model, default="camel"
-                ),
-            )
-            schema_instance.__class__.__name__ = schema_name
+            schema_name = schema_name_resolver(schema_instance)
 
             schema_key = make_schema_key(schema_instance)
             existing_ref = registered_refs.get(schema_key)
@@ -519,7 +510,6 @@ def register_schemas(
                         existing_ref
                     )
                     registered_refs[schema_key] = schema_name
-                schema_instance.__class__.__name__ = original_name
                 continue
 
             existing_schema = spec.components.schemas.get(schema_name)
@@ -529,7 +519,6 @@ def register_schemas(
                 spec.components.schema(schema_name, schema=schema_instance)
 
             registered_refs[schema_key] = schema_name
-            schema_instance.__class__.__name__ = original_name
 
 
 def register_routes_with_spec(
