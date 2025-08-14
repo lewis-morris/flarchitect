@@ -1,3 +1,57 @@
+Core Settings
+-------------
+
+Essential configuration values needed to run ``flarchitect`` and control automatic route generation.
+
+.. list-table::
+
+    * - ``API_TITLE``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-danger:`Required` :bdg-dark-line:`Global`
+
+        - Sets the display title of the generated documentation. Provide a concise project name or API identifier. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_VERSION``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-danger:`Required` :bdg-dark-line:`Global`
+
+        - Defines the version string shown in the docs header, helping consumers track API revisions. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``FULL_AUTO``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True`` ``flarchitect`` registers CRUD routes for all models at
+          startup. Set to ``False`` to define routes manually.
+
+        Example::
+
+              class Config:
+                  FULL_AUTO = False
+
+    * - ``AUTO_NAME_ENDPOINTS``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Automatically generates OpenAPI summaries from the schema and HTTP
+          method when no summary is supplied. Disable to preserve custom
+          summaries.
+
+          Example::
+
+              class Config:
+                  AUTO_NAME_ENDPOINTS = False
+
+
+Optional Settings
+-----------------
+
 .. list-table::
 
     * - ``API_CREATE_DOCS``
@@ -36,20 +90,6 @@
 
         - Path where the raw OpenAPI document is served. Override to change the
           URL exposed by the automatic endpoint.
-    * - ``API_TITLE``
-
-          :bdg:`default:` ``None``
-          :bdg:`type` ``str``
-          :bdg-danger:`Required` :bdg-dark-line:`Global`
-
-        - Sets the display title of the generated documentation. Provide a concise project name or API identifier. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_VERSION``
-
-          :bdg:`default:` ``None``
-          :bdg:`type` ``str``
-          :bdg-danger:`Required` :bdg-dark-line:`Global`
-
-        - Defines the version string shown in the docs header, helping consumers track API revisions. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_LOGO_URL``
 
           :bdg:`default:` ``None``
@@ -677,35 +717,6 @@
         - Companion flag to ``API_ALLOW_DELETE_RELATED`` covering association-table entries and similar dependents.
           Not currently evaluated by the code base; cascade behaviour hinges solely on ``API_ALLOW_CASCADE_DELETE``.
           Documented for completeness and potential future use.
-    * - ``AUTO_NAME_ENDPOINTS``
-
-          :bdg:`default:` ``True``
-          :bdg:`type` ``bool``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - Automatically generates OpenAPI summaries from the schema and HTTP
-          method when no summary is supplied. Disable to preserve custom
-          summaries.
-
-          Example::
-
-              class Config:
-                  AUTO_NAME_ENDPOINTS = False
-
-    * - ``FULL_AUTO``
-
-          :bdg:`default:` ``True``
-          :bdg:`type` ``bool``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - When ``True`` ``flarchitect`` registers CRUD routes for all models at
-          startup. Set to ``False`` to define routes manually.
-
-        Example::
-
-              class Config:
-                  FULL_AUTO = False
-
     * - ``GET_MANY_SUMMARY``
 
           :bdg:`default:` ``None``

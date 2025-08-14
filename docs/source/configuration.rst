@@ -165,42 +165,30 @@ Please note the badge for each configuration value, as it defines where the valu
 
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
-
-Automatic generation
+Core configuration
 --------------------
 
-Two flags control flarchitect's automatic behaviour when building routes and
-documentation.
+Some settings are essential for initialising the extension and controlling its
+automatic behaviour.
 
-FULL_AUTO
-^^^^^^^^^
-
-When ``True`` (default), :class:`~flarchitect.Architect` inspects your SQLAlchemy
-models and registers CRUD routes for each one. Set ``FULL_AUTO`` to ``False`` if
-you plan to define routes manually or only want to initialise specific models.
+At a minimum, provide a title and version for your API:
 
 .. code:: python
 
     class Config:
-        FULL_AUTO = False
+        API_TITLE = "My API"
+        API_VERSION = "1.0"
 
-    app = Flask(__name__)
-    arch = Architect(app)
-    arch.init_api(app=app)  # call manually when FULL_AUTO is disabled
-
-AUTO_NAME_ENDPOINTS
-^^^^^^^^^^^^^^^^^^^
-
-``AUTO_NAME_ENDPOINTS`` defaults to ``True`` and automatically generates a
-summary line for each endpoint based on the schema and HTTP method. Disable it
-to keep custom summaries supplied via ``*_SUMMARY`` config options or
-callbacks.
+Two additional flags, ``FULL_AUTO`` and ``AUTO_NAME_ENDPOINTS``, toggle the
+automatic registration of routes and the generation of default endpoint
+summaries. Both default to ``True`` and may be disabled when you need manual
+control.
 
 .. code:: python
 
     class Config:
-        AUTO_NAME_ENDPOINTS = False
-
+        FULL_AUTO = False           # register routes manually
+        AUTO_NAME_ENDPOINTS = False # keep custom summaries
 
 
 Cascade delete settings
