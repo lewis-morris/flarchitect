@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from werkzeug.serving import run_simple
+
+from flarchitect.logging import logger
+
 try:  # pragma: no cover - prefer package import
     from .module import create_app
 except ImportError:  # pragma: no cover - direct script execution
@@ -23,6 +27,17 @@ def load() -> Flask:
     return create_app()
 
 
+def app_factory() -> Flask:
+    """Create the demo application and log the documentation URL.
+
+    Returns:
+        Flask: The configured Flask application.
+    """
+    app = load()
+    docs_url = app.config.get("API_DOCUMENTATION_URL", "/docs")
+    logger.log(1, f"|Documentation available at| `http://localhost:5000{docs_url}`")
+    return app
+
+
 if __name__ == "__main__":
-    flask_app = load()
-    flask_app.run(host="0.0.0.0", port=5000, debug=True)
+    run_simple("0.0.0.0", 5000, app_factory, use_reloader=True, use_debugger=True)
