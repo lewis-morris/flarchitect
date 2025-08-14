@@ -16,3 +16,9 @@ def load(config_class: str = "Scaffolding.config.Config") -> Flask:
     """
 
     return create_app(config_class)
+
+
+if __name__ == "__main__":
+    """Run the application if this module is executed directly."""
+    app = load()
+    app.run(host="0.0.0.0", port=5000, debug=True)

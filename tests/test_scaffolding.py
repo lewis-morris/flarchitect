@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from Scaffolding import load
-from Scaffolding.module.extensions import db
-from Scaffolding.module.models import User
+from demo.scaffolding import load
+from demo.scaffolding.module.extensions import db
+from demo.scaffolding import User
 
 
 @pytest.fixture()
