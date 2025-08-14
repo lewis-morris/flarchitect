@@ -111,8 +111,12 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     algorithm = get_jwt_algorithm()
 
     payload = {
-        lookup_field: str(getattr(usr_model, lookup_field)),
-        pk: str(getattr(usr_model, pk)),
+        lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
+        pk: str(getattr(usr_model, pk)),  # Convert UUID to string
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
+        "iat": datetime.datetime.now(datetime.timezone.utc),
+
     }
     token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
@@ -148,11 +152,13 @@ def generate_refresh_token(
         "API_JWT_REFRESH_EXPIRY_TIME", default=2880
     )
 
-    algorithm = get_jwt_algorithm()
-
     payload = {
-        lookup_field: str(getattr(usr_model, lookup_field)),
-        pk: str(getattr(usr_model, pk)),
+        lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
+        pk: str(getattr(usr_model, pk)),  # Convert UUID to string
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
+        "iat": datetime.datetime.now(datetime.timezone.utc),
+
     }
     token, payload = create_jwt(payload, REFRESH_SECRET_KEY, exp_minutes, algorithm)
 
@@ -205,16 +211,17 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         object.
 
     Raises:
-        CustomHTTPException: If the token is invalid, expired, or the user cannot
-        be found.
+        CustomHTTPException: If ``REFRESH_SECRET_KEY`` is missing, the token is
+        invalid or expired, or the user cannot be found.
     """
     # Verify refresh token
     REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
         "REFRESH_SECRET_KEY"
     )
-    payload = decode_token(refresh_token, REFRESH_SECRET_KEY)
-    if payload is None:
-        raise CustomHTTPException(status_code=401, reason="Invalid token")
+    if REFRESH_SECRET_KEY is None:
+        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
+
+    decode_token(refresh_token, REFRESH_SECRET_KEY)
 
     # Check if the refresh token is in the store and not expired
     stored_token = refresh_tokens_store.get(refresh_token)
@@ -270,7 +277,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         Any: The user model instance corresponding to the token.
 
     Raises:
-        CustomHTTPException: If the token is invalid or the user is not found.
+        CustomHTTPException: If ``ACCESS_SECRET_KEY`` is missing, the token is
+        invalid, or the user is not found.
     """
     # Determine secret key priority:
     # 1. Explicit ``secret_key`` argument
@@ -283,6 +291,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         or current_app.config.get("ACCESS_SECRET_KEY")
     )
     # fmt: on
+    if access_secret_key is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = decode_token(token, access_secret_key)
 

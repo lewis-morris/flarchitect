@@ -386,16 +386,24 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert get_current_user() is None
 
 
-def test_refresh_token_persistence(client_jwt: tuple[FlaskClient, str, str]) -> None:
-    """Refresh tokens persist and are removed after use."""
+def test_refresh_access_token_missing_key(
+    monkeypatch, client_jwt: tuple[FlaskClient, str, str]
+) -> None:
+    """``refresh_access_token`` raises when ``REFRESH_SECRET_KEY`` is absent."""
 
-    _, _, refresh_token = client_jwt
-    session = get_session(RefreshToken)
-    stored = session.get(RefreshToken, refresh_token)
-    assert stored is not None
+    client, _, refresh_token = client_jwt
+    monkeypatch.delenv("REFRESH_SECRET_KEY", raising=False)
+    client.application.config.pop("REFRESH_SECRET_KEY", None)
 
-    refresh_access_token(refresh_token)
-    assert session.get(RefreshToken, refresh_token) is None
+    with (
+        client.application.app_context(),
+        pytest.raises(CustomHTTPException) as exc_info,
+    ):
+        refresh_access_token(refresh_token)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.reason == "REFRESH_SECRET_KEY missing"
+
 
 
 def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
