@@ -28,21 +28,11 @@ jobs:
           python-version: "3.x"
           cache: 'pip'
 
-      - name: Install docs dependencies
+      - name: Install for docs
         run: |
-          python -m pip install --upgrade pip
-          # Prefer a dedicated docs extra if you have it:
-          pip install .[docs] || true
-          # Install additional requirements if present
-          pip install -r docs/requirements.txt || true
-          # Fallbacks (adjust to your project):
-          pip install sphinx sphinx-autobuild furo \
-                     sphinx-copybutton sphinx-design \
-                     sphinxcontrib-jquery \
-                     sphinxext-opengraph \
-                     myst-parser \
-                     pillow \
-                     matplotlib || true
+          python -m pip install -U pip
+          pip install -e .
+          pip install .[dev]
 
       - name: Build HTML
         working-directory: docs

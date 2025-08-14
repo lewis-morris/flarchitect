@@ -1122,7 +1122,7 @@ def get_related_schema_name(field_obj: fields.Field, field_type: type) -> str | 
     Returns:
         str | None: The related schema name converted using
         ``API_SCHEMA_CASE`` (default ``"camel"``). ``None`` is returned when
-        the field does not reference another schema.
+
     """
     if field_type == Nested:
         schema_cls = field_obj.schema.__class__
@@ -1185,6 +1185,7 @@ def get_description_and_example_add(
     Returns:
         dict[str, Any]: The modified ``openapi_type_info``. If the model field
         lacks relevant metadata the input is returned unchanged.
+
     """
     model_field = getattr(field_obj.parent.Meta.model, field_obj.name, None)
     if model_field and hasattr(model_field, "info"):
@@ -1294,6 +1295,17 @@ def endpoint_namer(
         str: Endpoint name converted using ``API_ENDPOINT_CASE`` (default
         ``"kebab"``) and pluralised.
     """
-    case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab", model=model)
-    converted_name = convert_case(model.__name__, case)
+    model_obj = model
+    if model_obj is None:
+        schema = input_schema or output_schema
+        model_obj = (
+            getattr(getattr(schema, "Meta", None), "model", None) if schema else None
+        )
+    if model_obj is None:
+        raise ValueError("A model or schema with a Meta.model attribute is required")
+
+    case = get_config_or_model_meta(
+        "API_ENDPOINT_CASE", default="kebab", model=model_obj
+    )
+    converted_name = convert_case(model_obj.__name__, case)
     return pluralize_last_word(converted_name)

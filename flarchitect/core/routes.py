@@ -596,11 +596,14 @@ class RouteCreator(AttributeInitializerMixin):
             return create_response(status=401, errors={"error": "Invalid credentials"})
 
     def _make_api_key_auth_routes(self, user: Callable) -> None:
-        """Create API key authentication login route.
+        """Register the API key authentication login endpoint.
 
-        The route expects an ``Authorization`` header using the ``Api-Key``
-        scheme. The provided key is validated against the configured user
-        model and, upon success, basic user information is returned.
+        Args:
+            user (Callable): User model containing credential fields and
+                verification methods.
+
+        Returns:
+            None: The login route is attached to the Flask application.
         """
 
         @self.architect.app.route("/auth/login", methods=["POST"])
@@ -649,14 +652,30 @@ class RouteCreator(AttributeInitializerMixin):
 
             return create_response(status=401, errors={"error": "Invalid credentials"})
 
-    def _make_jwt_auth_routes(self, user: Callable):
-        """Create JWT authentication routes."""
+    def _make_jwt_auth_routes(self, user: Callable) -> None:
+        """Register JWT login, logout, and refresh endpoints.
+
+        Args:
+            user (Callable): User model used for credential verification and
+                token generation.
+
+        Returns:
+            None: Routes are added to the Flask application.
+        """
         self._create_jwt_login_route(user)
         self._create_jwt_logout_route(user)
         self._create_jwt_refresh_route(user)
 
-    def _create_jwt_login_route(self, user: Callable):
-        """Create the login route for JWT authentication."""
+    def _create_jwt_login_route(self, user: Callable) -> None:
+        """Create the login route for JWT authentication.
+
+        Args:
+            user (Callable): User model that provides credential lookup and
+                verification methods.
+
+        Returns:
+            None: The login route is registered on the Flask application.
+        """
 
         @self.architect.app.route("/auth/login", methods=["POST"])
         @self.architect.schema_constructor(
@@ -704,8 +723,15 @@ class RouteCreator(AttributeInitializerMixin):
 
             raise CustomHTTPException(401, "Invalid credentials")
 
-    def _create_jwt_logout_route(self, user: Callable):
-        """Create the logout route for JWT authentication."""
+    def _create_jwt_logout_route(self, user: Callable) -> None:
+        """Create the logout route for JWT authentication.
+
+        Args:
+            user (Callable): User model, included for interface consistency.
+
+        Returns:
+            None: The logout route is registered on the Flask application.
+        """
 
         @self.architect.app.route("/auth/logout", methods=["POST"])
         @self.architect.schema_constructor(
@@ -721,8 +747,16 @@ class RouteCreator(AttributeInitializerMixin):
             set_current_user(None)
             return {}
 
-    def _create_jwt_refresh_route(self, *args, **kwargs):
-        """Create the refresh token route for JWT authentication."""
+    def _create_jwt_refresh_route(self, user: Callable) -> None:
+        """Create the refresh token route for JWT authentication.
+
+        Args:
+            user (Callable): User model, currently unused but kept for API
+                symmetry with other JWT route creators.
+
+        Returns:
+            None: The refresh route is registered on the Flask application.
+        """
 
         @self.architect.app.route("/auth/refresh", methods=["POST"])
         @self.architect.schema_constructor(
@@ -771,22 +805,28 @@ class RouteCreator(AttributeInitializerMixin):
         def before_request(*args, **kwargs):
             g.start_time = time.time()
 
-    def make_all_model_routes(self, model: Callable, session: Any):
+    def make_all_model_routes(self, model: Callable, session: Any) -> None:
         """Create all routes for a given model.
 
         Args:
             model (Callable): The model to create routes for.
-            session (Any): The database session to use for the model.
+            session (Any): Database session used for operations on the model.
+
+        Returns:
+            None: Routes for the model and its relations are registered.
         """
         self._generate_relation_routes(model, session)
         self._generate_model_routes(model, session)
 
-    def _generate_model_routes(self, model: Callable, session: Any):
+    def _generate_model_routes(self, model: Callable, session: Any) -> None:
         """Generate CRUD routes for a model.
 
         Args:
             model (Callable): The model to create routes for.
-            session (Any): The database session to use for the model.
+            session (Any): Database session to use for the model.
+
+        Returns:
+            None: CRUD endpoints are generated for the provided model.
         """
 
         # Retrieve allowed and blocked methods from configuration or model metadata
@@ -856,12 +896,15 @@ class RouteCreator(AttributeInitializerMixin):
             route_data = self._prepare_route_data(model, session, http_method)
             self.generate_route(**route_data)
 
-    def _generate_relation_routes(self, model: Callable, session: Any):
+    def _generate_relation_routes(self, model: Callable, session: Any) -> None:
         """Generate routes for model relationships if configured.
 
         Args:
             model (Callable): The model to create relation routes for.
-            session (Any): The database session to use for the model.
+            session (Any): Database session to use for the model.
+
+        Returns:
+            None: Relation endpoints are generated when enabled.
         """
         if get_config_or_model_meta("API_ADD_RELATIONS", model=model, default=True):
             relations = get_models_relationships(model)
@@ -871,11 +914,17 @@ class RouteCreator(AttributeInitializerMixin):
                 )
                 self._create_relation_route_and_to_url_function(prepared_relation_data)
 
-    def _create_relation_route_and_to_url_function(self, relation_data: dict[str, Any]):
-        """Create a route for a relation and add a to_url function to the model.
+    def _create_relation_route_and_to_url_function(
+        self, relation_data: dict[str, Any]
+    ) -> None:
+        """Create a route for a relation and attach a ``to_url`` helper.
 
         Args:
-            relation_data (Dict[str, Any]): The data for creating the relation route.
+            relation_data (dict[str, Any]): Data describing the relation,
+                including models and join keys.
+
+        Returns:
+            None: The route is registered and helper added to the child model.
         """
         child = relation_data["child_model"]
         parent = relation_data["parent_model"]
