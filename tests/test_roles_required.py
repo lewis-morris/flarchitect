@@ -26,9 +26,17 @@ def test_roles_required_direct() -> None:
     set_current_user(SimpleNamespace(roles=["admin"]))
     assert sample() == "ok"
 
-    set_current_user(SimpleNamespace(roles=["user"]))
-    with pytest.raises(CustomHTTPException):
+    set_current_user(None)
+    with pytest.raises(CustomHTTPException) as exc:
         sample()
+    assert exc.value.status_code == 401
+    assert exc.value.reason == "Authentication required"
+
+    set_current_user(SimpleNamespace(roles=["user"]))
+    with pytest.raises(CustomHTTPException) as exc:
+        sample()
+    assert exc.value.status_code == 403
+    assert exc.value.reason == "Insufficient role"
 
 
 @pytest.fixture()
@@ -76,6 +84,10 @@ def test_schema_constructor_applies_roles(
     resp = client.get("/protected")
     assert resp.status_code == 200
 
+    holder.user = None
+    resp = client.get("/protected")
+    assert resp.status_code == 401
+
     holder.user = SimpleNamespace(roles=["user"])
     resp = client.get("/protected")
     assert resp.status_code == 403
@@ -109,9 +121,17 @@ def test_roles_accepted_direct() -> None:
     set_current_user(SimpleNamespace(roles=["editor"]))
     assert sample() == "ok"
 
-    set_current_user(SimpleNamespace(roles=["user"]))
-    with pytest.raises(CustomHTTPException):
+    set_current_user(None)
+    with pytest.raises(CustomHTTPException) as exc:
         sample()
+    assert exc.value.status_code == 401
+    assert exc.value.reason == "Authentication required"
+
+    set_current_user(SimpleNamespace(roles=["user"]))
+    with pytest.raises(CustomHTTPException) as exc:
+        sample()
+    assert exc.value.status_code == 403
+    assert exc.value.reason == "Insufficient role"
 
 
 def test_openapi_documents_roles_accepted() -> None:
