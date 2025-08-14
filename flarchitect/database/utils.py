@@ -46,15 +46,17 @@ OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
 
 
 def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]:
-    """Collect relationship attributes and related class names for a model.
+
+    """Collect relationship attributes and their related class names.
 
     Args:
-        model: SQLAlchemy model to inspect.
+        model (object): SQLAlchemy declarative model whose relationships are
+            inspected.
 
     Returns:
-        list[tuple[str, str]]: Tuples mapping each relationship attribute name on
-        ``model`` to the related model's class name. An empty list is returned
-        when the model has no relationships.
+        list[tuple[str, str]]: Pairs of the relationship attribute name on
+        ``model`` and the related model's class name. Returns an empty list if
+        ``model`` defines no relationships.
     """
 
     return [
@@ -68,21 +70,22 @@ def get_all_columns_and_hybrids(
 ) -> tuple[
     dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]
 ]:
-    """Gather columns and hybrid properties from the base and join models.
+
+    """Gather columns and hybrid properties for the base and join models.
 
     Args:
-        model: Base SQLAlchemy model.
-        join_models: Mapping of join model names to SQLAlchemy classes.
+        model (DeclarativeBase): Base SQLAlchemy model.
+        join_models (dict[str, DeclarativeBase]): Mapping of join model aliases
+            to SQLAlchemy model classes. May be empty.
 
     Returns:
         tuple[dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]]:
-        A mapping of table names to their column attributes and a list of all
-        inspected models.
+        A mapping of table names to their public columns/hybrid properties and a
+        list of all models inspected.
 
     Notes:
-        Attributes starting with an underscore are excluded when the configuration
-        flag ``API_IGNORE_UNDERSCORE_ATTRIBUTES`` is enabled. The returned model list
-        always includes ``model`` and any provided ``join_models``.
+        Attributes beginning with ``_`` are ignored when
+        ``API_IGNORE_UNDERSCORE_ATTRIBUTES`` is set (default).
     """
     ignore_underscore = get_config_or_model_meta(
         key="API_IGNORE_UNDERSCORE_ATTRIBUTES", model=model, default=True
@@ -126,13 +129,14 @@ def create_pagination_defaults() -> tuple[dict[str, int], dict[str, int]]:
 
 
 def extract_pagination_params(args_dict: dict[str, str]) -> tuple[int, int]:
-    """Extract pagination settings from query parameters.
+     """Parse pagination information from request arguments.
 
     Args:
-        args_dict: Mapping of request arguments.
+        args_dict (dict[str, str]): Query string arguments from the request.
 
     Returns:
-        tuple[int, int]: The page number and page size.
+        tuple[int, int]: The requested page number and page size.
+
 
     Raises:
         CustomHTTPException: If the requested ``limit`` exceeds the configured
@@ -160,19 +164,21 @@ def get_group_by_fields(
     all_columns: dict[str, dict[str, hybrid_property | InstrumentedAttribute]],
     base_model: DeclarativeBase,
 ) -> list[Callable]:
-    """Retrieve ``GROUP BY`` columns from request arguments.
+    """Derive ``GROUP BY`` SQLAlchemy columns from query parameters.
 
     Args:
-        args_dict: Mapping of request arguments.
-        all_columns: Mapping of table names to column attributes.
-        base_model: Base SQLAlchemy model used for inferring table names.
+
+        args_dict (dict[str, str]): Query string arguments containing an
+            optional ``groupby`` entry.
+        all_columns (dict[str, dict[str, hybrid_property | InstrumentedAttribute]]):
+            Mapping of table names to their accessible columns/hybrid
+            properties.
+        base_model (DeclarativeBase): Base model used for resolving table
+            names when not explicitly provided.
 
     Returns:
-        list[Callable]: Columns to include in the ``GROUP BY`` clause. An empty
-        list is returned when no ``groupby`` parameter is supplied.
-
-    Raises:
-        CustomHTTPException: If a specified table or column does not exist.
+        list[Callable]: Columns to use in the ``GROUP BY`` clause. Returns an
+        empty list when ``groupby`` is absent.
     """
 
     group_by_fields: list[Callable] = []
@@ -191,6 +197,7 @@ def get_group_by_fields(
 def get_models_for_join(
     args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]
 ) -> dict[str, DeclarativeBase]:
+
     """Build a mapping of models to join from the ``join`` query parameter.
 
     Args:
@@ -203,6 +210,7 @@ def get_models_for_join(
 
     Raises:
         CustomHTTPException: If a requested join model cannot be resolved.
+
     """
 
     models: dict[str, DeclarativeBase] = {}
@@ -253,19 +261,19 @@ def get_select_fields(
     base_model: DeclarativeBase,
     all_columns: dict[str, dict[str, Column]],
 ) -> list[Callable]:
-    """Determine select fields from request arguments.
+    """Determine explicit column selection from query parameters.
 
     Args:
-        args_dict: Mapping of request arguments.
-        base_model: The base SQLAlchemy model.
-        all_columns: Mapping of table names to their column attributes.
+        args_dict (dict[str, str]): Query string arguments which may contain a
+            comma-separated ``fields`` entry.
+        base_model (DeclarativeBase): Base model used to infer table names when
+            ``fields`` entries omit them.
+        all_columns (dict[str, dict[str, Column]]): Mapping of table names to
+            their available SQLAlchemy columns.
 
     Returns:
-        list[Callable]: Columns to include in the ``SELECT`` clause. Returns an
-        empty list when no ``fields`` parameter is provided.
-
-    Raises:
-        CustomHTTPException: If a requested field does not exist.
+        list[Callable]: SQLAlchemy columns to include in the ``SELECT`` clause.
+        Returns an empty list when ``fields`` is absent.
     """
     select_fields = []
     if "fields" in args_dict:

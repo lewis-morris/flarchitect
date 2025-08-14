@@ -76,7 +76,7 @@ Hook it into your `Flask`_ application and you'll have endpoints, schemas and do
 
 What can it do?
 
-* Automatically create CRUD endpoint for your sqlalchemy models.
+* Automatically create CRUD endpoints for your SQLAlchemy models.
 * Generate `Redoc`_ or Swagger UI documentation on the fly - no manual OpenAPI spec needed.
 * Be configured globally in `Flask`_ or per model or method via ``Meta`` attributes in your models.
 * Authenticate users with minimal effort - use JWTs, API keys or Basic Authentication.
