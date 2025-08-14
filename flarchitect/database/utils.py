@@ -70,8 +70,6 @@ def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, D
         Tuple[Dict[str, Dict[str, Union[hybrid_property, InstrumentedAttribute]]], List[DeclarativeBase]]:
         A tuple containing a dictionary of all columns and a list of all models.
     """
-    from flarchitect.utils.general import get_config_or_model_meta
-
     ignore_underscore = get_config_or_model_meta(key="API_IGNORE_UNDERSCORE_ATTRIBUTES", model=model, default=True)
     schema_case = get_config_or_model_meta(key="API_SCHEMA_CASE", model=model, default="camel")
 
