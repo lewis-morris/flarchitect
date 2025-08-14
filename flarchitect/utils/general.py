@@ -102,6 +102,14 @@ def manual_render_absolute_template(absolute_template_path: str, **kwargs: Any) 
         template_folder, template_filename = os.path.split(template_folder)
 
     env = Environment(loader=FileSystemLoader(template_folder))
+    # ensure standard Flask globals like ``url_for`` are available
+    try:
+        from flask import url_for
+
+        env.globals.update(url_for=url_for)
+    except Exception:  # pragma: no cover - fallback when Flask not installed
+        pass
+
     template = env.get_template(template_filename)
     return template.render(**kwargs)
 
