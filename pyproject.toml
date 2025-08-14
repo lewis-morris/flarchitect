@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flarchitect"
-version = "0.1.0.1"
+version = "0.1.2"
 description = "Automatic RESTful API generator with redoc"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -104,3 +104,18 @@ select = [
 quote-style = "double"
 # Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "master"
+commit_parser = "conventional"
+tag_format = "v{version}"
+build_command = "python -m build"
+upload_to_pypi = true
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.remote]
+name = "origin"
+
+[tool.semantic_release.publish]
+upload_to_vcs_release = true

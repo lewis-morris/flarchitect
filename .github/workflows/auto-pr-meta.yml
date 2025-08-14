@@ -1,0 +1,81 @@
+name: Auto PR Title & Labels
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  decorate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute and apply PR metadata
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const branch = pr.head.ref; // e.g. arched/unit-tests-for-feature
+            const m = branch.match(/^arched\/(.+)$/);
+
+            // Parse "type" from optional prefix in branch feature, e.g. feat-unit-tests
+            // Supported: feat|fix|chore|docs|refactor|perf|test
+            let type = "feat";
+            let feature = m ? m[1] : branch;
+            const typeMatch = feature.match(/^(feat|fix|chore|docs|refactor|perf|test)[-_]/i);
+            if (typeMatch) {
+              type = typeMatch[1].toLowerCase();
+              feature = feature.replace(/^(feat|fix|chore|docs|refactor|perf|test)[-_]/i, "");
+            }
+
+            // Compose Conventional-Commit style PR title
+            // Example: feat(unit-tests-for-feature): <original title or summary>
+            const baseTitle = pr.title && pr.title.trim() !== "" ? pr.title.trim() : feature.replace(/[-_]/g, " ");
+            const ccTitle = `${type}(${feature}): ${baseTitle}`;
+
+            // Europe/London date/time
+            const optsDate = { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const optsTime = { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false };
+            const now = new Date();
+            const d = new Intl.DateTimeFormat('en-CA', optsDate).format(now); // YYYY-MM-DD
+            const t = new Intl.DateTimeFormat('en-GB', optsTime).format(now); // HH:MM
+
+            // Update title if different
+            if (pr.title !== ccTitle) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title: ccTitle
+              });
+            }
+
+            // Ensure labels exist then add
+            async function ensure(label) {
+              try {
+                await github.rest.issues.getLabel({
+                  owner: context.repo.owner, repo: context.repo.repo, name: label
+                });
+              } catch {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  name: label, color: "A0A0A0"
+                });
+              }
+            }
+
+            const labels = [
+              `feature: ${feature}`,
+              `date: ${d}`,
+              `time: ${t}`
+            ];
+
+            for (const lbl of labels) await ensure(lbl);
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              labels
+            });

@@ -1,0 +1,16 @@
+name: Branch Name Check
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+jobs:
+  validate-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure branch is arched/<feature>
+        run: |
+          BR="${{ github.head_ref }}"
+          if ! echo "$BR" | grep -Eq '^arched\/[A-Za-z0-9._-]+$'; then
+            echo "::error ::Branch '$BR' must match 'arched/<feature>'"
+            exit 1
+          fi
