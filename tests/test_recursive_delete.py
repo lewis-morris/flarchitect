@@ -18,6 +18,8 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 
+from flarchitect.utils.config_helpers import get_config_or_model_meta
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Create minimal package structure to load operations without heavy dependencies
@@ -78,9 +80,6 @@ exceptions_stub.CustomHTTPException = CustomHTTPException
 sys.modules["flarchitect.exceptions"] = exceptions_stub
 
 config_stub = types.ModuleType("flarchitect.utils.config_helpers")
-
-
-def get_config_or_model_meta(*args: Any, **kwargs: Any) -> dict[str, Any]:
 
 
 config_stub.get_config_or_model_meta = get_config_or_model_meta

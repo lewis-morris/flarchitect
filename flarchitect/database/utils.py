@@ -129,15 +129,13 @@ def create_pagination_defaults() -> tuple[dict[str, int], dict[str, int]]:
 
 
 def extract_pagination_params(args_dict: dict[str, str]) -> tuple[int, int]:
-     """Parse pagination information from request arguments.
+    """Parse pagination information from request arguments.
 
     Args:
         args_dict (dict[str, str]): Query string arguments from the request.
 
     Returns:
         tuple[int, int]: The requested page number and page size.
-
-
     Raises:
         CustomHTTPException: If the requested ``limit`` exceeds the configured
         maximum.
