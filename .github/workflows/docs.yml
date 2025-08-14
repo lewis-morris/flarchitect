@@ -33,6 +33,8 @@ jobs:
           python -m pip install --upgrade pip
           # Prefer a dedicated docs extra if you have it:
           pip install .[docs] || true
+          # Install additional requirements if present
+          pip install -r docs/requirements.txt || true
           # Fallbacks (adjust to your project):
           pip install sphinx sphinx-autobuild furo \
                      sphinx-copybutton sphinx-design \
