@@ -195,7 +195,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
     Args:
         token (str): The JWT containing user information.
         secret_key (str | None, optional): The secret key used to decode the
-            token. If ``None``, the access secret key is used.
+            token. If ``None``, falls back to the ``ACCESS_SECRET_KEY``
+            environment variable, then ``current_app.config['ACCESS_SECRET_KEY']``.
 
     Returns:
         Any: The user model instance corresponding to the token.
@@ -203,8 +204,17 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
     Raises:
         CustomHTTPException: If the token is invalid or the user is not found.
     """
-    # Decode the token
-    access_secret_key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY") if secret_key is None else secret_key
+    # Determine secret key priority:
+    # 1. Explicit ``secret_key`` argument
+    # 2. ``ACCESS_SECRET_KEY`` environment variable
+    # 3. ``current_app.config['ACCESS_SECRET_KEY']``
+    # fmt: off
+    access_secret_key = (
+        secret_key
+        or os.environ.get("ACCESS_SECRET_KEY")
+        or current_app.config.get("ACCESS_SECRET_KEY")
+    )
+    # fmt: on
 
     payload = decode_token(token, access_secret_key)
 
