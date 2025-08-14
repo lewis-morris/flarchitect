@@ -8,6 +8,7 @@ import types
 from pathlib import Path
 from typing import Any
 
+import pytest
 from sqlalchemy import ForeignKey, String, create_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -22,91 +23,95 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Create minimal package structure to load operations without heavy dependencies
-flarchitect_pkg = types.ModuleType("flarchitect")
-core_pkg = types.ModuleType("flarchitect.core")
-database_pkg = types.ModuleType("flarchitect.database")
-sys.modules["flarchitect"] = flarchitect_pkg
-sys.modules["flarchitect.core"] = core_pkg
-sys.modules["flarchitect.database"] = database_pkg
 
-utils_spec = importlib.util.spec_from_file_location(
-    "flarchitect.core.utils", REPO_ROOT / "flarchitect/core/utils.py"
-)
-utils_module = importlib.util.module_from_spec(utils_spec)
-assert utils_spec.loader is not None
-utils_spec.loader.exec_module(utils_module)
-sys.modules["flarchitect.core.utils"] = utils_module
+@pytest.fixture()
+def recursive_delete(monkeypatch: pytest.MonkeyPatch):
+    """Provide the ``recursive_delete`` operation with minimal stubs.
 
-inspections_spec = importlib.util.spec_from_file_location(
-    "flarchitect.database.inspections",
-    REPO_ROOT / "flarchitect/database/inspections.py",
-)
-inspections_module = importlib.util.module_from_spec(inspections_spec)
-assert inspections_spec.loader is not None
-inspections_spec.loader.exec_module(inspections_module)
-sys.modules["flarchitect.database.inspections"] = inspections_module
+    The function patches ``sys.modules`` so the operation can be imported
+    without pulling in heavy dependencies. Modules are restored
+    automatically after the test thanks to ``monkeypatch``.
+    """
 
-utils_stub = types.ModuleType("flarchitect.database.utils")
-utils_stub.AGGREGATE_FUNCS = {}
+    flarchitect_pkg = types.ModuleType("flarchitect")
+    core_pkg = types.ModuleType("flarchitect.core")
+    database_pkg = types.ModuleType("flarchitect.database")
+    monkeypatch.setitem(sys.modules, "flarchitect", flarchitect_pkg)
+    monkeypatch.setitem(sys.modules, "flarchitect.core", core_pkg)
+    monkeypatch.setitem(sys.modules, "flarchitect.database", database_pkg)
 
+    utils_spec = importlib.util.spec_from_file_location(
+        "flarchitect.core.utils", REPO_ROOT / "flarchitect/core/utils.py"
+    )
+    utils_module = importlib.util.module_from_spec(utils_spec)
+    assert utils_spec.loader is not None
+    utils_spec.loader.exec_module(utils_module)
+    monkeypatch.setitem(sys.modules, "flarchitect.core.utils", utils_module)
 
-def _stub(*args: Any, **kwargs: Any) -> None:
-    return None
+    inspections_spec = importlib.util.spec_from_file_location(
+        "flarchitect.database.inspections",
+        REPO_ROOT / "flarchitect/database/inspections.py",
+    )
+    inspections_module = importlib.util.module_from_spec(inspections_spec)
+    assert inspections_spec.loader is not None
+    inspections_spec.loader.exec_module(inspections_module)
+    monkeypatch.setitem(
+        sys.modules, "flarchitect.database.inspections", inspections_module
+    )
 
+    utils_stub = types.ModuleType("flarchitect.database.utils")
+    utils_stub.AGGREGATE_FUNCS = {}
 
-utils_stub.create_aggregate_conditions = _stub
-utils_stub.generate_conditions_from_args = _stub
-utils_stub.get_all_columns_and_hybrids = _stub
-utils_stub.get_group_by_fields = _stub
-utils_stub.get_models_for_join = _stub
-utils_stub.get_primary_key_filters = _stub
-utils_stub.get_related_b_query = _stub
-utils_stub.get_select_fields = _stub
-utils_stub.get_table_and_column = _stub
-utils_stub.parse_column_table_and_operator = _stub
-utils_stub.validate_table_and_column = _stub
-sys.modules["flarchitect.database.utils"] = utils_stub
+    def _stub(*args: Any, **kwargs: Any) -> None:  # pragma: no cover - simple stub
+        return None
 
+    # Populate stub with the required callables
+    utils_stub.create_aggregate_conditions = _stub
+    utils_stub.generate_conditions_from_args = _stub
+    utils_stub.get_all_columns_and_hybrids = _stub
+    utils_stub.get_group_by_fields = _stub
+    utils_stub.get_models_for_join = _stub
+    utils_stub.get_primary_key_filters = _stub
+    utils_stub.get_related_b_query = _stub
+    utils_stub.get_select_fields = _stub
+    utils_stub.get_table_and_column = _stub
+    utils_stub.parse_column_table_and_operator = _stub
+    utils_stub.validate_table_and_column = _stub
+    monkeypatch.setitem(sys.modules, "flarchitect.database.utils", utils_stub)
 
-exceptions_stub = types.ModuleType("flarchitect.exceptions")
+    exceptions_stub = types.ModuleType("flarchitect.exceptions")
 
+    class CustomHTTPException(Exception):
+        """Lightweight stand-in for the real exception."""
 
-class CustomHTTPException(Exception):
-    pass
+    exceptions_stub.CustomHTTPException = CustomHTTPException
+    monkeypatch.setitem(sys.modules, "flarchitect.exceptions", exceptions_stub)
 
+    config_stub = types.ModuleType("flarchitect.utils.config_helpers")
+    config_stub.get_config_or_model_meta = get_config_or_model_meta
+    monkeypatch.setitem(sys.modules, "flarchitect.utils.config_helpers", config_stub)
 
-exceptions_stub.CustomHTTPException = CustomHTTPException
-sys.modules["flarchitect.exceptions"] = exceptions_stub
+    decorators_stub = types.ModuleType("flarchitect.utils.decorators")
 
-config_stub = types.ModuleType("flarchitect.utils.config_helpers")
+    def add_dict_to_query(query: Any, *args: Any, **kwargs: Any) -> Any:
+        return query
 
+    def add_page_totals_and_urls(query: Any, *args: Any, **kwargs: Any) -> Any:
+        return query
 
-config_stub.get_config_or_model_meta = get_config_or_model_meta
-sys.modules["flarchitect.utils.config_helpers"] = config_stub
+    decorators_stub.add_dict_to_query = add_dict_to_query
+    decorators_stub.add_page_totals_and_urls = add_page_totals_and_urls
+    monkeypatch.setitem(sys.modules, "flarchitect.utils.decorators", decorators_stub)
 
-decorators_stub = types.ModuleType("flarchitect.utils.decorators")
+    operations_spec = importlib.util.spec_from_file_location(
+        "flarchitect.database.operations",
+        REPO_ROOT / "flarchitect/database/operations.py",
+    )
+    operations_module = importlib.util.module_from_spec(operations_spec)
+    assert operations_spec.loader is not None
+    operations_spec.loader.exec_module(operations_module)
 
-
-def add_dict_to_query(query: Any, *args: Any, **kwargs: Any) -> Any:
-    return query
-
-
-def add_page_totals_and_urls(query: Any, *args: Any, **kwargs: Any) -> Any:
-    return query
-
-
-decorators_stub.add_dict_to_query = add_dict_to_query
-decorators_stub.add_page_totals_and_urls = add_page_totals_and_urls
-sys.modules["flarchitect.utils.decorators"] = decorators_stub
-
-operations_spec = importlib.util.spec_from_file_location(
-    "flarchitect.database.operations", REPO_ROOT / "flarchitect/database/operations.py"
-)
-operations_module = importlib.util.module_from_spec(operations_spec)
-assert operations_spec.loader is not None
-operations_spec.loader.exec_module(operations_module)
-recursive_delete = operations_module.recursive_delete
+    return operations_module.recursive_delete
 
 
 class Base(DeclarativeBase):
@@ -134,7 +139,6 @@ class Child(Base):
     parent: Mapped[Parent] = relationship("Parent", back_populates="children")
     grandchildren: Mapped[list[Grandchild]] = relationship(
         "Grandchild", back_populates="child"
-
     )
 
 
@@ -157,7 +161,9 @@ def make_session() -> Session:
     return sessionmaker(bind=engine)()
 
 
-def test_recursive_delete_removes_descendants_and_skips_parents() -> None:
+def test_recursive_delete_removes_descendants_and_skips_parents(
+    recursive_delete: Any,
+) -> None:
     """Deleting a child removes descendants while preserving ancestors."""
 
     session: Session = make_session()
