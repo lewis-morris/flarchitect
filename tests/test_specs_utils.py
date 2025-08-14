@@ -14,6 +14,7 @@ spec_utils_spec.loader.exec_module(spec_utils_module)
 
 convert_path_to_openapi = spec_utils_module.convert_path_to_openapi
 scrape_extra_info_from_spec_data = spec_utils_module.scrape_extra_info_from_spec_data
+endpoint_namer = spec_utils_module.endpoint_namer
 
 
 def test_scrape_extra_info_logs_missing_fields(monkeypatch):
@@ -42,3 +43,26 @@ def test_scrape_extra_info_logs_missing_fields(monkeypatch):
 def test_convert_path_to_openapi(flask_path: str, openapi_path: str) -> None:
     """convert_path_to_openapi should replace Flask converters with OpenAPI params."""
     assert convert_path_to_openapi(flask_path) == openapi_path
+
+
+def test_endpoint_namer_accepts_model_and_schemas() -> None:
+    """endpoint_namer should derive names from a model or schemas."""
+
+    class Widget:
+        pass
+
+    class InputSchema:
+        class Meta:
+            model = Widget
+
+    class OutputSchema:
+        class Meta:
+            model = Widget
+
+    app = Flask(__name__)
+    with app.app_context():
+        assert endpoint_namer(Widget) == "widgets"
+        assert endpoint_namer(input_schema=InputSchema) == "widgets"
+        assert endpoint_namer(output_schema=OutputSchema) == "widgets"
+        with pytest.raises(ValueError):
+            endpoint_namer()
