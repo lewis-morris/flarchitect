@@ -6,11 +6,7 @@ import jwt
 from flask import current_app
 from sqlalchemy.exc import NoResultFound
 
-from flarchitect.authentication.token_store import (
-    delete_refresh_token,
-    get_refresh_token,
-    store_refresh_token,
-)
+from flarchitect.authentication.token_store import delete_refresh_token
 from flarchitect.database.utils import get_primary_keys
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -61,6 +57,7 @@ def create_jwt(
     }
     token = jwt.encode(payload, secret_key, algorithm=algorithm)
     return token, payload
+
 
 def get_pk_and_lookups() -> tuple[str, str]:
     """Retrieve the primary key name and lookup field for the user model.
@@ -116,7 +113,6 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
-
     }
     token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
@@ -158,8 +154,8 @@ def generate_refresh_token(
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
-
     }
+    algorithm = get_jwt_algorithm()
     token, payload = create_jwt(payload, REFRESH_SECRET_KEY, exp_minutes, algorithm)
 
     refresh_tokens_store[token] = {
@@ -228,7 +224,6 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     if (
         not stored_token
         or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]
-
     ):
         raise CustomHTTPException(
             status_code=403, reason="Invalid or expired refresh token"
@@ -236,8 +231,8 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
-    lookup_value = stored_token.user_lookup
-    pk_value = stored_token.user_pk
+    lookup_value = stored_token[lookup_field]
+    pk_value = stored_token[pk_field]
 
     # Get the user model (this is the SQLAlchemy model)
     usr_model_class = get_config_or_model_meta("API_USER_MODEL")
@@ -260,6 +255,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     new_access_token = generate_access_token(user)
 
     delete_refresh_token(refresh_token)
+    refresh_tokens_store.pop(refresh_token, None)
 
     return new_access_token, user
 
