@@ -254,28 +254,22 @@ def generate_additional_query_params(
 
 def _add_request_body_to_spec_template(
     spec_template: dict[str, Any],
-    http_method: str,
+    _http_method: str,
     input_schema: Schema,
-    model: DeclarativeBase | None,
+    _model: DeclarativeBase | None,
 ):
     """Helper function to add a request body to the spec template.
 
     Args:
         spec_template (Dict[str, Any]): The OpenAPI specification template to enhance.
-        http_method (str): The HTTP method (GET, POST, PUT, DELETE, PATCH).
+        _http_method (str): The HTTP method (GET, POST, PUT, DELETE, PATCH).
         input_schema (Schema): The Marshmallow schema for request body validation.
-        model (Optional[DeclarativeBase]): The SQLAlchemy model for database interactions.
+        _model (Optional[DeclarativeBase]): The SQLAlchemy model for database interactions.
 
     Returns:
         None
     """
-    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
-
-    name = convert_case(
-        ("patch_" if http_method == "PATCH" else "")
-        + input_schema.__name__.replace("Schema", ""),
-        case,
-    )
+    name = schema_name_resolver(input_schema)
 
     spec_template["requestBody"] = {
         "description": f"`{name}` payload.",
