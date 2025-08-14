@@ -24,6 +24,7 @@ from flarchitect.authentication.user import (
     set_current_user,
 )
 from flarchitect.exceptions import CustomHTTPException
+from flarchitect.specs.generator import register_routes_with_spec
 from flarchitect.utils.response_helpers import create_response
 
 db = SQLAlchemy()
@@ -149,6 +150,7 @@ def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
         API_AUTHENTICATE_METHOD=["jwt"],
         API_USER_MODEL=User,
         API_USER_LOOKUP_FIELD="username",
+        API_BASE_MODEL=User,
     )
     app.config["ACCESS_SECRET_KEY"] = "access"
     app.config["REFRESH_SECRET_KEY"] = "refresh"
@@ -180,6 +182,45 @@ def client_jwt() -> Generator[tuple[FlaskClient, str, str], None, None]:
         access = generate_access_token(user)
         refresh = generate_refresh_token(user)
         yield app.test_client(), access, refresh
+
+
+def _create_app_with_docs() -> Flask:
+    """Create an app configured for JWT auth with documentation."""
+    app = Flask(__name__)
+    app.config.update(
+        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        FULL_AUTO=False,
+        API_CREATE_DOCS=True,
+        API_AUTHENTICATE_METHOD=["jwt"],
+        API_USER_MODEL=User,
+        API_USER_LOOKUP_FIELD="username",
+        API_BASE_MODEL=User,
+        API_DESCRIPTION="desc",
+    )
+    app.config["ACCESS_SECRET_KEY"] = "access"
+    app.config["REFRESH_SECRET_KEY"] = "refresh"
+    db.init_app(app)
+    return app
+
+
+def test_auth_routes_in_spec() -> None:
+    """Authentication routes should be tagged and documented."""
+    app = _create_app_with_docs()
+    with app.app_context():
+        architect = Architect(app=app)
+        architect.init_api(app=app, api_full_auto=False)
+        architect.api.make_auth_routes()
+        register_routes_with_spec(architect, architect.route_spec)
+        client = app.test_client()
+        spec = client.get("/swagger.json").get_json()
+
+    assert spec["paths"]["/auth/login"]["post"]["tags"] == ["Authentication"]
+    assert spec["paths"]["/auth/login"]["post"]["summary"] == "Authenticate user and return JWT tokens."
+    assert spec["paths"]["/auth/logout"]["post"]["tags"] == ["Authentication"]
+    assert spec["paths"]["/auth/logout"]["post"]["summary"] == "Log out current user."
+    assert spec["paths"]["/auth/refresh"]["post"]["tags"] == ["Authentication"]
+    assert spec["paths"]["/auth/refresh"]["post"]["summary"] == "Refresh access token."
 
 
 @pytest.fixture()

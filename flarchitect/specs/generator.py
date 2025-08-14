@@ -426,7 +426,8 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
             if rule:
                 methods = rule.methods - {"OPTIONS", "HEAD"}
                 for http_method in methods:
-                    route_info = scrape_extra_info_from_spec_data(route_info, method=http_method)
+                    summary = route_info.get("summary")
+                    route_info = scrape_extra_info_from_spec_data(route_info, method=http_method, summary=summary)
                     path = rule.rule
 
                     output_schema = route_info.get("output_schema")
