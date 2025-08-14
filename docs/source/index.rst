@@ -20,6 +20,7 @@ flarchitect
    validation
    extensions
    openapi
+   graphql
    error_handling
 
 .. toctree::
