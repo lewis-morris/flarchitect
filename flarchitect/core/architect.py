@@ -747,33 +747,28 @@ class Architect(AttributeInitializerMixin):
         return decorator
 
     @classmethod
-    def get_templates_path(cls, folder_name="html", max_levels=3):
-        """
-        Recursively searches for the folder_name in the source directory
-        or its parent directories up to max_levels levels.
+    def get_templates_path(
+        cls, folder_name: str = "html", max_levels: int = 3
+    ) -> str | None:
+        """Recursively search for ``folder_name`` within ancestor directories.
 
         Args:
-            folder_name (str): The name of the folder to search for. Default is "html".
-            max_levels (int): Maximum number of levels to search upwards. Default is 3.
+            folder_name: Name of the folder to search for. Defaults to "html".
+            max_levels: Maximum number of levels to search upward. Defaults to 3.
 
         Returns:
-            str: The path to the folder if found, else None.
+            str | None: Path to the folder if found, otherwise ``None``.
         """
-        # Find the source directory of the class/module
         spec = importlib.util.find_spec(cls.__module__)
-        source_dir = Path(os.path.split(spec.origin)[0])
+        source_dir: Path = Path(os.path.split(spec.origin)[0])
 
-        # Traverse up to max_levels levels
         for _level in range(max_levels):
-            # Search for the folder in the current directory
-            potential_path = source_dir / folder_name
+            potential_path: Path = source_dir / folder_name
             if potential_path.exists() and potential_path.is_dir():
                 return str(potential_path)
 
-            # Move to the parent directory for the next level search
             source_dir = source_dir.parent
 
-        # Return None if the folder is not found
         return None
 
     def set_route(self, route: dict):
