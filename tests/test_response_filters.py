@@ -1,6 +1,5 @@
 """Tests for response filtering utilities."""
 
-
 from __future__ import annotations
 
 from typing import Any
@@ -99,4 +98,5 @@ def test_filter_response_data_removes_and_keeps_keys(
 
     filtered = _filter_response_data(data.copy())
     expected = {k: data[k] for k in expected_keys}
+
     assert filtered == expected
