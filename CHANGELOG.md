@@ -2,6 +2,29 @@
 
 <!-- version list -->
 
+## v1.1.0 (2025-08-14)
+
+### Bug Fixes
+
+- **specs**: Register tags for OpenAPI docs
+  ([`3851c00`](https://github.com/lewis-morris/flarchitect/commit/3851c002e95f5a55c916f59d16cfa3a72b329e71))
+
+### Chores
+
+- **ci**: Consolidate docs workflows
+  ([`358558c`](https://github.com/lewis-morris/flarchitect/commit/358558c0dcab041fed6c0965487328f049740a86))
+
+### Documentation
+
+- **auth**: Document role setup and link guides
+  ([`91eb9cf`](https://github.com/lewis-morris/flarchitect/commit/91eb9cf36c0f5087c67249e627aa7f150a3d8429))
+
+### Features
+
+- **authentication**: Add roles_accepted decorator
+  ([`ebbf077`](https://github.com/lewis-morris/flarchitect/commit/ebbf077aadf7aff174a859465de4825436d88d61))
+
+
 ## v1.0.0 (2025-08-14)
 
 - Initial Release
