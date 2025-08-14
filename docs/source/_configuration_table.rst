@@ -127,12 +127,6 @@ Documentation Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Accepts free text or a filepath to a Jinja template and supplies the description shown on the docs landing page. Useful for providing an overview or dynamically generated content using ``{config.xxxx}`` placeholders. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_KEYWORDS``
-
-          :bdg:`default:` ``None``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - Comma-separated keywords that improve searchability and SEO of the documentation page. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_CONTACT_NAME``
 
           :bdg:`default:` ``None``
@@ -182,13 +176,6 @@ Documentation Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - HTML ``<head>`` snippets inserted into the documentation page. Use to add meta tags or analytics scripts. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_DOC_HTML_FOOTERS``
-
-          :bdg:`default:` ``None``
-          :bdg:`type` ``str``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - HTML ``<footer>`` snippets rendered at the bottom of the docs page, useful for legal notices or navigation links.
 
 Routing and Behaviour
 ~~~~~~~~~~~~~~~~~~~~~
@@ -667,15 +654,6 @@ Rate Limiting and Sessions
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Rate limit string using Flask-Limiter syntax (e.g., ``100/minute``) to throttle requests. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_RATE_LIMIT_CALLBACK``
-
-          :bdg:`default:` ``None``
-          :bdg:`type` ``callable``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - Reserved hook that would fire when a request exceeds its rate limit.
-          The callable could log the event or return a bespoke response.
-          Currently, ``flarchitect`` does not invoke this callback, so setting it has no effect.
     * - ``API_RATE_LIMIT_STORAGE_URI``
 
           :bdg:`default:` ``None``
@@ -735,15 +713,6 @@ Soft Delete
 
 .. list-table::
 
-    * - ``API_BLUEPRINT_NAME``
-
-          :bdg:`default:` ``None``
-          :bdg:`type` ``str``
-          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
-
-        - Proposed name for the Flask blueprint wrapping all API routes.
-          The extension presently registers the blueprint as ``"api"`` regardless of this value.
-          Treat it as a placeholder for future namespacing support.
     * - ``API_SOFT_DELETE``
 
           :bdg:`default:` ``False``
