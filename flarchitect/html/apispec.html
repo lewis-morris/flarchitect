@@ -20,7 +20,7 @@
     </style>
 </head>
 <body>
-<redoc spec-url='/swagger.json'></redoc>
+<redoc spec-url="{{ url_for('specification.get_swagger_spec') }}"></redoc>
 <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
 </body>
 {{custom_footers|safe}}
