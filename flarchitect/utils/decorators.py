@@ -9,7 +9,7 @@ from flask import Response, request
 from sqlalchemy.exc import ProgrammingError
 from werkzeug.exceptions import HTTPException
 
-from flarchitect.exceptions import CustomHTTPException, _handle_exception
+from flarchitect.exceptions import CustomHTTPException, _handle_exception as _handle_exception
 from flarchitect.schemas.utils import deserialize_data
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import convert_case

@@ -96,3 +96,7 @@ def _handle_exception(
             "reason": error_name,
         },  # Structured error payload for consistent responses
     )
+
+
+__all__ = ["CustomHTTPException", "_print_exception", "handle_http_exception", "_handle_exception"]
+
