@@ -21,10 +21,7 @@ from flarchitect.authentication.jwt import (
     refresh_access_token,
 )
 from flarchitect.authentication.user import set_current_user
-from flarchitect.core.utils import (
-    get_primary_key_info,
-    get_url_pk,
-)
+from flarchitect.core.utils import get_primary_key_info, get_url_pk
 from flarchitect.database.operations import CrudService
 from flarchitect.database.utils import get_models_relationships, get_primary_keys
 from flarchitect.exceptions import CustomHTTPException, handle_http_exception
@@ -49,7 +46,9 @@ if TYPE_CHECKING:
     from flarchitect import Architect
 
 
-def _global_pre_process(service: CrudService, global_pre_hook: Callable | None, **hook_kwargs: Any) -> dict[str, Any]:
+def _global_pre_process(
+    service: CrudService, global_pre_hook: Callable | None, **hook_kwargs: Any
+) -> dict[str, Any]:
     """Execute the global pre-hook if defined, seeding default model.
 
     Args:
@@ -66,7 +65,9 @@ def _global_pre_process(service: CrudService, global_pre_hook: Callable | None, 
     return hook_kwargs
 
 
-def _pre_process(service: CrudService, pre_hook: Callable | None, **hook_kwargs: Any) -> dict[str, Any]:
+def _pre_process(
+    service: CrudService, pre_hook: Callable | None, **hook_kwargs: Any
+) -> dict[str, Any]:
     """Run the pre-hook allowing mutation of incoming arguments.
 
     Args:
@@ -83,7 +84,9 @@ def _pre_process(service: CrudService, pre_hook: Callable | None, **hook_kwargs:
     return hook_kwargs
 
 
-def _post_process(service: CrudService, post_hook: Callable | None, output: Any, **hook_kwargs: Any) -> Any:
+def _post_process(
+    service: CrudService, post_hook: Callable | None, output: Any, **hook_kwargs: Any
+) -> Any:
     """Apply a post-hook to the action result.
 
     Args:
@@ -98,7 +101,11 @@ def _post_process(service: CrudService, post_hook: Callable | None, output: Any,
     if post_hook:
         model = hook_kwargs.pop("model", None) or service.model
         out_val = post_hook(model=model, output=output, **hook_kwargs).get("output")
-        return out_val.get("output") if isinstance(out_val, dict) and "output" in out_val else out_val
+        return (
+            out_val.get("output")
+            if isinstance(out_val, dict) and "output" in out_val
+            else out_val
+        )
     return output
 
 
@@ -155,7 +162,9 @@ def _route_function_factory(
     return route_function
 
 
-def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> list[dict[str, Any]]:
+def create_params_from_rule(
+    model: DeclarativeBase, rule, schema: Schema
+) -> list[dict[str, Any]]:
     """Generates path parameters from a Flask routing rule.
 
     Args:
@@ -169,10 +178,17 @@ def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> lis
     path_params = []
 
     for argument in rule.arguments:
-        name = get_config_or_model_meta("name", model=model, output_schema=schema, default=None)
+        name = get_config_or_model_meta(
+            "name", model=model, output_schema=schema, default=None
+        )
         if not name:
-            name = (model or schema).__name__.replace("Schema", "").replace("schema", "")
-        name = convert_case(name, get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"))
+            name = (
+                (model or schema).__name__.replace("Schema", "").replace("schema", "")
+            )
+        name = convert_case(
+            name,
+            get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"),
+        )
 
         param_info = {
             "name": argument,
@@ -208,7 +224,9 @@ def create_query_params_from_rule(
     Returns:
         List[Dict[str, Any]]: List of query parameters.
     """
-    query_params = generate_delete_query_params(schema, model) if "DELETE" in methods else []
+    query_params = (
+        generate_delete_query_params(schema, model) if "DELETE" in methods else []
+    )
 
     if "GET" in methods and many:
         query_params.extend(generate_get_query_params(schema, model))
@@ -261,12 +279,20 @@ def create_route_function(
     Returns:
         Callable: The route function.
     """
-    global_pre_hook = get_config_or_model_meta("API_GLOBAL_SETUP_CALLBACK", default=None, method=method)
-    pre_hook = get_config_or_model_meta("API_SETUP_CALLBACK", model=service.model, default=None, method=method)
-    post_hook = get_config_or_model_meta("API_RETURN_CALLBACK", model=service.model, default=None, method=method)
+    global_pre_hook = get_config_or_model_meta(
+        "API_GLOBAL_SETUP_CALLBACK", default=None, method=method
+    )
+    pre_hook = get_config_or_model_meta(
+        "API_SETUP_CALLBACK", model=service.model, default=None, method=method
+    )
+    post_hook = get_config_or_model_meta(
+        "API_RETURN_CALLBACK", model=service.model, default=None, method=method
+    )
 
     action_map = {
-        "GET": lambda **action_kwargs: service.get_query(request.args.to_dict(), alt_field=get_field, **action_kwargs),
+        "GET": lambda **action_kwargs: service.get_query(
+            request.args.to_dict(), alt_field=get_field, **action_kwargs
+        ),
         "DELETE": service.delete_object,
         "PATCH": service.update_object,
         "POST": service.add_object,
@@ -287,6 +313,24 @@ def create_route_function(
 
 
 class RouteCreator(AttributeInitializerMixin):
+    """Automatically construct API routes for configured models.
+
+    RouteCreator inspects SQLAlchemy models and their associated schemas to
+    generate CRUD endpoints. When ``api_full_auto`` is ``True``, initialization
+    triggers model setup, configuration validation, and registration of the
+    generated routes on the application blueprint.
+
+    Attributes:
+        created_routes: Mapping of endpoint names to route metadata.
+        architect: Parent Architect supplying the Flask application.
+        api_full_auto: Enables automatic route generation during initialization.
+        api_base_model: Base model or models used to discover resources.
+        api_base_schema: Default schema used for serialization.
+        db_service: CRUD service class used for database interactions.
+        session: SQLAlchemy session or sessions bound to the models.
+        blueprint: Flask blueprint where generated routes are registered.
+    """
+
     created_routes: dict[str, dict[str, Any]] | None = None
     architect: Architect
     api_full_auto: bool | None = True
@@ -314,7 +358,11 @@ class RouteCreator(AttributeInitializerMixin):
 
     def setup_models(self):
         """Set up the models for the API by adding necessary configurations."""
-        self.api_base_model = [self.api_base_model] if not isinstance(self.api_base_model, list) else self.api_base_model
+        self.api_base_model = (
+            [self.api_base_model]
+            if not isinstance(self.api_base_model, list)
+            else self.api_base_model
+        )
 
         for base in self.api_base_model:
             for _ in base.__subclasses__():
@@ -331,15 +379,23 @@ class RouteCreator(AttributeInitializerMixin):
     def _validate_base_model_setup(self):
         """Validate the base model setup for the API."""
         if not self.api_base_model:
-            raise ValueError("If FULL_AUTO is True, API_BASE_MODEL must be set to a SQLAlchemy model.")
+            raise ValueError(
+                "If FULL_AUTO is True, API_BASE_MODEL must be set to a SQLAlchemy model."
+            )
 
-        self.api_base_model = [self.api_base_model] if not isinstance(self.api_base_model, list) else self.api_base_model
+        self.api_base_model = (
+            [self.api_base_model]
+            if not isinstance(self.api_base_model, list)
+            else self.api_base_model
+        )
 
         for base in self.api_base_model:
             try:
                 get_session(base)
             except Exception as exc:  # pragma: no cover - configuration error
-                raise ValueError("If FULL_AUTO is True, API_BASE_MODEL must be bound to a SQLAlchemy session.") from exc
+                raise ValueError(
+                    "If FULL_AUTO is True, API_BASE_MODEL must be bound to a SQLAlchemy session."
+                ) from exc
 
     def _validate_authentication_setup(self):
         """Validate the authentication setup for the API."""
@@ -348,20 +404,32 @@ class RouteCreator(AttributeInitializerMixin):
         authenticate = get_config_or_model_meta("API_AUTHENTICATE", default=False)
         custom_auth = get_config_or_model_meta("API_CUSTOM_AUTH", default=False)
         hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-        check_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
+        check_method = get_config_or_model_meta(
+            "API_KEY_AUTH_AND_RETURN_METHOD", default=None
+        )
 
         if not self.architect.app.config.get("SECRET_KEY") and auth_method:
-            raise ValueError(f"SECRET_KEY must be set in the Flask app config. You can use this randomly generated key:\n{secrets.token_urlsafe(48)}\nAnd this SALT key\n{secrets.token_urlsafe(32)}\n")
+            raise ValueError(
+                f"SECRET_KEY must be set in the Flask app config. You can use this randomly generated key:\n{secrets.token_urlsafe(48)}\nAnd this SALT key\n{secrets.token_urlsafe(32)}\n"
+            )
 
         if auth_method and "custom" not in auth_method and not user:
-            raise ValueError("If API_AUTHENTICATE_METHOD is set to a callable, API_USER_MODEL must be set to the user model.")
+            raise ValueError(
+                "If API_AUTHENTICATE_METHOD is set to a callable, API_USER_MODEL must be set to the user model."
+            )
 
         if authenticate and not auth_method:
-            raise ValueError("If API_AUTHENTICATE is set to True, API_AUTHENTICATE_METHOD must be set to either 'basic', 'jwt', 'api_key' or custom.")
+            raise ValueError(
+                "If API_AUTHENTICATE is set to True, API_AUTHENTICATE_METHOD must be set to either 'basic', 'jwt', 'api_key' or custom."
+            )
 
         if authenticate and "jwt" in auth_method:
-            ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or self.architect.app.config.get("ACCESS_SECRET_KEY")
-            REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or self.architect.app.config.get("REFRESH_SECRET_KEY")
+            ACCESS_SECRET_KEY = os.environ.get(
+                "ACCESS_SECRET_KEY"
+            ) or self.architect.app.config.get("ACCESS_SECRET_KEY")
+            REFRESH_SECRET_KEY = os.environ.get(
+                "REFRESH_SECRET_KEY"
+            ) or self.architect.app.config.get("REFRESH_SECRET_KEY")
             if not ACCESS_SECRET_KEY or not REFRESH_SECRET_KEY:
                 raise ValueError(
                     """If API_AUTHENTICATE_METHOD is set to 'jwt' you must set ACCESS_SECRET_KEY and REFRESH_SECRET_KEY in the
@@ -370,7 +438,9 @@ class RouteCreator(AttributeInitializerMixin):
 
         if authenticate and "api_key" in auth_method:
             if not user:
-                raise ValueError("If API_AUTHENTICATE_METHOD is set to 'api_key', API_USER_MODEL must be set to the user model.")
+                raise ValueError(
+                    "If API_AUTHENTICATE_METHOD is set to 'api_key', API_USER_MODEL must be set to the user model."
+                )
             if not hash_field or not check_method:
                 raise ValueError(
                     "If API_AUTHENTICATE_METHOD is set to 'api_key', API_CREDENTIAL_HASH_FIELD must be set "
@@ -383,22 +453,38 @@ class RouteCreator(AttributeInitializerMixin):
 
         if authenticate and "custom" in auth_method:
             if not custom_auth:
-                raise ValueError("If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be set to True.")
+                raise ValueError(
+                    "If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be set to True."
+                )
             if not callable(custom_auth):
-                raise ValueError("If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be a callable that takes the request and returns a user object.")
+                raise ValueError(
+                    "If API_AUTHENTICATE_METHOD is set to 'custom', API_CUSTOM_AUTH must be a callable that takes the request and returns a user object."
+                )
 
     def _validate_soft_delete_setup(self):
         """Validate the soft delete setup for the API."""
         soft_delete = get_config_or_model_meta("API_SOFT_DELETE", default=False)
         if soft_delete:
-            deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", default=None)
-            soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", default=None)
+            deleted_attr = get_config_or_model_meta(
+                "API_SOFT_DELETE_ATTRIBUTE", default=None
+            )
+            soft_delete_values = get_config_or_model_meta(
+                "API_SOFT_DELETE_VALUES", default=None
+            )
 
             if not deleted_attr:
-                raise ValueError("If API_SOFT_DELETE is set to True, API_SOFT_DELETE_ATTRIBUTE must be set to the name of the attribute that holds the soft delete value.")
+                raise ValueError(
+                    "If API_SOFT_DELETE is set to True, API_SOFT_DELETE_ATTRIBUTE must be set to the name of the attribute that holds the soft delete value."
+                )
 
-            if not soft_delete_values or not isinstance(soft_delete_values, tuple) or len(soft_delete_values) != 2:
-                raise ValueError("API_SOFT_DELETE_VALUES must be a tuple of two values that represent the soft delete state (not deleted, deleted).")
+            if (
+                not soft_delete_values
+                or not isinstance(soft_delete_values, tuple)
+                or len(soft_delete_values) != 2
+            ):
+                raise ValueError(
+                    "API_SOFT_DELETE_VALUES must be a tuple of two values that represent the soft delete state (not deleted, deleted)."
+                )
 
     def setup_api_routes(self):
         """Setup all necessary API routes."""
@@ -415,7 +501,9 @@ class RouteCreator(AttributeInitializerMixin):
             4,
             "Setting up custom error handler for CustomHTTPException.",
         )
-        self.architect.app.register_error_handler(CustomHTTPException, handle_http_exception)
+        self.architect.app.register_error_handler(
+            CustomHTTPException, handle_http_exception
+        )
 
         for code in default_exceptions:
             logger.debug(
@@ -473,21 +561,37 @@ class RouteCreator(AttributeInitializerMixin):
         def basic_login() -> dict[str, Any]:
             auth_header = request.headers.get("Authorization", "")
             if not auth_header.startswith("Basic "):
-                return create_response(status=401, errors={"error": "Invalid credentials"})
+                return create_response(
+                    status=401, errors={"error": "Invalid credentials"}
+                )
 
             try:
                 encoded = auth_header.split(" ", 1)[1]
-                username, password = base64.b64decode(encoded).decode("utf-8").split(":", 1)
-            except (ValueError, binascii.Error, UnicodeDecodeError):  # pragma: no cover - bad header
-                return create_response(status=401, errors={"error": "Invalid credentials"})
+                username, password = (
+                    base64.b64decode(encoded).decode("utf-8").split(":", 1)
+                )
+            except (
+                ValueError,
+                binascii.Error,
+                UnicodeDecodeError,
+            ):  # pragma: no cover - bad header
+                return create_response(
+                    status=401, errors={"error": "Invalid credentials"}
+                )
 
-            lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user, default=None)
-            check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
+            lookup_field = get_config_or_model_meta(
+                "API_USER_LOOKUP_FIELD", model=user, default=None
+            )
+            check_method = get_config_or_model_meta(
+                "API_CREDENTIAL_CHECK_METHOD", model=user, default=None
+            )
             usr = user.query.filter(getattr(user, lookup_field) == username).first()
 
             if usr and getattr(usr, check_method)(password):
                 pk, lookup = get_pk_and_lookups()
-                return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
+                return create_response(
+                    {"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)}
+                )
 
             return create_response(status=401, errors={"error": "Invalid credentials"})
 
@@ -504,14 +608,22 @@ class RouteCreator(AttributeInitializerMixin):
             header = request.headers.get("Authorization", "")
             scheme, _, token = header.partition(" ")
             if scheme.lower() != "api-key" or not token:
-                return create_response(status=401, errors={"error": "Invalid credentials"})
+                return create_response(
+                    status=401, errors={"error": "Invalid credentials"}
+                )
 
-            custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", model=user, default=None)
+            custom_method = get_config_or_model_meta(
+                "API_KEY_AUTH_AND_RETURN_METHOD", model=user, default=None
+            )
             if callable(custom_method):
                 usr = custom_method(token)
             else:
-                hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", model=user, default=None)
-                check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
+                hash_field = get_config_or_model_meta(
+                    "API_CREDENTIAL_HASH_FIELD", model=user, default=None
+                )
+                check_method = get_config_or_model_meta(
+                    "API_CREDENTIAL_CHECK_METHOD", model=user, default=None
+                )
 
                 query = getattr(user, "query", None)
                 if query is None:
@@ -566,9 +678,15 @@ class RouteCreator(AttributeInitializerMixin):
             password = data.get("password")
 
             # The hash_field is retrieved for future use but not needed here
-            get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", model=user, default=None)
-            lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user, default=None)
-            check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user, default=None)
+            get_config_or_model_meta(
+                "API_CREDENTIAL_HASH_FIELD", model=user, default=None
+            )
+            lookup_field = get_config_or_model_meta(
+                "API_USER_LOOKUP_FIELD", model=user, default=None
+            )
+            check_method = get_config_or_model_meta(
+                "API_CREDENTIAL_CHECK_METHOD", model=user, default=None
+            )
 
             usr = user.query.filter(getattr(user, lookup_field) == username).first()
 
@@ -622,7 +740,9 @@ class RouteCreator(AttributeInitializerMixin):
             # Extract the refresh token from the request
             refresh_token = request.get_json().get("refresh_token")
             if not refresh_token:
-                raise CustomHTTPException(status_code=400, reason="Refresh token is missing")
+                raise CustomHTTPException(
+                    status_code=400, reason="Refresh token is missing"
+                )
 
             # Attempt to refresh the access token and retrieve the user
             try:
@@ -671,9 +791,13 @@ class RouteCreator(AttributeInitializerMixin):
 
         # Retrieve allowed and blocked methods from configuration or model metadata
 
-        read_only = get_config_or_model_meta("API_READ_ONLY", model=model, default=False)
+        read_only = get_config_or_model_meta(
+            "API_READ_ONLY", model=model, default=False
+        )
 
-        allowed, allowed_from = get_config_or_model_meta("API_ALLOWED_METHODS", model=model, default=[], return_from_config=True)
+        allowed, allowed_from = get_config_or_model_meta(
+            "API_ALLOWED_METHODS", model=model, default=[], return_from_config=True
+        )
         allowed_methods = [x.upper() for x in allowed]
 
         blocked_methods, blocked_from = get_config_or_model_meta(
@@ -686,11 +810,23 @@ class RouteCreator(AttributeInitializerMixin):
         blocked_methods = [x.upper() for x in blocked_methods]
 
         for http_method in ["GETS", "GET", "POST", "PATCH", "DELETE"]:
-            if read_only and http_method in ["POST", "PATCH", "DELETE"] and (http_method not in allowed_methods):
+            if (
+                read_only
+                and http_method in ["POST", "PATCH", "DELETE"]
+                and (http_method not in allowed_methods)
+            ):
                 continue
 
-            check_http_meth = http_method if not http_method.endswith("S") else http_method.replace("S", "")
-            if check_http_meth in blocked_methods and blocked_from == "config" and allowed_from == "default":
+            check_http_meth = (
+                http_method
+                if not http_method.endswith("S")
+                else http_method.replace("S", "")
+            )
+            if (
+                check_http_meth in blocked_methods
+                and blocked_from == "config"
+                and allowed_from == "default"
+            ):
                 continue
 
             if check_http_meth not in allowed_methods and allowed_from == "config":
@@ -698,13 +834,23 @@ class RouteCreator(AttributeInitializerMixin):
 
             if check_http_meth in blocked_methods and blocked_from == "model":
                 continue
-            if check_http_meth in blocked_methods and (check_http_meth not in allowed_methods and allowed_from == "model"):
+            if check_http_meth in blocked_methods and (
+                check_http_meth not in allowed_methods and allowed_from == "model"
+            ):
                 continue
 
-            if check_http_meth not in allowed_methods and allowed_methods and allowed_from in ["config", "default"]:
+            if (
+                check_http_meth not in allowed_methods
+                and allowed_methods
+                and allowed_from in ["config", "default"]
+            ):
                 continue
 
-            if allowed_methods and allowed_from == "model" and check_http_meth not in allowed_methods:
+            if (
+                allowed_methods
+                and allowed_from == "model"
+                and check_http_meth not in allowed_methods
+            ):
                 continue
 
             route_data = self._prepare_route_data(model, session, http_method)
@@ -720,7 +866,9 @@ class RouteCreator(AttributeInitializerMixin):
         if get_config_or_model_meta("API_ADD_RELATIONS", model=model, default=True):
             relations = get_models_relationships(model)
             for relation_data in relations:
-                prepared_relation_data = self._prepare_relation_route_data(relation_data, session)
+                prepared_relation_data = self._prepare_relation_route_data(
+                    relation_data, session
+                )
                 self._create_relation_route_and_to_url_function(prepared_relation_data)
 
     def _create_relation_route_and_to_url_function(self, relation_data: dict[str, Any]):
@@ -731,10 +879,14 @@ class RouteCreator(AttributeInitializerMixin):
         """
         child = relation_data["child_model"]
         parent = relation_data["parent_model"]
-        self._add_relation_url_function_to_model(child=child, parent=parent, id_key=relation_data["join_key"])
+        self._add_relation_url_function_to_model(
+            child=child, parent=parent, id_key=relation_data["join_key"]
+        )
         self.generate_route(**relation_data)
 
-    def _prepare_route_data(self, model: Callable, session: Any, http_method: str) -> dict[str, Any]:
+    def _prepare_route_data(
+        self, model: Callable, session: Any, http_method: str
+    ) -> dict[str, Any]:
         """Prepare data for creating a route.
 
         Args:
@@ -751,13 +903,17 @@ class RouteCreator(AttributeInitializerMixin):
             many = True
             http_method = "GET"
 
-        input_schema_class, output_schema_class = get_input_output_from_model_or_make(model)
+        input_schema_class, output_schema_class = get_input_output_from_model_or_make(
+            model
+        )
 
         base_url = f"/{self._get_url_naming_function(model, input_schema_class, output_schema_class)}"
         method = http_method
 
         if http_method == "GET" and not many or http_method in ["DELETE", "PATCH"]:
-            pk_url = get_url_pk(model)  # GET operates on a single item, so include the primary key in the URL
+            pk_url = get_url_pk(
+                model
+            )  # GET operates on a single item, so include the primary key in the URL
             base_url = f"{base_url}/{pk_url}"
 
         logger.debug(
@@ -773,10 +929,14 @@ class RouteCreator(AttributeInitializerMixin):
             "name": model.__name__.lower(),
             "output_schema": output_schema_class,
             "session": session,
-            "input_schema": (input_schema_class if http_method in ["POST", "PATCH"] else None),
+            "input_schema": (
+                input_schema_class if http_method in ["POST", "PATCH"] else None
+            ),
         }
 
-    def _prepare_relation_route_data(self, relation_data: dict[str, Any], session: Any) -> dict[str, Any]:
+    def _prepare_relation_route_data(
+        self, relation_data: dict[str, Any], session: Any
+    ) -> dict[str, Any]:
         """Prepare data for creating a relation route.
 
         Args:
@@ -789,8 +949,12 @@ class RouteCreator(AttributeInitializerMixin):
 
         child_model = relation_data["model"]
         parent_model = relation_data["parent"]
-        input_schema_class, output_schema_class = get_input_output_from_model_or_make(child_model)
-        pinput_schema_class, poutput_schema_class = get_input_output_from_model_or_make(parent_model)
+        input_schema_class, output_schema_class = get_input_output_from_model_or_make(
+            child_model
+        )
+        pinput_schema_class, poutput_schema_class = get_input_output_from_model_or_make(
+            parent_model
+        )
 
         key = get_primary_key_info(parent_model)
 
@@ -808,7 +972,8 @@ class RouteCreator(AttributeInitializerMixin):
             "child_model": child_model,
             "model": child_model,
             "parent_model": parent_model,
-            "many": relation_data["join_type"][-4:].lower() == "many" or relation_data.get("many", False),
+            "many": relation_data["join_type"][-4:].lower() == "many"
+            or relation_data.get("many", False),
             "method": "GET",
             "relation_name": relation_data["relationship"],
             "url": relation_url,
@@ -851,7 +1016,9 @@ class RouteCreator(AttributeInitializerMixin):
 
         if http_method == "GET" and self.architect.cache:
             timeout = self.architect.get_config("API_CACHE_TIMEOUT", 300)
-            unique_route_function = self.architect.cache.cached(timeout=timeout)(unique_route_function)
+            unique_route_function = self.architect.cache.cached(timeout=timeout)(
+                unique_route_function
+            )
 
         kwargs["function"] = unique_route_function
 
@@ -861,7 +1028,11 @@ class RouteCreator(AttributeInitializerMixin):
             kwargs["method"],
             self.architect.schema_constructor(**kwargs)(unique_route_function),
         )
-        (self._add_self_url_function_to_model(model) if not kwargs.get("join_key") else None)
+        (
+            self._add_self_url_function_to_model(model)
+            if not kwargs.get("join_key")
+            else None
+        )
         self._add_to_created_routes(**kwargs)
 
     def _is_route_blocked(self, http_method: str, model: Callable) -> bool:
@@ -874,8 +1045,12 @@ class RouteCreator(AttributeInitializerMixin):
         Returns:
             bool: True if the route is blocked, otherwise False.
         """
-        blocked_methods = get_config_or_model_meta("API_BLOCK_METHODS", model=model, default=[], allow_join=True)
-        read_only = get_config_or_model_meta("API_READ_ONLY", model=model, default=False)
+        blocked_methods = get_config_or_model_meta(
+            "API_BLOCK_METHODS", model=model, default=[], allow_join=True
+        )
+        read_only = get_config_or_model_meta(
+            "API_READ_ONLY", model=model, default=False
+        )
         if read_only:
             blocked_methods.extend(["POST", "PATCH", "DELETE"])
 
@@ -899,7 +1074,11 @@ class RouteCreator(AttributeInitializerMixin):
             Callable: The unique route function.
         """
         # Ensure the function name is unique by differentiating between collection and single item routes
-        unique_function_name = f"route_wrapper_{http_method}_collection_{url.replace('/', '_')}" if is_many else f"route_wrapper_{http_method}_single_{url.replace('/', '_')}"
+        unique_function_name = (
+            f"route_wrapper_{http_method}_collection_{url.replace('/', '_')}"
+            if is_many
+            else f"route_wrapper_{http_method}_single_{url.replace('/', '_')}"
+        )
 
         unique_route_function = FunctionType(
             route_function.__code__,
@@ -937,7 +1116,9 @@ class RouteCreator(AttributeInitializerMixin):
             return
 
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
-        url_naming_function = get_config_or_model_meta("API_ENDPOINT_NAMER", model, default=endpoint_namer)
+        url_naming_function = get_config_or_model_meta(
+            "API_ENDPOINT_NAMER", model, default=endpoint_namer
+        )
 
         def to_url(self):
             return f"{api_prefix}/{url_naming_function(model)}/{getattr(self, primary_keys[0])}"
@@ -945,7 +1126,9 @@ class RouteCreator(AttributeInitializerMixin):
         logger.log(3, f"Adding method $to_url$ to model --{model.__name__}--")
         model.to_url = to_url
 
-    def _add_relation_url_function_to_model(self, id_key: str, child: Callable, parent: Callable):
+    def _add_relation_url_function_to_model(
+        self, id_key: str, child: Callable, parent: Callable
+    ):
         """Add a relation URL method to the model class.
 
         Args:
@@ -954,8 +1137,12 @@ class RouteCreator(AttributeInitializerMixin):
             parent (Callable): The parent model.
         """
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
-        parent_endpoint = get_config_or_model_meta("API_ENDPOINT_NAMER", parent, default=endpoint_namer)(parent)
-        child_endpoint = get_config_or_model_meta("API_ENDPOINT_NAMER", child, default=endpoint_namer)(child)
+        parent_endpoint = get_config_or_model_meta(
+            "API_ENDPOINT_NAMER", parent, default=endpoint_namer
+        )(parent)
+        child_endpoint = get_config_or_model_meta(
+            "API_ENDPOINT_NAMER", child, default=endpoint_namer
+        )(child)
 
         def to_url(self):
             parent_pk = get_primary_keys(parent).key
@@ -989,7 +1176,9 @@ class RouteCreator(AttributeInitializerMixin):
             "output_schema": kwargs.get("output_schema"),
         }
 
-    def _get_url_naming_function(self, model: Callable, input_schema: Callable, output_schema: Callable) -> str:
+    def _get_url_naming_function(
+        self, model: Callable, input_schema: Callable, output_schema: Callable
+    ) -> str:
         """Get the URL naming function for a model.
 
         Args:
@@ -1000,4 +1189,6 @@ class RouteCreator(AttributeInitializerMixin):
         Returns:
             str: The URL naming string.
         """
-        return get_config_or_model_meta("API_ENDPOINT_NAMER", model, default=endpoint_namer)(model, input_schema, output_schema)
+        return get_config_or_model_meta(
+            "API_ENDPOINT_NAMER", model, default=endpoint_namer
+        )(model, input_schema, output_schema)
