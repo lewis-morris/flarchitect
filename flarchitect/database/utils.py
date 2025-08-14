@@ -46,6 +46,7 @@ OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
 
 
 def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]:
+
     """Collect relationship attributes and their related class names.
 
     Args:
@@ -69,6 +70,7 @@ def get_all_columns_and_hybrids(
 ) -> tuple[
     dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]
 ]:
+
     """Gather columns and hybrid properties for the base and join models.
 
     Args:
@@ -127,7 +129,7 @@ def create_pagination_defaults() -> tuple[dict[str, int], dict[str, int]]:
 
 
 def extract_pagination_params(args_dict: dict[str, str]) -> tuple[int, int]:
-    """Parse pagination information from request arguments.
+     """Parse pagination information from request arguments.
 
     Args:
         args_dict (dict[str, str]): Query string arguments from the request.
@@ -135,21 +137,17 @@ def extract_pagination_params(args_dict: dict[str, str]) -> tuple[int, int]:
     Returns:
         tuple[int, int]: The requested page number and page size.
 
+
     Raises:
-        CustomHTTPException: If the supplied ``limit`` exceeds the configured
-            maximum.
+        CustomHTTPException: If the requested ``limit`` exceeds the configured
+        maximum.
 
     Notes:
-        Missing ``page`` or ``limit`` values fall back to the configured
-        defaults. Values are cast to ``int`` and may raise ``ValueError`` if
-        non-numeric input is provided.
+        Defaults are used when ``page`` or ``limit`` are missing.
     """
-
-    # Pagination defaults and maximums
 
     PAGINATION_DEFAULTS, PAGINATION_MAX = create_pagination_defaults()
 
-    # Parse page and limit values
     page = int(args_dict.get("page", PAGINATION_DEFAULTS["page"]))
     limit = int(args_dict.get("limit", PAGINATION_DEFAULTS["limit"]))
 
@@ -169,6 +167,7 @@ def get_group_by_fields(
     """Derive ``GROUP BY`` SQLAlchemy columns from query parameters.
 
     Args:
+
         args_dict (dict[str, str]): Query string arguments containing an
             optional ``groupby`` entry.
         all_columns (dict[str, dict[str, hybrid_property | InstrumentedAttribute]]):
@@ -198,21 +197,20 @@ def get_group_by_fields(
 def get_models_for_join(
     args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]
 ) -> dict[str, DeclarativeBase]:
-    """Resolve models referenced in the ``join`` query parameter.
+
+    """Build a mapping of models to join from the ``join`` query parameter.
 
     Args:
-        args_dict (dict[str, str]): Query string arguments which may include a
-            comma-separated ``join`` or ``join_models`` value.
-        get_model_func (Callable[[str], DeclarativeBase]): Callback used to
-            retrieve a model by name.
+        args_dict: Mapping of request arguments.
+        get_model_func: Callback used to resolve a model name to a class.
 
     Returns:
-        dict[str, DeclarativeBase]: Mapping of join identifiers to their
-        corresponding SQLAlchemy models. Returns an empty dict when no join is
-        requested.
+        dict[str, DeclarativeBase]: Requested join names mapped to model classes.
+        An empty dictionary is returned when no joins are requested.
 
     Raises:
-        CustomHTTPException: If any requested join model cannot be resolved.
+        CustomHTTPException: If a requested join model cannot be resolved.
+
     """
 
     models: dict[str, DeclarativeBase] = {}
@@ -230,21 +228,19 @@ def get_models_for_join(
 def get_table_column(
     key: str, all_columns: dict[str, dict[str, Any]]
 ) -> tuple[str, str, str]:
-    """Split a query key into table, column, and operator components.
+    """Resolve a request key to its table name, column, and operator.
 
     Args:
-        key (str): Incoming key such as ``"user.email__ilike"``. The table name
-            may be included using ``table.column`` notation and an operator may
-            be appended using ``__``.
-        all_columns (dict[str, dict[str, Any]]): Mapping of table names to their
-            available columns or hybrid properties.
+        key: Request argument key containing a column name and optional operator
+            (e.g., ``"id__eq"`` or ``"users.id__eq"``).
+        all_columns: Mapping of table names to their column attributes.
 
     Returns:
-        tuple[str, str, str]: The resolved table name, column name, and
-        operator string. The operator is an empty string when omitted.
+        tuple[str, str, str]: The table name, column name, and operator. The
+        operator is an empty string if none is specified.
 
     Raises:
-        CustomHTTPException: If the column cannot be found in ``all_columns``.
+        CustomHTTPException: If ``key`` does not correspond to a known column.
     """
     keys_split = key.split("__")
     column_name = keys_split[0]
