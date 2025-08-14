@@ -25,7 +25,6 @@ as a ``create_item`` mutation that accepts the model's columns as arguments.
 """
 
 from __future__ import annotations
-
 from collections.abc import Iterable
 from typing import Any
 
