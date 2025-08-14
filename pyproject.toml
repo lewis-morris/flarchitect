@@ -79,7 +79,8 @@ docs = [
   "sphinx-copybutton>=0.5.2",
   "sphinx-design>=0.6.1",
   "myst-parser>=3.0.0",
-  "sphinxext-opengraph>=0.9.1"
+  "sphinxext-opengraph>=0.9.1",
+  "coverage-badge>=1.1.0"
 ]
 
 dev = [
@@ -143,8 +144,6 @@ changelog_file = "CHANGELOG.md"
 [tool.semantic_release.commit_parser_options]
 # Treat these as patch bumps too
 patch_tags = ["fix", "perf", "docs", "chore", "refactor", "build", "ci", "style", "test"]
-
-[tool.semantic_release.commit_parser_options]
 default_bump_level = "PATCH"   # NO_RELEASE | PATCH | MINOR | MAJOR
 
 [tool.semantic_release.remote]

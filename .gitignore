@@ -9,7 +9,8 @@
 /.coveragerc
 /CHANGES.rst
 /conftest.py
-/coverage.xml
+coverage.xml
+coverage.svg
 /todo
 /rough_readne.MD
 .env
