@@ -1,12 +1,17 @@
 """Tests for logging utilities."""
 
 import importlib.util
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 
 from colorama import Fore
 
 # Import the logging module directly to avoid package-level imports requiring external deps.
-spec = importlib.util.spec_from_file_location("flarchitect_logging", Path("flarchitect/logging.py"))
+project_root = Path(__file__).resolve().parents[1]
+spec: ModuleSpec | None = importlib.util.spec_from_file_location(
+    "flarchitect_logging",
+    project_root / "flarchitect" / "logging.py",
+)
 flarchitect_logging = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
 spec.loader.exec_module(flarchitect_logging)
@@ -14,7 +19,7 @@ CustomLogger = flarchitect_logging.CustomLogger
 color_text_with_multiple_patterns = flarchitect_logging.color_text_with_multiple_patterns
 
 
-def test_color_text_with_multiple_patterns_replaces_wrappers():
+def test_color_text_with_multiple_patterns_replaces_wrappers() -> None:
     text = "This is `code`, +danger+, --info--, $price$, and |success|."
     colored = color_text_with_multiple_patterns(text)
     assert Fore.YELLOW in colored
@@ -29,7 +34,7 @@ def test_color_text_with_multiple_patterns_replaces_wrappers():
     assert "|success|" not in colored
 
 
-def test_custom_logger_respects_verbosity(capsys):
+def test_custom_logger_respects_verbosity(capsys) -> None:
     logger = CustomLogger(verbosity_level=1)
     logger.log(1, "hi")
     out = capsys.readouterr().out
@@ -40,7 +45,7 @@ def test_custom_logger_respects_verbosity(capsys):
     assert out == ""
 
 
-def test_custom_logger_error_color(capsys):
+def test_custom_logger_error_color(capsys) -> None:
     logger = CustomLogger(verbosity_level=1)
     logger.error(1, "boom")
     out = capsys.readouterr().out
