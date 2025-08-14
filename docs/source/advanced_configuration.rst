@@ -100,6 +100,32 @@ is installed, set ``API_CACHE_TYPE`` to any supported backend such as
 activates a small in-memory cache bundled with ``flarchitect``; any other
 value will raise a :class:`RuntimeError`. Use ``API_CACHE_TIMEOUT`` to control
 how long items remain cached.
+
+Example ``RedisCache`` setup with a ``SimpleCache`` fallback and a cached
+``GET`` request::
+
+    from flask import Flask
+    from flarchitect import Architect
+    import time
+
+    app = Flask(__name__)
+    try:
+        import flask_caching  # requires installing ``flask-caching``
+        app.config["API_CACHE_TYPE"] = "RedisCache"
+        app.config["CACHE_REDIS_URL"] = "redis://localhost:6379/0"
+    except ModuleNotFoundError:
+        app.config["API_CACHE_TYPE"] = "SimpleCache"
+
+    arch = Architect(app)
+
+    @app.get("/time")
+    def get_time():
+        return {"now": time.time()}
+
+    with app.test_client() as client:
+        client.get("/time")  # first call stored in cache
+        client.get("/time")  # second call served from cache
+
 For a runnable example demonstrating cached responses see the `caching demo <https://github.com/lewis-morris/flarchitect/tree/master/demo/caching>`_.
 
 After securing throughput, you can also shape what your clients see in each
