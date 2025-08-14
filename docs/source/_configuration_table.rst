@@ -52,6 +52,9 @@ Essential configuration values needed to run ``flarchitect`` and control automat
 Optional Settings
 -----------------
 
+Documentation Settings
+~~~~~~~~~~~~~~~~~~~~~~
+
 .. list-table::
 
     * - ``API_CREATE_DOCS``
@@ -172,6 +175,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - HTML ``<footer>`` snippets rendered at the bottom of the docs page, useful for legal notices or navigation links.
+
+Routing and Behaviour
+~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_PREFIX``
 
           :bdg:`default:` ``/api``
@@ -236,6 +245,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Function that generates endpoint names from models. Override to customise URL naming behaviour.
+
+Serialization Settings
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_FIELD_CASE``
 
           :bdg:`default:` ``snake``
@@ -342,6 +357,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - When ``True``, only read operations are allowed on models, blocking writes for safety. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
+Query Options
+~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_ALLOW_ORDER_BY``
 
           :bdg:`default:` ``True``
@@ -384,6 +405,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - Allows clients to specify which fields to return, reducing payload size. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
+Method Access Control
+~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_ALLOWED_METHODS``
 
           :bdg:`default:` ``[]``
@@ -398,6 +425,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - Methods that should be disabled even if allowed elsewhere, e.g., ``["DELETE", "POST"]`` for read-only APIs.
+
+Authentication Settings
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_AUTHENTICATE``
 
           :bdg-secondary:`Optional` 
@@ -462,6 +495,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Minutes a refresh token stays valid. Defaults to two days (``2880`` minutes).
+
+Callback Hooks
+~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_GLOBAL_SETUP_CALLBACK``
 
           :bdg:`default:` ``None``
@@ -539,6 +578,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
         - Extra query parameters supported by the endpoint. Each dict may contain ``name`` and ``schema`` keys. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
+Response Metadata
+~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_DUMP_DATETIME``
 
           :bdg:`default:` ``True``
@@ -595,6 +640,12 @@ Optional Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Ensures an ``errors`` key is always present in responses, defaulting to ``null`` when no errors occurred. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
+Rate Limiting and Sessions
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_RATE_LIMIT``
 
           :bdg:`default:` ``None``
@@ -632,6 +683,12 @@ Optional Settings
           or multiple database binds. If unset, ``flarchitect`` attempts to
           locate the session via Flask-SQLAlchemy, model ``query`` attributes,
           or engine bindings.
+
+Field Inclusion Controls
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``IGNORE_FIELDS``
 
           :bdg:`default:` ``None``
@@ -658,6 +715,12 @@ Optional Settings
         - Attributes the API ignores if clients supply them, while still returning the values when present on the model.
           Useful for server-managed columns such as ``created_at``.
           Currently this flag is informational and does not trigger automatic filtering.
+
+Soft Delete
+~~~~~~~~~~~
+
+.. list-table::
+
     * - ``API_BLUEPRINT_NAME``
 
           :bdg:`default:` ``None``
@@ -717,6 +780,12 @@ Optional Settings
         - Companion flag to ``API_ALLOW_DELETE_RELATED`` covering association-table entries and similar dependents.
           Not currently evaluated by the code base; cascade behaviour hinges solely on ``API_ALLOW_CASCADE_DELETE``.
           Documented for completeness and potential future use.
+
+Endpoint Summaries
+~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
     * - ``GET_MANY_SUMMARY``
 
           :bdg:`default:` ``None``
@@ -753,3 +822,4 @@ Optional Settings
         - Sets the summary for ``PATCH`` endpoints used in the OpenAPI docs.
           Example: ``patch_summary = "Update selected fields of a book"``.
           Provides readers with a concise explanation of partial updates.
+
