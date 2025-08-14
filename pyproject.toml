@@ -73,7 +73,6 @@ dev = [
   "isort",
   "pytest>=7.4.4",
   "pytest-cov>=4.1.0",
-  "python-semantic-release>=10.3.1",
 ]
 cache = [
   "flask-caching>=2.1.0",
@@ -81,6 +80,10 @@ cache = [
 graphql = [
   "graphene>=3.3",
 ]
+release = [
+    "python-semantic-release>=10.3.1",
+]
+
 [tool.ruff]
 exclude = ["./tests", ".bzr", ".direnv", ".eggs", ".git", "./frontend/*", ".git-rewrite", ".hg", ".mypy_cache", ".nox", ".pants.d", ".pytype", ".ruff_cache", ".svn", ".tox", ".venv", "__pypackages__", "_build", "buck-out", "dist", "node_modules", ".venv"]
 fix = true
