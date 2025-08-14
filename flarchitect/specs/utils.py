@@ -636,6 +636,11 @@ def make_endpoint_description(schema: Schema, http_method: str, **kwargs) -> str
 
     parent = kwargs.get("parent")
     parent_name = parent.__name__ if parent else ""
+    if parent_name:
+        parent_name = convert_case(
+            parent_name,
+            get_config_or_model_meta("API_SCHEMA_CASE", model=parent, default="camel"),
+        )
 
     if http_method == "GET":
         if parent and many:
