@@ -97,6 +97,7 @@ class Architect(AttributeInitializerMixin):
 
         if app is not None:
             if self._is_reloader_start():
+
                 logger.debug(4, "Skipping Architect initialisation in reloader parent process")
             else:
                 self.init_app(app, *args, **kwargs)

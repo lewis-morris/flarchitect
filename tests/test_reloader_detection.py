@@ -15,6 +15,7 @@ def test_architect_skips_init_in_reloader(monkeypatch):
     app = _create_app()
     monkeypatch.delenv("WERKZEUG_RUN_MAIN", raising=False)
     monkeypatch.setenv("WERKZEUG_SERVER_FD", "3")
+
     architect = Architect(app)
     assert not hasattr(architect, "app")
 
@@ -24,6 +25,7 @@ def test_architect_init_runs_when_reloader_child(monkeypatch):
     app = _create_app()
     monkeypatch.setenv("WERKZEUG_RUN_MAIN", "true")
     monkeypatch.setenv("WERKZEUG_SERVER_FD", "3")
+
     with app.app_context():
         architect = Architect(app)
         assert architect.app is app

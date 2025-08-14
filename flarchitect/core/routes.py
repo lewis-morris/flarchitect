@@ -40,6 +40,7 @@ from flarchitect.specs.utils import (
     get_tag_group,
 )
 from flarchitect.utils.config_helpers import get_config_or_model_meta
+from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import AttributeInitializerMixin
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.session import get_session
@@ -65,6 +66,7 @@ def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> lis
         name = get_config_or_model_meta("name", model=model, output_schema=schema, default=None)
         if not name:
             name = (model or schema).__name__.replace("Schema", "").replace("schema", "")
+        name = convert_case(name, get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"))
 
         param_info = {
             "name": argument,
@@ -483,9 +485,13 @@ class RouteCreator(AttributeInitializerMixin):
             many=False,
             roles=True,
             group_tag="Authentication",
+            tag="Authentication",
+            summary="Authenticate user and return JWT tokens.",
             auth=False,
         )
         def login(*args, **kwargs):
+            """Authenticate a user and return JWT tokens."""
+
             data = request.get_json()
             username = data.get("username")
             password = data.get("password")
@@ -519,8 +525,12 @@ class RouteCreator(AttributeInitializerMixin):
             output_schema=None,
             many=False,
             group_tag="Authentication",
+            tag="Authentication",
+            summary="Log out current user.",
         )
         def logout(*args, **kwargs):
+            """Log out the current user."""
+
             set_current_user(None)
             return {}
 
@@ -533,18 +543,12 @@ class RouteCreator(AttributeInitializerMixin):
             output_schema=TokenSchema,
             many=False,
             group_tag="Authentication",
+            tag="Authentication",
+            summary="Refresh access token.",
             auth=False,
         )
         def refresh(*args, **kwargs):
-            """
-            Endpoint to refresh JWT access tokens using a refresh token.
-
-            Expects:
-                JSON payload with 'refresh_token'.
-
-            Returns:
-                JSON response with 'access_token' and 'refresh_token'.
-            """
+            """Refresh a JWT access token using a refresh token."""
 
             # Extract the refresh token from the request
             refresh_token = request.get_json().get("refresh_token")
