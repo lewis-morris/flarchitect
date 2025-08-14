@@ -192,6 +192,7 @@ Nested model creation
 ---------------------
 
 Nested writes are disabled by default. Enable them globally with
+
 ``API_ALLOW_NESTED_WRITES = True`` or per model via
 ``Meta.allow_nested_writes``.
 
@@ -239,9 +240,21 @@ up to two levels deep::
         }
     }
 
-The nested ``author`` and ``publisher`` objects are deserialized into their
-respective models while responses continue to use the configured serialization
-type (URL, JSON, or dynamic).
+To partially update a nested relationship, send only the fields you want to
+change in a ``PATCH`` request::
+
+    PATCH /books/1
+    {
+        "author": {
+            "id": 1,
+            "biography": "Updated bio"
+        }
+    }
+
+The nested ``author`` object is deserialized into an ``Author`` instance while
+responses continue to use the configured serialization type (URL, JSON, or
+dynamic).
+
 
 .. _soft-delete:
 
