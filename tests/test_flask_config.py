@@ -36,6 +36,14 @@ def test_basic_change_title_and_version(client):
     assert "0.2.0" in html
 
 
+def test_hidden_patch_and_auto_schemas(client) -> None:
+    """Ensure patch and auto schemas are excluded from OpenAPI docs."""
+    swagger = client.get("/swagger.json").json
+    schema_names = swagger["components"]["schemas"].keys()
+    assert "auto" not in schema_names
+    assert all(not name.startswith("patch") for name in schema_names)
+
+
 @pytest.fixture
 def app_meth():
     app_new = create_app(
@@ -155,9 +163,7 @@ def test_read_only():
 
 # check to make sure that changing the docs url works
 def test_docs_path():
-    app = create_app(
-        {"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"}
-    )
+    app = create_app({"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"})
 
     client = app.test_client()
     resp = client.get("/my_docs")
@@ -442,7 +448,7 @@ def test_switch_off_url_params():
     app_filters = create_app(
         {
             "API_ALLOW_ORDER_BY": False,
-            "API_ALLOW_FILTER": False,
+            "API_ALLOW_FILTERS": False,
             "API_ALLOW_SELECT_FIELDS": False,
         }
     )
@@ -687,12 +693,8 @@ def test_global_query_param(client_two):
 def test_post_specific_query_param(client_two):
     swagger = client_two.get("/apispec.json").json
 
-    post_params = [
-        x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]
-    ]
-    get_params = [
-        x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]
-    ]
+    post_params = [x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]]
+    get_params = [x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]]
 
     assert "log_one" in post_params
     assert "log_one" not in get_params
@@ -710,9 +712,7 @@ def test_cascade_delete(client_two):
     delete_response = client_cascade_delete.delete("/api/authors/1")
     delete_response.status_code == 409
     assert "cascade_delete=1" in delete_response.json["errors"]["error"]
-    delete_response_happy = client_cascade_delete.delete(
-        "/api/authors/1?cascade_delete=1"
-    )
+    delete_response_happy = client_cascade_delete.delete("/api/authors/1?cascade_delete=1")
     assert delete_response_happy.status_code == 200
 
 

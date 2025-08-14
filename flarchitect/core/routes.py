@@ -316,14 +316,14 @@ class RouteCreator(AttributeInitializerMixin):
     """Automatically construct API routes for configured models.
 
     RouteCreator inspects SQLAlchemy models and their associated schemas to
-    generate CRUD endpoints. When ``api_full_auto`` is ``True``, initialization
+    generate CRUD endpoints. When ``api_full_auto`` is ``True``, initialisation
     triggers model setup, configuration validation, and registration of the
     generated routes on the application blueprint.
 
     Attributes:
         created_routes: Mapping of endpoint names to route metadata.
         architect: Parent Architect supplying the Flask application.
-        api_full_auto: Enables automatic route generation during initialization.
+        api_full_auto: Enables automatic route generation during initialisation.
         api_base_model: Base model or models used to discover resources.
         api_base_schema: Default schema used for serialization.
         db_service: CRUD service class used for database interactions.
@@ -341,7 +341,7 @@ class RouteCreator(AttributeInitializerMixin):
     blueprint: Blueprint | None = None
 
     def __init__(self, architect: Architect, *args, **kwargs):
-        """Initialize the RouteCreator object.
+        """Initialise the RouteCreator object.
 
         Args:
             architect (Architect): The architect object.

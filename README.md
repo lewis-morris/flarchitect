@@ -20,6 +20,7 @@ If you're new here, welcome! flarchitect gets you from data models to a fully fl
 - **Built-in authentication** – JWT, basic and API key strategies ship with a ready‑made `/auth/login` endpoint, or plug in your own.
 - **Extensibility hooks** – customise request and response flows.
 - **Soft delete** – hide and restore records without permanently removing them.
+- **GraphQL integration** – expose your models through a single `/graphql` endpoint when you need more flexible queries.
 
 ### Optional extras
 
@@ -66,6 +67,41 @@ With the application running, try your new API in another terminal window:
 curl http://localhost:5000/api/authors
 ```
 
+## Authentication
+
+flarchitect ships with ready-to-use JWT, Basic and API key authentication. Choose strategies with
+`API_AUTHENTICATE_METHOD`.
+
+### JWT
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["jwt"]
+app.config["ACCESS_SECRET_KEY"] = "access-secret"
+app.config["REFRESH_SECRET_KEY"] = "refresh-secret"
+app.config["API_USER_MODEL"] = User
+app.config["API_USER_LOOKUP_FIELD"] = "username"
+app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+```
+
+### Basic
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["basic"]
+app.config["API_USER_MODEL"] = User
+app.config["API_USER_LOOKUP_FIELD"] = "username"
+app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+```
+
+### API key
+
+```python
+app.config["API_AUTHENTICATE_METHOD"] = ["api_key"]
+app.config["API_KEY_AUTH_AND_RETURN_METHOD"] = lookup_user_by_token
+# app.config["API_CREDENTIAL_HASH_FIELD"] = "api_key_hash"  # optional
+```
+
+See the [authentication docs](docs/source/authentication.rst) for full configuration details and custom strategies.
+
 ## OpenAPI specification
 
 An OpenAPI 3 schema is generated automatically and powers the Redoc UI. You
@@ -78,12 +114,37 @@ from flask import Flask
 from flarchitect import Architect
 
 app = Flask(__name__)
-architect = Architect(app)  # OpenAPI served at /openapi.json
+architect = Architect(app)  # OpenAPI served at /openapi.json, docs serverd at /docs
+
 ```
 
 The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
 [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
 document.
+
+## GraphQL
+
+Prefer working with a single endpoint? `flarchitect` can turn your SQLAlchemy models into a GraphQL schema with just a couple of lines. Generate the schema and register it with the architect:
+
+```python
+from flarchitect.graphql import create_schema_from_models
+
+schema = create_schema_from_models([Item], db.session)
+architect.init_graphql(schema=schema)
+```
+
+With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively.
+
+```graphql
+query {
+    items {
+        id
+        name
+    }
+}
+```
+
+The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
 
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 

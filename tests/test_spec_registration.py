@@ -29,7 +29,9 @@ def test_register_schemas_avoids_duplicates():
         register_schemas(spec, schema)
         register_schemas(spec, schema)
 
-    assert not any("has already been added to the spec" in str(w.message) for w in caught)
+    assert not any(
+        "has already been added to the spec" in str(w.message) for w in caught
+    )
 
 
 class ItemSchema(Schema):
@@ -52,4 +54,4 @@ def test_register_schemas_preserves_name_and_case():
 
     assert schema.__class__.__name__ == "ItemSchema"
     assert "item" in spec.components.schemas
-    assert "patchItem" in spec.components.schemas
+    assert "patchItem" not in spec.components.schemas
