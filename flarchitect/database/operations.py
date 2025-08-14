@@ -16,7 +16,9 @@ from flarchitect.database.utils import (
     get_all_columns_and_hybrids,
     get_group_by_fields,
     get_models_for_join,
-    get_primary_key_filters,
+    get_primary_key_filters,>>>>>>> master
+279
+
     get_related_b_query,
     get_select_fields,
     get_table_and_column,
@@ -270,6 +272,7 @@ class CrudService:
             query = query.with_entities(*(group_by_fields + agg_fields))
         elif select_fields:
             query = query.with_entities(*select_fields)
+
 
         if conditions and get_config_or_model_meta(
             "API_ALLOW_FILTER", model=self.model, default=True

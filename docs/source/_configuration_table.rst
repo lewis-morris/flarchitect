@@ -371,13 +371,13 @@ Query Options
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
         - Enables ``order_by`` query parameter to sort results. Disable to enforce fixed ordering. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
-    * - ``API_ALLOW_FILTER``
+    * - ``API_ALLOW_FILTERS``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Allows filtering using query parameters. Useful for building rich search functionality. Also recognised as ``API_ALLOW_FILTERS``. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Allows filtering using query parameters. Useful for building rich search functionality. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_ALLOW_JOIN``
 
           :bdg:`default:` ``False``
