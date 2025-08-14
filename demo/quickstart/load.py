@@ -52,11 +52,11 @@ class Author(db.Model):
 
 
 with app.app_context():
-    # initialize the database with the app context
+    # initialise the database with the app context
     db.init_app(app)
     # create the database tables
     db.create_all()
-    # initialize the Architect object with the app context
+    # initialise the Architect object with the app context
     Architect(app)
 
 # Run the app
