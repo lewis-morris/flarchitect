@@ -1,6 +1,9 @@
 """Tests for secret key fallback order in ``get_user_from_token``."""
 
+import pytest
+
 from flarchitect.authentication.jwt import get_user_from_token
+from flarchitect.exceptions import CustomHTTPException
 
 pytest_plugins = ["tests.test_authentication"]
 
@@ -33,3 +36,20 @@ def test_config_fallback_used_last(monkeypatch, client_jwt):
     with client.application.app_context():
         user = get_user_from_token(access_token)
         assert user.username == "carol"
+
+
+def test_access_secret_key_missing(monkeypatch, client_jwt):
+    """Raise ``CustomHTTPException`` when ``ACCESS_SECRET_KEY`` is absent."""
+
+    client, access_token, _ = client_jwt
+    monkeypatch.delenv("ACCESS_SECRET_KEY", raising=False)
+    client.application.config.pop("ACCESS_SECRET_KEY", None)
+
+    with (
+        client.application.app_context(),
+        pytest.raises(CustomHTTPException) as exc_info,
+    ):
+        get_user_from_token(access_token)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.reason == "ACCESS_SECRET_KEY missing"

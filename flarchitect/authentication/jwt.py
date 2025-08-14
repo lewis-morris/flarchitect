@@ -54,23 +54,30 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     """
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_EXPIRY_TIME", default=360)
+    exp_minutes = expires_in_minutes or get_config_or_model_meta(
+        "API_JWT_EXPIRY_TIME", default=360
+    )
 
-    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get(
+        "ACCESS_SECRET_KEY"
+    )
     if ACCESS_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, ACCESS_SECRET_KEY, algorithm="HS256")
     return token
 
 
-def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None) -> str:
+def generate_refresh_token(
+    usr_model: Any, expires_in_minutes: int | None = None
+) -> str:
     """Create a long-lived refresh token for ``usr_model``.
 
     The expiry time defaults to ``API_JWT_REFRESH_EXPIRY_TIME`` from the Flask
@@ -87,17 +94,22 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
         CustomHTTPException: If the refresh secret key is not configured.
     """
 
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
+        "REFRESH_SECRET_KEY"
+    )
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_REFRESH_EXPIRY_TIME", default=2880)
+    exp_minutes = expires_in_minutes or get_config_or_model_meta(
+        "API_JWT_REFRESH_EXPIRY_TIME", default=2880
+    )
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
@@ -145,19 +157,27 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         object.
 
     Raises:
-        CustomHTTPException: If the token is invalid, expired, or the user cannot
-        be found.
+        CustomHTTPException: If ``REFRESH_SECRET_KEY`` is missing, the token is
+        invalid or expired, or the user cannot be found.
     """
     # Verify refresh token
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
-    payload = decode_token(refresh_token, REFRESH_SECRET_KEY)
-    if payload is None:
-        raise CustomHTTPException(status_code=401, reason="Invalid token")
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
+        "REFRESH_SECRET_KEY"
+    )
+    if REFRESH_SECRET_KEY is None:
+        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
+
+    decode_token(refresh_token, REFRESH_SECRET_KEY)
 
     # Check if the refresh token is in the store and not expired
     stored_token = refresh_tokens_store.get(refresh_token)
-    if not stored_token or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]:
-        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
+    if (
+        not stored_token
+        or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]
+    ):
+        raise CustomHTTPException(
+            status_code=403, reason="Invalid or expired refresh token"
+        )
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
@@ -202,7 +222,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         Any: The user model instance corresponding to the token.
 
     Raises:
-        CustomHTTPException: If the token is invalid or the user is not found.
+        CustomHTTPException: If ``ACCESS_SECRET_KEY`` is missing, the token is
+        invalid, or the user is not found.
     """
     # Determine secret key priority:
     # 1. Explicit ``secret_key`` argument
@@ -215,6 +236,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         or current_app.config.get("ACCESS_SECRET_KEY")
     )
     # fmt: on
+    if access_secret_key is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = decode_token(token, access_secret_key)
 
