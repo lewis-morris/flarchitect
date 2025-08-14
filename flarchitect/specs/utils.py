@@ -238,6 +238,7 @@ def _add_request_body_to_spec_template(
         None
     """
     case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
+
     name = convert_case(
         ("patch_" if http_method == "PATCH" else "") + input_schema.__name__.replace("Schema", ""),
         case,

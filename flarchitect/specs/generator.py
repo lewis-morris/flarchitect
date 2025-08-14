@@ -19,7 +19,6 @@ from flarchitect.core.routes import (
 )
 from flarchitect.logging import logger
 from flarchitect.specs.utils import (
-    _prepare_patch_schema,
     append_parameters,
     convert_path_to_openapi,
     handle_authorization,
@@ -484,8 +483,6 @@ def register_schemas(
         None
     """
 
-    put_input_schema = _prepare_patch_schema(input_schema)
-
     # ``MarshmallowPlugin`` keeps track of registered schemas. Inspect the
     # plugin to avoid adding the same schema class twice, which would trigger
     # warnings from ``apispec``.
@@ -494,7 +491,7 @@ def register_schemas(
         getattr(getattr(plugin, "converter", None), "refs", {}) if plugin else {}
     )
 
-    for schema in [input_schema, output_schema, put_input_schema]:
+    for schema in [input_schema, output_schema]:
         if schema:
             model = schema.get_model() if hasattr(schema, "get_model") else None
 
@@ -603,7 +600,3 @@ def register_routes_with_spec(
                         path=convert_path_to_openapi(path),
                         operations={http_method.lower(): endpoint_spec},
                     )
-
-    from flarchitect.schemas.bases import AutoSchema
-
-    register_schemas(architect.api_spec, AutoSchema)
