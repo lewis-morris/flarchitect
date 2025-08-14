@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from apispec.ext.marshmallow.common import make_schema_key, resolve_schema_instance
-from flask import Blueprint, Flask, Response, current_app, request
+from flask import Blueprint, Flask, Response, current_app, redirect, request, session
+from flask_login import current_user, login_user
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
@@ -244,47 +245,86 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
 
         documentation_url = get_config_or_model_meta("API_DOCUMENTATION_URL", default="/docs")
         docs_password = get_config_or_model_meta("API_DOCUMENTATION_PASSWORD", default=None)
+        docs_require_auth = get_config_or_model_meta("API_DOCUMENTATION_REQUIRE_AUTH", default=False)
+        auth_method = get_config_or_model_meta("API_AUTHENTICATE_METHOD", default=None)
+        user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
 
-        def _check_docs_password() -> Response | None:
-            """Validate optional documentation password.
+        def _ensure_docs_access(json_only: bool = False) -> Response | tuple[str, int] | None:
+            """Validate optional documentation authentication.
+
+            Args:
+                json_only (bool): When ``True`` return a JSON error response instead of HTML.
 
             Returns:
-                Optional[Response]: 401 response when authentication fails, otherwise ``None``.
+                Optional[Union[Response, tuple[str, int]]]: ``None`` if access is granted, otherwise a response prompting for login.
             """
 
-            if docs_password:
-                auth = request.authorization
-                if not auth or auth.password != docs_password:
-                    resp = create_response(status=401, errors="Unauthorized")
-                    resp.headers["WWW-Authenticate"] = 'Basic realm="API Documentation"'
-                    return resp
-            return None
+            if not (docs_password or docs_require_auth):
+                return None
+
+            if session.get("docs_authenticated") or getattr(current_user, "is_authenticated", False):
+                return None
+
+            if request.method == "POST" and not json_only:
+                username = request.form.get("username")
+                password = request.form.get("password", "")
+
+                if docs_password and password == docs_password:
+                    session["docs_authenticated"] = True
+                    return redirect(request.path)
+
+                if auth_method and user_model and username and password:
+                    lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user_model, default=None)
+                    check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None)
+                    usr = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
+                    if usr and getattr(usr, check_method)(password):
+                        session["docs_authenticated"] = True
+                        login_user(usr)
+                        return redirect(request.path)
+
+                error = "Invalid credentials"
+            else:
+                error = None
+
+            if json_only:
+                return create_response(status=401, errors="Unauthorized")
+
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
+            allow_username = bool(auth_method and user_model)
+            html = manual_render_absolute_template(
+                os.path.join(self.architect.get_templates_path(), "docs_login.html"),
+                config=self.app.config,
+                docs_style=docs_style,
+                allow_username=allow_username,
+                error=error,
+            )
+            return html, 200
 
         @specification.route("swagger.json")
-        def get_swagger_spec() -> dict | Response:
+        def get_swagger_spec() -> dict | Response | tuple[str, int]:
             """Serve the Swagger spec as JSON.
 
             Returns:
-                Union[dict, Response]: The Swagger spec or a 401 response.
+                Union[dict, Response, tuple[str, int]]: The Swagger spec or an authentication response.
             """
 
-            unauthorized = _check_docs_password()
+            unauthorized = _ensure_docs_access(json_only=True)
             if unauthorized:
                 return unauthorized
             return self.architect.to_api_spec()
 
         get_swagger_spec._auth_disabled = True
 
-        @specification.route(documentation_url)
-        @specification.route(documentation_url + "/")
-        def get_docs() -> str | Response:
+        @specification.route(documentation_url, methods=["GET", "POST"])
+        @specification.route(documentation_url + "/", methods=["GET", "POST"])
+        def get_docs() -> str | Response | tuple[str, int]:
             """Serve the API documentation page.
 
             Returns:
-                Union[str, Response]: HTML documentation or a 401 response.
+                Union[str, Response, tuple[str, int]]: HTML documentation or an authentication response.
             """
 
-            unauthorized = _check_docs_password()
+            unauthorized = _ensure_docs_access()
             if unauthorized:
                 return unauthorized
 
