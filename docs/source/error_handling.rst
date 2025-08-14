@@ -1,7 +1,7 @@
 Error Handling
 =========================================
 
-flarchitect standardizes error reporting through a small set of helpers. These
+flarchitect standardises error reporting through a small set of helpers. These
 utilities ensure your API returns consistent payloads regardless of where an
 exception originates.
 

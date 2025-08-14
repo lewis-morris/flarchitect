@@ -65,7 +65,7 @@ class ResetPasswordSchemaOut(Schema):
     message = fields.Str(
         dump_only=True,
         metadata={
-            "description": "Repsonse message",
+            "description": "Response message",
             "type": "string",
             "format": "email",
         },

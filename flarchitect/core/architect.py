@@ -107,7 +107,7 @@ class Architect(AttributeInitializerMixin):
     cache: "Cache | None" = None
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
-        """Initialize the Architect extension.
+        """Initialise the Architect extension.
 
         The Flask development server runs the application twice when the
         automatic reloader is enabled. To avoid duplicate initialisation and
@@ -152,8 +152,7 @@ class Architect(AttributeInitializerMixin):
         return server_fd is not None and run_main != "true"
 
     def init_app(self, app: Flask, *args, **kwargs):
-        """
-        Initializes the Architect object.
+        """Initialises the Architect object.
 
         Args:
             app (Flask): The flask app.
@@ -312,8 +311,7 @@ class Architect(AttributeInitializerMixin):
                 return jsonify(self.api_spec.to_dict())
 
     def init_api(self, **kwargs):
-        """
-        Initializes the api object, which handles flask route creation for models.
+        """Initialises the api object, which handles Flask route creation for models.
 
         Args:
             **kwargs (dict): Dictionary of keyword arguments.
