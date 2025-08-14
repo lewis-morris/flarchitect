@@ -1125,6 +1125,10 @@ def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
             else field_type.__name__.lower()
         )
 
+    if field_type == fields.Decimal and (fmt := field_obj.metadata.get("format")):
+        # Add optional format for Decimal fields if provided in metadata
+        openapi_type_info["format"] = fmt
+
     if field_type == fields.Function:
         openapi_type_info["format"] = "uri"
         openapi_type_info["example"] = "/url/to/resource"
@@ -1214,6 +1218,7 @@ type_mapping = {
     fields.String: "string",
     fields.Integer: "integer",
     fields.Float: "number",
+    fields.Decimal: "number",
     fields.Boolean: "boolean",
     fields.DateTime: "string",
     fields.Date: "string",
