@@ -96,30 +96,32 @@ class Architect(AttributeInitializerMixin):
         self.route_spec: list[dict[str, Any]] = []
 
         if app is not None:
-            if self._is_reloader_start(app):
+            if self._is_reloader_start():
+
                 logger.debug(4, "Skipping Architect initialisation in reloader parent process")
             else:
                 self.init_app(app, *args, **kwargs)
                 logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
 
     @staticmethod
-    def _is_reloader_start(app: Flask) -> bool:
-        """Detect whether the current process is the initial reloader run.
+    def _is_reloader_start() -> bool:
+        """Return ``True`` when executing in the reloader's parent process.
 
-        Flask's built-in development server executes the application code twice
-        when ``debug`` mode is enabled: once in a supervisory process and again
-        in the child process that serves requests. Only the second run should
-        perform expensive setup.
-
-        Args:
-            app: The Flask application instance.
+        Flask's development reloader spawns a supervisory process that imports
+        the application before starting a child process to serve requests. The
+        parent process exposes a ``WERKZEUG_SERVER_FD`` environment variable
+        while the child sets ``WERKZEUG_RUN_MAIN`` to ``"true"``. By combining
+        these signals we can skip one-time setup during the parent's initial
+        import without affecting production deployments where neither variable
+        is present.
 
         Returns:
-            bool: ``True`` if running under the reloader's parent process,
-            otherwise ``False``.
+            bool: ``True`` if running as the reloader parent, otherwise ``False``.
         """
 
-        return app.debug and os.environ.get("WERKZEUG_RUN_MAIN") != "true"
+        run_main = os.environ.get("WERKZEUG_RUN_MAIN")
+        server_fd = os.environ.get("WERKZEUG_SERVER_FD")
+        return server_fd is not None and run_main != "true"
 
     def init_app(self, app: Flask, *args, **kwargs):
         """
