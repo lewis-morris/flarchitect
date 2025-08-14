@@ -84,7 +84,14 @@ Documentation Settings
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Enables optional basic auth protection for docs and ``swagger.json``. Set the ``API_DOCUMENTATION_PASSWORD`` environment variable to require this password.
+        - Protects docs and ``swagger.json`` with a simple password prompt. Users must enter this password on the docs login screen.
+    * - ``API_DOCUMENTATION_REQUIRE_AUTH``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True`` the docs login screen accepts user account credentials in addition to the optional password. Requires ``API_AUTHENTICATE_METHOD`` to be configured.
     * - ``API_DOCS_STYLE``
 
           :bdg:`default:` ``redoc``
