@@ -55,12 +55,30 @@ def jwt_authentication(func: F) -> F:
 
     @wraps(func)
     def auth_wrapped(*args: Any, **kwargs: Any) -> Any:
+        """Validate a request's JWT before executing ``func``.
+
+        Args:
+            *args: Positional arguments forwarded to ``func``.
+            **kwargs: Keyword arguments forwarded to ``func``.
+
+        Returns:
+            Any: The result of ``func`` if authentication succeeds.
+
+        Raises:
+            CustomHTTPException: If the Authorization header or token is
+                missing or invalid.
+        """
+
         auth = request.headers.get("Authorization")
         if not auth:
-            raise CustomHTTPException(status_code=401, reason="Authorization header missing")
+            raise CustomHTTPException(
+                status_code=401, reason="Authorization header missing"
+            )
         parts = auth.split()
         if parts[0].lower() != "bearer" or len(parts) != 2:
-            raise CustomHTTPException(status_code=401, reason="Invalid Authorization header")
+            raise CustomHTTPException(
+                status_code=401, reason="Invalid Authorization header"
+            )
         token = parts[1]
         usr = get_user_from_token(token, secret_key=None)
         if not usr:
@@ -72,6 +90,14 @@ def jwt_authentication(func: F) -> F:
 
 
 class Architect(AttributeInitializerMixin):
+    """Main orchestrator for the Flask extension.
+
+    The ``Architect`` centralizes initialisation, route creation, API
+    specification generation, caching, CORS handling, and request
+    authentication. It exposes helpers and configuration that allow an
+    application to be wired up with minimal boilerplate.
+    """
+
     app: Flask
     api_spec: CustomSpec | None = None
     api: Optional["RouteCreator"] = None
@@ -98,7 +124,9 @@ class Architect(AttributeInitializerMixin):
         if app is not None:
             if self._is_reloader_start():
 
-                logger.debug(4, "Skipping Architect initialisation in reloader parent process")
+                logger.debug(
+                    4, "Skipping Architect initialisation in reloader parent process"
+                )
             else:
                 self.init_app(app, *args, **kwargs)
                 logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
@@ -144,7 +172,10 @@ class Architect(AttributeInitializerMixin):
             if importlib.util.find_spec("flask_caching") is not None:
                 from flask_caching import Cache
 
-                cache_config = {"CACHE_TYPE": cache_type, "CACHE_DEFAULT_TIMEOUT": cache_timeout}
+                cache_config = {
+                    "CACHE_TYPE": cache_type,
+                    "CACHE_DEFAULT_TIMEOUT": cache_timeout,
+                }
                 self.cache = Cache(config=cache_config)
                 self.cache.init_app(app)
             elif cache_type == "SimpleCache":
@@ -153,7 +184,9 @@ class Architect(AttributeInitializerMixin):
                 self.cache = SimpleCache(default_timeout=cache_timeout)
                 self.cache.init_app(app)
             else:
-                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set")
+                raise RuntimeError(
+                    "flask-caching is required when API_CACHE_TYPE is set"
+                )
 
         if self.get_config("API_ENABLE_CORS", False):
             if importlib.util.find_spec("flask_cors") is not None:
@@ -162,17 +195,34 @@ class Architect(AttributeInitializerMixin):
                 CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
             else:
                 resources = app.config.get("CORS_RESOURCES", {})
-                compiled = [(re.compile(pattern), opts.get("origins", "*")) for pattern, opts in resources.items()]
+                compiled = [
+                    (re.compile(pattern), opts.get("origins", "*"))
+                    for pattern, opts in resources.items()
+                ]
 
                 @app.after_request
                 def apply_cors_headers(response: Response) -> Response:
+                    """Apply CORS headers based on configured resource patterns.
+
+                    Args:
+                        response: The outgoing Flask response.
+
+                    Returns:
+                        Response: The modified response with any relevant CORS
+                        headers added.
+                    """
+
                     path = request.path
                     origin = request.headers.get("Origin")
                     for pattern, origins in compiled:
                         if pattern.match(path):
-                            allowed = [origins] if isinstance(origins, str) else list(origins)
+                            allowed = (
+                                [origins] if isinstance(origins, str) else list(origins)
+                            )
                             if "*" in allowed or (origin and origin in allowed):
-                                response.headers["Access-Control-Allow-Origin"] = "*" if "*" in allowed else origin
+                                response.headers["Access-Control-Allow-Origin"] = (
+                                    "*" if "*" in allowed else origin
+                                )
                             break
                     return response
 
@@ -203,11 +253,19 @@ class Architect(AttributeInitializerMixin):
             """
 
             view = app.view_functions.get(request.endpoint)
-            if not view or getattr(view, "_auth_disabled", False) or getattr(view, "_has_schema_constructor", False):
+            if (
+                not view
+                or getattr(view, "_auth_disabled", False)
+                or getattr(view, "_has_schema_constructor", False)
+            ):
                 return
             try:
-                self._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
-            except CustomHTTPException as exc:  # pragma: no cover - integration behaviour
+                self._handle_auth(
+                    model=None, output_schema=None, input_schema=None, auth_flag=True
+                )
+            except (
+                CustomHTTPException
+            ) as exc:  # pragma: no cover - integration behaviour
                 return create_response(status=exc.status_code, errors=exc.reason)
 
         @app.teardown_request
@@ -346,7 +404,11 @@ class Architect(AttributeInitializerMixin):
             Callable: The decorated function.
         """
 
-        decorator = handle_many(output_schema, input_schema) if many else handle_one(output_schema, input_schema)
+        decorator = (
+            handle_many(output_schema, input_schema)
+            if many
+            else handle_one(output_schema, input_schema)
+        )
         return decorator(func)
 
     def _apply_rate_limit(
@@ -381,7 +443,9 @@ class Architect(AttributeInitializerMixin):
             return self.limiter.limit(rl)(func)
         if rl:
             rule = find_rule_by_function(self, func).rule
-            logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
+            logger.error(
+                f"Rate limit definition not a string or not valid. Skipping for `{rule}` route."
+            )
         return func
 
     def _authenticate_jwt(self) -> bool:
@@ -418,13 +482,17 @@ class Architect(AttributeInitializerMixin):
 
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
         lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", default=None)
-        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
+        check_method = get_config_or_model_meta(
+            "API_CREDENTIAL_CHECK_METHOD", default=None
+        )
 
         if not (user_model and lookup_field and check_method):
             return False
 
         try:
-            user = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
+            user = user_model.query.filter(
+                getattr(user_model, lookup_field) == username
+            ).first()
         except Exception:  # pragma: no cover
             return False
 
@@ -442,7 +510,9 @@ class Architect(AttributeInitializerMixin):
         if scheme.lower() != "api-key" or not token:
             return False
 
-        custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
+        custom_method = get_config_or_model_meta(
+            "API_KEY_AUTH_AND_RETURN_METHOD", default=None
+        )
         if callable(custom_method):
             user = custom_method(token)
             if user:
@@ -452,7 +522,9 @@ class Architect(AttributeInitializerMixin):
 
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
         hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
+        check_method = get_config_or_model_meta(
+            "API_CREDENTIAL_CHECK_METHOD", default=None
+        )
 
         if not (user_model and hash_field and check_method):
             return False
@@ -511,12 +583,16 @@ class Architect(AttributeInitializerMixin):
         auth_flag = kwargs.get("auth")
         roles_tuple: tuple[str, ...] = ()
         if roles and roles is not True:
-            roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
+            roles_tuple = (
+                tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
+            )
 
         def decorator(f: Callable) -> Callable:
             local_roles_required = None
             if roles and auth_flag is not False:
-                from flarchitect.authentication import roles_required as local_roles_required
+                from flarchitect.authentication import (
+                    roles_required as local_roles_required,
+                )
 
             @wraps(f)
             def wrapped(*_args, **_kwargs):
@@ -527,7 +603,9 @@ class Architect(AttributeInitializerMixin):
                     auth_flag=auth_flag,
                 )
 
-                f_decorated = self._apply_schemas(f, output_schema, input_schema, bool(many))
+                f_decorated = self._apply_schemas(
+                    f, output_schema, input_schema, bool(many)
+                )
                 f_decorated = self._apply_rate_limit(
                     f_decorated,
                     model=model,

@@ -4,6 +4,7 @@ import base64
 import datetime
 from collections.abc import Generator
 
+import jwt
 import pytest
 from flask import Flask, Response, request
 from flask.testing import FlaskClient
@@ -18,6 +19,7 @@ from flarchitect.authentication.jwt import (
     generate_refresh_token,
     refresh_access_token,
 )
+from flarchitect.authentication.token_store import RefreshToken
 from flarchitect.authentication.user import (
     current_user,
     get_current_user,
@@ -27,6 +29,7 @@ from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.generator import register_routes_with_spec
 from flarchitect.utils.general import generate_readme_html
 from flarchitect.utils.response_helpers import create_response
+from flarchitect.utils.session import get_session
 
 db = SQLAlchemy()
 
@@ -402,6 +405,7 @@ def test_refresh_access_token_missing_key(
     assert exc_info.value.reason == "REFRESH_SECRET_KEY missing"
 
 
+
 def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
     """Tokens honour ``API_JWT_EXPIRY_TIME`` settings."""
 
@@ -427,6 +431,21 @@ def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
         )
         assert access_delta == datetime.timedelta(minutes=1)
         assert refresh_delta == datetime.timedelta(minutes=2)
+
+
+def test_jwt_algorithm_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """Tokens honour the algorithm set in configuration."""
+
+    client, _, _ = client_jwt
+    app: Flask = client.application
+    with app.app_context():
+        app.config["API_JWT_ALGORITHM"] = "HS512"
+        user = User.query.filter_by(username="carol").first()
+        access = generate_access_token(user)
+        header = jwt.get_unverified_header(access)
+        assert header["alg"] == "HS512"
+        payload = decode_token(access, app.config["ACCESS_SECRET_KEY"])
+        assert payload["username"] == "carol"
 
 
 def test_jwt_no_authorization_header(

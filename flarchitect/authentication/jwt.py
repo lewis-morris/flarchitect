@@ -6,6 +6,11 @@ import jwt
 from flask import current_app
 from sqlalchemy.exc import NoResultFound
 
+from flarchitect.authentication.token_store import (
+    delete_refresh_token,
+    get_refresh_token,
+    store_refresh_token,
+)
 from flarchitect.database.utils import get_primary_keys
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -17,6 +22,45 @@ from flarchitect.utils.session import get_session
 # In-memory store for refresh tokens (use a persistent database in production)
 refresh_tokens_store: dict[str, dict[str, Any]] = {}
 
+
+def get_jwt_algorithm() -> str:
+    """Retrieve the JWT signing algorithm from configuration.
+
+    Returns:
+        str: The algorithm used for encoding and decoding JWTs. Defaults to
+        ``"HS256"`` when not explicitly configured.
+    """
+
+    return get_config_or_model_meta("API_JWT_ALGORITHM", default="HS256")
+
+
+def create_jwt(
+    payload: dict[str, Any],
+    secret_key: str,
+    exp_minutes: int,
+    algorithm: str,
+) -> tuple[str, dict[str, Any]]:
+    """Generate a JSON Web Token and return the token and payload.
+
+    Args:
+        payload: Base payload without temporal claims.
+        secret_key: Key used to sign the token.
+        exp_minutes: Number of minutes until the token expires.
+        algorithm: JWT signing algorithm.
+
+    Returns:
+        tuple[str, dict[str, Any]]: The encoded token and payload including
+        ``exp`` and ``iat`` claims.
+    """
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    payload = {
+        **payload,
+        "exp": now + datetime.timedelta(minutes=exp_minutes),
+        "iat": now,
+    }
+    token = jwt.encode(payload, secret_key, algorithm=algorithm)
+    return token, payload
 
 def get_pk_and_lookups() -> tuple[str, str]:
     """Retrieve the primary key name and lookup field for the user model.
@@ -64,14 +108,17 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     if ACCESS_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
+    algorithm = get_jwt_algorithm()
+
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
+
     }
-    token = jwt.encode(payload, ACCESS_SECRET_KEY, algorithm="HS256")
+    token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
 
 
@@ -111,24 +158,29 @@ def generate_refresh_token(
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
-    }
-    token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
 
-    # Store the refresh token in the server-side store
+    }
+    token, payload = create_jwt(payload, REFRESH_SECRET_KEY, exp_minutes, algorithm)
+
     refresh_tokens_store[token] = {
-        lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
-        pk: str(getattr(usr_model, pk)),  # Convert UUID to string
+        lookup_field: payload[lookup_field],
+        pk: payload[pk],
         "expires_at": payload["exp"],
     }
+
     return token
 
 
-def decode_token(token: str, secret_key: str) -> dict[str, Any]:
+def decode_token(
+    token: str, secret_key: str, algorithm: str | None = None
+) -> dict[str, Any]:
     """Decode a JWT and return its payload.
 
     Args:
-        token (str): The encoded JWT.
-        secret_key (str): The secret key used to decode the token.
+        token: The encoded JWT.
+        secret_key: The secret key used to decode the token.
+        algorithm: Optional JWT algorithm to use for decoding. Defaults to the
+            configured algorithm.
 
     Returns:
         dict[str, Any]: The decoded token payload.
@@ -137,8 +189,10 @@ def decode_token(token: str, secret_key: str) -> dict[str, Any]:
         CustomHTTPException: If the token is expired or invalid.
     """
 
+    algorithm = algorithm or get_jwt_algorithm()
+
     try:
-        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
         return payload
     except jwt.ExpiredSignatureError as exc:
         raise CustomHTTPException(status_code=401, reason="Token has expired") from exc
@@ -174,6 +228,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     if (
         not stored_token
         or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]
+
     ):
         raise CustomHTTPException(
             status_code=403, reason="Invalid or expired refresh token"
@@ -181,8 +236,8 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
-    lookup_value = stored_token.get(lookup_field)
-    pk_value = stored_token.get(pk_field)
+    lookup_value = stored_token.user_lookup
+    pk_value = stored_token.user_pk
 
     # Get the user model (this is the SQLAlchemy model)
     usr_model_class = get_config_or_model_meta("API_USER_MODEL")
@@ -204,7 +259,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     # Generate new access token
     new_access_token = generate_access_token(user)
 
-    refresh_tokens_store.pop(refresh_token)
+    delete_refresh_token(refresh_token)
 
     return new_access_token, user
 
