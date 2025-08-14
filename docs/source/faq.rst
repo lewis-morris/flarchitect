@@ -5,7 +5,7 @@ FAQ
 .. dropdown:: Can I change the case of the output?
 
 
-    Be default url endpoints are ``pluralized kebab-case``, resources are ``camelCase`` and resource fields are
+    By default url endpoints are ``pluralized kebab-case``, resources are ``camelCase`` and resource fields are
     ``snake_case``.
 
     You can change the default behaviour easily by adding the below global flask configurations:
@@ -19,10 +19,10 @@ FAQ
     Options are: camel, pascal, snake, kebab, screaming_kebab, screaming_snake
 
 
-.. dropdown:: Can I block http methods in my API?
+.. dropdown:: Can I block HTTP methods in my API?
 
 
-    `Http method`_'s can be blocked easily, on a global or a model level. See here for full information on how to block
+    `HTTP method`_'s can be blocked easily, on a global or a model level. See here for full information on how to block
     methods.
 
         `API_BLOCK_METHODS <configuration.html#BLOCK_METHODS>`_
@@ -32,7 +32,7 @@ FAQ
 
     .. code-block:: python
 
-        app.config['API_BLOCK_METHODS'] = ['DELETE', 'POST]
+        app.config['API_BLOCK_METHODS'] = ['DELETE', 'POST']
 
 
     Example blocking ``DELETE`` & ``POST`` methods on a specific model:
@@ -74,7 +74,7 @@ FAQ
     If you need to perform soft deletes, you can use the `API_SOFT_DELETE <configuration.html#SOFT_DELETE>`_ configuration
     as a `Flask`_ global configuration. See :ref:`soft-delete` for an example.
 
-    Additonal configuration values to set the attribute that holds the delete flag and the value that represents the
+    Additional configuration values to set the attribute that holds the delete flag and the value that represents the
     ``active`` and ``deleted`` value is also needed.
 
     See the below configuration values that can be defined globally as `Flask`_ configurations or on a model level.
@@ -108,3 +108,5 @@ Troubleshooting
     Confirm the model has a ``Meta`` class and the endpoint isn't blocked by
     ``API_BLOCK_METHODS``. Rebuilding the application will refresh the
     specification.
+
+.. _HTTP method: https://developer.mozilla.org/docs/Web/HTTP/Methods
