@@ -27,4 +27,5 @@ Because the demo starts with no records, that list is empty:
        "value": []
    }
 
-Pop open ``http://localhost:5000/docs`` in your browser to explore the automatically generated API docs.
+ Pop open ``http://localhost:5000/docs`` in your browser to explore the automatically generated API docs.
+ To optionally restrict access, set the ``API_DOCUMENTATION_PASSWORD`` environment variable and supply that password via HTTP Basic auth when visiting the docs.

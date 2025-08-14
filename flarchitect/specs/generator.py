@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
-from flask import Blueprint, Flask, current_app
+from flask import Blueprint, Flask, Response, current_app, request
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
@@ -34,6 +34,7 @@ from flarchitect.utils.general import (
     pretty_print_dict,
     search_all_keys,
 )
+from flarchitect.utils.response_helpers import create_response
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type hints
     from flarchitect import Architect
@@ -240,27 +241,53 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         )
 
         documentation_url = get_config_or_model_meta("API_DOCUMENTATION_URL", default="/docs")
+        docs_password = get_config_or_model_meta("API_DOCUMENTATION_PASSWORD", default=None)
 
-        @specification.route("swagger.json")
-        def get_swagger_spec() -> dict:
-            """Serves the Swagger spec as JSON.
+        def _check_docs_password() -> Response | None:
+            """Validate optional documentation password.
 
             Returns:
-                dict: The Swagger spec.
+                Optional[Response]: 401 response when authentication fails, otherwise ``None``.
             """
+
+            if docs_password:
+                auth = request.authorization
+                if not auth or auth.password != docs_password:
+                    resp = create_response(status=401, errors="Unauthorized")
+                    resp.headers["WWW-Authenticate"] = 'Basic realm="API Documentation"'
+                    return resp
+            return None
+
+        @specification.route("swagger.json")
+        def get_swagger_spec() -> dict | Response:
+            """Serve the Swagger spec as JSON.
+
+            Returns:
+                Union[dict, Response]: The Swagger spec or a 401 response.
+            """
+
+            unauthorized = _check_docs_password()
+            if unauthorized:
+                return unauthorized
             return self.architect.to_api_spec()
+
+        get_swagger_spec._auth_disabled = True
 
         @specification.route(documentation_url)
         @specification.route(documentation_url + "/")
-        def get_docs() -> str:
-            """Serves the API documentation page.
+        def get_docs() -> str | Response:
+            """Serve the API documentation page.
 
             Returns:
-                str: The HTML documentation page.
+                Union[str, Response]: HTML documentation or a 401 response.
             """
+
+            unauthorized = _check_docs_password()
+            if unauthorized:
+                return unauthorized
+
             custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
             docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
- 
 
             template_name = "swagger.html" if docs_style == "swagger" else "apispec.html"
             return manual_render_absolute_template(
@@ -268,6 +295,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 config=self.app.config,
                 custom_headers=custom_headers,
             )
+
+        get_docs._auth_disabled = True
 
         self.architect.app.register_blueprint(specification)
 

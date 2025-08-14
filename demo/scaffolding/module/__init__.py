@@ -2,8 +2,8 @@
 
 from flask import Flask
 
-from .extensions import db, schema
 from .config import Config
+from .extensions import db, schema
 
 
 def create_app() -> Flask:

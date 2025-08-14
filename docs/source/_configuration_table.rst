@@ -78,6 +78,13 @@ Documentation Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - URL path where documentation is served. Useful for mounting docs under a custom route such as ``/redoc``. Accepts any valid path string. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+    * - ``API_DOCUMENTATION_PASSWORD``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Enables optional basic auth protection for docs and ``swagger.json``. Set the ``API_DOCUMENTATION_PASSWORD`` environment variable to require this password.
     * - ``API_DOCS_STYLE``
 
           :bdg:`default:` ``redoc``
