@@ -1,16 +1,7 @@
 from datetime import date, datetime
 
 from flask import session
-from sqlalchemy import (
-    Column,
-    Date,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Table,
-    Text,
-)
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -126,7 +117,7 @@ class Author(db.Model):
 
     books = relationship("Book", back_populates="author")
 
-    # By default, any field starting with an underscore is ignored by flarchitect. To change this behavior, set the
+    # By default, any field starting with an underscore is ignored by flarchitect. To change this behaviour, set the
     # `API_IGNORE_UNDERSCORE_ATTRIBUTES` to `False` in the app's configuration.
     _hidden_field: Mapped[str | None] = mapped_column(
         String,

@@ -1,4 +1,4 @@
-"""Custom logging utilities providing colored pattern highlighting and verbosity control."""
+"""Custom logging utilities providing coloured pattern highlighting and verbosity control."""
 
 from __future__ import annotations
 
@@ -6,18 +6,18 @@ import re
 
 from colorama import Fore, Style, init
 
-# Initialize Colorama
+# Initialise Colorama
 init(autoreset=True)
 
 
 def color_text_with_multiple_patterns(text: str) -> str:
-    """Color text wrapped in specific patterns with respective colors.
+    """Colour text wrapped in specific patterns with respective colours.
 
     Args:
         text: The text containing wrapped patterns.
 
     Returns:
-        The colorized text with patterns replaced.
+        The colourised text with patterns replaced.
     """
     patterns: dict[str, tuple[str, str]] = {
         r"`(.*?)`": (Fore.YELLOW, Style.NORMAL),  # Yellow for backticks
@@ -33,7 +33,9 @@ def color_text_with_multiple_patterns(text: str) -> str:
     for pattern, (color, style) in patterns.items():
         text = re.sub(
             pattern,
-            lambda match, color=color, style=style: replace_with_color(match, color, style),
+            lambda match, color=color, style=style: replace_with_color(
+                match, color, style
+            ),
             text,
         )
 
@@ -54,8 +56,10 @@ class CustomLogger:
         """
         print(color_text_with_multiple_patterns(text))
 
-    def _log_with_prefix(self, level: int, message: str, prefix: str, color: str | None = None) -> None:
-        """Internal helper to log with a prefix and optional color."""
+    def _log_with_prefix(
+        self, level: int, message: str, prefix: str, color: str | None = None
+    ) -> None:
+        """Internal helper to log with a prefix and optional colour."""
         if level <= self.verbosity_level:
             prefix_text = f"{prefix} {level}: ".ljust(10)
             if color:

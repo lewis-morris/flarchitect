@@ -5,16 +5,16 @@ categories = {
     "Science Fiction": "Explores futuristic concepts, advanced technology, and often space exploration.",
     "Mystery": "Involves suspenseful and puzzling scenarios, often with a detective or investigator.",
     "Thriller": "Focuses on generating excitement and suspense, with high stakes and constant tension.",
-    "Romance": "Centers on love stories and romantic relationships between characters.",
+    "Romance": "Centres on love stories and romantic relationships between characters.",
     "Historical Fiction": "Set in the past, blending historical facts with fictional characters and plots.",
     "Horror": "Aimed to scare, unsettle, or horrify the reader, often with supernatural elements.",
-    "Literary Fiction": "Emphasizes themes, character development, and stylistic complexity over plot.",
+    "Literary Fiction": "Emphasises themes, character development, and stylistic complexity over plot.",
     "Young Adult": "Targets teenagers and young adults, dealing with themes relevant to youth.",
     "Children's Books": "Designed for young readers, featuring stories and illustrations suitable for children.",
     "Biography": "A detailed account of a person's life, told by someone else.",
     "Self-Help": "Intended to guide readers in personal improvement and tackling personal problems.",
     "Cookbooks": "A collection of recipes and cooking tips, often accompanied by culinary guidance.",
-    "Poetry": "Expressive writing, often employing verse, meter, and imagery for emotional impact.",
+    "Poetry": "Expressive writing, often employing verse, metre, and imagery for emotional impact.",
     "Graphic Novels": "Narrative works in which the story is conveyed through sequential art.",
 }
 
@@ -23,7 +23,7 @@ good_words = [
     "wonderful",
     "exciting",
     "delightful",
-    "marvelous",
+    "marvellous",
     "superb",
     "enjoyable",
     "splendid",
@@ -50,7 +50,7 @@ bad_words = [
     "horrible",
     "tedious",
     "miserable",
-    "lackluster",
+    "lacklustre",
     "uninspiring",
     "disappointing",
 ]
@@ -134,7 +134,14 @@ last_names = [
     "Turner",
 ]
 
-nationality = ["English"] * 10 + ["Scottish"] * 10 + ["Welsh"] * 10 + ["Irish"] * 5 + ["American"] * 3 + ["Australian"] * 3
+nationality = (
+    ["English"] * 10
+    + ["Scottish"] * 10
+    + ["Welsh"] * 10
+    + ["Irish"] * 5
+    + ["American"] * 3
+    + ["Australian"] * 3
+)
 
 bios = [
     "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative ",
@@ -151,7 +158,7 @@ bios = [
     "A trailblazer in their genre, they have garnered numerous awards and accolades for their groundbreaking work.",
     "Their compelling narratives and complex characters reflect a profound understanding of social and cultural ",
     "dynamics.",
-    "This author's ability to weave humor and wit into their storytelling has delighted audiences, making their books ",
+    "This author's ability to weave humour and wit into their storytelling has delighted audiences, making their books ",
     "a joy to read.",
     "A champion of exploring challenging themes, their works are known for their depth and thought-provoking content.",
     "Blending rich imagination with intricate plots, this author creates captivating tales that linger in the minds",
