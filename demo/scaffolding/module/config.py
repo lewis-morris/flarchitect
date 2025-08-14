@@ -29,6 +29,7 @@ class Config:
     API_ALLOW_NESTED_WRITES = False
     API_CREATE_DOCS = True
     API_ENABLE_CORS = False
+    API_DOCUMENTATION_PASSWORD = os.getenv("API_DOCUMENTATION_PASSWORD")
 
     # Authentication configuration
     API_AUTHENTICATE = True
