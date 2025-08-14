@@ -19,10 +19,6 @@ from flarchitect.utils.session import get_session
 # Secret keys (keep them secure)
 
 
-# In-memory store for refresh tokens (use a persistent database in production)
-refresh_tokens_store: dict[str, dict[str, Any]] = {}
-
-
 def get_jwt_algorithm() -> str:
     """Retrieve the JWT signing algorithm from configuration.
 
@@ -61,6 +57,7 @@ def create_jwt(
     }
     token = jwt.encode(payload, secret_key, algorithm=algorithm)
     return token, payload
+
 
 def get_pk_and_lookups() -> tuple[str, str]:
     """Retrieve the primary key name and lookup field for the user model.
@@ -116,7 +113,6 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
-
     }
     token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
@@ -158,15 +154,17 @@ def generate_refresh_token(
         "exp": datetime.datetime.now(datetime.timezone.utc)
         + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
-
     }
+
+    algorithm = get_jwt_algorithm()
     token, payload = create_jwt(payload, REFRESH_SECRET_KEY, exp_minutes, algorithm)
 
-    refresh_tokens_store[token] = {
-        lookup_field: payload[lookup_field],
-        pk: payload[pk],
-        "expires_at": payload["exp"],
-    }
+    store_refresh_token(
+        token=token,
+        user_pk=payload[pk],
+        user_lookup=payload[lookup_field],
+        expires_at=payload["exp"],
+    )
 
     return token
 
@@ -221,15 +219,25 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
-    decode_token(refresh_token, REFRESH_SECRET_KEY)
+    try:
+        decode_token(refresh_token, REFRESH_SECRET_KEY)
+    except CustomHTTPException as exc:
+        if exc.reason == "Token has expired":
+            delete_refresh_token(refresh_token)
+        raise
 
     # Check if the refresh token is in the store and not expired
-    stored_token = refresh_tokens_store.get(refresh_token)
-    if (
-        not stored_token
-        or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]
+    stored_token = get_refresh_token(refresh_token)
+    if stored_token is None:
+        raise CustomHTTPException(
+            status_code=403, reason="Invalid or expired refresh token"
+        )
 
-    ):
+    expires_at = stored_token.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+    if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+        delete_refresh_token(refresh_token)
         raise CustomHTTPException(
             status_code=403, reason="Invalid or expired refresh token"
         )
