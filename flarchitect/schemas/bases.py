@@ -302,8 +302,24 @@ class AutoSchema(Base):
 
     def add_column_field(
         self, attribute: str, original_attribute: str, column_type: Any
-    ):
-        """Automatically add a field for a given column in the SQLAlchemy model."""
+    ) -> None:
+        """Add a schema field for a SQLAlchemy column.
+
+        Args:
+            attribute (str): Name of the field exposed by the schema.
+            original_attribute (str): Name of the attribute on the SQLAlchemy model.
+            column_type (Any): SQLAlchemy column type instance being converted.
+
+        Returns:
+            None: The field is added directly to ``self.fields`` and related mappings.
+
+        Assumptions:
+            ``column_type`` is either an ``Enum`` or present in ``type_mapping``.
+
+        Side Effects:
+            Mutates ``self`` by inserting the generated field and updating its
+            metadata via :meth:`_update_field_metadata`.
+        """
 
         # Check if the attribute should be skipped
         if self._should_skip_attribute(attribute):
@@ -339,16 +355,23 @@ class AutoSchema(Base):
         # Update the OpenAPI metadata for the field
         self._update_field_metadata(original_attribute)
 
-    def add_to_fields(self, attribute, field, load=True, dump=True):
-        """
-        Add a field to the fields dictionary
+    def add_to_fields(
+        self, attribute: str, field: fields.Field, load: bool = True, dump: bool = True
+    ) -> None:
+        """Register a field on the schema.
+
         Args:
-            attribute (str): The attribute name
-            field (Field): The field object
+            attribute (str): Attribute name on the schema.
+            field (fields.Field): Marshmallow field to register.
+            load (bool, optional): Whether the field should be available for loading.
+            dump (bool, optional): Whether the field should be available for dumping.
 
         Returns:
             None
 
+        Side Effects:
+            Updates ``declared_fields``, ``fields``, ``load_fields`` and
+            ``dump_fields`` dictionaries on the schema.
         """
         self.declared_fields[attribute] = field
 
@@ -360,8 +383,19 @@ class AutoSchema(Base):
 
     def _get_column_field_attrs(
         self, original_attribute: str, column_type: Any
-    ) -> dict:
-        """Get additional arguments for column fields."""
+    ) -> dict[str, Any]:
+        """Compute Marshmallow field arguments for a model column.
+
+        Args:
+            original_attribute (str): Name of the column on the SQLAlchemy model.
+            column_type (Any): SQLAlchemy column type instance.
+
+        Returns:
+            dict[str, Any]: Keyword arguments to apply when instantiating the field.
+
+        Assumptions:
+            ``self.model`` exposes ``__table__`` and ``original_attribute`` exists on it.
+        """
         column = self.model.__table__.columns.get(original_attribute)
 
         # Check if column is None
@@ -506,15 +540,23 @@ class AutoSchema(Base):
 
         return field_args
 
-    def get_url(self, obj, attribute, other_schema):
-        """
-        Get the URL for a related object.
+    def get_url(
+        self, obj: Any, attribute: str, other_schema: Schema
+    ) -> str | list[str] | None:
+        """Resolve a URL for a related object.
+
         Args:
-            obj (Any): The object to get the URL from.
-            attribute (str): The attribute name to get the URL for.
+            obj (Any): Parent object from which to read the relationship.
+            attribute (str): Relationship attribute name on ``obj``.
+            other_schema (Schema): Related schema class; currently unused but
+                reserved for future customization.
 
         Returns:
+            str | list[str] | None: URL or list of URLs returned from the related
+            object's ``to_url`` method, or ``None`` if the relationship is empty.
 
+        Assumptions:
+            Related objects implement a ``to_url`` method.
         """
         related = getattr(obj, attribute)
         if isinstance(related, list):
@@ -524,15 +566,23 @@ class AutoSchema(Base):
         else:
             return None
 
-    def get_many_url(self, obj, attribute, other_schema):
-        """
-        Get the URL for many related object.
+    def get_many_url(
+        self, obj: Any, attribute: str, other_schema: Schema
+    ) -> str | list[str]:
+        """Resolve URLs for collection relationships.
+
         Args:
-            obj (Any): The object to get the URL from.
-            attribute (str): The attribute name to get the URL for.
+            obj (Any): Parent object from which to read the relationship.
+            attribute (str): Relationship attribute name on ``obj``.
+            other_schema (Schema): Schema class describing the related model.
 
         Returns:
+            str | list[str]: Result of calling the generated ``*_to_url`` method
+            on ``obj`` for the related model.
 
+        Assumptions:
+            ``obj`` exposes a ``<child>_to_url`` method for the related model as
+            determined by the configured endpoint namer.
         """
 
         child_end = get_config_or_model_meta(
@@ -546,8 +596,22 @@ class AutoSchema(Base):
         attribute: str,
         original_attribute: str,
         relationship_property: RelationshipProperty,
-    ):
-        """Automatically add a field for a given relationship in the SQLAlchemy model."""
+    ) -> None:
+        """Add a schema field for a SQLAlchemy relationship.
+
+        Args:
+            attribute (str): Name of the field exposed by the schema.
+            original_attribute (str): Name of the relationship attribute on the model.
+            relationship_property (RelationshipProperty): SQLAlchemy relationship
+                descriptor.
+
+        Returns:
+            None
+
+        Side Effects:
+            Modifies schema field mappings and updates field metadata. May add
+            additional load-only fields when nested writes are enabled.
+        """
         allow_nested_writes = get_config_or_model_meta(
             "ALLOW_NESTED_WRITES", model=self.model, default=False
         )
@@ -716,8 +780,18 @@ class AutoSchema(Base):
             )
             self.add_to_fields(field_name, load_field, dump=False)
 
-    def _update_field_metadata(self, attribute: str):
-        """Update metadata for the generated field."""
+    def _update_field_metadata(self, attribute: str) -> None:
+        """Populate OpenAPI metadata for a field.
+
+        Args:
+            attribute (str): Field name whose metadata should be updated.
+
+        Returns:
+            None
+
+        Side Effects:
+            Mutates the field's ``metadata`` dictionary in-place.
+        """
         field_obj = self.fields[attribute]  # Get the Marshmallow field object
         field_meta = field_obj.metadata  # Extract the existing metadata
 
