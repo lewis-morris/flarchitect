@@ -1,7 +1,7 @@
 # flarchitect
 
 [![Docs](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/docs.yml)
-[![Tests](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master)](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml)
+[![Tests](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml/badge.svg?branch=master&event=push)](https://github.com/lewis-morris/flarchitect/actions/workflows/run-unit-tests.yml)
 ![Coverage](https://lewis-morris.github.io/flarchitect/_static/coverage.svg)
 [![PyPI version](https://img.shields.io/pypi/v/flarchitect.svg)](https://pypi.org/project/flarchitect/)
 
