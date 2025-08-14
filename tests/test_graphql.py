@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Tests for GraphQL integration."""
+
+from __future__ import annotations
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
