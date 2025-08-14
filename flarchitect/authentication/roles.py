@@ -2,7 +2,7 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any, TypeVar, cast
 
-from flarchitect.authentication.user import current_user
+from flarchitect.authentication.user import get_current_user
 from flarchitect.exceptions import CustomHTTPException
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -19,19 +19,22 @@ def roles_required(*roles: str) -> Callable[[F], F]:
         Callable[[F], F]: A decorator enforcing role-based access control.
 
     Raises:
-        CustomHTTPException: Raised with status code ``403`` when the current
-            user lacks any of the required roles or no user is authenticated.
+        CustomHTTPException: Raised with status code ``401`` when no user is
+            authenticated or ``403`` when the user lacks the required roles.
     """
 
     def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            user_roles = getattr(current_user, "roles", None)
-            if user_roles is None:
-                raise CustomHTTPException(status_code=403, reason="Roles required")
+            user = get_current_user()
+            if user is None:
+                raise CustomHTTPException(
+                    status_code=401, reason="Authentication required"
+                )
 
-            if roles and not set(roles).issubset(set(user_roles)):
-                raise CustomHTTPException(status_code=403, reason="Roles required")
+            user_roles = getattr(user, "roles", None)
+            if roles and not set(roles).issubset(set(user_roles or [])):
+                raise CustomHTTPException(status_code=403, reason="Insufficient role")
 
             return func(*args, **kwargs)
 
@@ -57,19 +60,22 @@ def roles_accepted(*roles: str) -> Callable[[F], F]:
         Callable[[F], F]: A decorator enforcing role-based access control.
 
     Raises:
-        CustomHTTPException: Raised with status code ``403`` when the current
-            user lacks all of the provided roles or no user is authenticated.
+        CustomHTTPException: Raised with status code ``401`` when no user is
+            authenticated or ``403`` when the user lacks all provided roles.
     """
 
     def decorator(func: F) -> F:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            user_roles = getattr(current_user, "roles", None)
-            if user_roles is None:
-                raise CustomHTTPException(status_code=403, reason="Roles accepted")
+            user = get_current_user()
+            if user is None:
+                raise CustomHTTPException(
+                    status_code=401, reason="Authentication required"
+                )
 
-            if roles and not set(roles).intersection(set(user_roles)):
-                raise CustomHTTPException(status_code=403, reason="Roles accepted")
+            user_roles = getattr(user, "roles", None)
+            if roles and not set(roles).intersection(set(user_roles or [])):
+                raise CustomHTTPException(status_code=403, reason="Insufficient role")
 
             return func(*args, **kwargs)
 
