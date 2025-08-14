@@ -137,39 +137,6 @@ def get_param_schema(converter) -> dict[str, str]:
         return {"type": "string"}
 
 
-# def generate_delete_query_params(schema: Schema, model: DeclarativeBase) -> List[Dict[str, Any]]:
-#     """Helper function to generate query parameters for DELETE method.
-#
-#     Args:
-#         schema (Schema): The schema associated with the model.
-#         model (DeclarativeBase): The SQLAlchemy model.
-#
-#     Returns:
-#         List[Dict[str, Any]]: List of query parameters for DELETE method.
-#     """
-#     query_params = []
-#     if get_config_or_model_meta("API_ALLOW_DELETE_RELATED", getattr(schema.Meta, "model", None), default=True):
-#         related = [x[1] for x in get_model_relationships(model)]
-#         query_params.append(
-#             {
-#                 "name": "delete_related",
-#                 "in": "query",
-#                 "schema": {"type": "string"},
-#                 "description": f"A comma-separated list of related resources to delete. Options include: {', '.join(related)}",
-#             }
-#         )
-#     if get_config_or_model_meta("API_ALLOW_DELETE_DEPENDENTS", getattr(schema.Meta, "model", None), default=True):
-#         query_params.append(
-#             {
-#                 "name": "delete_dependents",
-#                 "in": "query",
-#                 "schema": {"type": "boolean"},
-#                 "description": "If true, will delete all recursively dependent resources.",
-#             }
-#         )
-#     return query_params
-
-
 def generate_delete_query_params(
     schema: Schema, model: DeclarativeBase
 ) -> list[dict[str, Any]]:
