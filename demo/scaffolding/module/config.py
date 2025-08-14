@@ -45,7 +45,7 @@ class Config:
     REFRESH_SECRET_KEY = os.getenv("REFRESH_SECRET_KEY", "refresh-secret")
     API_JWT_EXPIRY_TIME = 15
     API_JWT_REFRESH_EXPIRY_TIME = 1440
-    API_DOCS_STYLE = "redoc"
+    API_DOCS_STYLE = "swagger"
     # Demo-specific options
     USERNAME_MIN_LENGTH = 3
 
