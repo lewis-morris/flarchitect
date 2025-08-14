@@ -3,6 +3,7 @@ import os
 import pprint
 import re
 import socket
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 from xml.etree import ElementTree as ET
@@ -237,20 +238,32 @@ def search_all_keys(model: Any, key: str) -> bool:
     return any(any(get_config_or_model_meta(key, model=subclass, method=method) for method in HTTP_METHODS) for subclass in model.__subclasses__())
 
 
-def generate_readme_html(file_path: str, *args: Any, **kwargs: Any) -> str:
+def generate_readme_html(file_path: str | Path, *args: Any, **kwargs: Any) -> str:
     """Generate README content from a Jinja2 template.
 
     Args:
-        file_path (str): The path to the Jinja2 template file.
-        *args (Any): Variable length argument list.
-        **kwargs (Any): Arbitrary keyword arguments.
+        file_path: Path to the Jinja2 template file. Relative paths are
+            resolved from the project root.
+        *args: Variable length argument list passed to ``render``.
+        **kwargs: Arbitrary keyword arguments passed to ``render``.
 
     Returns:
-        str: The rendered content as a string.
+        Rendered template content.
+
+    Raises:
+        FileNotFoundError: If ``file_path`` does not exist.
     """
-    template_dir, template_file = os.path.split(file_path)
-    environment = Environment(loader=FileSystemLoader(os.path.abspath(template_dir)))
-    template = environment.get_template(template_file)
+    path = Path(file_path)
+    if not path.is_absolute():
+        # Resolve relative paths from the project root to avoid dependence on
+        # the current working directory during test execution.
+        path = Path(__file__).resolve().parents[2] / path
+
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found.")
+
+    environment = Environment(loader=FileSystemLoader(str(path.parent)))
+    template = environment.get_template(path.name)
     return template.render(*args, **kwargs)
 
 
