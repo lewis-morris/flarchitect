@@ -36,6 +36,14 @@ def test_basic_change_title_and_version(client):
     assert "0.2.0" in html
 
 
+def test_hidden_patch_and_auto_schemas(client) -> None:
+    """Ensure patch and auto schemas are excluded from OpenAPI docs."""
+    swagger = client.get("/swagger.json").json
+    schema_names = swagger["components"]["schemas"].keys()
+    assert "auto" not in schema_names
+    assert all(not name.startswith("patch") for name in schema_names)
+
+
 @pytest.fixture
 def app_meth():
     app_new = create_app(
