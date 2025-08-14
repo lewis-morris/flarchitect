@@ -1,4 +1,4 @@
-"""Tests for recursive_delete behavior."""
+"""Tests for `recursive_delete` utility."""
 
 from __future__ import annotations
 
@@ -66,6 +66,7 @@ utils_stub.parse_column_table_and_operator = _stub
 utils_stub.validate_table_and_column = _stub
 sys.modules["flarchitect.database.utils"] = utils_stub
 
+
 exceptions_stub = types.ModuleType("flarchitect.exceptions")
 
 
@@ -80,7 +81,6 @@ config_stub = types.ModuleType("flarchitect.utils.config_helpers")
 
 
 def get_config_or_model_meta(*args: Any, **kwargs: Any) -> dict[str, Any]:
-    return {}
 
 
 config_stub.get_config_or_model_meta = get_config_or_model_meta
@@ -135,6 +135,7 @@ class Child(Base):
     parent: Mapped[Parent] = relationship("Parent", back_populates="children")
     grandchildren: Mapped[list[Grandchild]] = relationship(
         "Grandchild", back_populates="child"
+
     )
 
 

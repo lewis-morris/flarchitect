@@ -11,7 +11,7 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 
 ## Why flarchitect?
 
-If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, saving you time without sacrificing quality or customization.
+If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, saving you time without sacrificing quality or customisation.
 
 ## Features
 
@@ -114,7 +114,7 @@ from flask import Flask
 from flarchitect import Architect
 
 app = Flask(__name__)
-architect = Architect(app)  # OpenAPI served at /openapi.json, docs serverd at /docs
+architect = Architect(app)  # OpenAPI served at /openapi.json, docs served at /docs
 
 ```
 

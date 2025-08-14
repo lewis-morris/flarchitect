@@ -5,10 +5,10 @@ FAQ
 .. dropdown:: Can I change the case of the output?
 
 
-    By default url endpoints are ``pluralized kebab-case``, resources are ``camelCase`` and resource fields are
+    By default URL endpoints are ``pluralised kebab-case``, resources are ``camelCase`` and resource fields are
     ``snake_case``.
 
-    You can change the default behaviour easily by adding the below global flask configurations:
+    You can change the default behaviour easily by adding the below global Flask configurations:
 
         `API_ENDPOINT_CASE <configuration.html#ENDPOINT_CASE>`_
 
@@ -22,12 +22,12 @@ FAQ
 .. dropdown:: Can I block HTTP methods in my API?
 
 
-    `HTTP method`_'s can be blocked easily, on a global or a model level. See here for full information on how to block
+    `HTTP methods <https://developer.mozilla.org/docs/Web/HTTP/Methods>`_ can be blocked easily, on a global or a model level. See here for full information on how to block
     methods.
 
         `API_BLOCK_METHODS <configuration.html#BLOCK_METHODS>`_
 
-    Example blocking all ``DELETE`` & ``POST`` methods:
+    Example blocking all ``DELETE`` and ``POST`` methods:
 
 
     .. code-block:: python
@@ -35,7 +35,7 @@ FAQ
         app.config['API_BLOCK_METHODS'] = ['DELETE', 'POST']
 
 
-    Example blocking ``DELETE`` & ``POST`` methods on a specific model:
+    Example blocking ``DELETE`` and ``POST`` methods on a specific model:
 
     .. code-block:: python
 
@@ -44,7 +44,7 @@ FAQ
                 block_methods = ['DELETE', 'POST']
 
 
-    Alternatively, If you want to only allow ``GET`` requests you can turn on the
+    Alternatively, if you want to only allow ``GET`` requests you can turn on the
     `API_READ_ONLY <configuration.html#READ_ONLY>`_ option in the `Flask`_ configuration, which will block all but ``GET``
     requests from being served.
 
@@ -56,7 +56,7 @@ FAQ
     that fire:
 
     - before the database query is performed
-    - before the data is returned to the api
+    - before the data is returned to the API
     - on an exception being raised
 
     See the below configuration values that can be defined globally as `Flask`_ configurations or on a model level.
@@ -109,4 +109,3 @@ Troubleshooting
     ``API_BLOCK_METHODS``. Rebuilding the application will refresh the
     specification.
 
-.. _HTTP method: https://developer.mozilla.org/docs/Web/HTTP/Methods
