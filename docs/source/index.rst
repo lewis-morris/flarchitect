@@ -39,6 +39,14 @@ flarchitect
 
    advanced_demo
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Project Info
+   :hidden:
+
+   faq
+   roadmap
+
 .. image:: /_static/coverage.svg
    :alt: Coverage Report
 
