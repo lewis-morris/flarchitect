@@ -1,6 +1,6 @@
 # Fetch all items
 query {
-  items {
+  all_items {
     id
     name
   }
@@ -8,7 +8,7 @@ query {
 
 # Create a new item
 mutation {
-  createItem(name: "Biscuit") {
+  create_item(name: "Biscuit") {
     id
     name
   }
