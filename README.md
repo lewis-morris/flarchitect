@@ -7,11 +7,11 @@
 
 
 
-flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API with almost no boilerplate. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
+flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQLAlchemy models into a production-ready REST API in minutes while keeping you in full control of your models and endpoints. It automatically builds CRUD endpoints, generates interactive Redoc documentation and keeps responses consistent so you can focus on your application logic.
 
 ## Why flarchitect?
 
-If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, letting you focus on the features that matter rather than plumbing.
+If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, saving you time without sacrificing quality or customization.
 
 ## Features
 

@@ -151,13 +151,49 @@ class Architect(AttributeInitializerMixin):
         server_fd = os.environ.get("WERKZEUG_SERVER_FD")
         return server_fd is not None and run_main != "true"
 
-    def init_app(self, app: Flask, *args, **kwargs):
-        """Initialises the Architect object.
+    def init_app(self, app: Flask, *args: Any, **kwargs: Any) -> None:
+        """Initialise the extension for a given :class:`flask.Flask` app.
+
+        The method wires core services into ``app``, enabling optional
+        behaviours such as response caching, Cross-Origin Resource Sharing
+        (CORS) headers and automatic OpenAPI documentation. Any additional
+        ``kwargs`` are forwarded to :meth:`init_api` and
+        :meth:`init_apispec`.
 
         Args:
-            app (Flask): The flask app.
-            *args (list): List of arguments.
-            **kwargs (dict): Dictionary of keyword arguments.
+            app: The Flask application to register with.
+            *args: Positional arguments forwarded to
+                :class:`~flarchitect.utils.general.AttributeInitializerMixin`.
+            **kwargs: Optional keyword arguments affecting initialisation.
+                Supported keys include:
+
+                ``cache`` (dict | bool, optional): Configuration for caching
+                responses. When truthy, ``API_CACHE_TYPE`` and
+                ``API_CACHE_TIMEOUT`` are used to set up caching.
+
+                ``enable_cors`` (bool, optional): Enable CORS handling when
+                ``True``. The ``CORS_RESOURCES`` mapping defines allowed
+                origins.
+
+                ``create_docs`` (bool, optional): Generate ReDoc and OpenAPI
+                documentation when ``True``.
+
+        Examples:
+            Basic initialisation::
+
+                architect = Architect()
+                architect.init_app(app)
+
+            With optional features::
+
+                architect = Architect()
+                architect.init_app(
+                    app,
+                    cache={"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 300},
+                    enable_cors=True,
+                    create_docs=True,
+                )
+
         """
         super().__init__(app, *args, **kwargs)
         self._register_app(app)

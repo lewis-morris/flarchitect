@@ -347,7 +347,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             )
             return html, 200
 
-        @specification.route("swagger.json")
+        @specification.route("apispec.json")
         def get_swagger_spec() -> dict | Response | tuple[str, int]:
             """Serve the Swagger spec as JSON.
 

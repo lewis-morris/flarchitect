@@ -51,6 +51,46 @@ This associates the ``iban`` and ``cron`` validators with the ``account`` and
 ``cron`` columns respectively.  Invalid values cause Marshmallow to raise a
 ``ValidationError`` and the API will respond with ``400``.
 
+Multiple validators can be applied to a single column by providing a list:
+
+.. code-block:: python
+
+    class Contact(db.Model):
+        identifier = db.Column(
+            db.String,
+            info={"validate": ["email", "slug"]},
+        )
+
+Submitting invalid data returns messages for each failed validator:
+
+.. code-block:: json
+
+    {
+      "errors": {"identifier": ["Email address is not valid.", "Value must be a valid slug."]},
+      "status_code": 400,
+      "value": null
+    }
+
+Custom error messages can also be supplied via a mapping:
+
+.. code-block:: python
+
+    class Employee(db.Model):
+        email = db.Column(
+            db.String,
+            info={"validate": {"email": "Invalid email"}},
+        )
+
+Invalid values return the custom message:
+
+.. code-block:: json
+
+    {
+      "errors": {"email": ["Invalid email"]},
+      "status_code": 400,
+      "value": null
+    }
+
 Available validators
 --------------------
 
