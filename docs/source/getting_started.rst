@@ -20,12 +20,14 @@ Run the demo
 The curl command answers with a JSON payload that includes some metadata and a ``value`` list of authors.
 Because the demo starts with no records, that list is empty:
 
+
 .. code-block:: json
 
    {
        "total_count": 0,
        "value": []
    }
+
 
  Pop open ``http://localhost:5000/docs`` in your browser to explore the automatically generated API docs.
  To optionally restrict access, set the ``API_DOCUMENTATION_PASSWORD`` environment variable and supply that password via HTTP Basic auth when visiting the docs.
