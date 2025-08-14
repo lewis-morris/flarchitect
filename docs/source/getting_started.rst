@@ -3,7 +3,7 @@ Getting Started Sample Project
 
 Flarchitect ships with a tiny demo that shows how it turns a SQLAlchemy model into a REST API.
 The sample lives in ``demo/quickstart/load.py`` and defines a single ``Author`` model.
-Running the script starts a local server and exposes the model at ``/api/author``, returning an empty list until you add data.
+Running the script starts a local server and exposes the model at ``/api/authors``, returning an empty list until you add data.
 
 .. literalinclude:: ../../demo/quickstart/load.py
    :language: python
@@ -15,7 +15,7 @@ Run the demo
 .. code-block:: bash
 
    python demo/quickstart/load.py
-   curl http://localhost:5000/api/author
+   curl http://localhost:5000/api/authors
 
 The curl command answers with a JSON payload that includes some metadata and a ``value`` list of authors.
 Because the demo starts with no records, that list is empty:

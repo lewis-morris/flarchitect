@@ -81,7 +81,7 @@ Use ``curl`` to call an endpoint and view the response.
 
 .. code:: bash
 
-    curl http://localhost:5000/api/author
+    curl http://localhost:5000/api/authors
 
 Example response:
 
