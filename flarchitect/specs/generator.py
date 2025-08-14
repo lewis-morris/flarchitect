@@ -57,7 +57,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
     api_logo_background: str | None = None
     api_keywords: list[str] | None = None
     create_docs: bool | None = True
-    documentation_url_prefix: str | None = "/"
+    documentation_url_prefix: str | None = None
     documentation_url: str | None = "/docs"
 
     def __init__(self, app: Flask, architect: Architect, *args, **kwargs):
