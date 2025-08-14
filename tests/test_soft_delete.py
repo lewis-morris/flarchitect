@@ -89,7 +89,7 @@ def client_gadget_soft() -> Generator[FlaskClient, None, None]:
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         API_BASE_MODEL=db.Model,
         API_CREATE_DOCS=False,
-        API_ALLOW_FILTER=False,
+        API_ALLOW_FILTERS=False,
         API_SOFT_DELETE=True,
         API_SOFT_DELETE_ATTRIBUTE="deleted",
         API_SOFT_DELETE_VALUES=(False, True),
@@ -115,7 +115,7 @@ def client_gadget_hard() -> Generator[FlaskClient, None, None]:
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         API_BASE_MODEL=db.Model,
         API_CREATE_DOCS=False,
-        API_ALLOW_FILTER=False,
+        API_ALLOW_FILTERS=False,
         API_SOFT_DELETE=False,
     )
     db.init_app(app)

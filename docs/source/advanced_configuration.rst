@@ -379,7 +379,7 @@ responses. These toggles may be disabled to enforce fixed behaviour.
 Filtering
 ^^^^^^^^^
 
-The :data:`API_ALLOW_FILTER` flag enables a ``filter`` query parameter for
+The :data:`API_ALLOW_FILTERS` flag enables a ``filter`` query parameter for
 constraining results. For example::
 
     GET /api/books?filter=author_id__eq:1
@@ -400,7 +400,7 @@ the ``fields`` parameter::
     GET /api/books?fields=title,author_id
 
 See :doc:`configuration <configuration>` for detailed descriptions of
-:data:`API_ALLOW_FILTER`, :data:`API_ALLOW_ORDER_BY` and
+:data:`API_ALLOW_FILTERS`, :data:`API_ALLOW_ORDER_BY` and
 :data:`API_ALLOW_SELECT_FIELDS`.
 
 Joining related resources
