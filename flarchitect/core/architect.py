@@ -12,7 +12,7 @@ from flask import Flask, Response, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Session
 
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
@@ -353,6 +353,66 @@ class Architect(AttributeInitializerMixin):
             **kwargs (dict): Dictionary of keyword arguments.
         """
         self.api = RouteCreator(architect=self, **kwargs)
+
+    def init_graphql(
+        self,
+        schema: Any | None = None,
+        *,
+        models: list[type[DeclarativeBase]] | None = None,
+        session: Session | None = None,
+        url_path: str = "/graphql",
+    ) -> None:
+        """Register a GraphQL endpoint and document it in the OpenAPI spec.
+
+        Args:
+            schema: Prebuilt Graphene schema. If ``None``, ``models`` and
+                ``session`` must be provided to build one automatically.
+            models: Models to expose via GraphQL when ``schema`` is ``None``.
+            session: SQLAlchemy session for resolver functions.
+            url_path: URL path where the GraphQL endpoint should live.
+
+        Raises:
+            ValueError: If a schema is not supplied and models or session are
+                missing.
+        """
+
+        if schema is None:
+            if not models or session is None:
+                raise ValueError("Provide a schema or models and session")
+            from flarchitect.graphql import create_schema_from_models
+
+            schema = create_schema_from_models(models, session)
+
+        @self.app.route(url_path, methods=["GET", "POST"])
+        def graphql_endpoint() -> Response:
+            """Handle GraphQL queries and mutations."""
+
+            if request.method == "GET":
+                return jsonify({"message": "Send a POST request with a GraphQL query."})
+
+            payload = request.get_json(silent=True) or {}
+            result = schema.execute(
+                payload.get("query"),
+                variable_values=payload.get("variables"),
+            )
+            response_data: dict[str, Any] = {}
+            if result.errors:
+                response_data["errors"] = [str(err) for err in result.errors]
+            if result.data is not None:
+                response_data["data"] = result.data
+            return jsonify(response_data)
+
+        route = {
+            "function": graphql_endpoint,
+            "summary": "GraphQL endpoint",
+            "description": "Execute GraphQL queries and mutations.",
+            "tag": "GraphQL",
+        }
+        self.set_route(route)
+        if self.api_spec is not None:
+            from flarchitect.specs.generator import register_routes_with_spec
+
+            register_routes_with_spec(self, [route])
 
     def to_api_spec(self):
         """
