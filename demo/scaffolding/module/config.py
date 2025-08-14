@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import os
 
-from demo.scaffolding.module.extensions import db
-from demo.scaffolding.module.models import User
+from .extensions import db
+from .models import User
 
 
 class Config:
