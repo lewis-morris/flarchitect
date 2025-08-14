@@ -41,7 +41,7 @@ jobs:
 
       - name: Stop if version unchanged
         if: steps.v.outputs.new == steps.v.outputs.old
-        run: echo "No version bump (${ { steps.v.outputs.new } }) — skipping publish." && exit 0
+        run: echo "No version bump (${{ steps.v.outputs.new }}) — skipping publish." && exit 0
 
       - name: Build sdist & wheel
         run: |
