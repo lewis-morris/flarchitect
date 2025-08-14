@@ -271,9 +271,8 @@ class CrudService:
         elif select_fields:
             query = query.with_entities(*select_fields)
 
-
         if conditions and get_config_or_model_meta(
-            "API_ALLOW_FILTER", model=self.model, default=True
+            "API_ALLOW_FILTERS", model=self.model, default=True
         ):
             query = query.filter(and_(*conditions))
 
