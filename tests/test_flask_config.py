@@ -43,6 +43,12 @@ def test_hidden_patch_and_auto_schemas(client) -> None:
     assert "auto" not in schema_names
     assert all(not name.startswith("patch") for name in schema_names)
 
+    for methods in swagger["paths"].values():
+        patch_spec = methods.get("patch")
+        if patch_spec:
+            ref = patch_spec["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+            assert "patch" not in ref.lower()
+
 
 @pytest.fixture
 def app_meth():
