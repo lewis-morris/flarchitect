@@ -87,55 +87,7 @@ Advanced Configuration
 
 Need finer control? The :doc:`Advanced Configuration <advanced_configuration>` guide covers features like rate limiting, CORS, and custom cache backends.
 
-What are you waiting for...?
-
-Turn this.
-
-.. code:: python
-
-    class Book(db.Model):
-
-        id = db.Column(db.Integer, primary_key=True)
-        title = db.Column(db.String(80), unique=True, nullable=False)
-        author = db.Column(db.String(80), nullable=False)
-        published = db.Column(db.DateTime, nullable=False)
-
-
-
-Into this:
-
-``GET /api/books``
-
-.. code:: json
-
-    {
-      "datetime": "2024-01-01T00:00:00.0000+00:00",
-      "api_version": "0.1.0",
-      "status_code": 200,
-      "response_ms": 15,
-      "total_count": 10,
-      "next_url": "/api/authors?limit=2&page=3",
-      "previous_url": "/api/authors?limit=2&page=1",
-      "errors": null,
-      "value": [
-        {
-          "author": "John Doe",
-          "id": 3,
-          "published": "2024-01-01T00:00:00.0000+00:00",
-          "title": "The Book"
-        },
-        {
-          "author": "Jane Doe",
-          "id": 4,
-          "published": "2024-01-01T00:00:00.0000+00:00",
-          "title": "The Book 2"
-        }
-      ]
-    }
-
-Let's get started!
-
-:doc:`Quick Start <quickstart>`
+Want to see **flarchitect** in action? Define your models, plug the library into your `Flask`_ app, and you'll get CRUD endpoints, schemas, and interactive docs instantly. The :doc:`Quick Start <quickstart>` walks through a complete example.
 
 `View Demos <https://github.com/lewis-morris/flarchitect/tree/master/demo>`__
 
