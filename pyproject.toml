@@ -136,13 +136,14 @@ version_toml = ["pyproject.toml:project.version"]
 branch = "master"
 commit_parser = "conventional"
 tag_format = "v{version}"
-build_command = "python -m build"
+build_command = "python -m pip install -U build && python -m build"
 upload_to_pypi = true
 changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.commit_parser_options]
 # Treat these as patch bumps too
 patch_tags = ["fix", "perf", "docs", "chore", "refactor", "build", "ci", "style", "test"]
+default_bump_level = 2  # PATCH (0: none, 1: prerelease, 2: patch, 3: minor, 4: major)
 
 [tool.semantic_release.remote]
 name = "origin"
