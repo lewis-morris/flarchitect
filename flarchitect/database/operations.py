@@ -16,9 +16,7 @@ from flarchitect.database.utils import (
     get_all_columns_and_hybrids,
     get_group_by_fields,
     get_models_for_join,
-    get_primary_key_filters,>>>>>>> master
-279
-
+    get_primary_key_filters,
     get_related_b_query,
     get_select_fields,
     get_table_and_column,
