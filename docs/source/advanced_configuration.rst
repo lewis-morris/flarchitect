@@ -187,6 +187,36 @@ Nested writes are disabled by default. Enable them globally with
 ``API_ALLOW_NESTED_WRITES = True`` or per model via
 ``Meta.allow_nested_writes``.
 
+.. code:: python
+
+    class Config:
+        API_ALLOW_NESTED_WRITES = True
+
+    class Parent(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+        children = db.relationship("Child", back_populates="parent")
+
+        class Meta:
+            allow_nested_writes = True
+
+    class Child(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        name = db.Column(db.String)
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
+        parent = db.relationship("Parent", back_populates="children")
+
+        class Meta:
+            allow_nested_writes = True
+
+With this configuration a nested object can be created in the same request::
+
+    POST /api/parent
+    {
+        "name": "Jane",
+        "children": [{"name": "Junior"}]
+    }
+
 Depth limits
 ^^^^^^^^^^^^
 
