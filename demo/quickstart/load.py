@@ -8,12 +8,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from flarchitect import Architect
 
 
-# Create a base model that all models will inherit from. This is a requirement for the auto api creator to work.
-# Don't, however, add to any of your models when using flask-sqlalchemy, instead, inherit from `db.model` as you
-# would normally.
+# Create a base model that all models will inherit from. This is a requirement for the auto
+# API creator to work. Don't, however, add to any of your models when using
+# flask-sqlalchemy; instead, inherit from `db.model` as you would normally.
 class BaseModel(DeclarativeBase):
-    def get_session(*args):
-        return db.session
+    """Base declarative model for all SQLAlchemy models."""
 
 
 # Create a new flask app
@@ -33,6 +32,8 @@ app.config["API_BASE_MODEL"] = db.Model
 
 # Create a new model that inherits from db.Model
 class Author(db.Model):
+    """Model representing an author."""
+
     __tablename__ = "author"
 
     class Meta:
