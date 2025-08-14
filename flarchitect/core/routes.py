@@ -49,6 +49,112 @@ if TYPE_CHECKING:
     from flarchitect import Architect
 
 
+def _global_pre_process(service: CrudService, global_pre_hook: Callable | None, **hook_kwargs: Any) -> dict[str, Any]:
+    """Execute the global pre-hook if defined, seeding default model.
+
+    Args:
+        service (CrudService): CRUD service supplying default model.
+        global_pre_hook (Callable | None): Hook to run before any processing.
+        **hook_kwargs (Any): Keyword arguments passed to the hook.
+
+    Returns:
+        dict[str, Any]: Possibly modified hook arguments.
+    """
+    if global_pre_hook:
+        model = hook_kwargs.pop("model", None) or service.model
+        return global_pre_hook(model=model, **hook_kwargs)
+    return hook_kwargs
+
+
+def _pre_process(service: CrudService, pre_hook: Callable | None, **hook_kwargs: Any) -> dict[str, Any]:
+    """Run the pre-hook allowing mutation of incoming arguments.
+
+    Args:
+        service (CrudService): CRUD service supplying default model.
+        pre_hook (Callable | None): Hook executed before the action.
+        **hook_kwargs (Any): Keyword arguments passed to the hook.
+
+    Returns:
+        dict[str, Any]: Processed hook arguments.
+    """
+    if pre_hook:
+        model = hook_kwargs.pop("model", None) or service.model
+        return pre_hook(model=model, **hook_kwargs)
+    return hook_kwargs
+
+
+def _post_process(service: CrudService, post_hook: Callable | None, output: Any, **hook_kwargs: Any) -> Any:
+    """Apply a post-hook to the action result.
+
+    Args:
+        service (CrudService): CRUD service supplying default model.
+        post_hook (Callable | None): Hook executed after the action.
+        output (Any): Data returned from the action.
+        **hook_kwargs (Any): Keyword arguments passed to the hook.
+
+    Returns:
+        Any: Final output after post processing.
+    """
+    if post_hook:
+        model = hook_kwargs.pop("model", None) or service.model
+        out_val = post_hook(model=model, output=output, **hook_kwargs).get("output")
+        return out_val.get("output") if isinstance(out_val, dict) and "output" in out_val else out_val
+    return output
+
+
+def _route_function_factory(
+    service: CrudService,
+    action: Callable,
+    many: bool,
+    global_pre_hook: Callable | None,
+    pre_hook: Callable | None,
+    post_hook: Callable | None,
+    get_field: str | None,
+    join_model: type[DeclarativeBase] | None,
+    output_schema: Schema | None,
+) -> Callable:
+    """Construct the route function tying together hooks and action.
+
+    Args:
+        service (CrudService): CRUD service for the model.
+        action (Callable): CRUD operation to execute.
+        many (bool): Whether multiple records are expected.
+        global_pre_hook (Callable | None): Global pre-hook.
+        pre_hook (Callable | None): Pre-hook.
+        post_hook (Callable | None): Post-hook.
+        get_field (str | None): Field used for lookups.
+        join_model (type[DeclarativeBase] | None): Related model for joins.
+        output_schema (Schema | None): Schema used for output serialization.
+
+    Returns:
+        Callable: Configured Flask route function.
+    """
+
+    def route_function(id: int | None = None, **hook_kwargs: Any) -> Any:
+        hook_kwargs = _global_pre_process(
+            service,
+            global_pre_hook,
+            id=id,
+            field=get_field,
+            join_model=join_model,
+            output_schema=output_schema,
+            **hook_kwargs,
+        )
+        hook_kwargs = _pre_process(service, pre_hook, **hook_kwargs)
+        action_kwargs: dict[str, Any] = {"lookup_val": id} if id else {}
+        action_kwargs.update(hook_kwargs)
+        action_kwargs["many"] = many
+        action_kwargs["data_dict"] = hook_kwargs.get("deserialized_data")
+        action_kwargs["join_model"] = hook_kwargs.get("join_model")
+        action_kwargs["id"] = hook_kwargs.get("id")
+        action_kwargs["model"] = hook_kwargs.get("model")
+
+        output = action(**action_kwargs) or abort(404)
+        return _post_process(service, post_hook, output, **hook_kwargs)
+
+    return route_function
+
+
 def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> list[dict[str, Any]]:
     """Generates path parameters from a Flask routing rule.
 
@@ -155,61 +261,6 @@ def create_route_function(
     Returns:
         Callable: The route function.
     """
-
-    def global_pre_process(global_pre_hook: Callable, **hook_kwargs) -> dict[str, Any]:
-        if global_pre_hook:
-            model = hook_kwargs.pop("model", None) or service.model
-
-            return global_pre_hook(model=model, **hook_kwargs)
-        return hook_kwargs
-
-    def pre_process(pre_hook: Callable, **hook_kwargs) -> dict[str, Any]:
-        if pre_hook:
-            model = hook_kwargs.pop("model", None) or service.model
-
-            return pre_hook(model=model, **hook_kwargs)
-        return hook_kwargs
-
-    def post_process(post_hook: Callable, output: Any, **hook_kwargs) -> Any:
-        if post_hook:
-            model = hook_kwargs.pop("model", None) or service.model
-            out_val = post_hook(model=model, output=output, **hook_kwargs).get("output")
-
-            # Ensure out_val is valid before attempting to access "output"
-            return out_val.get("output") if isinstance(out_val, dict) and "output" in out_val else out_val
-
-        return output
-
-    def route_function_factory(
-        action: Callable,
-        many: bool,
-        global_pre_hook: Callable | None,
-        pre_hook: Callable | None,
-        post_hook: Callable | None,
-    ) -> Callable:
-        def route_function(id: int | None = None, **hook_kwargs) -> Any:
-            hook_kwargs = global_pre_process(
-                global_pre_hook,
-                id=id,
-                field=get_field,
-                join_model=join_model,
-                output_schema=kwargs.get("output_schema"),
-                **hook_kwargs,
-            )
-            hook_kwargs = pre_process(pre_hook, **hook_kwargs)
-            action_kwargs = {"lookup_val": id} if id else {}
-            action_kwargs.update(hook_kwargs)
-            action_kwargs["many"] = many
-            action_kwargs["data_dict"] = hook_kwargs.get("deserialized_data")
-            action_kwargs["join_model"] = hook_kwargs.get("join_model")
-            action_kwargs["id"] = hook_kwargs.get("id")
-            action_kwargs["model"] = hook_kwargs.get("model")
-
-            output = action(**action_kwargs) or abort(404)
-            return post_process(post_hook, output, **hook_kwargs)
-
-        return route_function
-
     global_pre_hook = get_config_or_model_meta("API_GLOBAL_SETUP_CALLBACK", default=None, method=method)
     pre_hook = get_config_or_model_meta("API_SETUP_CALLBACK", model=service.model, default=None, method=method)
     post_hook = get_config_or_model_meta("API_RETURN_CALLBACK", model=service.model, default=None, method=method)
@@ -222,7 +273,17 @@ def create_route_function(
     }
 
     action = action_map.get(method)
-    return route_function_factory(action, many, global_pre_hook, pre_hook, post_hook)
+    return _route_function_factory(
+        service,
+        action,
+        many,
+        global_pre_hook,
+        pre_hook,
+        post_hook,
+        get_field,
+        join_model,
+        kwargs.get("output_schema"),
+    )
 
 
 class RouteCreator(AttributeInitializerMixin):
