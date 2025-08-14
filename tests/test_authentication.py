@@ -19,6 +19,7 @@ from flarchitect.authentication.jwt import (
     generate_refresh_token,
     refresh_access_token,
 )
+from flarchitect.authentication.token_store import RefreshToken
 from flarchitect.authentication.user import (
     current_user,
     get_current_user,
@@ -28,6 +29,7 @@ from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.generator import register_routes_with_spec
 from flarchitect.utils.general import generate_readme_html
 from flarchitect.utils.response_helpers import create_response
+from flarchitect.utils.session import get_session
 
 db = SQLAlchemy()
 
@@ -382,6 +384,18 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     with pytest.raises(CustomHTTPException):
         refresh_access_token(refresh_token)
     assert get_current_user() is None
+
+
+def test_refresh_token_persistence(client_jwt: tuple[FlaskClient, str, str]) -> None:
+    """Refresh tokens persist and are removed after use."""
+
+    _, _, refresh_token = client_jwt
+    session = get_session(RefreshToken)
+    stored = session.get(RefreshToken, refresh_token)
+    assert stored is not None
+
+    refresh_access_token(refresh_token)
+    assert session.get(RefreshToken, refresh_token) is None
 
 
 def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:

@@ -85,7 +85,14 @@ def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, D
     return all_columns, all_models
 
 
-def create_pagination_defaults():
+def create_pagination_defaults() -> tuple[dict[str, int], dict[str, int]]:
+    """Assemble default and maximum pagination limits and return both dictionaries.
+
+    Returns:
+        tuple[dict[str, int], dict[str, int]]: Default pagination values and
+        their maximum allowable limits.
+    """
+
     PAGINATION_DEFAULTS = {
         "page": 1,
         "limit": get_config_or_model_meta("API_PAGINATION_SIZE_DEFAULT", default=20),

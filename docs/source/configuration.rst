@@ -7,7 +7,6 @@ Configuration
    :caption: Config Locations:
 
    config_locations/global_
-   config_locations/global_method
    config_locations/model
    config_locations/model_method
 
@@ -29,13 +28,10 @@ To offer flexibility and control, **flarchitect** follows a hierarchy of configu
 - **Lowest Priority – Global `Flask`_ config options** are added to ``app.config`` with an ``API_`` prefix
   (for example ``API_TITLE``). These defaults apply to every request unless overridden by a more specific
   configuration.  See :doc:`Global<config_locations/global_>` for details.
-- **Method-based – Global method options** add the HTTP method after the ``API_`` prefix
-  (such as ``API_GET_RATE_LIMIT``) to customise behaviour for a particular verb across the entire
-  application.  See :doc:`Global Method<config_locations/global_method>` for details.
 - **Model-based – `SQLAlchemy`_ model ``Meta`` attributes** are written in lowercase without the ``API_`` prefix
   (for example ``rate_limit``) and override any global settings for that model.  See :doc:`Model<config_locations/model>`.
 - **Highest Priority – Model method-specific ``Meta`` attributes** prefix the lowercase option name with an HTTP
-  method (such as ``get_rate_limit`` or ``post_blocked``) to target a single model-method combination.
+  method (such as ``get_description`` or ``post_authenticate``) to target a single model-method combination.
   These settings override all others.  See :doc:`Model Method<config_locations/model_method>`.
 
 .. note::
@@ -46,9 +42,7 @@ To offer flexibility and control, **flarchitect** follows a hierarchy of configu
 
     Pri 2. :bdg-dark-line:`Model` - :doc:`View here<config_locations/model>`
 
-    Pri 3. :bdg-dark-line:`Global Method` - :doc:`View here<config_locations/global_method>`
-
-    Pri 4. :bdg-dark-line:`Global` - :doc:`View here<config_locations/global_>`
+    Pri 3. :bdg-dark-line:`Global` - :doc:`View here<config_locations/global_>`
 
 Config Value Structure
 --------------------------------
@@ -86,30 +80,6 @@ Please note the badge for each configuration value, as it defines where the valu
 
         See the :doc:`Global <config_locations/global_>` page for more information.
 
-    .. tab-item:: Global Method
-
-        :bdg-dark-line:`Global Method`
-
-        Global configuration values can apply to specific HTTP methods: ``GET``, ``POST``, ``PUT``, ``DELETE``, or ``PATCH``.
-
-        The method name should be added after the ``API_`` prefix.
-
-        Use method-scoped options to change behaviour between reads and writes across the entire API, such as
-        applying tighter rate limits to mutating requests or disabling a verb globally. Any global configuration
-        key that supports method scoping can be used here by inserting the method name (e.g. ``API_GET_RATE_LIMIT``),
-        with value types mirroring their global counterparts.
-
-        Example:
-
-        .. code:: python
-
-            class Config:
-                API_GET_RATE_LIMIT = "100 per minute"  # throttle read requests
-                API_POST_BLOCKED = True                 # disable POST across the API
-                API_PATCH_RATE_LIMIT = "10 per minute"  # tighter limits on writes
-
-        See the :doc:`Global Method<config_locations/global_method>` page for more information.
-
     .. tab-item:: Model
 
         :bdg-dark-line:`Model`
@@ -145,10 +115,10 @@ Please note the badge for each configuration value, as it defines where the valu
 
         They are applied in the `SQLAlchemy`_ model's ``Meta`` class, omit the ``API_`` prefix, are lowercase, and are prefixed with the method.
 
-        Use these settings to fine-tune behaviour for a specific model-method combination. This is useful when,
-        for example, a model should allow ``GET`` requests with a high rate limit but restrict ``POST`` calls or
-        customise serialization only for ``PATCH``. Any model-level option can be adapted by prefixing it with the
-        HTTP method name (such as ``get_rate_limit`` or ``post_blocked``) and follows the same value types as the
+        Use these settings to fine-tune behaviour for a specific model-method combination. This is useful when
+        a model should provide different documentation summaries or authentication requirements per HTTP method.
+        Any model-level option can be adapted by prefixing it with the
+        HTTP method name (such as ``get_description`` or ``post_authenticate``) and follows the same value types as the
         corresponding model option.
 
         Example:
@@ -159,9 +129,8 @@ Please note the badge for each configuration value, as it defines where the valu
                 __tablename__ = "article"
 
                 class Meta:
-                    get_rate_limit = "100 per minute"    # API_GET_RATE_LIMIT
-                    post_blocked = True                   # API_POST_BLOCKED
-                    patch_serialization_depth = 1         # API_PATCH_SERIALIZATION_DEPTH
+                    get_description = "Detail view of an article"
+                    post_authenticate = True
 
         See the :doc:`Model Method<config_locations/model_method>` page for more information.
 
