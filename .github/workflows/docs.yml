@@ -34,12 +34,6 @@ jobs:
           python -m pip install -e .
           python -m pip install -e ".[docs,dev]"
 
-      - name: Run tests and generate coverage badge
-        run: |
-          pytest --maxfail=1 --disable-warnings \
-                 --cov=. --cov-report=term-missing --cov-report=xml
-          coverage-badge -i coverage.xml -o docs/source/_static/coverage.svg
-
       - name: Build HTML
         working-directory: docs
         run: |
