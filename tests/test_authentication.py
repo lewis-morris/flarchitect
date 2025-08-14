@@ -25,6 +25,7 @@ from flarchitect.authentication.user import (
 )
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.generator import register_routes_with_spec
+from flarchitect.utils.general import generate_readme_html
 from flarchitect.utils.response_helpers import create_response
 
 db = SQLAlchemy()
@@ -430,3 +431,36 @@ def test_custom_success_and_failure(client_custom: FlaskClient) -> None:
     resp_bad = client_custom.get("/custom", headers={"Authorization": "Wrong token"})
     assert resp_bad.status_code == 401
     assert get_current_user() is None
+
+
+def test_readme_authentication_section() -> None:
+    """Authentication section renders only the active method."""
+    config = {
+        "API_AUTHENTICATE": True,
+        "API_AUTHENTICATE_METHOD": ["jwt"],
+        "API_TITLE": "Example",
+        "API_JWT_EXPIRY_TIME": 360,
+        "API_JWT_REFRESH_EXPIRY_TIME": 2880,
+    }
+    rendered = generate_readme_html(
+        "flarchitect/html/base_readme.MD",
+        config=config,
+        api_output_example="{}",
+        has_rate_limiting=False,
+    )
+    assert rendered.count("# Authentication") == 1
+    assert "## JSON Web Tokens (JWT)" in rendered
+    assert "## API Key Authentication" not in rendered
+    assert "## Basic Authentication" not in rendered
+
+
+def test_readme_authentication_absent_when_disabled() -> None:
+    """Authentication section is omitted when disabled."""
+    config = {"API_AUTHENTICATE": False, "API_TITLE": "Example"}
+    rendered = generate_readme_html(
+        "flarchitect/html/base_readme.MD",
+        config=config,
+        api_output_example="{}",
+        has_rate_limiting=False,
+    )
+    assert "# Authentication" not in rendered

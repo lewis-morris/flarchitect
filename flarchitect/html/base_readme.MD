@@ -38,9 +38,6 @@ Request headers for endpoints with rate limiting will include the following fiel
 - Retry-After: The number of seconds until you can make another request.
 
 {% endif %}
-{% if config.API_AUTHENTICATE %}
-
-{% endif %}
 
 # Error Handling
 
@@ -66,7 +63,7 @@ Common Error Codes:
 
 # Authentication
 
-{% if config.API_AUTHENTICATE_METHOD == "api_key" %}
+{% if "api_key" in config.API_AUTHENTICATE_METHOD %}
 
 ## API Key Authentication
 
@@ -78,9 +75,9 @@ making requests to protected endpoints, include your API key in the request head
 Your API key is a unique identifier that must be kept confidential. Do not share it in publicly accessible areas such
 GitHub, client-side code, and so forth.
 
-## JSON Web Tokens (JWT)
+{% elif "jwt" in config.API_AUTHENTICATE_METHOD %}
 
-{% elif config.API_AUTHENTICATE_METHOD == "jwt" %}
+## JSON Web Tokens (JWT)
 
 Our API leverages JSON Web Tokens (JWT) for secure authentication. To use our API, include the JWT in the Authorization
 header of each request like so:
@@ -96,9 +93,9 @@ Please note, refresh tokens remain valid for approximately {{ (config.API_JWT_RE
 days.
 Upon expiration, you'll need to authenticate again to obtain a new JWT.
 
-## Basic Authentication
+{% elif "basic" in config.API_AUTHENTICATE_METHOD %}
 
-{% elif config.API_AUTHENTICATE_METHOD == "basic" %}
+## Basic Authentication
 
 Our API supports Basic Authentication. This method requires the submission of a username and password with each request.
 These credentials should be base64-encoded and included in the Authorization header:
