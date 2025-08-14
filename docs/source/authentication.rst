@@ -265,9 +265,65 @@ You can require multiple roles by passing more than one name:
    def update_post():
        ...
 
-Ensure your user model exposes a list of role names, for example
-``User.roles = ["admin", "editor"]``. If the authenticated user lacks any of
-the required roles—or if no user is authenticated—a ``403`` response is raised.
+.. _defining-roles:
+
+Defining roles
+~~~~~~~~~~~~~~
+
+Roles can be attached to the user model or embedded in authentication tokens so
+``roles_required`` can evaluate permissions.
+
+JWT
+^^^^
+
+1. Persist a ``roles`` attribute on the user model, e.g. ``User.roles = ["admin"]``.
+2. Include roles when creating tokens::
+
+       create_access_token(
+           identity=user.id,
+           additional_claims={"roles": user.roles},
+       )
+
+3. ``roles_required`` reads the ``roles`` claim from the token.
+
+API keys
+^^^^^^^^
+
+1. Store roles on the user model.
+2. In the lookup function, return a user object with those roles::
+
+       def lookup_user_by_token(token: str) -> User | None:
+           user = User.query.filter_by(api_key=token).first()
+           if user:
+               set_current_user(user)
+           return user
+
+3. ``roles_required`` pulls roles from ``current_user``.
+
+Custom authentication
+^^^^^^^^^^^^^^^^^^^^^
+
+1. Resolve the user from your custom credentials.
+2. Call ``set_current_user`` with an object exposing ``roles``.
+3. ``roles_required`` authorises the request using those roles.
+
+Common roles
+^^^^^^^^^^^^
+
+.. list-table:: Common roles
+   :header-rows: 1
+
+   * - Role
+     - Responsibility
+   * - ``admin``
+     - Full access to manage resources and users.
+   * - ``editor``
+     - Create and modify resources but cannot manage users.
+   * - ``viewer``
+     - Read-only access to resources.
+
+If the authenticated user lacks any of the required roles—or if no user is
+authenticated—a ``403`` response is raised.
 
 Troubleshooting
 ---------------
@@ -280,9 +336,9 @@ Troubleshooting
    * - Missing Authorization header
      - Include the appropriate ``Authorization`` header with your credentials.
    * - Token has expired
-      - Use the refresh token to obtain a new access token.
+     - Use the refresh token to obtain a new access token.
    * - Invalid or expired refresh token
-      - Log in again to receive a new access/refresh token pair.
+     - Log in again to receive a new access/refresh token pair.
 
 
 .. _jwt_auth.py: https://github.com/lewis-morris/flarchitect/blob/master/demo/authentication/jwt_auth.py
