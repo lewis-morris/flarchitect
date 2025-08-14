@@ -26,8 +26,7 @@ flarchitect
    :maxdepth: 2
    :caption: Configuration
    :hidden:
-
-   soft_delete
+   
    configuration
    advanced_configuration
 

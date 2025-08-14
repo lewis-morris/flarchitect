@@ -736,7 +736,7 @@ Soft Delete
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Marks records as deleted rather than removing them from the database.
+        - Marks records as deleted rather than removing them from the database. See :ref:`soft-delete`.
           When enabled, ``DELETE`` swaps a configured attribute to its "deleted" value unless ``?cascade_delete=1`` is sent.
         - Example::
 

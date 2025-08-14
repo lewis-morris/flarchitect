@@ -72,7 +72,7 @@ FAQ
 
 
     If you need to perform soft deletes, you can use the `API_SOFT_DELETE <configuration.html#SOFT_DELETE>`_ configuration
-    as a `Flask`_ global configuration.
+    as a `Flask`_ global configuration. See :ref:`soft-delete` for an example.
 
     Additonal configuration values to set the attribute that holds the delete flag and the value that represents the
     ``active`` and ``deleted`` value is also needed.
