@@ -26,19 +26,17 @@ Config Hierarchy
 
 To offer flexibility and control, **flarchitect** follows a hierarchy of configuration priorities:
 
-- **Lowest Priority** – Global `Flask`_ config options apply to all requests and are overridden by any more specific configuration.
-- **Method-based** – Method-specific options can override global settings for particular HTTP methods.
-- **Model-based** – `SQLAlchemy`_ model ``Meta`` attributes override both global and method-based configurations.
-- **Highest Priority** – Model-specific configurations suffixed with an `HTTP method`_ allow the most detailed customization per model and method.
-
-.. note::
-
-    When applying config values:
-
-    - Global `Flask`_ config values are prefixed with ``API_``.
-    - Global method-based `Flask`_ config values are prefixed with ``API_{method}_``.
-    - `SQLAlchemy`_ model config values omit the ``API_`` prefix and are lowercase.
-    - `SQLAlchemy`_ model method config values omit the ``API_`` prefix, are lowercase, and are prefixed with the method.
+- **Lowest Priority – Global `Flask`_ config options** are added to ``app.config`` with an ``API_`` prefix
+  (for example ``API_TITLE``). These defaults apply to every request unless overridden by a more specific
+  configuration.  See :doc:`Global<config_locations/global_>` for details.
+- **Method-based – Global method options** add the HTTP method after the ``API_`` prefix
+  (such as ``API_GET_RATE_LIMIT``) to customise behaviour for a particular verb across the entire
+  application.  See :doc:`Global Method<config_locations/global_method>` for details.
+- **Model-based – `SQLAlchemy`_ model ``Meta`` attributes** are written in lowercase without the ``API_`` prefix
+  (for example ``rate_limit``) and override any global settings for that model.  See :doc:`Model<config_locations/model>`.
+- **Highest Priority – Model method-specific ``Meta`` attributes** prefix the lowercase option name with an HTTP
+  method (such as ``get_rate_limit`` or ``post_blocked``) to target a single model-method combination.
+  These settings override all others.  See :doc:`Model Method<config_locations/model_method>`.
 
 .. note::
 
