@@ -1,0 +1,15 @@
+# Fetch all items
+query {
+  items {
+    id
+    name
+  }
+}
+
+# Create a new item
+mutation {
+  createItem(name: "Biscuit") {
+    id
+    name
+  }
+}

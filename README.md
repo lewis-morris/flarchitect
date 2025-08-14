@@ -20,6 +20,7 @@ If you're new here, welcome! flarchitect gets you from data models to a fully fl
 - **Built-in authentication** – JWT, basic and API key strategies ship with a ready‑made `/auth/login` endpoint, or plug in your own.
 - **Extensibility hooks** – customise request and response flows.
 - **Soft delete** – hide and restore records without permanently removing them.
+- **GraphQL integration** – expose your models through a single `/graphql` endpoint when you need more flexible queries.
 
 ### Optional extras
 
@@ -120,6 +121,30 @@ architect = Architect(app)  # OpenAPI served at /openapi.json, docs serverd at /
 The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
 [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
 document.
+
+## GraphQL
+
+Prefer working with a single endpoint? `flarchitect` can turn your SQLAlchemy models into a GraphQL schema with just a couple of lines. Generate the schema and register it with the architect:
+
+```python
+from flarchitect.graphql import create_schema_from_models
+
+schema = create_schema_from_models([Item], db.session)
+architect.init_graphql(schema=schema)
+```
+
+With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively.
+
+```graphql
+query {
+    items {
+        id
+        name
+    }
+}
+```
+
+The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
 
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 

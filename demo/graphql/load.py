@@ -1,6 +1,6 @@
-from __future__ import annotations
+"""Run this module to start a tiny GraphQL server powered by flarchitect."""
 
-"""Minimal GraphQL demo using flarchitect."""
+from __future__ import annotations
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
