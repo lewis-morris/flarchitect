@@ -29,6 +29,27 @@ def test_register_schemas_avoids_duplicates():
         register_schemas(spec, schema)
         register_schemas(spec, schema)
 
-    assert not any(
-        "has already been added to the spec" in str(w.message) for w in caught
+    assert not any("has already been added to the spec" in str(w.message) for w in caught)
+
+
+class ItemSchema(Schema):
+    id = fields.Int()
+
+
+def test_register_schemas_preserves_name_and_case():
+    app = Flask(__name__)
+    spec = APISpec(
+        title="Test",
+        version="1.0.0",
+        openapi_version="3.0.2",
+        plugins=[MarshmallowPlugin()],
     )
+    schema = ItemSchema()
+
+    with app.app_context():
+        register_schemas(spec, schema)
+        register_schemas(spec, schema)
+
+    assert schema.__class__.__name__ == "ItemSchema"
+    assert "item" in spec.components.schemas
+    assert "patchItem" in spec.components.schemas
