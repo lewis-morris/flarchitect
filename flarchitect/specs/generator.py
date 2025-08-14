@@ -359,6 +359,12 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 return unauthorized
             return self.architect.to_api_spec()
 
+        @specification.route("swagger.json")
+        def get_legacy_swagger_spec() -> dict | Response | tuple[str, int]:
+            """Serve the Swagger spec at legacy ``swagger.json`` endpoint."""
+
+            return get_swagger_spec()
+
         get_swagger_spec._auth_disabled = True
 
         @specification.route(documentation_url, methods=["GET", "POST"])

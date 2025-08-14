@@ -35,15 +35,11 @@ class RefreshToken(Base):
 
 
 _lock = Lock()
-_table_created = False
 
 
 def _ensure_table(session: Session) -> None:
     """Create the refresh token table if it does not exist."""
-    global _table_created
-    if not _table_created:
-        RefreshToken.metadata.create_all(bind=session.get_bind())
-        _table_created = True
+    RefreshToken.metadata.create_all(bind=session.get_bind())
 
 
 def store_refresh_token(
