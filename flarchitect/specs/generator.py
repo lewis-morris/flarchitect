@@ -15,6 +15,7 @@ from flarchitect.core.routes import (
     create_query_params_from_rule,
     find_rule_by_function,
 )
+from flarchitect.logging import logger
 from flarchitect.specs.utils import (
     _prepare_patch_schema,
     append_parameters,
@@ -299,6 +300,14 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         get_docs._auth_disabled = True
 
         self.architect.app.register_blueprint(specification)
+
+        prefix = self.documentation_url_prefix or self._get_config("DOCUMENTATION_URL_PREFIX", "/")
+        docs_url = documentation_url if documentation_url.startswith("/") else f"/{documentation_url}"
+        full_url = f"{prefix.rstrip('/')}{docs_url}"
+        server_name = self.app.config.get("SERVER_NAME")
+        if server_name:
+            full_url = f"http://{server_name}{full_url}"
+        logger.log(1, f"API documentation available at |{full_url}|")
 
 
 def generate_swagger_spec(
