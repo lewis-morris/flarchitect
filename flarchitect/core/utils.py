@@ -40,12 +40,16 @@ def get_url_pk(model: type[DeclarativeBase]) -> str:
     pk_type = primary_key.type.python_type
 
     # Use the type from the SQLALCHEMY_TO_FLASK_CONVERTER mapping if it exists
-    flask_converter = SQLALCHEMY_TO_FLASK_CONVERTER.get(pk_type, "string")  # Default to 'string' if unknown
+    flask_converter = SQLALCHEMY_TO_FLASK_CONVERTER.get(
+        pk_type, "string"
+    )  # Default to 'string' if unknown
 
     return f"<{flask_converter}:{primary_key.key}>"
 
 
-def get_foreign_key_to_parent(child_model: type[DeclarativeBase], parent_model: type[DeclarativeBase]) -> tuple[str, str] | None:
+def get_foreign_key_to_parent(
+    child_model: type[DeclarativeBase], parent_model: type[DeclarativeBase]
+) -> tuple[str, str] | None:
     """
     Get the foreign key columns in the association table that reference the child and parent models.
 
@@ -60,7 +64,7 @@ def get_foreign_key_to_parent(child_model: type[DeclarativeBase], parent_model: 
     child_mapper = inspect(child_model)
     parent_mapper = inspect(parent_model)
 
-    # Initialize variables
+    # Initialise variables
     association_table = None
     child_fk_column = None
     parent_fk_column = None

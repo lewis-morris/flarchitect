@@ -87,11 +87,23 @@ Example response:
 
 .. code:: json
 
-    [
-      {"id": 1, "name": "Test Author"}
-    ]
+    {
+      "datetime": "2024-01-01T00:00:00.0000+00:00",
+      "api_version": "0.1.0",
+      "status_code": 200,
+      "response_ms": 15,
+      "total_count": 1,
+      "next_url": null,
+      "previous_url": null,
+      "errors": null,
+      "value": [
+        {"id": 1, "name": "Test Author"}
+      ]
+    }
 
-A JSON array confirms the API is up and responding as expected.
+This structured payload is produced by :func:`create_response` and shows the
+standard metadata flarchitect includes by default. To return a bare list,
+disable the metadata fields via the ``API_DUMP_*`` configuration options.
 
 From Model to API
 ----------------------------------------

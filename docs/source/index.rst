@@ -20,6 +20,7 @@ flarchitect
    validation
    extensions
    openapi
+   graphql
    error_handling
 
 .. toctree::
@@ -68,19 +69,20 @@ flarchitect
 --------------------------------------------
 
 
+**Build APIs fast, customise at will.**
 
 **flarchitect** turns your `SQLAlchemy`_ models into a polished RESTful API complete with interactive `Redoc`_ or Swagger UI documentation.
-Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments.
+Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments. It reduces boilerplate while letting you tailor behaviour to your needs.
 
 What can it do?
 
-* Automatically create CRUD endpoints for your models, including nested relationships.
-* Authenticate users with JWT access and refresh tokens.
+* Automatically create CRUD endpoint for your sqlalchemy models.
+* Generate `Redoc`_ or Swagger UI documentation on the fly - no manual OpenAPI spec needed.
+* Be configured globally in `Flask`_ or per model or method via ``Meta`` attributes in your models.
+* Authenticate users with minimal effort - use JWTs, API keys or Basic Authentication.
 * Restrict endpoints to specific roles with :ref:`roles-required`.
-* Add configurable rate limits backed by Redis, Memcached or MongoDB.
-* Be configured globally in `Flask`_ or per model via ``Meta`` attributes.
-* Generate `Redoc`_ or Swagger UI documentation on the fly.
 * Extend behaviour with response callbacks, custom validators and per-route hooks (:ref:`advanced-extensions`).
+* And much more!
 
 Advanced Configuration
 ----------------------

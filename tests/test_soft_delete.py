@@ -18,8 +18,12 @@ from flarchitect import Architect
 class BaseModel(DeclarativeBase):
     """Base model providing audit fields and session access."""
 
-    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow
+    )
+    updated: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
@@ -89,7 +93,7 @@ def client_gadget_soft() -> Generator[FlaskClient, None, None]:
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         API_BASE_MODEL=db.Model,
         API_CREATE_DOCS=False,
-        API_ALLOW_FILTER=False,
+        API_ALLOW_FILTERS=False,
         API_SOFT_DELETE=True,
         API_SOFT_DELETE_ATTRIBUTE="deleted",
         API_SOFT_DELETE_VALUES=(False, True),
@@ -115,7 +119,7 @@ def client_gadget_hard() -> Generator[FlaskClient, None, None]:
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         API_BASE_MODEL=db.Model,
         API_CREATE_DOCS=False,
-        API_ALLOW_FILTER=False,
+        API_ALLOW_FILTERS=False,
         API_SOFT_DELETE=False,
     )
     db.init_app(app)
@@ -141,18 +145,24 @@ def test_soft_delete_marks_and_omits(client_widget: FlaskClient) -> None:
     by_id = client_widget.get("/api/widgets/1")
     assert by_id.status_code == 404
 
-    include_deleted = client_widget.get("/api/widgets/1?include_deleted=1").json["value"]
+    include_deleted = client_widget.get("/api/widgets/1?include_deleted=1").json[
+        "value"
+    ]
     assert include_deleted["deleted"] is True
 
 
-def test_config_soft_delete_toggle(client_gadget_soft: FlaskClient, client_gadget_hard: FlaskClient) -> None:
-    """Global configuration toggles soft delete behavior."""
+def test_config_soft_delete_toggle(
+    client_gadget_soft: FlaskClient, client_gadget_hard: FlaskClient
+) -> None:
+    """Global configuration toggles soft delete behaviour."""
 
     soft_del = client_gadget_soft.delete("/api/gadgets/1")
     assert soft_del.status_code == 200
     soft_by_id = client_gadget_soft.get("/api/gadgets/1")
     assert soft_by_id.status_code == 404
-    soft_included = client_gadget_soft.get("/api/gadgets/1?include_deleted=1").json["value"]
+    soft_included = client_gadget_soft.get("/api/gadgets/1?include_deleted=1").json[
+        "value"
+    ]
     assert soft_included["deleted"] is True
 
     hard_del = client_gadget_hard.delete("/api/gadgets/1")

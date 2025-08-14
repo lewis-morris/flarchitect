@@ -82,6 +82,7 @@ def get_refresh_token(token: str) -> RefreshToken | None:
     """
     session = get_session(RefreshToken)
     _ensure_table(session)
+    session.expire_all()
     return session.get(RefreshToken, token)
 
 
@@ -98,3 +99,4 @@ def delete_refresh_token(token: str) -> None:
         if instance is not None:
             session.delete(instance)
             session.commit()
+            session.expire_all()
