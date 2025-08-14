@@ -1015,12 +1015,19 @@ def get_related_schema_name(field_obj: fields.Field, field_type: type) -> str | 
         Optional[str]: The related schema name, if found.
     """
     if field_type == Nested:
-        return field_obj.schema.__class__.__name__
+        schema_cls = field_obj.schema.__class__
+        model = getattr(schema_cls.Meta, "model", None)
+        name = schema_cls.__name__
     elif field_type in [Related, RelatedList]:
         parent_model = field_obj.parent.Meta.model
         related_model = getattr(parent_model, field_obj.name).property.mapper.class_
-        return f"{related_model.__name__}Schema"
-    return None
+        model = related_model
+        name = f"{related_model.__name__}Schema"
+    else:
+        return None
+
+    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
+    return convert_case(name.replace("Schema", ""), case)
 
 
 def handle_nested_related_fields(
