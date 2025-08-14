@@ -247,7 +247,7 @@ Routing and Behaviour
 
         - Function that generates endpoint names from models. Override to customise URL naming behaviour.
 
-Serialization Settings
+Serialisation Settings
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
@@ -286,7 +286,7 @@ Serialization Settings
           :bdg:`type` ``Schema``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Base schema class used for model serialization. Override with a custom schema to adjust marshmallow behaviour. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Base schema class used for model serialisation. Override with a custom schema to adjust marshmallow behaviour. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_AUTO_VALIDATE``
 
           :bdg:`default:` ``True``
@@ -300,7 +300,7 @@ Serialization Settings
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Callable run on the raw request body before deserialization. Use it to normalise or sanitize payloads globally.
+        - Callable run on the raw request body before deserialisation. Use it to normalise or sanitise payloads globally.
     * - ``API_ALLOW_CASCADE_DELETE``
 
           :bdg-secondary:`Optional` 
@@ -312,31 +312,31 @@ Serialization Settings
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Ignores attributes prefixed with ``_`` during serialization to keep internal fields hidden. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Ignores attributes prefixed with ``_`` during serialisation to keep internal fields hidden. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_TYPE``
 
           :bdg-secondary:`Optional`
 
-        - Output format for serialized data. Options include ``url`` (default), ``json``, ``dynamic`` and ``hybrid``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Output format for serialised data. Options include ``url`` (default), ``json``, ``dynamic`` and ``hybrid``. Determines how responses are rendered. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_SERIALIZATION_DEPTH``
 
           :bdg-secondary:`Optional` 
 
-        - Depth for nested relationship serialization. Higher numbers include deeper related objects, impacting performance.
+        - Depth for nested relationship serialisation. Higher numbers include deeper related objects, impacting performance.
     * - ``API_DUMP_HYBRID_PROPERTIES``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Includes hybrid SQLAlchemy properties in serialized output. Disable to omit computed attributes. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Includes hybrid SQLAlchemy properties in serialised output. Disable to omit computed attributes. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_ADD_RELATIONS``
 
           :bdg:`default:` ``True``
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Adds relationship fields to serialized output, enabling nested data representation. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Adds relationship fields to serialised output, enabling nested data representation. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_PAGINATION_SIZE_DEFAULT``
 
           :bdg:`default:` ``20``
@@ -564,14 +564,14 @@ Callback Hooks
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Post-serialization hook to adjust data after Marshmallow dumping.
+        - Post-serialisation hook to adjust data after Marshmallow dumping.
     * - ``API_FINAL_CALLBACK``
 
           :bdg:`default:` ``None``
           :bdg:`type` ``callable``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Executes just before the response is serialized and returned to the client.
+        - Executes just before the response is serialised and returned to the client.
     * - ``API_ADDITIONAL_QUERY_PARAMS``
 
           :bdg:`default:` ``None``
@@ -605,7 +605,7 @@ Response Metadata
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Adds the HTTP status code to the serialized output, clarifying request outcomes. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+        - Adds the HTTP status code to the serialised output, clarifying request outcomes. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
     * - ``API_DUMP_RESPONSE_MS``
 
           :bdg:`default:` ``True``
@@ -696,8 +696,8 @@ Field Inclusion Controls
           :bdg:`type` ``list[str]``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model Method`
 
-        - Fields accepted during writes but stripped from serialized responses—ideal for secrets like ``password``.
-          This option is not yet wired into the serializer; custom schema logic is required to enforce it.
+        - Fields accepted during writes but stripped from serialised responses—ideal for secrets like ``password``.
+          This option is not yet wired into the serialiser; custom schema logic is required to enforce it.
     * - ``IGNORE_INPUT_FIELDS``
 
           :bdg:`default:` ``None``
