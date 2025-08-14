@@ -26,10 +26,13 @@ class Config:
     API_TITLE = "Scaffolding API"
     API_VERSION = "0.1.0"
     API_VERBOSITY_LEVEL = 4
-    API_ALLOW_NESTED_WRITES = False
+    API_ALLOW_NESTED_WRITES = True
     API_CREATE_DOCS = True
     API_ENABLE_CORS = False
     API_DOCUMENTATION_PASSWORD = os.getenv("API_DOCUMENTATION_PASSWORD")
+    API_SOFT_DELETE = True
+    API_SOFT_DELETE_ATTRIBUTE = "deleted"
+    API_SOFT_DELETE_VALUES = (False, True)
 
     # Authentication configuration
     API_AUTHENTICATE = True
