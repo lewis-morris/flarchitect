@@ -436,14 +436,20 @@ def register_schemas(
             model = schema.get_model() if hasattr(schema, "get_model") else None
 
             schema_instance = resolve_schema_instance(schema)
+            original_name = schema_instance.__class__.__name__
             schema_name = convert_case(
-                schema_instance.__class__.__name__.replace("Schema", ""),
+                original_name.replace("Schema", ""),
                 get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"),
             )
             schema_instance.__class__.__name__ = schema_name
 
             schema_key = make_schema_key(schema_instance)
-            if schema_key in registered_refs and not force_update:
+            existing_ref = registered_refs.get(schema_key)
+            if existing_ref and not force_update:
+                if existing_ref != schema_name:
+                    spec.components.schemas[schema_name] = spec.components.schemas.pop(existing_ref)
+                    registered_refs[schema_key] = schema_name
+                schema_instance.__class__.__name__ = original_name
                 continue
 
             existing_schema = spec.components.schemas.get(schema_name)
@@ -451,6 +457,9 @@ def register_schemas(
                 spec.components.schemas[schema_name] = schema_instance
             elif not existing_schema:
                 spec.components.schema(schema_name, schema=schema_instance)
+
+            registered_refs[schema_key] = schema_name
+            schema_instance.__class__.__name__ = original_name
 
 
 def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None = None) -> None:
