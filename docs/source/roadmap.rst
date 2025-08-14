@@ -1,8 +1,10 @@
 Roadmap
 =======
 
-- Support for more database backends (e.g. PostgreSQL, MySQL)
-- Improved role-based access control
-- Real-time updates via WebSockets
-- CLI tooling for project scaffolding
+- **Expanded backend documentation** – Provide examples for using flarchitect with PostgreSQL, MySQL, SQLite and other SQLAlchemy-supported databases.
+- **Enhanced role-based access control** – Add fine-grained permissions and group-based policies to secure endpoints.
+- **Real-time updates via WebSockets** – Broadcast model changes to clients for live dashboards and reactive UIs.
+- **CLI tooling for project scaffolding** – Generate boilerplate applications and resources from the command line.
+- **Plugin architecture** – Allow third-party extensions to hook into requests and responses.
+- **First-class caching support** – Integrate an optional caching layer to speed up repeated GET requests.
 
