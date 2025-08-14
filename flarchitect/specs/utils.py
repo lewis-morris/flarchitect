@@ -1112,17 +1112,17 @@ def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
 
 
 def get_related_schema_name(field_obj: fields.Field, field_type: type) -> str | None:
-    """Resolve the name of a related schema.
+    """Determine the schema name referenced by a nested or related field.
 
     Args:
-        field_obj (fields.Field): Marshmallow field being inspected.
-        field_type (type): Class of ``field_obj`` (for example ``Nested`` or
-            ``Related``).
+        field_obj (fields.Field): Field instance whose schema is being resolved.
+        field_type (type): Concrete class of ``field_obj`` such as ``Nested``,
+            ``Related`` or ``RelatedList``.
 
     Returns:
-        str | None: The converted schema name when the field references another
-        model, otherwise ``None``. The name is converted according to the
-        ``API_SCHEMA_CASE`` configuration, which defaults to ``"camel"``.
+        str | None: The related schema name converted using
+        ``API_SCHEMA_CASE`` (default ``"camel"``). ``None`` is returned when
+
     """
     if field_type == Nested:
         schema_cls = field_obj.schema.__class__
@@ -1146,22 +1146,20 @@ def handle_nested_related_fields(
     related_schema_name: str,
     openapi_type_info: dict[str, Any],
 ) -> dict[str, Any]:
-    """Populate OpenAPI metadata for nested or relationship fields.
+    """Populate OpenAPI metadata for nested and related fields.
 
     Args:
-        field_obj (fields.Field): Field to be transformed into OpenAPI
-            metadata.
-        field_type (type): Class of ``field_obj``. ``RelatedList`` implies the
-            field represents a collection.
-        related_schema_name (str): Schema name to reference in the component
-            registry.
-        openapi_type_info (dict[str, Any]): Mutable OpenAPI representation of
-            the field. The dictionary is modified in place.
+        field_obj (fields.Field): Field being processed.
+        field_type (type): Class of ``field_obj``.
+        related_schema_name (str): Name of the referenced schema.
+        openapi_type_info (dict[str, Any]): Existing OpenAPI snippet to
+            mutate.
 
     Returns:
-        dict[str, Any]: The updated ``openapi_type_info`` with either an array
-        of references or a single ``$ref`` depending on whether the field holds
-        multiple values.
+        dict[str, Any]: Updated OpenAPI metadata. When the field represents a
+        collection (``many=True`` or ``RelatedList``), ``type`` is set to
+        ``"array"`` with ``items`` referencing the related schema. Otherwise a
+        direct ``$ref`` is applied.
     """
     if field_obj.many or field_type == RelatedList:
         openapi_type_info["type"] = "array"
@@ -1176,18 +1174,18 @@ def handle_nested_related_fields(
 def get_description_and_example_add(
     openapi_type_info: dict[str, Any], field_obj: fields.Field
 ) -> dict[str, Any]:
-    """Augment OpenAPI metadata with ``description`` and ``example`` entries.
+    """Attach description and example metadata defined on a model field.
 
     Args:
-        openapi_type_info (dict[str, Any]): Existing OpenAPI representation for
-            the field. This dictionary is mutated.
-        field_obj (fields.Field): Marshmallow field whose SQLAlchemy column may
-            contain ``info`` metadata.
+        openapi_type_info (dict[str, Any]): OpenAPI fragment to enrich.
+        field_obj (fields.Field): Marshmallow field whose underlying SQLAlchemy
+            column may define ``info`` with ``description`` or ``example``
+            entries.
 
     Returns:
-        dict[str, Any]: The enriched ``openapi_type_info``. If the underlying
-        model column lacks the expected metadata, the dictionary is returned
-        unchanged.
+        dict[str, Any]: The modified ``openapi_type_info``. If the model field
+        lacks relevant metadata the input is returned unchanged.
+
     """
     model_field = getattr(field_obj.parent.Meta.model, field_obj.name, None)
     if model_field and hasattr(model_field, "info"):
@@ -1221,18 +1219,23 @@ type_mapping = {
 
 
 def get_description(kwargs: dict[str, Any]) -> str:
-    """Determine a route description.
+    """Return a human-readable description for an endpoint.
 
     Args:
-        kwargs (dict[str, Any]): Mapping containing at minimum ``name`` and
-            ``method``. May also include ``model``, ``child_model``,
-            ``parent_model``, and ``multiple``. If ``model`` or ``child_model``
-            defines ``Meta.description``, that value takes precedence.
+        kwargs (dict[str, Any]): Context options. Recognised keys include:
+            ``model`` or ``child_model`` (type[DeclarativeBase]): Models used to
+                derive the description.
+            ``parent_model`` (type[DeclarativeBase], optional): Required when
+                ``child_model`` is supplied.
+            ``name`` (str): Resource name used in fallback text.
+            ``method`` (str): HTTP method in uppercase.
+            ``multiple`` (bool, optional): Whether the endpoint returns multiple
+                resources. Defaults to ``False``.
 
     Returns:
-        str: A description from the model's ``Meta`` class or a generic string
-        based on ``method``. Returns an empty string when no description can be
-        determined.
+        str: Description sourced from ``model.Meta.description`` or a default
+        string based on ``method``. An empty string is returned when no
+        description can be determined.
     """
     model = kwargs.get("model", kwargs.get("child_model"))
     name, method = kwargs["name"], kwargs["method"]
@@ -1259,15 +1262,14 @@ def get_description(kwargs: dict[str, Any]) -> str:
 
 
 def get_tag_group(kwargs: dict[str, Any]) -> str | None:
-    """Return the ``x-tagGroup`` for a route, if defined.
+    """Retrieve the ``x-tagGroup`` value for a route.
 
     Args:
-        kwargs (dict[str, Any]): Mapping that may contain ``model`` or
+        kwargs (dict[str, Any]): Keyword arguments containing ``model`` or
             ``child_model``.
 
     Returns:
-        str | None: The ``tag_group`` value from the model's ``Meta`` class, or
-        ``None`` if it is not specified.
+        str | None: Value of ``Meta.tag_group`` if defined; otherwise ``None``.
     """
     model = kwargs.get("model", kwargs.get("child_model"))
     return getattr(model.Meta, "tag_group", None) if hasattr(model, "Meta") else None
@@ -1281,20 +1283,17 @@ def endpoint_namer(
     """Generate a pluralised endpoint name for a model.
 
     Args:
-        model (type[DeclarativeBase] | None): SQLAlchemy model used for naming.
-            Required unless one of the schema arguments is provided.
-        input_schema (type[Schema] | None, optional): Schema whose ``Meta``
-            class defines ``model``. Defaults to ``None``.
-        output_schema (type[Schema] | None, optional): Alternative schema source
-            when ``model`` is omitted. Defaults to ``None``.
+        model (type[DeclarativeBase] | None): Model used to derive the name.
+            This parameter is required; the schema parameters are reserved for
+            future use.
+        input_schema (type[Schema] | None, optional): Unused placeholder to
+            match a common function signature.
+        output_schema (type[Schema] | None, optional): Unused placeholder to
+            match a common function signature.
 
     Returns:
-        str: The model name converted to the configured case (``API_ENDPOINT_CASE``
-        defaults to ``"kebab"``) and pluralised.
-
-    Raises:
-        ValueError: If no model information is supplied via ``model`` or schema
-        arguments.
+        str: Endpoint name converted using ``API_ENDPOINT_CASE`` (default
+        ``"kebab"``) and pluralised.
     """
     model_obj = model
     if model_obj is None:
