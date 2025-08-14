@@ -10,6 +10,11 @@ def test_default_spec_route():
     data = resp.get_json()
     assert isinstance(data, dict)
     assert data.get("openapi")
+    assert data["components"]["securitySchemes"]["bearerAuth"] == {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+    }
 
 
 def test_custom_spec_route():

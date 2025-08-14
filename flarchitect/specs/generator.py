@@ -112,6 +112,15 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                 **self._get_license_info(),
                 **self._get_logo_info(),
             },
+            "components": {
+                "securitySchemes": {
+                    "bearerAuth": {
+                        "type": "http",
+                        "scheme": "bearer",
+                        "bearerFormat": "JWT",
+                    }
+                }
+            },
             **self._get_servers_info(),
         }
         return {**api_spec_data, **kwargs}

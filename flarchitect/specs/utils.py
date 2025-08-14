@@ -1047,15 +1047,9 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
                     if decorator.__name__ == "roles_required"
                     else "Roles accepted"
                 )
-                spec_template["parameters"].append(
-                    {
-                        "name": "Authorization",
-                        "in": "header",
-                        "description": "JWT token required",
-                        "required": True,
-                        "schema": {"type": "string", "format": "jwt"},
-                    }
-                )
+                security = spec_template.setdefault("security", [])
+                if not any("bearerAuth" in scheme for scheme in security):
+                    security.append({"bearerAuth": []})
                 break
 
     if required_roles and roles_label:

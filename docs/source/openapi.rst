@@ -35,6 +35,14 @@ Accessing the spec
 The generated schema is automatically served at ``/openapi.json``. Override
 the URL with ``API_SPEC_ROUTE`` if you need to mount the document elsewhere.
 
+Security scheme
+---------------
+
+flarchitect defines a ``bearerAuth`` security scheme using HTTP bearer tokens
+with JWTs. Routes that require authentication reference this scheme via a
+``security`` declaration instead of documenting an explicit ``Authorization``
+header parameter.
+
 Exporting to a file
 -------------------
 
