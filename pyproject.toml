@@ -140,8 +140,17 @@ build_command = "python -m build"
 upload_to_pypi = true
 changelog_file = "CHANGELOG.md"
 
+[tool.semantic_release.commit_parser_options]
+# Treat these as patch bumps too
+patch_tags = ["fix", "perf", "docs", "chore", "refactor", "build", "ci", "style", "test"]
+
+[tool.semantic_release.commit_parser_options]
+default_bump_level = "PATCH"   # NO_RELEASE | PATCH | MINOR | MAJOR
+
 [tool.semantic_release.remote]
 name = "origin"
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = true
+
+
