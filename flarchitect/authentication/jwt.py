@@ -6,16 +6,17 @@ import jwt
 from flask import current_app
 from sqlalchemy.exc import NoResultFound
 
+from flarchitect.authentication.token_store import (
+    delete_refresh_token,
+    get_refresh_token,
+    store_refresh_token,
+)
 from flarchitect.database.utils import get_primary_keys
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.session import get_session
 
 # Secret keys (keep them secure)
-
-
-# In-memory store for refresh tokens (use a persistent database in production)
-refresh_tokens_store: dict[str, dict[str, Any]] = {}
 
 
 def get_pk_and_lookups() -> tuple[str, str]:
@@ -54,23 +55,30 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     """
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_EXPIRY_TIME", default=360)
+    exp_minutes = expires_in_minutes or get_config_or_model_meta(
+        "API_JWT_EXPIRY_TIME", default=360
+    )
 
-    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get(
+        "ACCESS_SECRET_KEY"
+    )
     if ACCESS_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, ACCESS_SECRET_KEY, algorithm="HS256")
     return token
 
 
-def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None) -> str:
+def generate_refresh_token(
+    usr_model: Any, expires_in_minutes: int | None = None
+) -> str:
     """Create a long-lived refresh token for ``usr_model``.
 
     The expiry time defaults to ``API_JWT_REFRESH_EXPIRY_TIME`` from the Flask
@@ -87,27 +95,31 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
         CustomHTTPException: If the refresh secret key is not configured.
     """
 
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
+        "REFRESH_SECRET_KEY"
+    )
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_REFRESH_EXPIRY_TIME", default=2880)
+    exp_minutes = expires_in_minutes or get_config_or_model_meta(
+        "API_JWT_REFRESH_EXPIRY_TIME", default=2880
+    )
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token = jwt.encode(payload, REFRESH_SECRET_KEY, algorithm="HS256")
-
-    # Store the refresh token in the server-side store
-    refresh_tokens_store[token] = {
-        lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
-        pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "expires_at": payload["exp"],
-    }
+    store_refresh_token(
+        token=token,
+        user_pk=str(getattr(usr_model, pk)),
+        user_lookup=str(getattr(usr_model, lookup_field)),
+        expires_at=payload["exp"],
+    )
     return token
 
 
@@ -149,20 +161,27 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         be found.
     """
     # Verify refresh token
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
+        "REFRESH_SECRET_KEY"
+    )
     payload = decode_token(refresh_token, REFRESH_SECRET_KEY)
     if payload is None:
         raise CustomHTTPException(status_code=401, reason="Invalid token")
 
     # Check if the refresh token is in the store and not expired
-    stored_token = refresh_tokens_store.get(refresh_token)
-    if not stored_token or datetime.datetime.now(datetime.timezone.utc) > stored_token["expires_at"]:
-        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
+    stored_token = get_refresh_token(refresh_token)
+    if (
+        stored_token is None
+        or datetime.datetime.now(datetime.timezone.utc) > stored_token.expires_at
+    ):
+        raise CustomHTTPException(
+            status_code=403, reason="Invalid or expired refresh token"
+        )
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()
-    lookup_value = stored_token.get(lookup_field)
-    pk_value = stored_token.get(pk_field)
+    lookup_value = stored_token.user_lookup
+    pk_value = stored_token.user_pk
 
     # Get the user model (this is the SQLAlchemy model)
     usr_model_class = get_config_or_model_meta("API_USER_MODEL")
@@ -184,7 +203,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     # Generate new access token
     new_access_token = generate_access_token(user)
 
-    refresh_tokens_store.pop(refresh_token)
+    delete_refresh_token(refresh_token)
 
     return new_access_token, user
 
