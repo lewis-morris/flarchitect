@@ -1,6 +1,7 @@
 import copy
 import os
 import random
+import re
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -815,9 +816,11 @@ def convert_path_to_openapi(path: str) -> str:
         path (str): Flask path to convert.
 
     Returns:
-        str: OpenAPI path.
+        str: OpenAPI path with Flask converters removed.
     """
-    return path.replace("<", "{").replace(">", "}").replace("<int:", "")
+    pattern = re.compile(r"<(?:[^:<>]+:)?([^<>]+)>")
+    # Replace Flask path converters with OpenAPI-style parameters
+    return pattern.sub(r"{\1}", path)
 
 
 def initialize_spec_template(
