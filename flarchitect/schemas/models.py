@@ -1,3 +1,5 @@
+from typing import Any
+
 from marshmallow import Schema, fields, post_load, pre_load
 from sqlalchemy.testing.pickleable import User
 
@@ -79,7 +81,14 @@ class UserSchema(AutoSchema):
         super().__init__(*args, **kwargs)
 
     @pre_load
-    def remove_unwanted_fields(self, data, **kwargs):
+    def remove_unwanted_fields(self, data: dict[str, Any], **kwargs) -> dict[str, Any]:
+        """Strip fields that should not be provided by clients.
+
+        Removes ``password_hash`` and ``roles`` to protect server-managed
+        attributes. If a ``password`` is supplied it is temporarily stored and
+        removed from the payload so it can be set via the model's password
+        setter.
+        """
         if "password_hash" in data:
             data.pop("password_hash", None)
         if "roles" in data:
@@ -92,16 +101,16 @@ class UserSchema(AutoSchema):
     password = fields.Str(required=False)
 
     @post_load
-    def make_instance(self, data, **kwargs):
-        """
-        Creates an instance of the model from the data, and sets the password if it exists (there is an issue with
-        setter methods and SQLAlchemyAutoSchema, so this is a workaround)
+    def make_instance(self, data: dict[str, Any], **kwargs) -> User:
+        """Create a ``User`` instance from validated data.
+
         Args:
-            data (dict): The data to be loaded
-            **kwargs (dict): The keyword arguments
+            data: The data to be loaded.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-
+            User: Model instance with attributes assigned. If a password was
+            provided it is set using the model's password setter.
         """
         instance = self.Meta.model(**data)
 
