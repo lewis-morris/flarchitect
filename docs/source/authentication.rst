@@ -8,7 +8,7 @@ uses the common setup defined in ``demo/authentication/app_base.py``. Runnable
 snippets demonstrating each strategy live in the project repository:
 `jwt_auth.py`_, `basic_auth.py`_, `api_key_auth.py`_, and `custom_auth.py`_.
 You can also protect routes based on user roles using the
-:ref:`roles-required` decorator.
+:ref:`roles-required` and :ref:`roles-accepted` decorators.
 
 .. list-table:: Authentication methods
    :header-rows: 1
@@ -268,6 +268,22 @@ You can require multiple roles by passing more than one name:
 Ensure your user model exposes a list of role names, for example
 ``User.roles = ["admin", "editor"]``. If the authenticated user lacks any of
 the required roles—or if no user is authenticated—a ``403`` response is raised.
+
+
+.. _roles-accepted:
+
+Use the ``roles_accepted`` decorator to allow users with any of the listed roles to access an endpoint. The decorator checks the ``roles`` attribute on ``current_user`` and grants access if at least one role matches.
+
+.. code-block:: python
+
+   from flarchitect.authentication import roles_accepted
+
+   @app.get("/edit")
+   @roles_accepted("admin", "editor")
+   def edit_article():
+       return {"status": "ok"}
+
+If the authenticated user lacks all of the accepted roles—or if no user is authenticated—a ``403`` response is raised.
 
 Troubleshooting
 ---------------

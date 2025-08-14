@@ -1,4 +1,4 @@
-"""Tests for the roles_required decorator and schema integration."""
+"""Tests for role-based access decorators."""
 
 from collections.abc import Generator
 from types import SimpleNamespace
@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 from marshmallow import Schema, fields
 
 from flarchitect import Architect
-from flarchitect.authentication import roles_required
+from flarchitect.authentication import roles_accepted, roles_required
 from flarchitect.authentication.user import set_current_user
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.utils import handle_authorization
@@ -51,7 +51,10 @@ def client_roles() -> Generator[FlaskClient, None, None]:
 
         @app.errorhandler(CustomHTTPException)
         def handle_custom(exc: CustomHTTPException):
-            return create_response(status=exc.status_code, errors={"error": exc.error, "reason": exc.reason})
+            return create_response(
+                status=exc.status_code,
+                errors={"error": exc.error, "reason": exc.reason},
+            )
 
         @app.route("/protected")
         @architect.schema_constructor(output_schema=PingSchema, roles=("admin",))
@@ -62,7 +65,9 @@ def client_roles() -> Generator[FlaskClient, None, None]:
         yield client, holder
 
 
-def test_schema_constructor_applies_roles(client_roles: tuple[FlaskClient, SimpleNamespace]) -> None:
+def test_schema_constructor_applies_roles(
+    client_roles: tuple[FlaskClient, SimpleNamespace],
+) -> None:
     """Access is restricted based on user roles when configured."""
 
     client, holder = client_roles
@@ -87,5 +92,45 @@ def test_openapi_documents_roles() -> None:
 
     handle_authorization(view, spec_template)
 
-    assert any(param["name"] == "Authorization" for param in spec_template["parameters"])
-    assert "Roles required: admin, editor" in spec_template["responses"]["401"]["description"]
+    assert any(
+        param["name"] == "Authorization" for param in spec_template["parameters"]
+    )
+    assert (
+        "Roles required: admin, editor"
+        in spec_template["responses"]["401"]["description"]
+    )
+
+
+def test_roles_accepted_direct() -> None:
+    """Access granted when user has any accepted role."""
+
+    @roles_accepted("admin", "editor")
+    def sample() -> str:
+        return "ok"
+
+    set_current_user(SimpleNamespace(roles=["editor"]))
+    assert sample() == "ok"
+
+    set_current_user(SimpleNamespace(roles=["user"]))
+    with pytest.raises(CustomHTTPException):
+        sample()
+
+
+def test_openapi_documents_roles_accepted() -> None:
+    """OpenAPI specification documents accepted roles."""
+
+    spec_template = {"parameters": [], "responses": {"401": {"description": ""}}}
+
+    @roles_accepted("admin", "editor")
+    def view() -> None:  # pragma: no cover - simple callable
+        pass
+
+    handle_authorization(view, spec_template)
+
+    assert any(
+        param["name"] == "Authorization" for param in spec_template["parameters"]
+    )
+    assert (
+        "Roles accepted: admin, editor"
+        in spec_template["responses"]["401"]["description"]
+    )
