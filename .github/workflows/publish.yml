@@ -1,14 +1,35 @@
-# NOTE: This workflow is disabled because python-semantic-release now publishes to PyPI.
-# If you prefer to publish on GitHub Release instead of on push, delete .github/workflows/release.yml
-# and re-enable this job by removing the "if: false" and switching `on:` to "release: types: [published]".
-name: Publish to PyPI (disabled - using semantic-release)
+name: Publish to PyPI
+
 on:
   push:
     branches: [ master ]
 
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
 jobs:
   publish:
-    if: false  # semantic-release handles publishing now
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Publishing handled by semantic-release. See .github/workflows/release.yml"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure tags are fetched for semantic-release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install build and semantic-release
+        run: |
+          python -m pip install --upgrade pip
+          pip install build python-semantic-release
+      - name: Semantic release version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: semantic-release version --skip-build
+      - name: Build package
+        run: python -m build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
