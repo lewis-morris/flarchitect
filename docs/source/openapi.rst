@@ -70,5 +70,13 @@ A number of configuration keys let you tailor the output:
 * ``API_LOGO_BACKGROUND`` – CSS colour value behind the logo (e.g.
   ``"#fff"`` or ``"transparent"``).
 
+For example, to load a Markdown file into the specification's info section:
+
+.. code-block:: python
+
+    app.config["API_DESCRIPTION"] = "docs/README.md"
+
+The contents of ``docs/README.md`` are rendered in the spec's ``info`` section.
+
 See :doc:`configuration` for the full list of options.
 
