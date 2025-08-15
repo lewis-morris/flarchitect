@@ -4,7 +4,9 @@ from pathlib import Path
 import pytest
 from flask import Flask
 
-spec_utils_path = Path(__file__).resolve().parents[1] / "flarchitect" / "specs" / "utils.py"
+spec_utils_path = (
+    Path(__file__).resolve().parents[1] / "flarchitect" / "specs" / "utils.py"
+)
 spec_utils_spec = importlib.util.spec_from_file_location("spec_utils", spec_utils_path)
 spec_utils_module = importlib.util.module_from_spec(spec_utils_spec)
 assert spec_utils_spec.loader is not None  # for mypy
@@ -64,3 +66,15 @@ def test_endpoint_namer_accepts_model_and_schemas() -> None:
         assert endpoint_namer(output_schema=OutputSchema) == "widgets"
         with pytest.raises(ValueError):
             endpoint_namer()
+
+
+def test_endpoint_namer_respects_config_case(monkeypatch: pytest.MonkeyPatch) -> None:
+    """endpoint_namer should honour ``API_ENDPOINT_CASE`` setting."""
+
+    class Widget:
+        pass
+
+    app = Flask(__name__)
+    with app.app_context():
+        app.config["API_ENDPOINT_CASE"] = "pascal"
+        assert endpoint_namer(Widget) == "Widgets"
