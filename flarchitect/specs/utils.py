@@ -8,15 +8,12 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import pytz
-from flask import current_app
 from marshmallow import Schema, fields
 from marshmallow_sqlalchemy.fields import Nested, Related, RelatedList
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.http import HTTP_STATUS_CODES
 from werkzeug.routing import IntegerConverter, UnicodeConverter
 
-import flarchitect.utils
-import flarchitect.utils.decorators
 from flarchitect.database.inspections import get_model_columns, get_model_relationships
 from flarchitect.database.utils import AGGREGATE_FUNCS
 from flarchitect.logging import logger
@@ -25,7 +22,7 @@ from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import (
     DATE_FORMAT,
     DATETIME_FORMAT,
-    html_path,
+    get_html_path,
     manual_render_absolute_template,
     pluralize_last_word,
 )
@@ -726,7 +723,7 @@ def generate_fields_description(schema: Schema) -> str:
             get_table_name(i, resource_name, fields, example_table) for i in range(3)
         ]
 
-        full_path = os.path.join(html_path, "redoc_templates/fields.html")
+        full_path = os.path.join(get_html_path(), "redoc_templates/fields.html")
         schema_name = endpoint_namer(schema.Meta.model)
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
 
@@ -752,7 +749,7 @@ def generate_x_description(template_data: dict, path: str = "") -> str:
         str: Filter examples.
     """
     if template_data:
-        full_path = os.path.join(html_path, path)
+        full_path = os.path.join(get_html_path(), path)
         return manual_render_absolute_template(full_path, **template_data)
     else:
         return "This endpoint does not have a database table (or is computed etc) and should not be filtered\n"
@@ -780,7 +777,7 @@ def generate_filter_examples(schema: Schema) -> str:
     example_one = "&".join(examples[:split_examples])
     example_two = "&".join(examples[-split_examples:])
 
-    full_path = os.path.join(html_path, "redoc_templates/filters.html")
+    full_path = os.path.join(get_html_path(), "redoc_templates/filters.html")
 
     return manual_render_absolute_template(
         full_path, examples=[example_one, example_two]
@@ -853,9 +850,6 @@ def append_parameters(
     Returns:
         None
     """
-    flarchitect.utils.general.html_path = current_app.extensions[
-        "flarchitect"
-    ].get_templates_path()
 
     spec_template.setdefault("parameters", []).extend(path_params + query_params)
     rate_limit = get_config_or_model_meta(
