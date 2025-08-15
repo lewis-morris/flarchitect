@@ -139,7 +139,14 @@ last_names = [
     "Turner",
 ]
 
-nationality = ["English"] * 10 + ["Scottish"] * 10 + ["Welsh"] * 10 + ["Irish"] * 5 + ["American"] * 3 + ["Australian"] * 3
+nationality = (
+    ["English"] * 10
+    + ["Scottish"] * 10
+    + ["Welsh"] * 10
+    + ["Irish"] * 5
+    + ["American"] * 3
+    + ["Australian"] * 3
+)
 
 bios = [
     "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative narratives.",
@@ -300,7 +307,9 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
+    title = (
+        pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
+    )
 
     return title
 
@@ -366,19 +375,20 @@ def generate_company_name() -> str:
     return random.choice(patterns)
 
 
-def generate_random_year(start=1860, to=datetime.now().year) -> int:
-    """
-    Generates a random year between 1940 and the current year.
+def generate_random_year(start: int = 1860, end: int | None = None) -> int:
+    """Generate a random year between ``start`` and ``end``.
 
     Args:
-        start (int, optional): The minimum year to generate. Defaults to None.
+        start: The minimum year to generate.
+        end: The maximum year to generate. Defaults to current year if ``None``.
 
     Returns:
-        int: Random year.
-
+        Randomly selected year within the given range.
     """
 
-    return random.randint(start, to)
+    if end is None:
+        end = datetime.now().year
+    return random.randint(start, end)
 
 
 def random_ratings():
@@ -474,7 +484,7 @@ def create_books(db, authors, categories, publishers):
     for author in authors:
         author_categories = []
         publisher = random.choice(publishers)
-        for x in range(0, random.randint(1, 3)):
+        for _ in range(random.randint(1, 3)):
             author_categories.append(random.choice(categories))
             author_categories = list(set(author_categories))
 
@@ -482,7 +492,9 @@ def create_books(db, authors, categories, publishers):
             categories = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
+            publication_year = generate_random_year(
+                author.date_of_birth.year + 20, datetime.now().year
+            )
 
             publication_date = datetime(
                 year=publication_year,
@@ -556,9 +568,11 @@ def create_publishers(db):
 
     publishers = []
 
-    for x in range(0, 30):
+    for _ in range(30):
         name = generate_company_name()
-        website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
+        website = (
+            "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
+        )
         foundation_year = generate_random_year(1860, 1920)
 
         company = Publisher(name=name, website=website, foundation_year=foundation_year)
@@ -594,7 +608,7 @@ def create_authors(db):
 
     authors = []
 
-    for x in range(0, 60):
+    for _ in range(60):
         first_name, last_name = get_name()
         website = "https://" + (first_name + last_name).lower() + ".co.uk"
         rand_nationality = random.choice(nationality)
