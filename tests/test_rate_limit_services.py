@@ -2,87 +2,59 @@
 
 from __future__ import annotations
 
-import importlib.util
-
 import pytest
+from flask import Flask
 
-from flarchitect.utils.general import check_rate_prerequisites, check_rate_services
+from flarchitect.utils.general import (check_rate_prerequisites,
+                                       check_rate_services)
 
 
 class TestRateLimitServices:
     """Validate rate limit storage detection and prerequisites."""
 
-    def test_returns_config_uri(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    @staticmethod
+    def _create_app(**config: str) -> Flask:
+        app = Flask(__name__)
+        app.config.update(config)
+        return app
+
+    def test_returns_config_uri(self) -> None:
         """Use configured storage URI when provided."""
 
-        # Provide a custom storage URI via configuration helper.
-        monkeypatch.setattr(
-            "flarchitect.utils.general.get_config_or_model_meta",
-            lambda key, default=None, model=None: "redis://127.0.0.1:6379",
-        )
-        monkeypatch.setattr(
-            "flarchitect.utils.general.check_rate_prerequisites",
-            lambda service: None,
-        )
+        app = self._create_app(API_RATE_LIMIT_STORAGE_URI="redis://127.0.0.1:6379")
+        with app.app_context():
+            assert check_rate_services() == "redis://127.0.0.1:6379"
 
-        assert check_rate_services() == "redis://127.0.0.1:6379"
+    def test_memory_storage_uri_allowed(self) -> None:
+        """``memory://`` URIs do not require a host and should be accepted."""
 
-    def test_returns_none_without_services(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+        app = self._create_app(API_RATE_LIMIT_STORAGE_URI="memory://")
+        with app.app_context():
+            assert check_rate_services() == "memory://"
+
+    def test_returns_none_without_services(self) -> None:
         """Return ``None`` when no cache services are reachable."""
 
-        monkeypatch.setattr(
-            "flarchitect.utils.general.get_config_or_model_meta",
-            lambda key, default=None, model=None: None,
-        )
+        app = self._create_app()
+        with app.app_context():
+            assert check_rate_services() is None
 
-        class DummySocket:
-            def __init__(self, *args, **kwargs) -> None:  # noqa: D401 - simple init
-                """Placeholder socket that always fails to connect."""
-
-            def settimeout(self, value: float) -> None:  # pragma: no cover
-                pass
-
-            def connect(self, address: tuple[str, int]) -> None:
-                raise OSError
-
-            def close(self) -> None:  # pragma: no cover
-                pass
-
-        monkeypatch.setattr(
-            "flarchitect.utils.general.socket.socket", lambda *a, **k: DummySocket()
-        )
-
-        assert check_rate_services() is None
-
-    def test_prerequisites_missing_dependency(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_prerequisites_missing_dependency(self) -> None:
         """Raise ``ImportError`` if required client library is absent."""
 
-        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
         with pytest.raises(ImportError):
-            check_rate_prerequisites("Redis")
+            check_rate_prerequisites("Memcached")
 
-    def test_invalid_storage_uri_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_invalid_storage_uri_raises(self) -> None:
         """Unsupported URI schemes raise a ``ValueError``."""
 
-        monkeypatch.setattr(
-            "flarchitect.utils.general.get_config_or_model_meta",
-            lambda key, default=None, model=None: "invalid://localhost",
-        )
-        with pytest.raises(ValueError):
+        app = self._create_app(API_RATE_LIMIT_STORAGE_URI="invalid://localhost")
+        with app.app_context(), pytest.raises(ValueError):
             check_rate_services()
 
-    def test_missing_host_in_storage_uri_raises(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_missing_host_in_storage_uri_raises(self) -> None:
         """A storage URI without a host should raise ``ValueError``."""
 
-        monkeypatch.setattr(
-            "flarchitect.utils.general.get_config_or_model_meta",
-            lambda key, default=None, model=None: "redis://",
-        )
-        with pytest.raises(ValueError):
+        app = self._create_app(API_RATE_LIMIT_STORAGE_URI="redis://")
+        with app.app_context(), pytest.raises(ValueError):
             check_rate_services()

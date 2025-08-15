@@ -27,10 +27,8 @@ from flarchitect.specs.generator import CustomSpec
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import handle_many, handle_one
 from flarchitect.utils.general import (
-    AttributeInitializerMixin,
-    check_rate_services,
-    validate_flask_limiter_rate_limit_string,
-)
+    AttributeInitializerMixin, check_rate_services,
+    validate_flask_limiter_rate_limit_string)
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.session import get_session
 
@@ -592,7 +590,8 @@ class Architect(AttributeInitializerMixin):
         if rl:
             rule = find_rule_by_function(self, func).rule
             logger.error(
-                f"Rate limit definition not a string or not valid. Skipping for `{rule}` route."
+                1,
+                f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.",
             )
         return func
 
@@ -738,9 +737,8 @@ class Architect(AttributeInitializerMixin):
         def decorator(f: Callable) -> Callable:
             local_roles_required = None
             if roles and auth_flag is not False:
-                from flarchitect.authentication import (
-                    require_roles as local_roles_required,
-                )
+                from flarchitect.authentication import \
+                    require_roles as local_roles_required
 
             @wraps(f)
             def wrapped(*_args, **_kwargs):
