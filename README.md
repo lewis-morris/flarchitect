@@ -144,6 +144,14 @@ query {
 }
 ```
 
+Mutations allow you to create, update and delete records:
+
+```graphql
+mutation { create_item(name: "Foo") { id name } }
+mutation { update_item(id: 1, name: "Bar") { id name } }
+mutation { delete_item(id: 1) }
+```
+
 The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
 
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).

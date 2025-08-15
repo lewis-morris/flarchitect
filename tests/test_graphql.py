@@ -66,3 +66,33 @@ def test_graphql_query_and_mutation() -> None:
 
     spec_resp = client.get("/openapi.json")
     assert "/graphql" in spec_resp.get_json()["paths"]
+
+
+def test_graphql_update_and_delete() -> None:
+    """Verify update and delete mutations modify the data store."""
+
+    app = create_app()
+    client = app.test_client()
+
+    # seed with an item
+    client.post(
+        "/graphql", json={"query": 'mutation { create_item(name: "Foo") { id } }'}
+    )
+
+    update_mutation = {
+        "query": 'mutation { update_item(id: 1, name: "Bar") { id name } }'
+    }
+    response = client.post("/graphql", json=update_mutation)
+    assert response.status_code == 200
+    assert response.json["data"]["update_item"] == {"id": 1, "name": "Bar"}
+
+    delete_mutation = {"query": "mutation { delete_item(id: 1) }"}
+    response = client.post("/graphql", json=delete_mutation)
+    assert response.status_code == 200
+    assert response.json["data"]["delete_item"] is True
+
+    # ensure record removed
+    query = {"query": "{ all_items { id } }"}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert response.json["data"]["all_items"] == []
