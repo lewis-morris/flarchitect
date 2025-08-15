@@ -26,6 +26,13 @@ FAQ
     determine the next version and record it in a separate commit (and optional tag). Finally, push both the
     feature commit and the bump commit, along with any tags, to your remote repository.
 
+.. dropdown:: What do the BumpWright commands do?
+
+    - ``bumpwright decide`` inspects your recent commits or API differences and reports the release type without
+      modifying any files.
+    - ``bumpwright bump`` increments the version. Add ``--dry-run`` to preview the change before writing.
+    - ``bumpwright auto`` combines deciding and bumping into a single command, ideal for most release workflows.
+
 
 .. dropdown:: Can I block HTTP methods in my API?
 
