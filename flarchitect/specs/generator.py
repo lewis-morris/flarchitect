@@ -29,8 +29,8 @@ from flarchitect.specs.utils import (
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import (
     AttributeInitializerMixin,
-    find_child_from_parent_dir,
     generate_readme_html,
+    get_html_path,
     make_base_dict,
     manual_render_absolute_template,
     pretty_print_dict,
@@ -258,10 +258,14 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         tag_groups.append({"name": group_name, "tags": [tag_name]})
 
     def _create_specification_blueprint(self) -> None:
-        """Sets up the blueprint to serve the API specification and documentation."""
-        html_path = find_child_from_parent_dir(
-            "src", "html", current_dir=os.path.dirname(os.path.abspath(__file__))
-        )
+        """Sets up the blueprint to serve the API specification and documentation.
+
+        The HTML template directory is resolved dynamically using
+        :func:`~flarchitect.utils.general.get_html_path` to avoid reliance on
+        global state.
+        """
+
+        html_path = get_html_path()
 
         specification = Blueprint(
             "specification",
