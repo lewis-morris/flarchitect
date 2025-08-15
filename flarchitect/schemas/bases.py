@@ -795,10 +795,19 @@ class AutoSchema(Base):
         field_obj = self.fields[attribute]  # Get the Marshmallow field object
         field_meta = field_obj.metadata  # Extract the existing metadata
 
-        # Correctly call get_openapi_meta_data with the field object
-        openapi_meta_data = get_openapi_meta_data(field_obj)
+        # Populate metadata from SQLAlchemy column ``info`` if available.
+        model_field = getattr(self.model, attribute, None)
+        if model_field is not None and hasattr(model_field, "info"):
+            info = model_field.info
+            if desc := info.get("description"):
+                field_meta.setdefault("description", desc)
+            if example := info.get("example"):
+                field_meta.setdefault("example", example)
+            if fmt := info.get("format"):
+                field_meta.setdefault("format", fmt)
 
-        # If the function returns metadata, update the field's metadata
+        # Merge additional OpenAPI-specific metadata derived from the field
+        openapi_meta_data = get_openapi_meta_data(field_obj)
         if openapi_meta_data:
             field_meta.update(openapi_meta_data)
 

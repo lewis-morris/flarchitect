@@ -46,7 +46,6 @@ OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
 
 
 def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]:
-
     """Collect relationship attributes and their related class names.
 
     Args:
@@ -70,7 +69,6 @@ def get_all_columns_and_hybrids(
 ) -> tuple[
     dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]
 ]:
-
     """Gather columns and hybrid properties for the base and join models.
 
     Args:
@@ -195,7 +193,6 @@ def get_group_by_fields(
 def get_models_for_join(
     args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]
 ) -> dict[str, DeclarativeBase]:
-
     """Build a mapping of models to join from the ``join`` query parameter.
 
     Args:
@@ -480,6 +477,9 @@ def validate_table_and_column(
     column_name = convert_case(column_name, field_case)
 
     all_models_columns = all_columns.get(table_name)
+    if not all_models_columns:
+        # Fallback to case-insensitive lookup to avoid issues with mixed casing
+        all_models_columns = all_columns.get(table_name.lower())
     if not all_models_columns:
         raise CustomHTTPException(400, f"Invalid table name: {table_name}")
 
