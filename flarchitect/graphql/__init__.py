@@ -25,12 +25,13 @@ as a ``create_item`` mutation that accepts the model's columns as arguments.
 """
 
 from __future__ import annotations
+
 from collections.abc import Iterable
 from typing import Any
 
 import graphene
 from sqlalchemy import Boolean, Float, Integer, String
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, Session, joinedload
 
 __all__ = ["create_schema_from_models"]
 
@@ -66,18 +67,27 @@ def _convert_sqla_type(column_type: Any) -> type[graphene.Scalar]:
     return graphene.String
 
 
-def _model_to_object_type(model: type[DeclarativeBase]) -> type[graphene.ObjectType]:
+def _model_to_object_type(
+    model: type[DeclarativeBase],
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]] | None = None,
+) -> type[graphene.ObjectType]:
     """Create a Graphene ``ObjectType`` for a given SQLAlchemy model.
 
     The function inspects the model's table and converts each column into a
-    GraphQL field using :func:`_convert_sqla_type`.
+    GraphQL field using :func:`_convert_sqla_type`. When ``object_types`` is
+    provided, SQLAlchemy relationships on ``model`` are converted into GraphQL
+    fields referencing the appropriate object types. Relationships are generated
+    recursively, ensuring nested models are exposed.
 
     Args:
         model: SQLAlchemy declarative model.
+        object_types: Optional mapping of models to already generated GraphQL
+            object types. Used to resolve relationships without infinite
+            recursion.
 
     Returns:
         A dynamically generated ``ObjectType`` subclass whose fields mirror the
-        model's columns.
+        model's columns and relationships.
 
     Examples:
         >>> class User(Base):
@@ -93,7 +103,27 @@ def _model_to_object_type(model: type[DeclarativeBase]) -> type[graphene.ObjectT
         gql_type = _convert_sqla_type(column.type)
         fields[column.name] = gql_type()
 
-    return type(f"{model.__name__}Type", (graphene.ObjectType,), fields)
+    obj_type = type(f"{model.__name__}Type", (graphene.ObjectType,), fields)
+
+    if object_types is not None:
+        # Register early to break potential recursion from bidirectional
+        # relationships.
+        object_types[model] = obj_type
+
+        for relationship in model.__mapper__.relationships:
+            related_model = relationship.mapper.class_
+            if related_model not in object_types:
+                _model_to_object_type(related_model, object_types)
+            related_obj_type = object_types[related_model]
+            field: graphene.Field = (
+                graphene.Field(graphene.List(related_obj_type))
+                if relationship.uselist
+                else graphene.Field(related_obj_type)
+            )
+            setattr(obj_type, relationship.key, field)
+            obj_type._meta.fields[relationship.key] = field
+
+    return obj_type
 
 
 def create_schema_from_models(
@@ -125,7 +155,10 @@ def create_schema_from_models(
         []
     """
 
-    object_types = {model: _model_to_object_type(model) for model in models}
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]] = {}
+    for model in models:
+        if model not in object_types:
+            _model_to_object_type(model, object_types)
 
     # Build query fields for single-record and list retrieval.
     query_fields: dict[str, Any] = {}
@@ -137,12 +170,20 @@ def create_schema_from_models(
         def _resolve_one(_root, _info, id: int, model=model):
             """Resolver for fetching a single record by ID."""
 
-            return session.get(model, id)
+            options = [
+                joinedload(getattr(model, r.key))
+                for r in model.__mapper__.relationships
+            ]
+            return session.get(model, id, options=options)
 
         def _resolve_all(_root, _info, model=model):
             """Resolver for fetching all records for the model."""
 
-            return session.query(model).all()
+            options = [
+                joinedload(getattr(model, r.key))
+                for r in model.__mapper__.relationships
+            ]
+            return session.query(model).options(*options).all()
 
         query_fields[f"resolve_{name}"] = staticmethod(_resolve_one)
         query_fields[f"resolve_all_{name}s"] = staticmethod(_resolve_all)

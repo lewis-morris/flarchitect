@@ -53,6 +53,37 @@ Example query
 Visit ``/graphql`` in a browser to access the interactive GraphiQL editor, or
 send HTTP ``POST`` requests with a ``query`` payload.
 
+Relationships
+-------------
+
+``create_schema_from_models`` also exposes SQLAlchemy relationships. Nested
+objects can be queried by traversing relationship fields. Given ``Parent`` and
+``Child`` models:
+
+.. code-block:: python
+
+   class Parent(Base):
+       __tablename__ = "parent"
+       id: Mapped[int] = mapped_column(primary_key=True)
+       children: Mapped[list["Child"]] = relationship(back_populates="parent")
+
+   class Child(Base):
+       __tablename__ = "child"
+       id: Mapped[int] = mapped_column(primary_key=True)
+       parent_id: Mapped[int] = mapped_column(ForeignKey("parent.id"))
+       parent: Mapped[Parent] = relationship(back_populates="children")
+
+The generated schema allows nested queries:
+
+.. code-block:: graphql
+
+   query {
+       all_parents {
+           id
+           children { id }
+       }
+   }
+
 Tips and trade-offs
 -------------------
 
