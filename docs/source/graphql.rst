@@ -21,7 +21,8 @@ architect:
 The generated schema provides CRUD-style queries and mutations for each model.
 An ``all_items`` query returns every ``Item`` and accepts optional column
 arguments for filtering. Pagination is supported via ``limit`` and
-``offset`` arguments, and a ``create_item`` mutation adds a new record.
+``offset`` arguments. ``create_item``, ``update_item`` and ``delete_item``
+mutations manage individual records.
 
 Type mapping
 ------------
@@ -38,12 +39,13 @@ types can be mapped by providing a ``type_mapping`` override:
        [User], db.session, type_mapping={MyType: graphene.String}
    )
 
-Example mutation
-~~~~~~~~~~~~~~~~
+Example mutations
+~~~~~~~~~~~~~~~~~
 
-``create_schema_from_models`` automatically generates a ``create_<table>``
-mutation for each model. The mutation accepts all non-primary-key columns as
-arguments. The example below creates a new ``Item``:
+``create_schema_from_models`` automatically generates ``create_<table>``,
+``update_<table>`` and ``delete_<table>`` mutations. Each accepts the model's
+columns as arguments with the primary key required for updates and deletions.
+The examples below create, update and delete an ``Item``:
 
 .. code-block:: graphql
 
@@ -52,6 +54,17 @@ arguments. The example below creates a new ``Item``:
            id
            name
        }
+   }
+
+   mutation {
+       update_item(id: 1, name: "Bar") {
+           id
+           name
+       }
+   }
+
+   mutation {
+       delete_item(id: 1)
    }
 
 Example query
@@ -137,18 +150,9 @@ datasets. Additional arguments can be introduced to perform simple filtering:
 CRUD mutations
 ~~~~~~~~~~~~~~
 
-Beyond the automatically generated ``create_<table>`` mutation you can extend
-the schema with ``update_`` and ``delete_`` operations. These mutations modify
-existing records or remove them entirely:
-
-.. code-block:: graphql
-
-   mutation {
-       update_item(id: 1, name: "Bar") {
-           id
-           name
-       }
-   }
+``create_schema_from_models`` exposes a full set of CRUD mutations out of the
+box, letting clients insert, modify and remove records without manual schema
+definitions.
 
 
 Tips and trade-offs

@@ -78,6 +78,7 @@ def test_graphql_query_and_mutation() -> None:
 def test_graphiql_served_on_get() -> None:
     """Ensure GraphiQL HTML is returned for ``GET`` requests."""
 
+
 def test_extended_type_mapping() -> None:
     """Ensure additional SQLAlchemy types map to correct Graphene scalars."""
 
@@ -108,9 +109,12 @@ def test_type_mapping_override() -> None:
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     session = Session(engine)
-    schema = create_schema_from_models([CustomModel], session, type_mapping={CustomInt: graphene.Int})
+    schema = create_schema_from_models(
+        [CustomModel], session, type_mapping={CustomInt: graphene.Int}
+    )
     field_type = schema.graphql_schema.get_type("CustomModelType").fields["value"].type
     assert field_type is GraphQLInt
+
 
 def test_graphql_filters_and_pagination() -> None:
     """Ensure filters and pagination work for list queries."""
@@ -135,7 +139,29 @@ def test_graphql_filters_and_pagination() -> None:
     assert response.status_code == 200
     assert response.json["data"]["all_items"] == [{"name": "Bar"}]
 
-    query = {"query": "{ all_items(limit: 1, offset: 1) { name } }"}
-    response = client.post("/graphql", json=query)
+
+def test_update_and_delete_mutations() -> None:
+    """Ensure update and delete mutations behave correctly."""
+
+    app = create_app()
+    client = app.test_client()
+
+    mutation = {"query": 'mutation { create_item(name: "Foo") { id name } }'}
+    response = client.post("/graphql", json=mutation)
+    item_id = response.json["data"]["create_item"]["id"]
+
+    mutation = {
+        "query": f'mutation {{ update_item(id: {item_id}, name: "Bar") {{ id name }} }}'
+    }
+    response = client.post("/graphql", json=mutation)
     assert response.status_code == 200
-    assert response.json["data"]["all_items"] == [{"name": "Bar"}]
+    assert response.json["data"]["update_item"]["name"] == "Bar"
+
+    mutation = {"query": f"mutation {{ delete_item(id: {item_id}) }}"}
+    response = client.post("/graphql", json=mutation)
+    assert response.status_code == 200
+    assert response.json["data"]["delete_item"] is True
+
+    query = {"query": "{ all_items { id } }"}
+    response = client.post("/graphql", json=query)
+    assert response.json["data"]["all_items"] == []

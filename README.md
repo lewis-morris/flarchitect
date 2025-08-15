@@ -148,6 +148,20 @@ query {
     }
 }
 ```
+Mutations manage records:
+
+```graphql
+mutation {
+    update_item(id: 1, name: "Bar") {
+        id
+        name
+    }
+}
+
+mutation {
+    delete_item(id: 1)
+}
+```
 
 Custom SQLAlchemy types can be mapped to Graphene scalars by supplying a
 `type_mapping` override:
