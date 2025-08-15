@@ -50,8 +50,9 @@ Example query
        }
    }
 
-Visit ``/graphql`` in a browser to access the interactive GraphiQL editor, or
-send HTTP ``POST`` requests with a ``query`` payload.
+Visit ``/graphql`` in a browser to access the interactive GraphiQL editor
+served on ``GET`` requests. Programmatic clients should send HTTP ``POST``
+requests with a ``query`` payload.
 
 Tips and trade-offs
 -------------------

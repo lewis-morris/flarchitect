@@ -66,3 +66,15 @@ def test_graphql_query_and_mutation() -> None:
 
     spec_resp = client.get("/openapi.json")
     assert "/graphql" in spec_resp.get_json()["paths"]
+
+
+def test_graphiql_served_on_get() -> None:
+    """Ensure GraphiQL HTML is returned for ``GET`` requests."""
+
+    app = create_app()
+    client = app.test_client()
+
+    response = client.get("/graphql")
+    assert response.status_code == 200
+    assert response.mimetype == "text/html"
+    assert "GraphiQL" in response.get_data(as_text=True)
