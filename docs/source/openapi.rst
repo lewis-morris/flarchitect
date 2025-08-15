@@ -10,7 +10,7 @@ Documentation style
 -------------------
 
 By default, flarchitect renders docs with Redoc. To switch to Swagger UI set
-``API_DOCS_STYLE = "swagger"`` in your Flask configuration. The only accepted
+`API_DOCS_STYLE <configuration.html#DOCS_STYLE>`_ = "swagger" in your Flask configuration. The only accepted
 values are ``"redoc"`` and ``"swagger"``. Redoc provides a clean read-only
 reference, while Swagger UI adds an interactive "try it out" console:
 
@@ -18,13 +18,13 @@ reference, while Swagger UI adds an interactive "try it out" console:
 
     app.config["API_DOCS_STYLE"] = "swagger"
 
-The documentation itself is hosted at ``API_DOCUMENTATION_URL`` (default
+The documentation itself is hosted at `API_DOCUMENTATION_URL <configuration.html#DOCUMENTATION_URL>`_ (default
 ``/docs``).
 
 Automatic generation
 --------------------
 
-When ``API_CREATE_DOCS`` is enabled (it is ``True`` by default) the
+When `API_CREATE_DOCS <configuration.html#CREATE_DOCS>`_ is enabled (it is ``True`` by default) the
 specification is built on start-up by inspecting the routes and schemas
 registered with :class:`flarchitect.Architect`.  Any models
 added later are included the next time the application boots.
@@ -33,7 +33,7 @@ Accessing the spec
 ------------------
 
 The generated schema is automatically served at ``/openapi.json``. Override
-the URL with ``API_SPEC_ROUTE`` if you need to mount the document elsewhere.
+the URL with `API_SPEC_ROUTE <configuration.html#SPEC_ROUTE>`_ if you need to mount the document elsewhere.
 
 Security scheme
 ---------------
@@ -60,14 +60,14 @@ Customising the document
 
 A number of configuration keys let you tailor the output:
 
-* ``API_DOCUMENTATION_HEADERS`` – HTML string inserted into the ``<head>`` of
+* `API_DOCUMENTATION_HEADERS <configuration.html#DOCUMENTATION_HEADERS>`_ – HTML string inserted into the ``<head>`` of
   the docs page. Use for meta tags or custom scripts.
-* ``API_TITLE`` – plain text displayed as the documentation title.
-* ``API_VERSION`` – semantic version string such as ``"1.0.0"``.
-* ``API_DESCRIPTION`` – free text or a filepath to a README-style file rendered
+* `API_TITLE <configuration.html#TITLE>`_ – plain text displayed as the documentation title.
+* `API_VERSION <configuration.html#VERSION>`_ – semantic version string such as ``"1.0.0"``.
+* `API_DESCRIPTION <configuration.html#DESCRIPTION>`_ – free text or a filepath to a README-style file rendered
   into the ``info`` section.
-* ``API_LOGO_URL`` – URL or static path to an image used as the logo.
-* ``API_LOGO_BACKGROUND`` – CSS colour value behind the logo (e.g.
+* `API_LOGO_URL <configuration.html#LOGO_URL>`_ – URL or static path to an image used as the logo.
+* `API_LOGO_BACKGROUND <configuration.html#LOGO_BACKGROUND>`_ – CSS colour value behind the logo (e.g.
   ``"#fff"`` or ``"transparent"``).
 
 For example, to load a Markdown file into the specification's info section:

@@ -1046,18 +1046,21 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
     Returns:
         None
     """
-    required_roles = None
-    roles_label = None
+    required_roles: tuple[str, ...] | None = None
+    roles_label: str | None = None
 
     if hasattr(f, "_decorators"):
         for decorator in f._decorators:
-            if decorator.__name__ in {"roles_required", "roles_accepted"}:
+            if decorator.__name__ in {
+                "roles_required",
+                "roles_accepted",
+                "require_roles",
+            }:
                 required_roles = decorator._args
-                roles_label = (
-                    "Roles required"
-                    if decorator.__name__ == "roles_required"
-                    else "Roles accepted"
+                any_of = getattr(
+                    decorator, "_any_of", decorator.__name__ == "roles_accepted"
                 )
+                roles_label = "Roles accepted" if any_of else "Roles required"
                 security = spec_template.setdefault("security", [])
                 if not any("bearerAuth" in scheme for scheme in security):
                     security.append({"bearerAuth": []})

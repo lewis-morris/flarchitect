@@ -86,10 +86,10 @@ somewhere.
 Caching backends
 -----------------
 
-``flarchitect`` can cache GET responses when ``API_CACHE_TYPE`` is set. If
+``flarchitect`` can cache GET responses when `API_CACHE_TYPE <configuration.html#CACHE_TYPE>`_ is set. If
 ``flask-caching`` is installed, any of its backends (such as Redis or
 Memcached) may be used. When ``flask-caching`` is **not** available and
-``API_CACHE_TYPE`` is ``"SimpleCache"``, a bundled
+`API_CACHE_TYPE <configuration.html#CACHE_TYPE>`_ is ``"SimpleCache"``, a bundled
 ``SimpleCache`` provides an in-memory fallback. This lightweight cache is
 cleared when the process restarts and stores data only for the current
 worker, making it suitable for development or tests rather than
@@ -116,11 +116,11 @@ to a shared Redis cluster so that multiple application servers enforce the
 same limits.
 
 You can also cache ``GET`` responses by choosing a backend with
-``API_CACHE_TYPE``. When `flask-caching <https://flask-caching.readthedocs.io/>`_
-is installed, set ``API_CACHE_TYPE`` to any supported backend such as
+`API_CACHE_TYPE <configuration.html#CACHE_TYPE>`_. When `flask-caching <https://flask-caching.readthedocs.io/>`_
+is installed, set `API_CACHE_TYPE <configuration.html#CACHE_TYPE>`_ to any supported backend such as
 ``RedisCache``. If the extension is missing, specifying ``SimpleCache``
 activates a small in-memory cache bundled with ``flarchitect``; any other
-value will raise a :class:`RuntimeError`. Use ``API_CACHE_TIMEOUT`` to control
+value will raise a :class:`RuntimeError`. Use `API_CACHE_TIMEOUT <configuration.html#CACHE_TIMEOUT>`_ to control
 how long items remain cached.
 
 Example ``RedisCache`` setup with a ``SimpleCache`` fallback and a cached
@@ -166,31 +166,31 @@ example, helps client developers cache against the correct release:
    * - Key
      - Default
      - Effect
-   * - ``API_DUMP_HYBRID_PROPERTIES``
+   * - `API_DUMP_HYBRID_PROPERTIES <configuration.html#DUMP_HYBRID_PROPERTIES>`_
      - ``True``
      - Include SQLAlchemy hybrid properties in serialized output.
-   * - ``API_DUMP_DATETIME``
+   * - `API_DUMP_DATETIME <configuration.html#DUMP_DATETIME>`_
      - ``True``
      - Append the current UTC timestamp as ``datetime``.
-   * - ``API_DUMP_VERSION``
+   * - `API_DUMP_VERSION <configuration.html#DUMP_VERSION>`_
      - ``True``
      - Embed the API version string as ``api_version``.
-   * - ``API_DUMP_STATUS_CODE``
+   * - `API_DUMP_STATUS_CODE <configuration.html#DUMP_STATUS_CODE>`_
      - ``True``
      - Add the HTTP status code to the payload.
-   * - ``API_DUMP_RESPONSE_MS``
+   * - `API_DUMP_RESPONSE_MS <configuration.html#DUMP_RESPONSE_MS>`_
      - ``True``
      - Include elapsed processing time in milliseconds as ``response_ms``.
-   * - ``API_DUMP_TOTAL_COUNT``
+   * - `API_DUMP_TOTAL_COUNT <configuration.html#DUMP_TOTAL_COUNT>`_
      - ``True``
      - Provide a ``total_count`` field for collection endpoints.
-   * - ``API_DUMP_NULL_NEXT_URL``
+   * - `API_DUMP_NULL_NEXT_URL <configuration.html#DUMP_NULL_NEXT_URL>`_
      - ``True``
      - Show ``next_url`` with ``null`` when no further page exists.
-   * - ``API_DUMP_NULL_PREVIOUS_URL``
+   * - `API_DUMP_NULL_PREVIOUS_URL <configuration.html#DUMP_NULL_PREVIOUS_URL>`_
      - ``True``
      - Show ``previous_url`` with ``null`` when at the first page.
-   * - ``API_DUMP_NULL_ERRORS``
+   * - `API_DUMP_NULL_ERRORS <configuration.html#DUMP_NULL_ERRORS>`_
      - ``True``
      - Always include an ``errors`` field, defaulting to ``null``.
 
@@ -232,7 +232,7 @@ Nested model creation
 
 Nested writes are disabled by default. Enable them globally with
 
-``API_ALLOW_NESTED_WRITES = True`` or per model via
+`API_ALLOW_NESTED_WRITES <configuration.html#ALLOW_NESTED_WRITES>`_ or per model via
 ``Meta.allow_nested_writes``.
 
 .. code:: python
@@ -346,8 +346,8 @@ Enable soft deletes and define how records are flagged:
        API_SOFT_DELETE_ATTRIBUTE = "deleted"
        API_SOFT_DELETE_VALUES = (False, True)
 
-``API_SOFT_DELETE_ATTRIBUTE`` names the column that stores the deleted flag.
-``API_SOFT_DELETE_VALUES`` is a tuple where the first value represents an
+`API_SOFT_DELETE_ATTRIBUTE <configuration.html#SOFT_DELETE_ATTRIBUTE>`_ names the column that stores the deleted flag.
+`API_SOFT_DELETE_VALUES <configuration.html#SOFT_DELETE_VALUES>`_ is a tuple where the first value represents an
 active record and the second marks it as deleted.
 
 Example model
@@ -401,9 +401,9 @@ CORS
 ----
 
 To enable `Cross-Origin Resource Sharing (CORS) <https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS>`_
-for your API, set :data:`API_ENABLE_CORS` to ``True`` in the application
+for your API, set `API_ENABLE_CORS <configuration.html#ENABLE_CORS>`_ to ``True`` in the application
 configuration. When active, CORS headers are applied to matching routes
-defined in :data:`CORS_RESOURCES`.
+defined in ``CORS_RESOURCES``.
 
 ``CORS_RESOURCES`` accepts a mapping of URL patterns to their respective
 options, mirroring the format used by `Flask-CORS <https://flask-cors.readthedocs.io/>`_.
@@ -457,7 +457,7 @@ responses. These toggles may be disabled to enforce fixed behaviour.
 Filtering
 ^^^^^^^^^
 
-The :data:`API_ALLOW_FILTERS` flag enables a ``filter`` query parameter for
+The `API_ALLOW_FILTERS <configuration.html#ALLOW_FILTERS>`_ flag enables a ``filter`` query parameter for
 constraining results. For example::
 
     GET /api/books?filter=author_id__eq:1
@@ -465,26 +465,26 @@ constraining results. For example::
 Ordering
 ^^^^^^^^
 
-Activate :data:`API_ALLOW_ORDER_BY` to allow sorting via ``order_by``::
+Activate `API_ALLOW_ORDER_BY <configuration.html#ALLOW_ORDER_BY>`_ to allow sorting via ``order_by``::
 
     GET /api/books?order_by=-published_date
 
 Selecting fields
 ^^^^^^^^^^^^^^^^
 
-:data:`API_ALLOW_SELECT_FIELDS` lets clients whitelist response columns with
+`API_ALLOW_SELECT_FIELDS <configuration.html#ALLOW_SELECT_FIELDS>`_ lets clients whitelist response columns with
 the ``fields`` parameter::
 
     GET /api/books?fields=title,author_id
 
 See :doc:`configuration <configuration>` for detailed descriptions of
-:data:`API_ALLOW_FILTERS`, :data:`API_ALLOW_ORDER_BY` and
-:data:`API_ALLOW_SELECT_FIELDS`.
+`API_ALLOW_FILTERS <configuration.html#ALLOW_FILTERS>`_, `API_ALLOW_ORDER_BY <configuration.html#ALLOW_ORDER_BY>`_ and
+`API_ALLOW_SELECT_FIELDS <configuration.html#ALLOW_SELECT_FIELDS>`_.
 
 Joining related resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Enable :data:`API_ALLOW_JOIN` to allow clients to join related models using
+Enable `API_ALLOW_JOIN <configuration.html#ALLOW_JOIN>`_ to allow clients to join related models using
 the ``join`` query parameter::
 
     GET /api/books?join=author&fields=books.title,author.first_name
@@ -492,8 +492,8 @@ the ``join`` query parameter::
 Grouping and aggregation
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:data:`API_ALLOW_GROUPBY` enables the ``groupby`` parameter for SQL
-``GROUP BY`` clauses. Use :data:`API_ALLOW_AGGREGATION` alongside it to
+`API_ALLOW_GROUPBY <configuration.html#ALLOW_GROUPBY>`_ enables the ``groupby`` parameter for SQL
+``GROUP BY`` clauses. Use `API_ALLOW_AGGREGATION <configuration.html#ALLOW_AGGREGATION>`_ alongside it to
 compute aggregates. Aggregates are expressed by appending a label and
 function to a field name::
 
@@ -508,7 +508,7 @@ When removing a record, related rows may block the operation. These
 settings let ``flarchitect`` clean up relationships automatically when
 explicitly requested.
 
-:data:`API_ALLOW_CASCADE_DELETE` permits clients to trigger cascading
+`API_ALLOW_CASCADE_DELETE <configuration.html#ALLOW_CASCADE_DELETE>`_ permits clients to trigger cascading
 removal by adding ``?cascade_delete=1`` to the request. Without this
 flag or query parameter, deletes that would orphan related records raise
 ``409 Conflict`` instead of proceeding::
@@ -520,7 +520,7 @@ flag or query parameter, deletes that would orphan related records raise
     class Config:
         API_ALLOW_CASCADE_DELETE = True
 
-:data:`API_ALLOW_DELETE_RELATED` governs whether child objects referencing
+`API_ALLOW_DELETE_RELATED <configuration.html#ALLOW_DELETE_RELATED>`_ governs whether child objects referencing
 the target can be removed automatically. Disable it to require manual
 cleanup of related rows:
 
@@ -530,7 +530,7 @@ cleanup of related rows:
         class Meta:
             delete_related = False  # API_ALLOW_DELETE_RELATED
 
-:data:`API_ALLOW_DELETE_DEPENDENTS` covers dependent objects such as
+`API_ALLOW_DELETE_DEPENDENTS <configuration.html#ALLOW_DELETE_DEPENDENTS>`_ covers dependent objects such as
 association table entries. Turning it off forces clients to delete those
 records explicitly:
 
@@ -550,11 +550,11 @@ Case conventions
 case conventions. These options keep the API's payloads, schemas and
 endpoints consistent with the style used by your clients.
 
-``API_FIELD_CASE``
+`API_FIELD_CASE <configuration.html#FIELD_CASE>`_
 ^^^^^^^^^^^^^^^^^^
 
 Controls the casing for fields in JSON responses. By default, field names
-use ``snake`` case. Setting ``API_FIELD_CASE`` changes the output to match
+use ``snake`` case. Setting `API_FIELD_CASE <configuration.html#FIELD_CASE>`_ changes the output to match
 other naming styles:
 
 .. code-block:: python
@@ -575,7 +575,7 @@ Switching to ``kebab`` case instead renders the same field as
 ``publication-date``. Supported options include ``snake``, ``camel``,
 ``pascal``, ``kebab`` and ``screaming_snake``.
 
-``API_SCHEMA_CASE``
+`API_SCHEMA_CASE <configuration.html#SCHEMA_CASE>`_
 ^^^^^^^^^^^^^^^^^^^
 
 Defines the naming convention for generated schema names in the OpenAPI
@@ -587,13 +587,13 @@ document. The default, ``camel``, produces schema identifiers such as
     class Config:
         API_SCHEMA_CASE = "screaming_snake"
 
-Interplay with ``API_ENDPOINT_CASE``
+Interplay with `API_ENDPOINT_CASE <configuration.html#ENDPOINT_CASE>`_
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``API_ENDPOINT_CASE`` controls the casing of the generated URL paths. To
+`API_ENDPOINT_CASE <configuration.html#ENDPOINT_CASE>`_ controls the casing of the generated URL paths. To
 maintain a consistent style across paths, schemas and payloads, combine
-``API_ENDPOINT_CASE`` with the appropriate ``API_FIELD_CASE`` and
-``API_SCHEMA_CASE`` values. For example, selecting ``kebab`` endpoint
+`API_ENDPOINT_CASE <configuration.html#ENDPOINT_CASE>`_ with the appropriate `API_FIELD_CASE <configuration.html#FIELD_CASE>`_ and
+`API_SCHEMA_CASE <configuration.html#SCHEMA_CASE>`_ values. For example, selecting ``kebab`` endpoint
 casing pairs naturally with ``kebab`` field names.
 
 

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from flarchitect import Architect
@@ -30,6 +31,7 @@ class User(db.Model):
     username: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str] = mapped_column()
     api_key: Mapped[str | None] = mapped_column(nullable=True)
+    roles: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     def check_password(self, candidate: str) -> bool:
         """Compare stored password with ``candidate``.

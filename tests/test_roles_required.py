@@ -9,17 +9,17 @@ from flask.testing import FlaskClient
 from marshmallow import Schema, fields
 
 from flarchitect import Architect
-from flarchitect.authentication import roles_accepted, roles_required
+from flarchitect.authentication import require_roles
 from flarchitect.authentication.user import set_current_user
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.utils import handle_authorization
 from flarchitect.utils.response_helpers import create_response
 
 
-def test_roles_required_direct() -> None:
-    """The decorator blocks access when roles are missing."""
+def test_require_roles_all() -> None:
+    """The decorator blocks access when required roles are missing."""
 
-    @roles_required("admin")
+    @require_roles("admin")
     def sample() -> str:
         return "ok"
 
@@ -98,7 +98,7 @@ def test_openapi_documents_roles() -> None:
 
     spec_template = {"parameters": [], "responses": {"401": {"description": ""}}}
 
-    @roles_required("admin", "editor")
+    @require_roles("admin", "editor")
     def view() -> None:  # pragma: no cover - simple callable
         pass
 
@@ -108,10 +108,10 @@ def test_openapi_documents_roles() -> None:
     assert "Roles required: admin, editor" in spec_template["responses"]["401"]["description"]
 
 
-def test_roles_accepted_direct() -> None:
-    """Access granted when user has any accepted role."""
+def test_require_roles_any() -> None:
+    """Access granted when user has any matching role."""
 
-    @roles_accepted("admin", "editor")
+    @require_roles("admin", "editor", any_of=True)
     def sample() -> str:
         return "ok"
 
@@ -136,7 +136,7 @@ def test_openapi_documents_roles_accepted() -> None:
 
     spec_template = {"parameters": [], "responses": {"401": {"description": ""}}}
 
-    @roles_accepted("admin", "editor")
+    @require_roles("admin", "editor", any_of=True)
     def view() -> None:  # pragma: no cover - simple callable
         pass
 
