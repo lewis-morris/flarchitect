@@ -124,7 +124,9 @@ document.
 
 ## GraphQL
 
-Prefer working with a single endpoint? `flarchitect` can turn your SQLAlchemy models into a GraphQL schema with just a couple of lines. Generate the schema and register it with the architect:
+Prefer working with a single endpoint? `flarchitect` can turn your SQLAlchemy
+models into a GraphQL schema with just a couple of lines. Generate the schema
+and register it with the architect:
 
 ```python
 from flarchitect.graphql import create_schema_from_models
@@ -133,18 +135,61 @@ schema = create_schema_from_models([Item], db.session)
 architect.init_graphql(schema=schema)
 ```
 
-With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively. A browser visit issues a `GET` request that serves the GraphiQL interface, while `POST` requests accept GraphQL operations as JSON. Use the `all_items` query to fetch existing records:
+The generated schema exposes CRUD-style queries and mutations for each model,
+including `all_items`, `item`, `create_item`, `update_item` and `delete_item`.
+Column-level filtering and simple pagination are built in via arguments on the
+`all_<table>` queries:
 
 ```graphql
 query {
-    all_items {
+    all_items(name: "Foo", limit: 10, offset: 0) {
         id
         name
     }
 }
 ```
+Mutations manage records:
 
-The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
+```graphql
+mutation {
+    update_item(id: 1, name: "Bar") {
+        id
+        name
+    }
+}
+
+mutation {
+    delete_item(id: 1)
+}
+```
+
+Custom SQLAlchemy types can be mapped to Graphene scalars by supplying a
+`type_mapping` override:
+
+```python
+schema = create_schema_from_models(
+    [Item], db.session, type_mapping={MyType: graphene.String}
+)
+```
+
+Run your app and open
+[GraphiQL](https://github.com/graphql/graphiql) at
+`http://localhost:5000/graphql` to explore your data interactively. A browser
+visit issues a `GET` request that serves the GraphiQL interface, while `POST`
+requests accept GraphQL operations as JSON.
+
+Quick start:
+
+```bash
+pip install flarchitect
+python app.py  # start your Flask app
+# then visit http://localhost:5000/graphql
+```
+
+The [GraphQL demo](demo/graphql/README.md) contains ready-made models and
+sample queries to help you get started. Read the
+[detailed GraphQL docs](https://lewis-morris.github.io/flarchitect/graphql.html)
+for advanced usage and configuration options.
 
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 

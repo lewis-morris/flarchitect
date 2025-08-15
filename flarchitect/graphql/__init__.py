@@ -30,7 +30,8 @@ Example:
     {'all_items': []}
 
 The schema exposes ``Item`` through ``item`` and ``all_items`` queries as well
-as a ``create_item`` mutation that accepts the model's columns as arguments.
+as ``create_item``, ``update_item`` and ``delete_item`` mutations for basic
+CRUD operations.
 """
 
 from __future__ import annotations
@@ -235,19 +236,25 @@ def create_schema_from_models(
 
     Query = type("Query", (graphene.ObjectType,), query_fields)
 
-    # Build mutation fields for record creation.
+    # Build mutation fields for create, update and delete operations.
     mutation_fields: dict[str, Any] = {}
     for model, obj_type in object_types.items():
-        arguments: dict[str, Any] = {}
+        pk_column: str | None = None
+        create_args: dict[str, Any] = {}
+        update_args: dict[str, Any] = {}
+
         for column in model.__table__.columns:  # type: ignore[attr-defined]
-            if column.primary_key:
-                continue
             gql_type = _convert_sqla_type(column.type, mapping)
-            arguments[column.name] = gql_type(required=not column.nullable)
+            if column.primary_key:
+                pk_column = column.name
+                update_args[column.name] = gql_type(required=True)
+                continue
+            create_args[column.name] = gql_type(required=not column.nullable)
+            update_args[column.name] = gql_type()
 
-        Arguments = type("Arguments", (), arguments)
+        CreateArguments = type("Arguments", (), create_args)
 
-        def _mutate(_root, _info, model=model, **kwargs):
+        def _create(_root, _info, model=model, **kwargs) -> Any:
             """Resolver creating and persisting a new record."""
 
             instance = model(**kwargs)
@@ -255,17 +262,75 @@ def create_schema_from_models(
             session.commit()
             return instance
 
-        mutation = type(
+        create_mutation = type(
             f"Create{model.__name__}",
             (graphene.Mutation,),
             {
-                "Arguments": Arguments,
+                "Arguments": CreateArguments,
                 "Output": obj_type,
-                "mutate": staticmethod(_mutate),
+                "mutate": staticmethod(_create),
             },
         )
 
-        mutation_fields[f"create_{model.__tablename__}"] = mutation.Field()
+        mutation_fields[f"create_{model.__tablename__}"] = create_mutation.Field()
+
+        UpdateArguments = type("Arguments", (), update_args)
+
+        def _update(_root, _info, model=model, pk_name=pk_column, **kwargs) -> Any:
+            """Resolver updating an existing record by primary key."""
+
+            pk_val = kwargs.pop(pk_name)
+            instance = session.get(model, pk_val)
+            if instance is None:
+                return None
+            for attr, value in kwargs.items():
+                if value is not None:
+                    setattr(instance, attr, value)
+            session.commit()
+            return instance
+
+        update_mutation = type(
+            f"Update{model.__name__}",
+            (graphene.Mutation,),
+            {
+                "Arguments": UpdateArguments,
+                "Output": obj_type,
+                "mutate": staticmethod(_update),
+            },
+        )
+
+        mutation_fields[f"update_{model.__tablename__}"] = update_mutation.Field()
+
+        delete_args: dict[str, Any] = {}
+        assert pk_column is not None
+        pk_type = _convert_sqla_type(
+            getattr(model.__table__.c, pk_column).type, mapping
+        )
+        delete_args[pk_column] = pk_type(required=True)
+        DeleteArguments = type("Arguments", (), delete_args)
+
+        def _delete(_root, _info, model=model, pk_name=pk_column, **kwargs) -> bool:
+            """Resolver deleting a record by primary key."""
+
+            pk_val = kwargs[pk_name]
+            instance = session.get(model, pk_val)
+            if instance is None:
+                return False
+            session.delete(instance)
+            session.commit()
+            return True
+
+        delete_mutation = type(
+            f"Delete{model.__name__}",
+            (graphene.Mutation,),
+            {
+                "Arguments": DeleteArguments,
+                "Output": graphene.Boolean,
+                "mutate": staticmethod(_delete),
+            },
+        )
+
+        mutation_fields[f"delete_{model.__tablename__}"] = delete_mutation.Field()
 
     Mutation = type("Mutation", (graphene.ObjectType,), mutation_fields)
 
