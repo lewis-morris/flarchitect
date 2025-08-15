@@ -139,14 +139,7 @@ last_names = [
     "Turner",
 ]
 
-nationality = (
-    ["English"] * 10
-    + ["Scottish"] * 10
-    + ["Welsh"] * 10
-    + ["Irish"] * 5
-    + ["American"] * 3
-    + ["Australian"] * 3
-)
+nationality = ["English"] * 10 + ["Scottish"] * 10 + ["Welsh"] * 10 + ["Irish"] * 5 + ["American"] * 3 + ["Australian"] * 3
 
 bios = [
     "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative narratives.",
@@ -307,9 +300,7 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = (
-        pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
-    )
+    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
 
     return title
 
@@ -492,9 +483,7 @@ def create_books(db, authors, categories, publishers):
             categories = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(
-                author.date_of_birth.year + 20, datetime.now().year
-            )
+            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
 
             publication_date = datetime(
                 year=publication_year,
@@ -570,9 +559,7 @@ def create_publishers(db):
 
     for _ in range(30):
         name = generate_company_name()
-        website = (
-            "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
-        )
+        website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
         foundation_year = generate_random_year(1860, 1920)
 
         company = Publisher(name=name, website=website, foundation_year=foundation_year)

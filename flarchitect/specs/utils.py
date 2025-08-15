@@ -8,15 +8,12 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import pytz
-from flask import current_app
 from marshmallow import Schema, fields
 from marshmallow_sqlalchemy.fields import Nested, Related, RelatedList
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.http import HTTP_STATUS_CODES
 from werkzeug.routing import IntegerConverter, UnicodeConverter
 
-import flarchitect.utils
-import flarchitect.utils.decorators
 from flarchitect.database.inspections import get_model_columns, get_model_relationships
 from flarchitect.database.utils import AGGREGATE_FUNCS
 from flarchitect.logging import logger
@@ -25,10 +22,11 @@ from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import (
     DATE_FORMAT,
     DATETIME_FORMAT,
-    html_path,
+    get_html_path,
     manual_render_absolute_template,
     pluralize_last_word,
 )
+from flarchitect.utils.response_helpers import create_response
 
 
 def schema_name_resolver(schema: Schema) -> str:
@@ -310,58 +308,95 @@ def _add_response_to_spec_template(
     )
 
 
+def build_error_response(
+    status_code: int, links: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Build a standardised error response for the OpenAPI specification.
+
+    Args:
+        status_code (int): HTTP status code representing the error.
+        links (Optional[Dict[str, Any]]): Optional OpenAPI links related to the error.
+
+    Returns:
+        Dict[str, Any]: Response block including example payload.
+    """
+    example = create_response(
+        status=status_code, errors={"error": HTTP_STATUS_CODES.get(status_code)}
+    ).get_json()
+
+    response: dict[str, Any] = {
+        "description": HTTP_STATUS_CODES.get(status_code),
+        "content": {"application/json": {"example": example}},
+    }
+
+    if links:
+        response["links"] = links
+
+    return response
+
+
 def _initialize_base_responses(
-    method: str, many: bool, error_responses: list[int]
+    method: str,
+    many: bool,
+    error_responses: list[int],
+    links: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Helper function to initialise base responses.
+    """Initialise base responses for a route.
 
     Args:
         method (str): The HTTP method.
         many (bool): Whether the endpoint returns multiple items.
         error_responses (List[int]): List of error response status codes.
+        links (Optional[Dict[int, Dict[str, Any]]]): Links for specific error responses.
 
     Returns:
         Dict[str, Dict[str, Any]]: Dictionary of base responses.
     """
+    links = links or {}
     responses = {"200": {"description": "Successful operation"}}
 
     if 500 in error_responses or not error_responses:
-        responses["500"] = {"description": HTTP_STATUS_CODES.get(500)}
+        responses["500"] = build_error_response(500, links.get(500))
 
     if (
         method != "POST"
         and not many
         and (404 in error_responses or not error_responses)
     ):
-        responses["404"] = {"description": HTTP_STATUS_CODES.get(404)}
+        responses["404"] = build_error_response(404, links.get(404))
 
     if (
         method == "DELETE"
         and not many
         and (409 in error_responses or not error_responses)
     ):
-        responses["409"] = {"description": HTTP_STATUS_CODES.get(409)}
+        responses["409"] = build_error_response(409, links.get(409))
 
     return responses
 
 
-def _initialize_auth_responses(error_responses: list[int]) -> dict[str, dict[str, Any]]:
-    """Helper function to initialise authentication responses.
+def _initialize_auth_responses(
+    error_responses: list[int],
+    links: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Initialise authentication error responses.
 
     Args:
         error_responses (List[int]): List of error response status codes.
+        links (Optional[Dict[int, Dict[str, Any]]]): Links for specific error responses.
 
     Returns:
         Dict[str, Dict[str, Any]]: Dictionary of authentication responses.
     """
     responses = {}
+    links = links or {}
     auth_on = get_config_or_model_meta("API_AUTHENTICATE", default=False)
 
     if auth_on and (403 in error_responses or not error_responses):
-        responses["403"] = {"description": HTTP_STATUS_CODES.get(403)}
+        responses["403"] = build_error_response(403, links.get(403))
 
     if auth_on and (401 in error_responses or not error_responses):
-        responses["401"] = {"description": HTTP_STATUS_CODES.get(401)}
+        responses["401"] = build_error_response(401, links.get(401))
 
     return responses
 
@@ -726,7 +761,7 @@ def generate_fields_description(schema: Schema) -> str:
             get_table_name(i, resource_name, fields, example_table) for i in range(3)
         ]
 
-        full_path = os.path.join(html_path, "redoc_templates/fields.html")
+        full_path = os.path.join(get_html_path(), "redoc_templates/fields.html")
         schema_name = endpoint_namer(schema.Meta.model)
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
 
@@ -752,7 +787,7 @@ def generate_x_description(template_data: dict, path: str = "") -> str:
         str: Filter examples.
     """
     if template_data:
-        full_path = os.path.join(html_path, path)
+        full_path = os.path.join(get_html_path(), path)
         return manual_render_absolute_template(full_path, **template_data)
     else:
         return "This endpoint does not have a database table (or is computed etc) and should not be filtered\n"
@@ -780,7 +815,7 @@ def generate_filter_examples(schema: Schema) -> str:
     example_one = "&".join(examples[:split_examples])
     example_two = "&".join(examples[-split_examples:])
 
-    full_path = os.path.join(html_path, "redoc_templates/filters.html")
+    full_path = os.path.join(get_html_path(), "redoc_templates/filters.html")
 
     return manual_render_absolute_template(
         full_path, examples=[example_one, example_two]
@@ -806,6 +841,7 @@ def initialize_spec_template(
     many: bool = False,
     rate_limit: bool = False,
     error_responses: list[int] | None = None,
+    links: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Initialises the spec template with optional rate limiting headers for successful and rate-limited responses.
 
@@ -814,6 +850,7 @@ def initialize_spec_template(
         many (bool): Whether the endpoint returns multiple items.
         rate_limit (bool): Whether the endpoint has a rate limit.
         error_responses (Optional[List[int]]): List of error response status codes.
+        links (Optional[Dict[int, Dict[str, Any]]]): Links for specific error responses.
 
     Returns:
         Dict[str, Any]: Spec template.
@@ -821,8 +858,12 @@ def initialize_spec_template(
     if not error_responses:
         error_responses = []
 
-    responses = _initialize_base_responses(method, many, error_responses)
-    responses.update(_initialize_auth_responses(error_responses))
+    if links is None:
+        raw_links = get_config_or_model_meta("links", default={}, method=method)
+        links = {int(k): v for k, v in raw_links.items()} if raw_links else {}
+
+    responses = _initialize_base_responses(method, many, error_responses, links)
+    responses.update(_initialize_auth_responses(error_responses, links))
     responses.update(_initialize_rate_limit_responses(rate_limit))
 
     return {"responses": responses, "parameters": []}
@@ -853,9 +894,6 @@ def append_parameters(
     Returns:
         None
     """
-    flarchitect.utils.general.html_path = current_app.extensions[
-        "flarchitect"
-    ].get_templates_path()
 
     spec_template.setdefault("parameters", []).extend(path_params + query_params)
     rate_limit = get_config_or_model_meta(

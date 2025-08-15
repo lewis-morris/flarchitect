@@ -29,9 +29,7 @@ def test_examples_data_type_and_desc(client):
     example = info.get("example")
 
     swagger_response = client.get("/apispec.json").json
-    author_schema = swagger_response["components"]["schemas"]["author"]["properties"][
-        "date_of_birth"
-    ]
+    author_schema = swagger_response["components"]["schemas"]["author"]["properties"]["date_of_birth"]
 
     assert author_schema["format"] == format_
     assert author_schema["description"] == description

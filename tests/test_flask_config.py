@@ -46,9 +46,7 @@ def test_hidden_patch_and_auto_schemas(client) -> None:
     for methods in swagger["paths"].values():
         patch_spec = methods.get("patch")
         if patch_spec:
-            ref = patch_spec["requestBody"]["content"]["application/json"]["schema"][
-                "$ref"
-            ]
+            ref = patch_spec["requestBody"]["content"]["application/json"]["schema"]["$ref"]
             assert "patch" not in ref.lower()
 
 
@@ -171,9 +169,7 @@ def test_read_only():
 
 # check to make sure that changing the docs url works
 def test_docs_path():
-    app = create_app(
-        {"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"}
-    )
+    app = create_app({"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"})
 
     client = app.test_client()
     resp = client.get("/my_docs")
@@ -703,12 +699,8 @@ def test_global_query_param(client_two):
 def test_post_specific_query_param(client_two):
     swagger = client_two.get("/apispec.json").json
 
-    post_params = [
-        x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]
-    ]
-    get_params = [
-        x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]
-    ]
+    post_params = [x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]]
+    get_params = [x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]]
 
     assert "log_one" in post_params
     assert "log_one" not in get_params
@@ -726,9 +718,7 @@ def test_cascade_delete_enabled(client_two):
     delete_response = client_cascade_delete.delete("/api/authors/1")
     assert delete_response.status_code == 409
     assert "cascade_delete=1" in delete_response.json["errors"]["error"]
-    delete_response_happy = client_cascade_delete.delete(
-        "/api/authors/1?cascade_delete=1"
-    )
+    delete_response_happy = client_cascade_delete.delete("/api/authors/1?cascade_delete=1")
     assert delete_response_happy.status_code == 200
 
 

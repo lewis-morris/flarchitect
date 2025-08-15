@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from xml.etree import ElementTree as ET
 
 import inflect
-from flask import Flask
+from flask import Flask, current_app
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -18,8 +18,26 @@ from flarchitect.utils.core_utils import convert_case, get_count
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-html_path = ""
 p = inflect.engine()
+
+
+def get_html_path() -> str:
+    """Return the absolute path to the ``html`` templates directory.
+
+    The path is resolved using the registered :class:`~flask.Flask` application
+    when available. If the ``flarchitect`` extension is not registered or no
+    application context is active, the path is determined by searching for an
+    ``html`` folder relative to this file.
+
+    Returns:
+        str: Absolute path to the ``html`` directory. Returns an empty string if
+        the directory cannot be located.
+    """
+
+    try:
+        return current_app.extensions["flarchitect"].get_templates_path()  # type: ignore[index]
+    except Exception:  # pragma: no cover - fallback when app context not available
+        return find_html_directory() or ""
 
 
 class AttributeInitializerMixin:
@@ -98,7 +116,7 @@ def manual_render_absolute_template(absolute_template_path: str, **kwargs: Any) 
         str: The rendered template as a string.
     """
 
-    template_folder = os.path.join(find_html_directory(), absolute_template_path)
+    template_folder = os.path.join(get_html_path(), absolute_template_path)
     if template_folder.endswith(".html"):
         template_folder, template_filename = os.path.split(template_folder)
 
@@ -115,7 +133,9 @@ def manual_render_absolute_template(absolute_template_path: str, **kwargs: Any) 
     return template.render(**kwargs)
 
 
-def find_child_from_parent_dir(parent: str, child: str, current_dir: str = os.getcwd()) -> str | None:
+def find_child_from_parent_dir(
+    parent: str, child: str, current_dir: str = os.getcwd()
+) -> str | None:
     """
     Finds the directory of a child folder within a parent directory.
 
@@ -158,12 +178,21 @@ def check_rate_prerequisites(service: str) -> None:
     back_end_spec = "or specify a cache service URI in the flask configuration with the key API_RATE_LIMIT_STORAGE_URI={URL}:{PORT}"
     if service == "Memcached":
         if importlib.util.find_spec("pymemcache") is None:
-            raise ImportError("Memcached prerequisite not available. Please install pymemcache " + back_end_spec)
+            raise ImportError(
+                "Memcached prerequisite not available. Please install pymemcache "
+                + back_end_spec
+            )
     elif service == "Redis":
         if importlib.util.find_spec("redis") is None:
-            raise ImportError("Redis prerequisite not available. Please install redis-py " + back_end_spec)
+            raise ImportError(
+                "Redis prerequisite not available. Please install redis-py "
+                + back_end_spec
+            )
     elif service == "MongoDB" and importlib.util.find_spec("pymongo") is None:
-        raise ImportError("MongoDB prerequisite not available. Please install pymongo " + back_end_spec)
+        raise ImportError(
+            "MongoDB prerequisite not available. Please install pymongo "
+            + back_end_spec
+        )
 
 
 def check_rate_services() -> str | None:
@@ -243,7 +272,13 @@ def search_all_keys(model: Any, key: str) -> bool:
     Returns:
         bool: True if the key is found in any subclass, False otherwise.
     """
-    return any(any(get_config_or_model_meta(key, model=subclass, method=method) for method in HTTP_METHODS) for subclass in model.__subclasses__())
+    return any(
+        any(
+            get_config_or_model_meta(key, model=subclass, method=method)
+            for method in HTTP_METHODS
+        )
+        for subclass in model.__subclasses__()
+    )
 
 
 def generate_readme_html(file_path: str | Path, *args: Any, **kwargs: Any) -> str:
@@ -317,7 +352,9 @@ def pretty_print_dict(d: dict[Any, Any]) -> str:
     return pprint.pformat(d, indent=2)
 
 
-def update_dict_if_flag_true(output: dict[str, Any], flag: bool, key: str, value: Any, case_func: Any) -> None:
+def update_dict_if_flag_true(
+    output: dict[str, Any], flag: bool, key: str, value: Any, case_func: Any
+) -> None:
     """Update a dictionary with a key-value pair if the flag is True.
 
     Args:
@@ -356,7 +393,9 @@ def make_base_dict() -> dict[str, Any]:
     ]
 
     for config, key, value, *defaults in config_options:
-        flag = get_config_or_model_meta(config, default=defaults[0] if defaults else True)
+        flag = get_config_or_model_meta(
+            config, default=defaults[0] if defaults else True
+        )
         update_dict_if_flag_true(output, flag, key, value, field_case)
 
     return output
@@ -376,7 +415,11 @@ def pluralize_last_word(converted_name: str) -> str:
     delimiters = {"_": "snake", "-": "kebab"}
     delimiter = next((d for d in delimiters if d in converted_name), "")
 
-    words = converted_name.split(delimiter) if delimiter else re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", converted_name)
+    words = (
+        converted_name.split(delimiter)
+        if delimiter
+        else re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", converted_name)
+    )
     last_word = words[-1]
     last_word_pluralized = p.plural(p.singular_noun(last_word) or last_word)
 

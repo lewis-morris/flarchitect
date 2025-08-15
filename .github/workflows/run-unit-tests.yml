@@ -3,6 +3,11 @@ name: Tests
 on:
   push:
     branches: [ master ]
+  pull_request:
+
+# needed so we can commit coverage.svg back to the repo on pushes
+permissions:
+  contents: write
 
 jobs:
   test:
@@ -16,12 +21,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: pip
 
       - name: Install package + dev deps
         run: |
@@ -43,13 +50,22 @@ jobs:
           name: coverage-${{ matrix.python-version }}
           path: coverage.xml
 
-      # Optional: publish to codecov if you use it (set CODECOV_TOKEN in repo secrets)
-      # - name: Upload to Codecov
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     files: coverage.xml
-      #     flags: py${{ matrix.python-version }}
+      # ---------- badge generation + commit (only once on pushes) ----------
+      - name: Generate coverage badge (3.12 only on push)
+        if: github.event_name == 'push' && matrix.python-version == '3.12'
+        run: |
+          python -m pip install -U genbadge[all]
+          genbadge coverage -i coverage.xml -o coverage.svg
+          mkdir -p docs/source/_static
+          cp coverage.svg docs/source/_static/coverage.svg
+
+      - name: Commit coverage.svg back to repo
+        if: github.event_name == 'push' && matrix.python-version == '3.12'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(badge): update coverage.svg [skip ci]"
+          file_pattern: docs/source/_static/coverage.svg
+      # ---------------------------------------------------------------------
 
     concurrency:
       group: tests-${{ github.ref }}-${{ matrix.python-version }}
