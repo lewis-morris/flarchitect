@@ -196,23 +196,25 @@ def check_rate_prerequisites(service: str) -> None:
 
 
 def check_rate_services() -> str | None:
-    """Return the configured or automatically detected rate limit backend.
+    """Return the configured rate limit backend, optionally auto-detecting.
 
-    The function accepts explicitly configured cache URIs and validates that
-    the scheme corresponds to a supported backend. ``memory://`` is permitted
-    without a host component. If no configuration is provided, the function
-    attempts to detect running local services for Memcached, Redis, or MongoDB
-    and returns the appropriate URI.
+    The function prioritises an explicitly configured cache URI. When absent,
+    auto-detection of locally running services (Memcached, Redis or MongoDB)
+    only occurs if ``API_RATE_LIMIT_AUTODETECT`` evaluates to ``True``. This
+    opt-in behaviour avoids non-deterministic outcomes in test environments
+    where a service might be running on the host machine.
 
     Returns:
-        Optional[str]: The URI of the running service, or ``None`` if no service
-        is found.
+        Optional[str]: The validated cache URI or ``None`` if no service is
+            configured or detected.
     """
+
     services = {
         "Memcached": 11211,
         "Redis": 6379,
         "MongoDB": 27017,
     }
+
     uri = get_config_or_model_meta("API_RATE_LIMIT_STORAGE_URI", default=None)
     if uri:
         parsed = urlparse(uri)
@@ -233,6 +235,10 @@ def check_rate_services() -> str | None:
         if service_name:
             check_rate_prerequisites(service_name)
         return uri
+
+    auto_detect = get_config_or_model_meta("API_RATE_LIMIT_AUTODETECT", default=False)
+    if not auto_detect:
+        return None
 
     for service, port in services.items():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

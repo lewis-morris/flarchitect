@@ -1396,9 +1396,21 @@ def endpoint_namer(
     if model_obj is None:
         raise ValueError("A model or schema with a Meta.model attribute is required")
 
-    case = get_config_or_model_meta(
+    case_raw = get_config_or_model_meta(
         "API_ENDPOINT_CASE", default="kebab", model=model_obj
     )
+    case = str(case_raw).lower()
+    valid_cases = {
+        "camel",
+        "pascal",
+        "snake",
+        "screaming_snake",
+        "kebab",
+        "screaming_kebab",
+    }
+    if case not in valid_cases:
+        case = "kebab"
+
     converted_name = convert_case(model_obj.__name__, case)
     pluralized_name = pluralize_last_word(converted_name)
     return convert_case(pluralized_name, case)
