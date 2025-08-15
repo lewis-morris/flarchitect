@@ -1,0 +1,3 @@
+# BumpWright configuration to prevent automatic version bumps when no release is required.
+# No explicit bump level is defined; `bumpwright bump` will exit without changes
+# if `bumpwright decide` returns `None`.
