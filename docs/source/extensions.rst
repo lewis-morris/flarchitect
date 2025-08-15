@@ -18,21 +18,21 @@ Callback types
 flarchitect recognises a number of callback hooks that allow you to run custom
 logic at various stages of processing:
 
-* **Global setup** – runs before any model-specific processing. ``GLOBAL_SETUP_CALLBACK`` (global: ``API_GLOBAL_SETUP_CALLBACK``)
+* **Global setup** – runs before any model-specific processing. ``GLOBAL_SETUP_CALLBACK`` (global: `API_GLOBAL_SETUP_CALLBACK <configuration.html#GLOBAL_SETUP_CALLBACK>`_)
 * **Setup** – runs before database operations. Useful for validation, logging
-  or altering incoming data. ``SETUP_CALLBACK`` (global: ``API_SETUP_CALLBACK``)
+  or altering incoming data. ``SETUP_CALLBACK`` (global: `API_SETUP_CALLBACK <configuration.html#SETUP_CALLBACK>`_)
 * **Filter** – lets you adjust the SQLAlchemy query object before filtering and
-  pagination are applied. ``FILTER_CALLBACK`` (global: ``API_FILTER_CALLBACK``)
-* **Add** – called before a new object is committed to the database. ``ADD_CALLBACK`` (global: ``API_ADD_CALLBACK``)
-* **Update** – invoked prior to persisting updates to an existing object. ``UPDATE_CALLBACK`` (global: ``API_UPDATE_CALLBACK``)
-* **Remove** – executed before an object is deleted. ``REMOVE_CALLBACK`` (global: ``API_REMOVE_CALLBACK``)
+  pagination are applied. ``FILTER_CALLBACK`` (global: `API_FILTER_CALLBACK <configuration.html#FILTER_CALLBACK>`_)
+* **Add** – called before a new object is committed to the database. ``ADD_CALLBACK`` (global: `API_ADD_CALLBACK <configuration.html#ADD_CALLBACK>`_)
+* **Update** – invoked prior to persisting updates to an existing object. ``UPDATE_CALLBACK`` (global: `API_UPDATE_CALLBACK <configuration.html#UPDATE_CALLBACK>`_)
+* **Remove** – executed before an object is deleted. ``REMOVE_CALLBACK`` (global: `API_REMOVE_CALLBACK <configuration.html#REMOVE_CALLBACK>`_)
 * **Return** – runs after the database operation but before the response is
-  returned. Ideal for adjusting the output or adding headers. ``RETURN_CALLBACK`` (global: ``API_RETURN_CALLBACK``)
+  returned. Ideal for adjusting the output or adding headers. ``RETURN_CALLBACK`` (global: `API_RETURN_CALLBACK <configuration.html#RETURN_CALLBACK>`_)
 * **Dump** – executes after Marshmallow serialisation allowing you to modify
-  the dumped data. ``DUMP_CALLBACK`` (global: ``API_DUMP_CALLBACK``)
-* **Final** – runs immediately before the response is sent to the client. ``FINAL_CALLBACK`` (global: ``API_FINAL_CALLBACK``)
+  the dumped data. ``DUMP_CALLBACK`` (global: `API_DUMP_CALLBACK <configuration.html#DUMP_CALLBACK>`_)
+* **Final** – runs immediately before the response is sent to the client. ``FINAL_CALLBACK`` (global: `API_FINAL_CALLBACK <configuration.html#FINAL_CALLBACK>`_)
 * **Error** – triggered when an exception bubbles up; handle logging or
-  notifications here. ``ERROR_CALLBACK`` (global: ``API_ERROR_CALLBACK``)
+  notifications here. ``ERROR_CALLBACK`` (global: `API_ERROR_CALLBACK <configuration.html#ERROR_CALLBACK>`_)
 
 Configuration
 -------------
@@ -40,16 +40,16 @@ Configuration
 Callbacks are referenced by the following configuration keys (global variants
 use ``API_<KEY>``):
 
-* ``GLOBAL_SETUP_CALLBACK`` / ``API_GLOBAL_SETUP_CALLBACK``
-* ``SETUP_CALLBACK`` / ``API_SETUP_CALLBACK``
-* ``FILTER_CALLBACK`` / ``API_FILTER_CALLBACK``
-* ``ADD_CALLBACK`` / ``API_ADD_CALLBACK``
-* ``UPDATE_CALLBACK`` / ``API_UPDATE_CALLBACK``
-* ``REMOVE_CALLBACK`` / ``API_REMOVE_CALLBACK``
-* ``RETURN_CALLBACK`` / ``API_RETURN_CALLBACK``
-* ``DUMP_CALLBACK`` / ``API_DUMP_CALLBACK``
-* ``FINAL_CALLBACK`` / ``API_FINAL_CALLBACK``
-* ``ERROR_CALLBACK`` / ``API_ERROR_CALLBACK``
+* ``GLOBAL_SETUP_CALLBACK`` / `API_GLOBAL_SETUP_CALLBACK <configuration.html#GLOBAL_SETUP_CALLBACK>`_
+* ``SETUP_CALLBACK`` / `API_SETUP_CALLBACK <configuration.html#SETUP_CALLBACK>`_
+* ``FILTER_CALLBACK`` / `API_FILTER_CALLBACK <configuration.html#FILTER_CALLBACK>`_
+* ``ADD_CALLBACK`` / `API_ADD_CALLBACK <configuration.html#ADD_CALLBACK>`_
+* ``UPDATE_CALLBACK`` / `API_UPDATE_CALLBACK <configuration.html#UPDATE_CALLBACK>`_
+* ``REMOVE_CALLBACK`` / `API_REMOVE_CALLBACK <configuration.html#REMOVE_CALLBACK>`_
+* ``RETURN_CALLBACK`` / `API_RETURN_CALLBACK <configuration.html#RETURN_CALLBACK>`_
+* ``DUMP_CALLBACK`` / `API_DUMP_CALLBACK <configuration.html#DUMP_CALLBACK>`_
+* ``FINAL_CALLBACK`` / `API_FINAL_CALLBACK <configuration.html#FINAL_CALLBACK>`_
+* ``ERROR_CALLBACK`` / `API_ERROR_CALLBACK <configuration.html#ERROR_CALLBACK>`_
 
 You can apply these keys in several places:
 

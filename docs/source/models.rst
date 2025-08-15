@@ -25,7 +25,7 @@ Dump types
 ----------
 
 ``flarchitect`` can serialize model responses in different formats, controlled
-by ``API_SERIALIZATION_TYPE`` or ``Meta.serialization_type``. Supported dump
+by `API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE>`_ or ``Meta.serialization_type``. Supported dump
 types are:
 
 * ``url`` (default) – represent related objects only by their URL links.
@@ -45,12 +45,12 @@ Clients can override ``dynamic`` dumps per request with
 Nested relationship dumping
 ---------------------------
 
-``API_ADD_RELATIONS`` controls whether relationship fields are included in the
+`API_ADD_RELATIONS <configuration.html#ADD_RELATIONS>`_ controls whether relationship fields are included in the
 serialized response. Disable it to return only column data, or use
 ``?dump_relationships=false`` on a request to temporarily suppress all
 relationships.
 
-``API_SERIALIZATION_DEPTH`` limits how many levels of related resources are
+`API_SERIALIZATION_DEPTH <configuration.html#SERIALIZATION_DEPTH>`_ limits how many levels of related resources are
 embedded. Increasing the depth exposes deeper links or objects but may add
 overhead.
 

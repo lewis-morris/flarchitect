@@ -39,7 +39,7 @@ SQLAlchemy, so no special ``get_session`` method is required.
 
 This setup gives **flarchitect** access to your models. The library automatically
 locates the active SQLAlchemy session. For non-Flask setups, a custom session
-resolver can be supplied via ``API_SESSION_GETTER`` in the Flask config; see
+resolver can be supplied via `API_SESSION_GETTER <configuration.html#SESSION_GETTER>`_ in the Flask config; see
 :ref:`custom-session-getter` for details.
 
 Configure Flask

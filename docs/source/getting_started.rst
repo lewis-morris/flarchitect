@@ -30,6 +30,6 @@ Because the demo starts with no records, that list is empty:
 
 
 Pop open ``http://localhost:5000/docs`` in your browser to explore the automatically generated API docs.
-To optionally restrict access, set the ``API_DOCUMENTATION_PASSWORD`` environment variable or enable
-``API_DOCUMENTATION_REQUIRE_AUTH``. When protection is active, navigating to ``/docs`` displays a login
+To optionally restrict access, set the `API_DOCUMENTATION_PASSWORD <configuration.html#DOCUMENTATION_PASSWORD>`_ environment variable or enable
+`API_DOCUMENTATION_REQUIRE_AUTH <configuration.html#DOCUMENTATION_REQUIRE_AUTH>`_. When protection is active, navigating to ``/docs`` displays a login
 screen that accepts either the configured password or valid user credentials.
