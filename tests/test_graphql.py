@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
+import graphene
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from graphql import GraphQLInt
+from sqlalchemy import JSON, Date, DateTime, Integer, Numeric, String, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.types import TypeDecorator
 
 from flarchitect import Architect
-from flarchitect.graphql import create_schema_from_models
+from flarchitect.graphql import (
+    SQLA_TYPE_MAPPING,
+    _convert_sqla_type,
+    create_schema_from_models,
+)
 
 
 class Base(DeclarativeBase):
@@ -71,6 +78,43 @@ def test_graphql_query_and_mutation() -> None:
 def test_graphiql_served_on_get() -> None:
     """Ensure GraphiQL HTML is returned for ``GET`` requests."""
 
+def test_extended_type_mapping() -> None:
+    """Ensure additional SQLAlchemy types map to correct Graphene scalars."""
+
+    assert _convert_sqla_type(Date(), SQLA_TYPE_MAPPING) is graphene.Date
+    assert _convert_sqla_type(DateTime(), SQLA_TYPE_MAPPING) is graphene.DateTime
+    assert _convert_sqla_type(Numeric(), SQLA_TYPE_MAPPING) is graphene.Decimal
+    assert _convert_sqla_type(JSON(), SQLA_TYPE_MAPPING) is graphene.JSONString
+
+
+class CustomInt(TypeDecorator):
+    """Custom SQLAlchemy type for override tests."""
+
+    impl = Integer
+
+
+class CustomModel(db.Model):
+    """Model using a custom type for testing overrides."""
+
+    __tablename__ = "custom_model"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    value: Mapped[int] = mapped_column(CustomInt)
+
+
+def test_type_mapping_override() -> None:
+    """Allow overriding default type mapping when building schemas."""
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = Session(engine)
+    schema = create_schema_from_models([CustomModel], session, type_mapping={CustomInt: graphene.Int})
+    field_type = schema.graphql_schema.get_type("CustomModelType").fields["value"].type
+    assert field_type is GraphQLInt
+
+def test_graphql_filters_and_pagination() -> None:
+    """Ensure filters and pagination work for list queries."""
+
     app = create_app()
     client = app.test_client()
 
@@ -78,3 +122,20 @@ def test_graphiql_served_on_get() -> None:
     assert response.status_code == 200
     assert response.mimetype == "text/html"
     assert "GraphiQL" in response.get_data(as_text=True)
+
+    for name in ["Foo", "Bar", "Baz"]:
+        mutation = {
+            "query": f'mutation {{ create_item(name: "{name}") {{ id name }} }}'
+        }
+        response = client.post("/graphql", json=mutation)
+        assert response.status_code == 200
+
+    query = {"query": '{ all_items(name: "Bar") { name } }'}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert response.json["data"]["all_items"] == [{"name": "Bar"}]
+
+    query = {"query": "{ all_items(limit: 1, offset: 1) { name } }"}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert response.json["data"]["all_items"] == [{"name": "Bar"}]
