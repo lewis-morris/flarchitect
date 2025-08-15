@@ -153,8 +153,14 @@ Read about hiding and restoring records in the [soft delete section](docs/source
 To run the test suite locally:
 
 ```bash
+pip install -e .[dev]
+export ACCESS_SECRET_KEY=access
+export REFRESH_SECRET_KEY=refresh
 pytest
 ```
+
+The `ACCESS_SECRET_KEY` and `REFRESH_SECRET_KEY` environment variables are required for JWT-related tests. Adjust the export
+commands for your shell and operating system.
 
 ## Documentation & help
 
@@ -172,10 +178,13 @@ Check out the [project roadmap](docs/source/roadmap.rst) for upcoming features a
 
 Contributions are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-Before submitting a pull request, ensure that linters and tests pass locally:
+Before submitting a pull request, ensure that development dependencies are installed and linters and tests pass locally:
 
 ```bash
+pip install -e .[dev]
 ruff --fix .
+export ACCESS_SECRET_KEY=access
+export REFRESH_SECRET_KEY=refresh
 pytest
 ```
 
