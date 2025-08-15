@@ -6,10 +6,7 @@ import importlib.util
 
 import pytest
 
-from flarchitect.utils.general import (
-    check_rate_prerequisites,
-    check_rate_services,
-)
+from flarchitect.utils.general import check_rate_prerequisites, check_rate_services
 
 
 class TestRateLimitServices:
@@ -30,7 +27,9 @@ class TestRateLimitServices:
 
         assert check_rate_services() == "redis://127.0.0.1:6379"
 
-    def test_returns_none_without_services(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_returns_none_without_services(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Return ``None`` when no cache services are reachable."""
 
         monkeypatch.setattr(
@@ -51,11 +50,15 @@ class TestRateLimitServices:
             def close(self) -> None:  # pragma: no cover
                 pass
 
-        monkeypatch.setattr("flarchitect.utils.general.socket.socket", lambda *a, **k: DummySocket())
+        monkeypatch.setattr(
+            "flarchitect.utils.general.socket.socket", lambda *a, **k: DummySocket()
+        )
 
         assert check_rate_services() is None
 
-    def test_prerequisites_missing_dependency(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_prerequisites_missing_dependency(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Raise ``ImportError`` if required client library is absent."""
 
         monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
@@ -68,6 +71,18 @@ class TestRateLimitServices:
         monkeypatch.setattr(
             "flarchitect.utils.general.get_config_or_model_meta",
             lambda key, default=None, model=None: "invalid://localhost",
+        )
+        with pytest.raises(ValueError):
+            check_rate_services()
+
+    def test_missing_host_in_storage_uri_raises(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A storage URI without a host should raise ``ValueError``."""
+
+        monkeypatch.setattr(
+            "flarchitect.utils.general.get_config_or_model_meta",
+            lambda key, default=None, model=None: "redis://",
         )
         with pytest.raises(ValueError):
             check_rate_services()

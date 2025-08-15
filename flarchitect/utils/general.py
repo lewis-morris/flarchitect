@@ -217,6 +217,8 @@ def check_rate_services() -> str | None:
             "mongodb": "MongoDB",
             "memory": None,
         }
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError("Rate limit storage URI must include scheme and host")
         if parsed.scheme not in scheme_map:
             raise ValueError(f"Unsupported rate limit storage backend: {parsed.scheme}")
         service_name = scheme_map[parsed.scheme]

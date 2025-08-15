@@ -1400,4 +1400,5 @@ def endpoint_namer(
         "API_ENDPOINT_CASE", default="kebab", model=model_obj
     )
     converted_name = convert_case(model_obj.__name__, case)
-    return pluralize_last_word(converted_name)
+    pluralized_name = pluralize_last_word(converted_name)
+    return convert_case(pluralized_name, case)
