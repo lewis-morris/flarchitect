@@ -108,3 +108,26 @@ def test_type_mapping_override() -> None:
     schema = create_schema_from_models([CustomModel], session, type_mapping={CustomInt: graphene.Int})
     field_type = schema.graphql_schema.get_type("CustomModelType").fields["value"].type
     assert field_type is GraphQLInt
+
+def test_graphql_filters_and_pagination() -> None:
+    """Ensure filters and pagination work for list queries."""
+
+    app = create_app()
+    client = app.test_client()
+
+    for name in ["Foo", "Bar", "Baz"]:
+        mutation = {
+            "query": f'mutation {{ create_item(name: "{name}") {{ id name }} }}'
+        }
+        response = client.post("/graphql", json=mutation)
+        assert response.status_code == 200
+
+    query = {"query": '{ all_items(name: "Bar") { name } }'}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert response.json["data"]["all_items"] == [{"name": "Bar"}]
+
+    query = {"query": "{ all_items(limit: 1, offset: 1) { name } }"}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert response.json["data"]["all_items"] == [{"name": "Bar"}]

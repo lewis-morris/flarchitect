@@ -130,7 +130,8 @@ def create_schema_from_models(
     Each provided model receives two query fields:
 
     * ``<table_name>(id: ID)`` – fetch a single row by primary key.
-    * ``all_<table_name>s`` – fetch every row in the table.
+    * ``all_<table_name>s`` – fetch rows with optional filters, ``limit`` and
+      ``offset`` arguments.
 
     And one mutation field:
 
@@ -161,17 +162,40 @@ def create_schema_from_models(
     for model, obj_type in object_types.items():
         name = model.__tablename__
         query_fields[name] = graphene.Field(obj_type, id=graphene.Int(required=True))
-        query_fields[f"all_{name}s"] = graphene.List(obj_type)
+
+        # Collect filterable columns for list queries and add pagination args.
+        list_args: dict[str, Any] = {}
+        for column in model.__table__.columns:  # type: ignore[attr-defined]
+            gql_type = _convert_sqla_type(column.type)
+            list_args[column.name] = gql_type()
+        list_args["limit"] = graphene.Int()
+        list_args["offset"] = graphene.Int()
+        query_fields[f"all_{name}s"] = graphene.List(obj_type, **list_args)
 
         def _resolve_one(_root, _info, id: int, model=model):
             """Resolver for fetching a single record by ID."""
 
             return session.get(model, id)
 
-        def _resolve_all(_root, _info, model=model):
-            """Resolver for fetching all records for the model."""
+        def _resolve_all(_root, _info, model=model, **kwargs):
+            """Resolver for fetching records with optional filters and pagination."""
 
-            return session.query(model).all()
+            query = session.query(model)
+            pk = list(model.__table__.primary_key.columns)[0]  # type: ignore[attr-defined]
+            query = query.order_by(pk)
+
+            limit = kwargs.pop("limit", None)
+            offset = kwargs.pop("offset", None)
+            for column, value in kwargs.items():
+                if value is not None:
+                    query = query.filter(getattr(model, column) == value)
+
+            if offset is not None:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
+
+            return query.all()
 
         query_fields[f"resolve_{name}"] = staticmethod(_resolve_one)
         query_fields[f"resolve_all_{name}s"] = staticmethod(_resolve_all)
