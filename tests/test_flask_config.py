@@ -46,7 +46,9 @@ def test_hidden_patch_and_auto_schemas(client) -> None:
     for methods in swagger["paths"].values():
         patch_spec = methods.get("patch")
         if patch_spec:
-            ref = patch_spec["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+            ref = patch_spec["requestBody"]["content"]["application/json"]["schema"][
+                "$ref"
+            ]
             assert "patch" not in ref.lower()
 
 
@@ -169,7 +171,9 @@ def test_read_only():
 
 # check to make sure that changing the docs url works
 def test_docs_path():
-    app = create_app({"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"})
+    app = create_app(
+        {"API_DOCUMENTATION_URL": "/my_docs", "API_TITLE": "Change docs url"}
+    )
 
     client = app.test_client()
     resp = client.get("/my_docs")
@@ -219,22 +223,22 @@ def test_docs_extra_info():
 def test_basic_no_change_api_output(client):
     books = client.get("/api/books").json
 
-    assert "datetime" in books.keys()
-    assert "api_version" in books.keys()
-    assert "status_code" in books.keys()
-    assert "total_count" in books.keys()
-    assert "next_url" in books.keys()
-    assert "previous_url" in books.keys()
+    assert "datetime" in books
+    assert "api_version" in books
+    assert "status_code" in books
+    assert "total_count" in books
+    assert "next_url" in books
+    assert "previous_url" in books
 
     books_error = client.get("/api/books/0009999").json
-    assert "errors" in books_error.keys()
+    assert "errors" in books_error
 
     book = client.get("/api/books/1").json
 
-    assert "datetime" in book.keys()
-    assert "api_version" in book.keys()
-    assert "status_code" in book.keys()
-    assert "total_count" in book.keys()
+    assert "datetime" in book
+    assert "api_version" in book
+    assert "status_code" in book
+    assert "total_count" in book
 
 
 # make sure camel case is and isn't used.
@@ -248,13 +252,13 @@ def test_change_to_camel_output():
     )
     client_camel = app_cam.test_client()
     book = client_camel.get("/api/books/1").json
-    assert "publication_date" in book["value"].keys()
+    assert "publication_date" in book["value"]
 
     api_calls = client_camel.get("/api/api-calls").json
     assert api_calls["status_code"] == 200
 
     swagger_oas = client_camel.get("/apispec.json").json
-    assert "apiCalls" in swagger_oas["components"]["schemas"].keys()
+    assert "apiCalls" in swagger_oas["components"]["schemas"]
 
 
 def test_change_to_pascal_output():
@@ -268,13 +272,13 @@ def test_change_to_pascal_output():
     client_pascal = app_pascal.test_client()
 
     book = client_pascal.get("/api/books/1").json
-    assert "publication-date" in book["value"].keys()
+    assert "publication-date" in book["value"]
 
     apiCalls = client_pascal.get("/api/api_calls").json
     assert apiCalls["status-code"] == 200
 
     swaggerOas = client_pascal.get("/apispec.json").json
-    assert "ApiCalls" in swaggerOas["components"]["schemas"].keys()
+    assert "ApiCalls" in swaggerOas["components"]["schemas"]
 
 
 def test_change_to_snake_output():
@@ -288,13 +292,13 @@ def test_change_to_snake_output():
     client_snake = app_snake.test_client()
 
     book = client_snake.get("/api/books/1").json
-    assert "PublicationDate" in book["Value"].keys()
+    assert "PublicationDate" in book["Value"]
 
     api_calls = client_snake.get("/api/apiCalls").json
     assert api_calls["StatusCode"] == 200
 
     swagger_oas = client_snake.get("/apispec.json").json
-    assert "api_calls" in swagger_oas["components"]["schemas"].keys()
+    assert "api_calls" in swagger_oas["components"]["schemas"]
 
 
 def test_change_to_screaming_snake_output():
@@ -308,13 +312,13 @@ def test_change_to_screaming_snake_output():
     client_screaming_snake = app_screaming_snake.test_client()
 
     book = client_screaming_snake.get("/api/books/1").json
-    assert "publicationDate" in book["value"].keys()
+    assert "publicationDate" in book["value"]
 
     api_calls = client_screaming_snake.get("/api/api-calls").json
     assert api_calls["statusCode"] == 200
 
     swagger_oas = client_screaming_snake.get("/apispec.json").json
-    assert "API_CALLS" in swagger_oas["components"]["schemas"].keys()
+    assert "API_CALLS" in swagger_oas["components"]["schemas"]
 
 
 def test_change_to_kebab_output():
@@ -328,13 +332,13 @@ def test_change_to_kebab_output():
     client_kebab = app_kebab.test_client()
 
     book = client_kebab.get("/api/Books/1").json
-    assert "publication_date" in book["value"].keys()
+    assert "publication_date" in book["value"]
 
     api_calls = client_kebab.get("/api/ApiCalls").json
     assert api_calls["status_code"] == 200
 
     swagger_oas = client_kebab.get("/apispec.json").json
-    assert "api-calls" in swagger_oas["components"]["schemas"].keys()
+    assert "api-calls" in swagger_oas["components"]["schemas"]
 
 
 def test_dump_hybrid_off():
@@ -348,14 +352,14 @@ def test_dump_hybrid_off():
     dump_client = dump_app.test_client()
     resp = dump_client.get("/api/authors/1")
 
-    assert "full_name" not in resp.json["value"].keys()
+    assert "full_name" not in resp.json["value"]
     assert resp.status_code == 200
 
 
 def test_dump_hybrid_on(client):
     resp = client.get("/api/authors/1")
 
-    assert "full_name" in resp.json["value"].keys()
+    assert "full_name" in resp.json["value"]
 
 
 # change the api base url prefix
@@ -369,7 +373,7 @@ def test_change_api_route():
     book = client_prefix.get("/my_api/books/1")
 
     assert book.status_code == 200
-    assert "title" in book.json["value"].keys()
+    assert "title" in book.json["value"]
 
 
 # change the api base output
@@ -468,7 +472,7 @@ def test_switch_off_url_params():
     assert resp.status_code == 200
     assert 21 not in [x["id"] for x in resp_order.json["value"]]
     assert resp_filter.json["value"][0]["id"] == 1
-    assert "created" in resp_select.json["value"][0].keys()
+    assert "created" in resp_select.json["value"][0]
 
 
 def test_rate_limit():
@@ -516,7 +520,7 @@ def client_one(app_one):
 
 def test_show_underscore_attributes(client_one):
     authors_response = client_one.get("/api/authors").json
-    assert "_hiddenField" in authors_response["value"][0].keys()
+    assert "_hiddenField" in authors_response["value"][0]
 
 
 def test_cascade_delete(client_one):
@@ -658,15 +662,15 @@ def client_three(app_three):
 
 def test_hide_underscore_attributes(client_two):
     authors_response = client_two.get("/api/authors").json
-    assert "_hiddenField" not in authors_response["value"][0].keys()
+    assert "_hiddenField" not in authors_response["value"][0]
 
 
-def test_show_underscore_attributes(client_two):
+def test_show_underscore_attributes_with_override(client_two):
     app_under = create_app_models({"API_IGNORE_UNDERSCORE_ATTRIBUTES": False})
     client_under = app_under.test_client()
 
     authors_response = client_under.get("/api/authors").json
-    assert "_hidden_field" in authors_response["value"][0].keys()
+    assert "_hidden_field" in authors_response["value"][0]
 
 
 def test_callbacks(client_two):
@@ -676,7 +680,7 @@ def test_callbacks(client_two):
 
     del book_one["id"]
     client_two.post("/api/books", json=book_one).json["value"]
-    client_two.get("/api/books/9999999").json
+    client_two.get("/api/books/9999999")
     client_two.patch("/api/books/" + str(id_key), json=book_one).json["value"]
     global hooks
     assert hooks.get("setup_hook")
@@ -699,14 +703,18 @@ def test_global_query_param(client_two):
 def test_post_specific_query_param(client_two):
     swagger = client_two.get("/apispec.json").json
 
-    post_params = [x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]]
-    get_params = [x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]]
+    post_params = [
+        x["name"] for x in swagger["paths"]["/api/books"]["post"]["parameters"]
+    ]
+    get_params = [
+        x["name"] for x in swagger["paths"]["/api/books"]["get"]["parameters"]
+    ]
 
     assert "log_one" in post_params
     assert "log_one" not in get_params
 
 
-def test_cascade_delete(client_two):
+def test_cascade_delete_enabled(client_two):
     app_cascade_delete = create_app_models(
         {
             "API_ALLOW_CASCADE_DELETE": True,
@@ -714,11 +722,13 @@ def test_cascade_delete(client_two):
     )
     client_cascade_delete = app_cascade_delete.test_client()
 
-    books = client_cascade_delete.get("/api/authors/1/books").json["value"]
+    client_cascade_delete.get("/api/authors/1/books")
     delete_response = client_cascade_delete.delete("/api/authors/1")
-    delete_response.status_code == 409
+    assert delete_response.status_code == 409
     assert "cascade_delete=1" in delete_response.json["errors"]["error"]
-    delete_response_happy = client_cascade_delete.delete("/api/authors/1?cascade_delete=1")
+    delete_response_happy = client_cascade_delete.delete(
+        "/api/authors/1?cascade_delete=1"
+    )
     assert delete_response_happy.status_code == 200
 
 
