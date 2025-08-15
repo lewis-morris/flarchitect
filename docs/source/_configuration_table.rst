@@ -126,6 +126,7 @@ Documentation Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - URL or path to an image used as the documentation logo. Useful for branding or product recognition. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
     * - .. _LOGO_BACKGROUND:
           ``API_LOGO_BACKGROUND``
 
@@ -134,6 +135,15 @@ Documentation Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Sets the background colour behind the logo, allowing alignment with corporate branding. Accepts any CSS colour string. Example: `tests/test_flask_config.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_flask_config.py>`_.
+
+    * - ``API_OPENAPI_FIELD_EXAMPLE_DEFAULTS``
+
+          :bdg:`default:` ``{"Integer": 1, "Float": 1.23, "Decimal": 9.99, "Boolean": True}``
+          :bdg:`type` ``dict``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Mapping of Marshmallow field names to example values used when no explicit ``example`` metadata is provided.
+
     * - .. _DESCRIPTION:
           ``API_DESCRIPTION``
 
