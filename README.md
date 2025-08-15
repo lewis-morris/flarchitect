@@ -133,7 +133,7 @@ schema = create_schema_from_models([Item], db.session)
 architect.init_graphql(schema=schema)
 ```
 
-With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively. Use the `all_items` query to fetch existing records:
+With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively. A browser visit issues a `GET` request that serves the GraphiQL interface, while `POST` requests accept GraphQL operations as JSON. Use the `all_items` query to fetch existing records:
 
 ```graphql
 query {
