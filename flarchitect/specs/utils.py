@@ -1096,6 +1096,12 @@ def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
 
     openapi_type_info["type"] = type_mapping.get(field_type, "string")
 
+    # Populate example with sensible defaults when none provided
+    if "example" not in openapi_type_info and (
+        example := _resolve_default_example(field_type)
+    ):
+        openapi_type_info["example"] = example
+
     if field_type in [fields.DateTime, fields.Date, fields.Time]:
         openapi_type_info["format"] = (
             "date-time"
@@ -1229,6 +1235,41 @@ type_mapping = {
     Related: "object",
     RelatedList: "array",
 }
+
+
+example_fallbacks = {
+    fields.Integer: 1,
+    fields.Float: 1.23,
+    fields.Decimal: 9.99,
+    fields.Boolean: True,
+}
+
+
+def _resolve_default_example(field_type: type[fields.Field]) -> Any | None:
+    """Return default example for a field type.
+
+    Args:
+        field_type: Marshmallow field class to resolve an example for.
+
+    Returns:
+        The configured example value, or ``None`` if no default exists.
+    """
+
+    defaults = example_fallbacks.copy()
+    try:
+        overrides = get_config_or_model_meta(
+            "OPENAPI_FIELD_EXAMPLE_DEFAULTS", default={}
+        )
+    except RuntimeError:
+        overrides = {}
+    if isinstance(overrides, dict):
+        for key, value in overrides.items():
+            override_cls = getattr(fields, key, None)
+            if isinstance(override_cls, type) and issubclass(
+                override_cls, fields.Field
+            ):
+                defaults[override_cls] = value
+    return defaults.get(field_type)
 
 
 def get_description(kwargs: dict[str, Any]) -> str:
