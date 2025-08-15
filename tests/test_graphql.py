@@ -75,10 +75,6 @@ def test_graphql_query_and_mutation() -> None:
     assert "/graphql" in spec_resp.get_json()["paths"]
 
 
-def test_graphiql_served_on_get() -> None:
-    """Ensure GraphiQL HTML is returned for ``GET`` requests."""
-
-
 def test_extended_type_mapping() -> None:
     """Ensure additional SQLAlchemy types map to correct Graphene scalars."""
 
