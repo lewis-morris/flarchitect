@@ -27,6 +27,15 @@ class TestRateLimitServices:
 
         assert check_rate_services() == "redis://127.0.0.1:6379"
 
+    def test_memory_storage_uri_allowed(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """``memory://`` URIs do not require a host and should be accepted."""
+
+        monkeypatch.setattr(
+            "flarchitect.utils.general.get_config_or_model_meta",
+            lambda key, default=None, model=None: "memory://",
+        )
+        assert check_rate_services() == "memory://"
+
     def test_returns_none_without_services(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
