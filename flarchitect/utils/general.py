@@ -196,12 +196,17 @@ def check_rate_prerequisites(service: str) -> None:
 
 
 def check_rate_services() -> str | None:
-    """
-    Checks if any supported services (Memcached, Redis, MongoDB)
-    are running locally and returns their URI.
+    """Return the configured or automatically detected rate limit backend.
+
+    The function accepts explicitly configured cache URIs and validates that
+    the scheme corresponds to a supported backend. ``memory://`` is permitted
+    without a host component. If no configuration is provided, the function
+    attempts to detect running local services for Memcached, Redis, or MongoDB
+    and returns the appropriate URI.
 
     Returns:
-        Optional[str]: The URI of the running service, or None if no service is found.
+        Optional[str]: The URI of the running service, or ``None`` if no service
+        is found.
     """
     services = {
         "Memcached": 11211,
@@ -217,10 +222,13 @@ def check_rate_services() -> str | None:
             "mongodb": "MongoDB",
             "memory": None,
         }
-        if not parsed.scheme or not parsed.netloc:
-            raise ValueError("Rate limit storage URI must include scheme and host")
+        if not parsed.scheme:
+            raise ValueError("Rate limit storage URI must include a scheme")
         if parsed.scheme not in scheme_map:
             raise ValueError(f"Unsupported rate limit storage backend: {parsed.scheme}")
+        # In-memory backends do not require a network location. All others do.
+        if parsed.scheme != "memory" and not parsed.netloc:
+            raise ValueError("Rate limit storage URI must include a host")
         service_name = scheme_map[parsed.scheme]
         if service_name:
             check_rate_prerequisites(service_name)
