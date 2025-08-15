@@ -146,6 +146,10 @@ query {
 
 The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
 
+Errors returned from the endpoint include an ``extensions`` object with a
+``code`` such as ``DATABASE_ERROR`` or ``VALIDATION_ERROR`` and a descriptive
+``detail``. This makes client-side error handling straightforward.
+
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 
 ## Running Tests

@@ -24,7 +24,7 @@ class Item(db.Model):
     __tablename__ = "item"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String)
+    name: Mapped[str] = mapped_column(String, unique=True)
 
 
 def create_app() -> Flask:
@@ -66,3 +66,32 @@ def test_graphql_query_and_mutation() -> None:
 
     spec_resp = client.get("/openapi.json")
     assert "/graphql" in spec_resp.get_json()["paths"]
+
+
+def test_graphql_invalid_id() -> None:
+    """Invalid ID values surface as validation errors."""
+
+    app = create_app()
+    client = app.test_client()
+
+    query = {"query": '{ item(id: "abc") { id } }'}
+    response = client.post("/graphql", json=query)
+    assert response.status_code == 200
+    assert (
+        response.json["errors"][0]["extensions"]["code"] == "GRAPHQL_VALIDATION_FAILED"
+    )
+
+
+def test_graphql_constraint_violation() -> None:
+    """Constraint violations are reported as database errors."""
+
+    app = create_app()
+    client = app.test_client()
+
+    mutation = {"query": 'mutation { create_item(name: "Foo") { id } }'}
+    client.post("/graphql", json=mutation)
+
+    dup = {"query": 'mutation { create_item(name: "Foo") { id } }'}
+    response = client.post("/graphql", json=dup)
+    assert response.status_code == 200
+    assert response.json["errors"][0]["extensions"]["code"] == "DATABASE_ERROR"

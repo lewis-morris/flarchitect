@@ -12,6 +12,7 @@ from flask import Flask, Response, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Session
 
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
@@ -385,7 +386,11 @@ class Architect(AttributeInitializerMixin):
 
         @self.app.route(url_path, methods=["GET", "POST"])
         def graphql_endpoint() -> Response:
-            """Handle GraphQL queries and mutations."""
+            """Handle GraphQL queries and mutations.
+
+            SQLAlchemy and validation errors are translated into structured
+            GraphQL error responses to aid client-side debugging.
+            """
 
             if request.method == "GET":
                 return jsonify({"message": "Send a POST request with a GraphQL query."})
@@ -397,7 +402,28 @@ class Architect(AttributeInitializerMixin):
             )
             response_data: dict[str, Any] = {}
             if result.errors:
-                response_data["errors"] = [str(err) for err in result.errors]
+                formatted_errors = []
+                for err in result.errors:
+                    formatted = getattr(err, "formatted", {"message": str(err)})
+                    orig = getattr(err, "original_error", None)
+                    if isinstance(orig, SQLAlchemyError):
+                        formatted["message"] = "Database error"
+                        formatted["extensions"] = {
+                            "code": "DATABASE_ERROR",
+                            "detail": str(orig),
+                        }
+                    elif isinstance(orig, ValueError | TypeError):
+                        formatted["message"] = "Validation error"
+                        formatted["extensions"] = {
+                            "code": "VALIDATION_ERROR",
+                            "detail": str(orig),
+                        }
+                    else:
+                        formatted.setdefault(
+                            "extensions", {"code": "GRAPHQL_VALIDATION_FAILED"}
+                        )
+                    formatted_errors.append(formatted)
+                response_data["errors"] = formatted_errors
             if result.data is not None:
                 response_data["data"] = result.data
             return jsonify(response_data)

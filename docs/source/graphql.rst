@@ -53,6 +53,28 @@ Example query
 Visit ``/graphql`` in a browser to access the interactive GraphiQL editor, or
 send HTTP ``POST`` requests with a ``query`` payload.
 
+Error handling
+--------------
+
+Resolvers and mutations surface issues as structured GraphQL errors. Database
+problems return ``DATABASE_ERROR`` codes, while invalid input yields
+``VALIDATION_ERROR``. Each error entry includes a short message and a
+``detail`` field for additional context::
+
+   {
+       "errors": [
+           {
+               "message": "Database error",
+               "extensions": {
+                   "code": "DATABASE_ERROR",
+                   "detail": "UNIQUE constraint failed: item.name"
+               }
+           }
+       ]
+   }
+
+Clients can inspect the ``extensions`` map to handle failures consistently.
+
 Tips and trade-offs
 -------------------
 

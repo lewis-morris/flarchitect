@@ -25,11 +25,14 @@ as a ``create_item`` mutation that accepts the model's columns as arguments.
 """
 
 from __future__ import annotations
+
 from collections.abc import Iterable
 from typing import Any
 
 import graphene
+from graphql import GraphQLError
 from sqlalchemy import Boolean, Float, Integer, String
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Session
 
 __all__ = ["create_schema_from_models"]
@@ -162,12 +165,31 @@ def create_schema_from_models(
         Arguments = type("Arguments", (), arguments)
 
         def _mutate(_root, _info, model=model, **kwargs):
-            """Resolver creating and persisting a new record."""
+            """Resolver creating and persisting a new record.
 
-            instance = model(**kwargs)
-            session.add(instance)
-            session.commit()
-            return instance
+            Any database or validation errors are converted into structured
+            ``GraphQLError`` instances with an ``extensions`` map describing the
+            failure. This ensures clients receive informative error responses
+            rather than generic exceptions.
+            """
+
+            try:
+                instance = model(**kwargs)
+                session.add(instance)
+                session.commit()
+                return instance
+            except SQLAlchemyError as exc:
+                session.rollback()
+                raise GraphQLError(
+                    "Database error",
+                    extensions={"code": "DATABASE_ERROR", "detail": str(exc)},
+                ) from exc
+            except (TypeError, ValueError) as exc:
+                session.rollback()
+                raise GraphQLError(
+                    "Validation error",
+                    extensions={"code": "VALIDATION_ERROR", "detail": str(exc)},
+                ) from exc
 
         mutation = type(
             f"Create{model.__name__}",
