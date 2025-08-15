@@ -116,9 +116,11 @@ specific types:
 Relationships
 ~~~~~~~~~~~~~
 
-Model relationships can be exposed by adding fields that return related object
-types. The example below links ``Item`` to ``Category`` so a query for items can
-also retrieve the owning category:
+``create_schema_from_models`` automatically inspects SQLAlchemy relationships
+and adds fields returning the related object types. The example below links
+``Item`` to ``Category`` so a query for items can also retrieve the owning
+category. Relationships are eagerly loaded using ``joinedload`` to avoid N+1
+query issues.
 
 .. code-block:: python
 
@@ -131,6 +133,18 @@ also retrieve the owning category:
        name = mapped_column(String)
        category_id = mapped_column(ForeignKey("category.id"))
        category = relationship(Category)
+
+``Item`` now exposes a ``category`` field and ``Category`` a ``items`` field. A
+single request can retrieve nested data:
+
+.. code-block:: graphql
+
+   query {
+       all_items {
+           name
+           category { name }
+       }
+   }
 
 Filtering and pagination
 ~~~~~~~~~~~~~~~~~~~~~~~~
