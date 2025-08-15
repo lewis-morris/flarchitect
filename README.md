@@ -237,19 +237,10 @@ pytest
 
 The package version is defined in `pyproject.toml` and exposed as `flarchitect.__version__`. A GitHub Actions workflow automatically publishes to PyPI when the version changes on `master`.
 
-### BumpWright commands
-
-BumpWright ships with a few subcommands to help manage versions:
-
-- `bumpwright decide` inspects recent commits or API changes and reports the release type without touching any files.
-- `bumpwright bump` applies the version increment. If no release is required, the command exits with "No version bump needed". Add `--dry-run` to preview the change without writing.
-- `bumpwright auto` combines both steps, deciding and bumping in one go. Useful when you simply want the version updated based on the current repository state.
-
 To publish a new release:
 
-1. Commit your feature or fix.
-2. Run `bumpwright auto --commit --tag` to let BumpWright calculate the next version and record it in a separate commit (and tag).
-3. Push both your feature commit and the bump commit (along with any tags) to `master`.
+1. Update the `version` field in `pyproject.toml` (for example with `hatch version patch`).
+2. Commit and push to `master`.
 
 Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
 
