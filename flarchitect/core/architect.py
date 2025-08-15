@@ -666,7 +666,7 @@ class Architect(AttributeInitializerMixin):
             group_tag: Group name. Defaults to ``None``.
             many: Indicates if multiple items are returned. Defaults to ``False``.
             roles: Roles required to access the endpoint. When truthy and
-                authentication is enabled, the :func:`roles_required` decorator
+                authentication is enabled, the :func:`require_roles` decorator
                 is applied. Defaults to ``False``.
             kwargs: Additional keyword arguments.
 
@@ -685,7 +685,7 @@ class Architect(AttributeInitializerMixin):
             local_roles_required = None
             if roles and auth_flag is not False:
                 from flarchitect.authentication import (
-                    roles_required as local_roles_required,
+                    require_roles as local_roles_required,
                 )
 
             @wraps(f)
@@ -721,8 +721,9 @@ class Architect(AttributeInitializerMixin):
                 def _marker() -> None:
                     """Marker function for roles documentation."""
 
-                _marker.__name__ = "roles_required"
+                _marker.__name__ = "require_roles"
                 _marker._args = roles_tuple  # type: ignore[attr-defined]
+                _marker._any_of = False  # type: ignore[attr-defined]
                 wrapped._decorators = getattr(wrapped, "_decorators", [])
                 wrapped._decorators.append(_marker)  # type: ignore[attr-defined]
 

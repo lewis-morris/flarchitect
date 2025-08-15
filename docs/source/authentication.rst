@@ -8,7 +8,7 @@ uses the common setup defined in ``demo/authentication/app_base.py``. Runnable
 snippets demonstrating each strategy live in the project repository:
 `jwt_auth.py`_, `basic_auth.py`_, `api_key_auth.py`_, and `custom_auth.py`_.
 You can also protect routes based on user roles using the
-:ref:`roles-required` and :ref:`roles-accepted` decorators.
+``require_roles`` decorator.
 
 .. list-table:: Authentication methods
    :header-rows: 1
@@ -301,24 +301,25 @@ See ``demo/authentication/custom_auth.py`` for this approach in context.
 Role-based access
 -----------------
 
-Use the ``roles_required`` decorator to allow only users with specific roles to
-access an endpoint. The decorator checks the ``roles`` attribute on
-``current_user`` which is populated by the active authentication method.
+Use the ``require_roles`` decorator to restrict access based on user roles. The
+decorator reads ``current_user.roles`` which is populated by the active
+authentication method.
 
 .. code-block:: python
 
-   from flarchitect.authentication import roles_required
+   from flarchitect.authentication import require_roles
 
    @app.get("/admin")
-   @roles_required("admin")
+   @require_roles("admin")
    def admin_dashboard():
        return {"status": "ok"}
 
-You can require multiple roles by passing more than one name:
+Pass multiple roles to require all of them. To allow access when a user has
+*any* of the listed roles, set ``any_of=True``:
 
 .. code-block:: python
 
-   @roles_required("admin", "editor")
+   @require_roles("admin", "editor", any_of=True)
    def update_post():
        ...
 
@@ -328,7 +329,7 @@ Defining roles
 ~~~~~~~~~~~~~~
 
 Roles can be attached to the user model or embedded in authentication tokens so
-``roles_required`` can evaluate permissions.
+``require_roles`` can evaluate permissions.
 
 JWT
 ^^^^
@@ -341,7 +342,7 @@ JWT
            additional_claims={"roles": user.roles},
        )
 
-3. ``roles_required`` reads the ``roles`` claim from the token.
+3. ``require_roles`` reads the ``roles`` claim from the token.
 
 API keys
 ^^^^^^^^
@@ -355,14 +356,14 @@ API keys
                set_current_user(user)
            return user
 
-3. ``roles_required`` pulls roles from ``current_user``.
+3. ``require_roles`` pulls roles from ``current_user``.
 
 Custom authentication
 ^^^^^^^^^^^^^^^^^^^^^
 
 1. Resolve the user from your custom credentials.
 2. Call ``set_current_user`` with an object exposing ``roles``.
-3. ``roles_required`` authorises the request using those roles.
+3. ``require_roles`` authorises the request using those roles.
 
 Common roles
 ^^^^^^^^^^^^
@@ -381,22 +382,6 @@ Common roles
 
 If the authenticated user lacks any of the required roles—or if no user is
 authenticated—a ``403`` response is raised.
-
-
-.. _roles-accepted:
-
-Use the ``roles_accepted`` decorator to allow users with any of the listed roles to access an endpoint. The decorator checks the ``roles`` attribute on ``current_user`` and grants access if at least one role matches.
-
-.. code-block:: python
-
-   from flarchitect.authentication import roles_accepted
-
-   @app.get("/edit")
-   @roles_accepted("admin", "editor")
-   def edit_article():
-       return {"status": "ok"}
-
-If the authenticated user lacks all of the accepted roles—or if no user is authenticated—a ``403`` response is raised.
 
 Troubleshooting
 ---------------

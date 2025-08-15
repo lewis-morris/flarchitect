@@ -5,8 +5,10 @@ from __future__ import annotations
 from flask import request
 
 from demo.authentication.app_base import BaseConfig, User, create_app
+from flarchitect.authentication import require_roles
 from flarchitect.authentication.jwt import generate_access_token, generate_refresh_token
 from flarchitect.authentication.user import get_current_user
+from flarchitect.core.architect import jwt_authentication
 from flarchitect.exceptions import CustomHTTPException
 
 
@@ -62,6 +64,7 @@ def login() -> dict[str, str]:
 
 
 @app.get("/profile")
+@jwt_authentication
 def profile() -> dict[str, str]:
     """Return the current user's profile.
 
@@ -71,3 +74,13 @@ def profile() -> dict[str, str]:
 
     user = get_current_user()
     return {"username": user.username}
+
+
+@app.get("/admin")
+@jwt_authentication
+@require_roles("admin")
+def admin() -> dict[str, str]:
+    """Return data for admin users only."""
+
+    user = get_current_user()
+    return {"username": user.username, "role": "admin"}
