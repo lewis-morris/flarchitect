@@ -37,7 +37,7 @@ Field validation
 
 ``flarchitect`` inspects the ``info`` mapping and the optional ``format``
 attribute on SQLAlchemy columns to determine which validators to apply.  When
-``API_AUTO_VALIDATE`` is enabled, common formats such as ``email`` or ``date``
+`API_AUTO_VALIDATE <configuration.html#AUTO_VALIDATE>`_ is enabled, common formats such as ``email`` or ``date``
 are added automatically based on column names.  Any validator supported by
 ``validate_by_type`` can also be assigned manually:
 
