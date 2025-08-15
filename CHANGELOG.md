@@ -28,3 +28,21 @@
 ## v1.0.0 (2025-08-14)
 
 - Initial Release
+
+## v0.1.2 (2024-03-05)
+
+- Total rework of the configuration system allowing fine-grained control over the application.
+- Automated tests added.
+- Rate-limiting option added to the configuration.
+- Refactoring and more.
+
+## v0.1.1 (2024-02-05)
+
+- Project structure reorganised.
+- README.md updated; work on documentation has begun.
+- Changes to the config.
+
+## v0.1.0 (2024-01-01)
+
+- Initial project created.
+- Minimal working example.
