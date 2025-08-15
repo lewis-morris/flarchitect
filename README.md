@@ -124,7 +124,14 @@ document.
 
 ## GraphQL
 
-Prefer working with a single endpoint? `flarchitect` can turn your SQLAlchemy models into a GraphQL schema with just a couple of lines. Generate the schema and register it with the architect:
+Expose your models through a single `/graphql` endpoint when you need more flexible data access.
+
+- **CRUD operations** – automatically generates `<table>` and `all_<table>s` queries plus `create_<table>` mutations for each model.
+- **Filtering & pagination** – list queries accept `filter`, `limit` and `offset` arguments to slice large result sets.
+- **Custom type mapping** – extend `flarchitect.graphql.SQLA_TYPE_MAPPING` to map SQLAlchemy column types to GraphQL scalars.
+- **GraphiQL IDE** – browse and test queries interactively at `http://localhost:5000/graphql`.
+
+### Quick start
 
 ```python
 from flarchitect.graphql import create_schema_from_models
@@ -133,18 +140,15 @@ schema = create_schema_from_models([Item], db.session)
 architect.init_graphql(schema=schema)
 ```
 
-With the server running you can open [GraphiQL](https://github.com/graphql/graphiql) at `http://localhost:5000/graphql` and explore your data interactively. Use the `all_items` query to fetch existing records:
+Run the app and query your API:
 
-```graphql
-query {
-    all_items {
-        id
-        name
-    }
-}
+```bash
+python demo/graphql/load.py  # starts a demo app with /graphql
+curl -X POST http://localhost:5000/graphql -H "Content-Type: application/json" \
+    -d '{"query":"{ all_items { id name } }"}'
 ```
 
-The [GraphQL demo](demo/graphql/README.md) contains ready-made models and sample queries to help you get started.
+See the [GraphQL docs](docs/source/graphql.rst) and [GraphQL demo](demo/graphql/README.md) for more details.
 
 Read about hiding and restoring records in the [soft delete section](docs/source/advanced_configuration.rst#soft-delete).
 
