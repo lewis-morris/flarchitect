@@ -239,8 +239,9 @@ The package version is defined in `pyproject.toml` and exposed as `flarchitect._
 
 To publish a new release:
 
-1. Update the `version` field in `pyproject.toml` (for example with `hatch version patch`).
-2. Commit and push to `master`.
+1. Commit your feature or fix.
+2. Run `bumpwright auto --commit --tag` to let BumpWright calculate the next version and record it in a separate commit (and tag).
+3. Push both your feature commit and the bump commit (along with any tags) to `master`.
 
 Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
 

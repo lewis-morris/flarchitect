@@ -19,6 +19,14 @@ FAQ
     Options are: camel, pascal, snake, kebab, screaming_kebab, screaming_snake
 
 
+.. dropdown:: When should I run BumpWright to bump the version?
+
+
+    Make your code changes and commit them first. Then run ``bumpwright auto --commit --tag`` to let BumpWright
+    determine the next version and record it in a separate commit (and optional tag). Finally, push both the
+    feature commit and the bump commit, along with any tags, to your remote repository.
+
+
 .. dropdown:: Can I block HTTP methods in my API?
 
 
