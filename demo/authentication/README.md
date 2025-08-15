@@ -88,11 +88,19 @@ see the [authentication docs](../../docs/source/authentication.rst#protecting-ma
 
 To try a demo:
 
-1. Insert a user into the in-memory database using the `User` model.
-2. Start the desired script with `python <file>` (the app listens on port
+1. Insert a user into the in-memory database using the ``User`` model. Roles
+   can be stored on the ``roles`` attribute, e.g.
+
+   ```python
+   from demo.authentication.app_base import User, db
+   with db.session.begin():
+       db.session.add(User(username="alice", password="wonderland", roles=["admin"]))
+   ```
+
+2. Start the desired script with ``python <file>`` (the app listens on port
    ``5000``).
-3. Use the sample curl commands below to authenticate and access the protected
-   `/profile` endpoint.
+3. Use the sample curl commands below to authenticate and access protected
+   endpoints.
 
 ### JWT – [jwt_auth.py](jwt_auth.py)
 
@@ -122,3 +130,13 @@ curl -H "Authorization: Api-Key secret" \
 
 An additional [custom_auth.py](custom_auth.py) example shows how to plug in a
 bespoke authentication callable.
+
+### Role-based access – [jwt_auth.py](jwt_auth.py)
+
+```
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"wonderland"}' \
+  http://localhost:5000/jwt-login
+curl -H "Authorization: Bearer <access-token>" \
+  http://localhost:5000/admin
+```
