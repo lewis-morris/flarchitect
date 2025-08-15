@@ -50,7 +50,7 @@ from sqlalchemy import (
     Numeric,
     String,
 )
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, Session, joinedload
 
 __all__ = ["create_schema_from_models"]
 
@@ -69,7 +69,9 @@ SQLA_TYPE_MAPPING: dict[type, type[graphene.Scalar]] = {
 }
 
 
-def _convert_sqla_type(column_type: Any, type_mapping: dict[type, type[graphene.Scalar]]) -> type[graphene.Scalar]:
+def _convert_sqla_type(
+    column_type: Any, type_mapping: dict[type, type[graphene.Scalar]]
+) -> type[graphene.Scalar]:
     """Map a SQLAlchemy column type to a Graphene scalar.
 
     Args:
@@ -92,25 +94,32 @@ def _convert_sqla_type(column_type: Any, type_mapping: dict[type, type[graphene.
     return graphene.String
 
 
-def _model_to_object_type(model: type[DeclarativeBase], type_mapping: dict[type, type[graphene.Scalar]]) -> type[graphene.ObjectType]:
+def _model_to_object_type(
+    model: type[DeclarativeBase],
+    type_mapping: dict[type, type[graphene.Scalar]],
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]],
+) -> type[graphene.ObjectType]:
     """Create a Graphene ``ObjectType`` for a given SQLAlchemy model.
 
-    The function inspects the model's table and converts each column into a
-    GraphQL field using :func:`_convert_sqla_type`.
+    The function inspects the model's table and relationships, converting each
+    column into a GraphQL field using :func:`_convert_sqla_type` and each
+    relationship into a field returning the related object type.
 
     Args:
         model: SQLAlchemy declarative model.
         type_mapping: Mapping of SQLAlchemy types to Graphene scalars.
+        object_types: Mapping of models to generated Graphene types. Used to
+            resolve relationship targets lazily.
 
     Returns:
         A dynamically generated ``ObjectType`` subclass whose fields mirror the
-        model's columns.
+        model's columns and relationships.
 
     Examples:
         >>> class User(Base):
         ...     __tablename__ = "user"
         ...     id: Mapped[int] = mapped_column(primary_key=True)
-        >>> UserType = _model_to_object_type(User, SQLA_TYPE_MAPPING)
+        >>> UserType = _model_to_object_type(User, SQLA_TYPE_MAPPING, {})
         >>> issubclass(UserType, graphene.ObjectType)
         True
     """
@@ -119,6 +128,17 @@ def _model_to_object_type(model: type[DeclarativeBase], type_mapping: dict[type,
     for column in model.__table__.columns:  # type: ignore[attr-defined]
         gql_type = _convert_sqla_type(column.type, type_mapping)
         fields[column.name] = gql_type()
+
+    for rel in model.__mapper__.relationships:  # type: ignore[attr-defined]
+        related_model = rel.mapper.class_
+        if rel.uselist:
+            fields[rel.key] = graphene.List(
+                lambda related_model=related_model: object_types[related_model]
+            )
+        else:
+            fields[rel.key] = graphene.Field(
+                lambda related_model=related_model: object_types[related_model]
+            )
 
     return type(f"{model.__name__}Type", (graphene.ObjectType,), fields)
 
@@ -161,7 +181,9 @@ def create_schema_from_models(
     """
 
     mapping = {**SQLA_TYPE_MAPPING, **(type_mapping or {})}
-    object_types = {model: _model_to_object_type(model, mapping) for model in models}
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]] = {}
+    for model in models:
+        object_types[model] = _model_to_object_type(model, mapping, object_types)
 
     # Build query fields for single-record and list retrieval.
     query_fields: dict[str, Any] = {}
@@ -172,21 +194,26 @@ def create_schema_from_models(
         # Collect filterable columns for list queries and add pagination args.
         list_args: dict[str, Any] = {}
         for column in model.__table__.columns:  # type: ignore[attr-defined]
-            gql_type = _convert_sqla_type(column.type)
+            gql_type = _convert_sqla_type(column.type, mapping)
             list_args[column.name] = gql_type()
         list_args["limit"] = graphene.Int()
         list_args["offset"] = graphene.Int()
         query_fields[f"all_{name}s"] = graphene.List(obj_type, **list_args)
 
-        def _resolve_one(_root, _info, id: int, model=model):
+        options = [
+            joinedload(getattr(model, rel.key))
+            for rel in model.__mapper__.relationships  # type: ignore[attr-defined]
+        ]
+
+        def _resolve_one(_root, _info, id: int, model=model, options=options):
             """Resolver for fetching a single record by ID."""
 
-            return session.get(model, id)
+            return session.get(model, id, options=options)
 
-        def _resolve_all(_root, _info, model=model, **kwargs):
+        def _resolve_all(_root, _info, model=model, options=options, **kwargs):
             """Resolver for fetching records with optional filters and pagination."""
 
-            query = session.query(model)
+            query = session.query(model).options(*options)
             pk = list(model.__table__.primary_key.columns)[0]  # type: ignore[attr-defined]
             query = query.order_by(pk)
 
