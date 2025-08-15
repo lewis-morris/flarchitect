@@ -53,6 +53,75 @@ Example query
 Visit ``/graphql`` in a browser to access the interactive GraphiQL editor, or
 send HTTP ``POST`` requests with a ``query`` payload.
 
+Advanced usage
+--------------
+
+Custom type mappings
+~~~~~~~~~~~~~~~~~~~~
+
+``flarchitect`` maps common SQLAlchemy column types to Graphene scalars via the
+``SQLA_TYPE_MAPPING`` dictionary. Extend this mapping to support application
+specific types:
+
+.. code-block:: python
+
+   from datetime import datetime
+   import graphene
+   from flarchitect.graphql import SQLA_TYPE_MAPPING
+
+   SQLA_TYPE_MAPPING[datetime] = graphene.DateTime
+
+Relationships
+~~~~~~~~~~~~~
+
+Model relationships can be exposed by adding fields that return related object
+types. The example below links ``Item`` to ``Category`` so a query for items can
+also retrieve the owning category:
+
+.. code-block:: python
+
+   class Category(db.Model):
+       id = mapped_column(Integer, primary_key=True)
+       name = mapped_column(String)
+
+   class Item(db.Model):
+       id = mapped_column(Integer, primary_key=True)
+       name = mapped_column(String)
+       category_id = mapped_column(ForeignKey("category.id"))
+       category = relationship(Category)
+
+Filtering and pagination
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Queries accept optional ``limit`` and ``offset`` arguments to page through large
+datasets. Additional arguments can be introduced to perform simple filtering:
+
+.. code-block:: graphql
+
+   query {
+       all_items(name: "Foo", limit: 5, offset: 10) {
+           id
+           name
+       }
+   }
+
+CRUD mutations
+~~~~~~~~~~~~~~
+
+Beyond the automatically generated ``create_<table>`` mutation you can extend
+the schema with ``update_`` and ``delete_`` operations. These mutations modify
+existing records or remove them entirely:
+
+.. code-block:: graphql
+
+   mutation {
+       update_item(id: 1, name: "Bar") {
+           id
+           name
+       }
+   }
+
+
 Tips and trade-offs
 -------------------
 

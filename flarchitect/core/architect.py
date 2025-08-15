@@ -364,6 +364,9 @@ class Architect(AttributeInitializerMixin):
     ) -> None:
         """Register a GraphQL endpoint and document it in the OpenAPI spec.
 
+        The generated schema supports custom type mappings, model
+        relationships, filtering and pagination arguments, and CRUD mutations.
+
         Args:
             schema: Prebuilt Graphene schema. If ``None``, ``models`` and
                 ``session`` must be provided to build one automatically.
