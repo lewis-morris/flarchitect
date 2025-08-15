@@ -21,6 +21,5 @@ def client_meta_model(app_model_meta):
 
 
 def test_model_block_methods(client_meta_model):
-
     fail_get = client_meta_model.get("/api/categories/1")
     assert fail_get.status_code == 405

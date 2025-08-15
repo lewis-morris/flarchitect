@@ -4,9 +4,7 @@ from pathlib import Path
 import pytest
 from flask import Flask
 
-spec_utils_path = (
-    Path(__file__).resolve().parents[1] / "flarchitect" / "specs" / "utils.py"
-)
+spec_utils_path = Path(__file__).resolve().parents[1] / "flarchitect" / "specs" / "utils.py"
 spec_utils_spec = importlib.util.spec_from_file_location("spec_utils", spec_utils_path)
 spec_utils_module = importlib.util.module_from_spec(spec_utils_spec)
 assert spec_utils_spec.loader is not None  # for mypy

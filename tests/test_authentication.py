@@ -223,10 +223,7 @@ def test_auth_routes_in_spec() -> None:
         spec = client.get("/apispec.json").get_json()
 
     assert spec["paths"]["/auth/login"]["post"]["tags"] == ["Authentication"]
-    assert (
-        spec["paths"]["/auth/login"]["post"]["summary"]
-        == "Authenticate user and return JWT tokens."
-    )
+    assert spec["paths"]["/auth/login"]["post"]["summary"] == "Authenticate user and return JWT tokens."
     assert spec["paths"]["/auth/logout"]["post"]["tags"] == ["Authentication"]
     assert spec["paths"]["/auth/logout"]["post"]["summary"] == "Log out current user."
     assert spec["paths"]["/auth/refresh"]["post"]["tags"] == ["Authentication"]
@@ -308,9 +305,7 @@ def test_basic_success_and_failure(client_basic: FlaskClient) -> None:
     assert get_current_user() is None
 
     bad_credentials = base64.b64encode(b"alice:wrong").decode("utf-8")
-    resp_bad = client_basic.get(
-        "/basic", headers={"Authorization": f"Basic {bad_credentials}"}
-    )
+    resp_bad = client_basic.get("/basic", headers={"Authorization": f"Basic {bad_credentials}"})
     assert resp_bad.status_code == 401
     assert get_current_user() is None
 
@@ -319,16 +314,12 @@ def test_basic_login(client_basic: FlaskClient) -> None:
     """Validate basic login endpoint with correct and incorrect credentials."""
 
     credentials = base64.b64encode(b"alice:wonderland").decode("utf-8")
-    resp = client_basic.post(
-        "/auth/login", headers={"Authorization": f"Basic {credentials}"}
-    )
+    resp = client_basic.post("/auth/login", headers={"Authorization": f"Basic {credentials}"})
     assert resp.status_code == 200
     assert resp.get_json()["value"]["username"] == "alice"
 
     bad_credentials = base64.b64encode(b"alice:bad").decode("utf-8")
-    resp_bad = client_basic.post(
-        "/auth/login", headers={"Authorization": f"Basic {bad_credentials}"}
-    )
+    resp_bad = client_basic.post("/auth/login", headers={"Authorization": f"Basic {bad_credentials}"})
     assert resp_bad.status_code == 401
 
 
@@ -349,15 +340,11 @@ def test_api_key_success_and_failure(client_api_key: FlaskClient) -> None:
 def test_api_key_login(client_api_key: FlaskClient) -> None:
     """Validate API key login endpoint."""
 
-    resp = client_api_key.post(
-        "/auth/login", headers={"Authorization": "Api-Key secret"}
-    )
+    resp = client_api_key.post("/auth/login", headers={"Authorization": "Api-Key secret"})
     assert resp.status_code == 200
     assert resp.get_json()["value"]["username"] == "bob"
 
-    resp_bad = client_api_key.post(
-        "/auth/login", headers={"Authorization": "Api-Key wrong"}
-    )
+    resp_bad = client_api_key.post("/auth/login", headers={"Authorization": "Api-Key wrong"})
     assert resp_bad.status_code == 401
 
 
@@ -375,9 +362,7 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
         new_access_token, user = refresh_access_token(refresh_token)
         assert user.username == "carol"
         assert get_refresh_token(refresh_token) is None
-    resp_new = client.get(
-        "/jwt", headers={"Authorization": f"Bearer {new_access_token}"}
-    )
+    resp_new = client.get("/jwt", headers={"Authorization": f"Bearer {new_access_token}"})
     assert resp_new.status_code == 200
     assert resp_new.get_json()["value"]["username"] == "carol"
     assert get_current_user() is None
@@ -391,9 +376,7 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     assert get_current_user() is None
 
 
-def test_refresh_access_token_missing_key(
-    monkeypatch, client_jwt: tuple[FlaskClient, str, str]
-) -> None:
+def test_refresh_access_token_missing_key(monkeypatch, client_jwt: tuple[FlaskClient, str, str]) -> None:
     """``refresh_access_token`` raises when ``REFRESH_SECRET_KEY`` is absent."""
 
     client, _, refresh_token = client_jwt
@@ -423,16 +406,8 @@ def test_jwt_expiry_config(client_jwt: tuple[FlaskClient, str, str]) -> None:
         refresh = generate_refresh_token(user)
         access_payload = decode_token(access, app.config["ACCESS_SECRET_KEY"])
         refresh_payload = decode_token(refresh, app.config["REFRESH_SECRET_KEY"])
-        access_delta = datetime.datetime.fromtimestamp(
-            access_payload["exp"], datetime.timezone.utc
-        ) - datetime.datetime.fromtimestamp(
-            access_payload["iat"], datetime.timezone.utc
-        )
-        refresh_delta = datetime.datetime.fromtimestamp(
-            refresh_payload["exp"], datetime.timezone.utc
-        ) - datetime.datetime.fromtimestamp(
-            refresh_payload["iat"], datetime.timezone.utc
-        )
+        access_delta = datetime.datetime.fromtimestamp(access_payload["exp"], datetime.timezone.utc) - datetime.datetime.fromtimestamp(access_payload["iat"], datetime.timezone.utc)
+        refresh_delta = datetime.datetime.fromtimestamp(refresh_payload["exp"], datetime.timezone.utc) - datetime.datetime.fromtimestamp(refresh_payload["iat"], datetime.timezone.utc)
         assert access_delta == datetime.timedelta(minutes=1)
         assert refresh_delta == datetime.timedelta(minutes=2)
 

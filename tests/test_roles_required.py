@@ -105,10 +105,7 @@ def test_openapi_documents_roles() -> None:
     handle_authorization(view, spec_template)
 
     assert spec_template["security"] == [{"bearerAuth": []}]
-    assert (
-        "Roles required: admin, editor"
-        in spec_template["responses"]["401"]["description"]
-    )
+    assert "Roles required: admin, editor" in spec_template["responses"]["401"]["description"]
 
 
 def test_roles_accepted_direct() -> None:
@@ -146,7 +143,4 @@ def test_openapi_documents_roles_accepted() -> None:
     handle_authorization(view, spec_template)
 
     assert spec_template["security"] == [{"bearerAuth": []}]
-    assert (
-        "Roles accepted: admin, editor"
-        in spec_template["responses"]["401"]["description"]
-    )
+    assert "Roles accepted: admin, editor" in spec_template["responses"]["401"]["description"]

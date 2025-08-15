@@ -9,7 +9,7 @@ def new_app():
         {
             "API_TITLE": "Automated test",
             "API_VERSION": "0.2.0",
-            "API_ADD_RELATIONS": True
+            "API_ADD_RELATIONS": True,
             # Other configurations specific to this test
         }
     )

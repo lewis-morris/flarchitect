@@ -40,9 +40,7 @@ def recursive_delete(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setitem(sys.modules, "flarchitect.core", core_pkg)
     monkeypatch.setitem(sys.modules, "flarchitect.database", database_pkg)
 
-    utils_spec = importlib.util.spec_from_file_location(
-        "flarchitect.core.utils", REPO_ROOT / "flarchitect/core/utils.py"
-    )
+    utils_spec = importlib.util.spec_from_file_location("flarchitect.core.utils", REPO_ROOT / "flarchitect/core/utils.py")
     utils_module = importlib.util.module_from_spec(utils_spec)
     assert utils_spec.loader is not None
     utils_spec.loader.exec_module(utils_module)
@@ -55,9 +53,7 @@ def recursive_delete(monkeypatch: pytest.MonkeyPatch):
     inspections_module = importlib.util.module_from_spec(inspections_spec)
     assert inspections_spec.loader is not None
     inspections_spec.loader.exec_module(inspections_module)
-    monkeypatch.setitem(
-        sys.modules, "flarchitect.database.inspections", inspections_module
-    )
+    monkeypatch.setitem(sys.modules, "flarchitect.database.inspections", inspections_module)
 
     utils_stub = types.ModuleType("flarchitect.database.utils")
     utils_stub.AGGREGATE_FUNCS = {}
@@ -137,9 +133,7 @@ class Child(Base):
     name: Mapped[str] = mapped_column(String)
     parent_id: Mapped[int] = mapped_column(ForeignKey("parents.id"))
     parent: Mapped[Parent] = relationship("Parent", back_populates="children")
-    grandchildren: Mapped[list[Grandchild]] = relationship(
-        "Grandchild", back_populates="child"
-    )
+    grandchildren: Mapped[list[Grandchild]] = relationship("Grandchild", back_populates="child")
 
 
 class Grandchild(Base):

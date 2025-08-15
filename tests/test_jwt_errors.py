@@ -41,10 +41,8 @@ def expired_token(secret_key: str) -> str:
     """Create an expired JWT for testing."""
     payload = {
         "sub": "user",
-        "iat": datetime.datetime.now(datetime.timezone.utc)
-        - datetime.timedelta(minutes=2),
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        - datetime.timedelta(minutes=1),
+        "iat": datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=2),
+        "exp": datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=1),
     }
     return jwt.encode(payload, secret_key, algorithm="HS256")
 
@@ -61,15 +59,12 @@ def valid_refresh_token(refresh_secret: str) -> str:
     payload = {
         "sub": "user",
         "iat": datetime.datetime.now(datetime.timezone.utc),
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(minutes=30),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30),
     }
     return jwt.encode(payload, refresh_secret, algorithm="HS256")
 
 
-def test_decode_token_expired(
-    app_ctx: Flask, expired_token: str, secret_key: str
-) -> None:
+def test_decode_token_expired(app_ctx: Flask, expired_token: str, secret_key: str) -> None:
     """Ensure ``decode_token`` raises ``CustomHTTPException`` for expired tokens."""
     with pytest.raises(CustomHTTPException) as exc_info:
         decode_token(expired_token, secret_key)
@@ -77,9 +72,7 @@ def test_decode_token_expired(
     assert exc_info.value.reason == "Token has expired"
 
 
-def test_decode_token_malformed(
-    app_ctx: Flask, malformed_token: str, secret_key: str
-) -> None:
+def test_decode_token_malformed(app_ctx: Flask, malformed_token: str, secret_key: str) -> None:
     """Ensure ``decode_token`` raises ``CustomHTTPException`` for malformed tokens."""
     with pytest.raises(CustomHTTPException) as exc_info:
         decode_token(malformed_token, secret_key)
@@ -96,18 +89,12 @@ def test_refresh_access_token_deletes_expired_token(
     """Verify expired refresh tokens are deleted and return ``403``."""
     app_ctx.config["REFRESH_SECRET_KEY"] = refresh_secret
 
-    past_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
-        minutes=1
-    )
+    past_time = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=1)
     stored = SimpleNamespace(expires_at=past_time, user_lookup="user", user_pk="1")
 
     delete_mock = Mock()
-    monkeypatch.setattr(
-        "flarchitect.authentication.jwt.delete_refresh_token", delete_mock
-    )
-    monkeypatch.setattr(
-        "flarchitect.authentication.jwt.get_refresh_token", lambda token: stored
-    )
+    monkeypatch.setattr("flarchitect.authentication.jwt.delete_refresh_token", delete_mock)
+    monkeypatch.setattr("flarchitect.authentication.jwt.get_refresh_token", lambda token: stored)
 
     with pytest.raises(CustomHTTPException) as exc_info:
         refresh_access_token(valid_refresh_token)
@@ -117,9 +104,7 @@ def test_refresh_access_token_deletes_expired_token(
     delete_mock.assert_called_once_with(valid_refresh_token)
 
 
-def test_refresh_access_token_missing_secret_key(
-    app_ctx: Flask, valid_refresh_token: str, monkeypatch: MonkeyPatch
-) -> None:
+def test_refresh_access_token_missing_secret_key(app_ctx: Flask, valid_refresh_token: str, monkeypatch: MonkeyPatch) -> None:
     """Ensure a ``500`` is raised when ``REFRESH_SECRET_KEY`` is missing."""
     monkeypatch.delenv("REFRESH_SECRET_KEY", raising=False)
     app_ctx.config.pop("REFRESH_SECRET_KEY", None)
@@ -127,9 +112,7 @@ def test_refresh_access_token_missing_secret_key(
     get_mock = Mock()
     delete_mock = Mock()
     monkeypatch.setattr("flarchitect.authentication.jwt.get_refresh_token", get_mock)
-    monkeypatch.setattr(
-        "flarchitect.authentication.jwt.delete_refresh_token", delete_mock
-    )
+    monkeypatch.setattr("flarchitect.authentication.jwt.delete_refresh_token", delete_mock)
 
     with pytest.raises(CustomHTTPException) as exc_info:
         refresh_access_token(valid_refresh_token)

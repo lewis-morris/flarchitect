@@ -139,46 +139,28 @@ last_names = [
     "Turner",
 ]
 
-nationality = (
-    ["English"] * 10
-    + ["Scottish"] * 10
-    + ["Welsh"] * 10
-    + ["Irish"] * 5
-    + ["American"] * 3
-    + ["Australian"] * 3
-)
+nationality = ["English"] * 10 + ["Scottish"] * 10 + ["Welsh"] * 10 + ["Irish"] * 5 + ["American"] * 3 + ["Australian"] * 3
 
 bios = [
-    "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative "
-    "narratives.",
-    "With a unique voice that resonates across genres, this writer has consistently been at the forefront of literary "
-    "innovation.",
+    "Renowned for their vivid storytelling, this author has captivated readers worldwide with their imaginative narratives.",
+    "With a unique voice that resonates across genres, this writer has consistently been at the forefront of literary innovation.",
     "An acclaimed master of character development, their books offer deep insights into the human condition.",
-    "Known for their suspenseful plots and unexpected twists, this author has become a staple for thrill-seekers and "
-    "mystery lovers alike.",
-    "Their elegant prose and poetic descriptions have earned them a distinguished place among contemporary literary "
-    "figures.",
-    "With a keen eye for detail, this writer crafts immersive worlds that transport readers to different times and "
-    "places.",
+    "Known for their suspenseful plots and unexpected twists, this author has become a staple for thrill-seekers and mystery lovers alike.",
+    "Their elegant prose and poetic descriptions have earned them a distinguished place among contemporary literary figures.",
+    "With a keen eye for detail, this writer crafts immersive worlds that transport readers to different times and places.",
     "A trailblazer in their genre, they have garnered numerous awards and accolades for their groundbreaking work.",
-    "Their compelling narratives and complex characters reflect a profound understanding of social and cultural "
-    "dynamics.",
-    "This author's ability to weave humour and wit into their storytelling has delighted audiences, making their books "
-    "a joy to read.",
+    "Their compelling narratives and complex characters reflect a profound understanding of social and cultural dynamics.",
+    "This author's ability to weave humour and wit into their storytelling has delighted audiences, making their books a joy to read.",
     "A champion of exploring challenging themes, their works are known for their depth and thought-provoking content.",
-    "Blending rich imagination with intricate plots, this author creates captivating tales that linger in the minds"
-    " of readers.",
-    "Known for their eloquent narrative style, their books explore the nuances of everyday life with grace and"
-    " sensitivity.",
+    "Blending rich imagination with intricate plots, this author creates captivating tales that linger in the minds of readers.",
+    "Known for their eloquent narrative style, their books explore the nuances of everyday life with grace and sensitivity.",
     "With a flair for bringing characters to life, their stories resonate with readers, evoking a range of emotions.",
     "Their work stands out for its lyrical quality, turning even the most mundane scenarios into something magical.",
-    "Masterfully constructing complex relationships in their narratives, this writer reveals the multifaceted nature"
-    " of human connections.",
+    "Masterfully constructing complex relationships in their narratives, this writer reveals the multifaceted nature of human connections.",
     "Renowned for crafting compelling dialogues, they bring authenticity and depth to each character they create.",
     "Their storytelling transcends boundaries, appealing to a diverse and broad audience with its universal themes.",
     "Expertly intertwining multiple storylines, they create rich tapestries that capture the complexity of life.",
-    "Their attention to emotional detail makes each novel a deeply moving experience, inviting readers to reflect"
-    " on their own lives.",
+    "Their attention to emotional detail makes each novel a deeply moving experience, inviting readers to reflect on their own lives.",
     "With a gift for observation, their books offer insightful perspectives on everyday experiences and encounters.",
 ]
 
@@ -318,9 +300,7 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = (
-        pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
-    )
+    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
 
     return title
 
@@ -462,10 +442,7 @@ def create_reviews(db, books):
             if rating >= 5:
                 review_text = f"{book.author.full_name} has done an {random.choice(good_words)} job with this book. {random.choice(recommendations)}"
             else:
-                review_text = (
-                    f"{book.author.full_name} has done an {random.choice(good_words)} job with this book. {negative_reviews}"
-                    f""
-                )
+                review_text = f"{book.author.full_name} has done an {random.choice(good_words)} job with this book. {negative_reviews}"
 
             review = Review(
                 rating=rating,
@@ -505,9 +482,7 @@ def create_books(db, authors, categories, publishers):
             categories = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(
-                author.date_of_birth.year + 20, datetime.now().year
-            )
+            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
 
             publication_date = datetime(
                 year=publication_year,
@@ -583,9 +558,7 @@ def create_publishers(db):
 
     for x in range(0, 30):
         name = generate_company_name()
-        website = (
-            "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
-        )
+        website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
         foundation_year = generate_random_year(1860, 1920)
 
         company = Publisher(name=name, website=website, foundation_year=foundation_year)

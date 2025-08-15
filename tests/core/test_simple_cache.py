@@ -6,12 +6,8 @@ from pathlib import Path
 
 # Load ``SimpleCache`` directly from the source file so the tests work
 # regardless of the working directory.
-module_path = (
-    Path(__file__).resolve().parents[2] / "flarchitect" / "core" / "simple_cache.py"
-)
-SimpleCache = (
-    SourceFileLoader("simple_cache", str(module_path)).load_module().SimpleCache
-)
+module_path = Path(__file__).resolve().parents[2] / "flarchitect" / "core" / "simple_cache.py"
+SimpleCache = SourceFileLoader("simple_cache", str(module_path)).load_module().SimpleCache
 
 
 def test_clear_removes_entries():
