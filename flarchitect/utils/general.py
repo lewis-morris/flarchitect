@@ -3,6 +3,8 @@ import os
 import pprint
 import re
 import socket
+from collections.abc import Callable
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -164,45 +166,58 @@ def find_child_from_parent_dir(
     return None
 
 
-def check_rate_prerequisites(service: str) -> None:
-    """
-    Checks if prerequisites for a specific service
-    (e.g., Memcached, Redis) are installed.
+def check_rate_prerequisites(
+    service: str,
+    find_spec: Callable[[str], ModuleSpec | None] = importlib.util.find_spec,
+) -> None:
+    """Verify that dependencies for a cache backend are installed.
 
     Args:
-        service (str): The service to check prerequisites for.
+        service: Name of the cache backend.
+        find_spec: Function used to locate module specifications. Allows tests
+            to supply a stub without monkeypatching.
 
     Raises:
-        ImportError: If the prerequisite is not available.
+        ImportError: If the required client library is missing.
     """
     back_end_spec = "or specify a cache service URI in the flask configuration with the key API_RATE_LIMIT_STORAGE_URI={URL}:{PORT}"
     if service == "Memcached":
-        if importlib.util.find_spec("pymemcache") is None:
+        if find_spec("pymemcache") is None:
             raise ImportError(
                 "Memcached prerequisite not available. Please install pymemcache "
                 + back_end_spec
             )
     elif service == "Redis":
-        if importlib.util.find_spec("redis") is None:
+        if find_spec("redis") is None:
             raise ImportError(
                 "Redis prerequisite not available. Please install redis-py "
                 + back_end_spec
             )
-    elif service == "MongoDB" and importlib.util.find_spec("pymongo") is None:
+    elif service == "MongoDB" and find_spec("pymongo") is None:
         raise ImportError(
             "MongoDB prerequisite not available. Please install pymongo "
             + back_end_spec
         )
 
 
-def check_rate_services() -> str | None:
+def check_rate_services(
+    config_getter: Callable[[str, Any, Any], Any] = get_config_or_model_meta,
+    prereq_checker: Callable[[str], None] = check_rate_prerequisites,
+    socket_factory: Callable[..., socket.socket] = socket.socket,
+) -> str | None:
     """Return the configured or automatically detected rate limit backend.
 
-    The function accepts explicitly configured cache URIs and validates that
-    the scheme corresponds to a supported backend. ``memory://`` is permitted
-    without a host component. If no configuration is provided, the function
-    attempts to detect running local services for Memcached, Redis, or MongoDB
-    and returns the appropriate URI.
+    Args:
+        config_getter: Function used to obtain configuration values.
+        prereq_checker: Callable used to validate backend prerequisites.
+        socket_factory: Factory returning socket-like objects. Facilitates
+            dependency injection for tests without monkeypatching.
+
+    The function accepts explicitly configured cache URIs and validates that the
+    scheme corresponds to a supported backend. ``memory://`` is permitted without
+    a host component. If no configuration is provided, the function attempts to
+    detect running local services for Memcached, Redis, or MongoDB and returns
+    the appropriate URI.
 
     Returns:
         Optional[str]: The URI of the running service, or ``None`` if no service
@@ -213,7 +228,7 @@ def check_rate_services() -> str | None:
         "Redis": 6379,
         "MongoDB": 27017,
     }
-    uri = get_config_or_model_meta("API_RATE_LIMIT_STORAGE_URI", default=None)
+    uri = config_getter("API_RATE_LIMIT_STORAGE_URI", default=None)
     if uri:
         parsed = urlparse(uri)
         scheme_map = {
@@ -231,16 +246,16 @@ def check_rate_services() -> str | None:
             raise ValueError("Rate limit storage URI must include a host")
         service_name = scheme_map[parsed.scheme]
         if service_name:
-            check_rate_prerequisites(service_name)
+            prereq_checker(service_name)
         return uri
 
     for service, port in services.items():
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1)
+        sock = socket_factory(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
         try:
-            s.connect(("127.0.0.1", port))
-            s.close()
-            check_rate_prerequisites(service)
+            sock.connect(("127.0.0.1", port))
+            sock.close()
+            prereq_checker(service)
 
             rate_type = {
                 "Memcached": f"memcached://127.0.0.1:{port}",

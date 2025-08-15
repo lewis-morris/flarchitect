@@ -17,18 +17,22 @@ scrape_extra_info_from_spec_data = spec_utils_module.scrape_extra_info_from_spec
 endpoint_namer = spec_utils_module.endpoint_namer
 
 
-def test_scrape_extra_info_logs_missing_fields(monkeypatch):
+def test_scrape_extra_info_logs_missing_fields(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
     """scrape_extra_info_from_spec_data should report which fields are missing."""
-    messages: list[str] = []
+    from flarchitect.logging import logger
 
-    def fake_log(level: int, message: str) -> None:
-        messages.append(message)
-
-    monkeypatch.setattr("flarchitect.logging.logger.log", fake_log)
     app = Flask(__name__)
-    with app.app_context():
-        scrape_extra_info_from_spec_data({"function": lambda: None}, method="GET")
-    assert any("model" in msg and "schema" in msg for msg in messages)
+    original_level = logger.verbosity_level
+    logger.verbosity_level = 1
+    try:
+        with app.app_context():
+            scrape_extra_info_from_spec_data({"function": lambda: None}, method="GET")
+    finally:
+        logger.verbosity_level = original_level
+    captured = capsys.readouterr().out
+    assert "model" in captured and "schema" in captured
 
 
 @pytest.mark.parametrize(
@@ -68,7 +72,7 @@ def test_endpoint_namer_accepts_model_and_schemas() -> None:
             endpoint_namer()
 
 
-def test_endpoint_namer_respects_config_case(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_endpoint_namer_respects_config_case() -> None:
     """endpoint_namer should honour ``API_ENDPOINT_CASE`` setting."""
 
     class Widget:
