@@ -34,4 +34,37 @@ mutation {
 }
 ```
 
-Additional examples, including a small Python client, live alongside this file.
+Filter and paginate results:
+
+```graphql
+query {
+    all_items(name: "Biscuit", limit: 5, offset: 0) {
+        id
+        name
+    }
+}
+```
+
+Update and delete items:
+
+```graphql
+mutation {
+    update_item(id: 1, name: "Cookie") { id name }
+    delete_item(id: 1)
+}
+```
+
+Relationship queries:
+
+```graphql
+query {
+    all_items {
+        id
+        name
+        category { id name }
+    }
+}
+```
+
+Additional examples, including a small Python client and an advanced schema
+showcasing relationships and pagination, live alongside this file.

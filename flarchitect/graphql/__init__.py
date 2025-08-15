@@ -1,9 +1,12 @@
 """Helpers for turning SQLAlchemy models into GraphQL schemas.
 
-This module provides a small bridge between SQLAlchemy and the ``graphene``
-library. Given a list of declarative models and an active
-``sqlalchemy.orm.Session`` it dynamically builds :class:`graphene.ObjectType`
-classes, query fields and mutation fields that expose basic CRUD operations.
+This module provides a bridge between SQLAlchemy and the ``graphene`` library.
+Given a list of declarative models and an active ``sqlalchemy.orm.Session`` it
+dynamically builds :class:`graphene.ObjectType` classes, query fields and
+mutation fields. Custom type mappings, simple relationships and optional
+filtering or pagination arguments can be expressed, while CRUD mutations allow
+creating, updating and deleting records.
+
 
 The default :data:`SQLA_TYPE_MAPPING` covers common column types such as
 ``Integer``, ``String``, ``Boolean``, ``Float``, ``Date``, ``DateTime``,
@@ -130,12 +133,15 @@ def create_schema_from_models(
     Each provided model receives two query fields:
 
     * ``<table_name>(id: ID)`` – fetch a single row by primary key.
-    * ``all_<table_name>s`` – fetch rows with optional filters, ``limit`` and
-      ``offset`` arguments.
+    * ``all_<table_name>s`` – fetch every row in the table with optional
+      filtering and pagination arguments.
 
-    And one mutation field:
+
+    And three mutation fields:
 
     * ``create_<table_name>(**columns)`` – insert a new row.
+    * ``update_<table_name>(id: ID, **columns)`` – modify an existing row.
+    * ``delete_<table_name>(id: ID)`` – remove a row.
 
     Args:
         models: Iterable of SQLAlchemy models to expose.

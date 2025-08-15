@@ -13,3 +13,26 @@ mutation {
     name
   }
 }
+
+# Filter and paginate
+query {
+  all_items(name: "Biscuit", limit: 5, offset: 0) {
+    id
+    name
+  }
+}
+
+# Update and delete
+mutation {
+  update_item(id: 1, name: "Cookie") { id name }
+  delete_item(id: 1)
+}
+
+# Query with relationships
+query {
+  all_items {
+    id
+    name
+    category { id name }
+  }
+}
