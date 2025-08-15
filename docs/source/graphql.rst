@@ -23,6 +23,21 @@ An ``all_items`` query returns every ``Item`` and accepts optional column
 arguments for filtering. Pagination is supported via ``limit`` and
 ``offset`` arguments, and a ``create_item`` mutation adds a new record.
 
+Type mapping
+------------
+
+``create_schema_from_models`` converts SQLAlchemy column types into Graphene
+scalars using :data:`flarchitect.graphql.SQLA_TYPE_MAPPING`. Out of the box it
+supports ``Integer``, ``String``, ``Boolean``, ``Float``, ``Date``, ``DateTime``,
+``Numeric``, ``JSON`` and ``UUID`` columns. Custom or proprietary SQLAlchemy
+types can be mapped by providing a ``type_mapping`` override:
+
+.. code-block:: python
+
+   schema = create_schema_from_models(
+       [User], db.session, type_mapping={MyType: graphene.String}
+   )
+
 Example mutation
 ~~~~~~~~~~~~~~~~
 
