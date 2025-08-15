@@ -75,6 +75,9 @@ def test_graphql_query_and_mutation() -> None:
     assert "/graphql" in spec_resp.get_json()["paths"]
 
 
+def test_graphiql_served_on_get() -> None:
+    """Ensure GraphiQL HTML is returned for ``GET`` requests."""
+
 def test_extended_type_mapping() -> None:
     """Ensure additional SQLAlchemy types map to correct Graphene scalars."""
 
@@ -114,6 +117,11 @@ def test_graphql_filters_and_pagination() -> None:
 
     app = create_app()
     client = app.test_client()
+
+    response = client.get("/graphql")
+    assert response.status_code == 200
+    assert response.mimetype == "text/html"
+    assert "GraphiQL" in response.get_data(as_text=True)
 
     for name in ["Foo", "Bar", "Baz"]:
         mutation = {

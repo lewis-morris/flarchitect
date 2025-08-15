@@ -1,6 +1,7 @@
 import base64
 import binascii
 import importlib
+import importlib.resources
 import os
 import re
 from collections.abc import Callable
@@ -36,6 +37,43 @@ from flarchitect.utils.session import get_session
 FLASK_APP_NAME = "flarchitect"
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+DEFAULT_GRAPHIQL_HTML = """<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GraphiQL</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/graphiql/graphiql.min.css"
+    />
+  </head>
+  <body style="margin: 0;">
+    <div id="graphiql" style="height: 100vh;"></div>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@17/umd/react.production.min.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/graphiql/graphiql.min.js"></script>
+    <script>
+      const graphQLFetcher = (params) =>
+        fetch('/graphql', {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params),
+        }).then((response) => response.json());
+      ReactDOM.render(
+        React.createElement(GraphiQL, { fetcher: graphQLFetcher }),
+        document.getElementById('graphiql'),
+      );
+    </script>
+  </body>
+</html>
+"""
 
 
 def jwt_authentication(func: F) -> F:
@@ -385,10 +423,23 @@ class Architect(AttributeInitializerMixin):
 
         @self.app.route(url_path, methods=["GET", "POST"])
         def graphql_endpoint() -> Response:
-            """Handle GraphQL queries and mutations."""
+            """Serve GraphiQL or execute GraphQL operations.
+
+            A ``GET`` request returns the GraphiQL interface. ``POST`` requests
+            execute GraphQL queries and mutations and return a JSON response.
+
+            Returns:
+                Response: HTML for GraphiQL or JSON GraphQL results.
+            """
 
             if request.method == "GET":
-                return jsonify({"message": "Send a POST request with a GraphQL query."})
+                try:
+                    template = importlib.resources.read_text(
+                        "graphene", "graphiql.html"
+                    )
+                except (FileNotFoundError, ModuleNotFoundError):
+                    template = DEFAULT_GRAPHIQL_HTML
+                return Response(template, mimetype="text/html")
 
             payload = request.get_json(silent=True) or {}
             result = schema.execute(
