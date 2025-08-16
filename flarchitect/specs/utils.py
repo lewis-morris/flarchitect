@@ -4,10 +4,9 @@ import random
 import re
 from collections.abc import Callable
 from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import pytz
 from marshmallow import Schema, fields
 from marshmallow_sqlalchemy.fields import Nested, Related, RelatedList
 from sqlalchemy.orm import DeclarativeBase
@@ -802,7 +801,7 @@ def generate_filter_examples(schema: Schema) -> str:
     Returns:
         str: Filter examples.
     """
-    now = datetime.now(pytz.utc)
+    now = datetime.now(timezone.utc)
     yesterday = now - timedelta(days=1)
     day_before_yesterday = yesterday - timedelta(days=1)
 

@@ -1,9 +1,8 @@
 import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
-import pytz
 from flask import Response, current_app, g, jsonify
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta, is_xml
@@ -82,7 +81,7 @@ def create_response(
             else "n/a"
         )
 
-    current_time_with_tz = datetime.now(pytz.utc).isoformat()
+    current_time_with_tz = datetime.now(timezone.utc).isoformat()
     data = {
         "api_version": current_app.config.get("API_VERSION"),
         "datetime": current_time_with_tz,
