@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+import types
 from types import SimpleNamespace
 
 import pytest
@@ -8,10 +10,14 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
-from flarchitect.utils.session import get_session
+sys.modules.setdefault(
+    "flarchitect.core.architect", types.SimpleNamespace(Architect=object)
+)
+
+from flarchitect.utils.session import get_session  # noqa: E402
 
 
-def test_get_session_flask_sqlalchemy() -> None:
+def test_get_session_flask_sqlalchemy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Session resolves automatically from Flask-SQLAlchemy."""
     app = Flask(__name__)
     app.config.update(
@@ -25,10 +31,20 @@ def test_get_session_flask_sqlalchemy() -> None:
 
     db.init_app(app)
     with app.app_context():
-        assert get_session(User) is db.session
+        closed = False
+
+        def tracking_close() -> None:
+            nonlocal closed
+            closed = True
+            db.session.remove()
+
+        monkeypatch.setattr(db.session, "close", tracking_close)
+        with get_session(User) as session:
+            assert session is db.session
+        assert closed
 
 
-def test_get_session_plain_sqlalchemy() -> None:
+def test_get_session_plain_sqlalchemy(monkeypatch: pytest.MonkeyPatch) -> None:
     """Session derives from a model's bound engine without Flask."""
 
     class Base(DeclarativeBase):
@@ -42,11 +58,20 @@ def test_get_session_plain_sqlalchemy() -> None:
     Base.metadata.bind = engine
     Base.metadata.create_all(engine)
 
-    session = get_session(Item)
-    try:
+    closed = False
+
+    original_close = Session.close
+
+    def tracking_close(self) -> None:  # noqa: D401 - simple wrapper
+        nonlocal closed
+        closed = True
+        original_close(self)
+
+    monkeypatch.setattr(Session, "close", tracking_close)
+
+    with get_session(Item) as session:
         assert isinstance(session, Session)
-    finally:
-        session.close()
+    assert closed
 
 
 def test_get_session_custom_getter(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -58,11 +83,24 @@ def test_get_session_custom_getter(monkeypatch: pytest.MonkeyPatch) -> None:
     def custom_getter() -> Session:
         return custom_session
 
-    monkeypatch.setattr("flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: custom_getter)
-    try:
-        assert get_session() is custom_session
-    finally:
-        custom_session.close()
+    monkeypatch.setattr(
+        "flarchitect.utils.session.get_config_or_model_meta",
+        lambda *_, **__: custom_getter,
+    )
+    closed = False
+
+    original_close = custom_session.close
+
+    def tracking_close() -> None:  # noqa: D401 - simple wrapper
+        nonlocal closed
+        closed = True
+        original_close()
+
+    monkeypatch.setattr(custom_session, "close", tracking_close)
+
+    with get_session() as session:
+        assert session is custom_session
+    assert closed
 
 
 def test_get_session_from_query(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -73,8 +111,11 @@ def test_get_session_from_query(monkeypatch: pytest.MonkeyPatch) -> None:
     class Model:
         query = SimpleNamespace(session=session_obj)
 
-    monkeypatch.setattr("flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None)
-    assert get_session(Model) is session_obj
+    monkeypatch.setattr(
+        "flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None
+    )
+    with get_session(Model) as session:
+        assert session is session_obj
 
 
 def test_get_session_legacy_method(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -87,8 +128,11 @@ def test_get_session_legacy_method(monkeypatch: pytest.MonkeyPatch) -> None:
         def get_session() -> object:
             return session_obj
 
-    monkeypatch.setattr("flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None)
-    assert get_session(Model) is session_obj
+    monkeypatch.setattr(
+        "flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None
+    )
+    with get_session(Model) as session:
+        assert session is session_obj
 
 
 def test_get_session_model_metadata_bind(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -99,12 +143,23 @@ def test_get_session_model_metadata_bind(monkeypatch: pytest.MonkeyPatch) -> Non
     class Model:
         metadata = SimpleNamespace(bind=engine)
 
-    monkeypatch.setattr("flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None)
-    session = get_session(Model)
-    try:
+    monkeypatch.setattr(
+        "flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None
+    )
+    closed = False
+
+    original_close = Session.close
+
+    def tracking_close(self) -> None:  # noqa: D401 - simple wrapper
+        nonlocal closed
+        closed = True
+        original_close(self)
+
+    monkeypatch.setattr(Session, "close", tracking_close)
+
+    with get_session(Model) as session:
         assert isinstance(session, Session)
-    finally:
-        session.close()
+    assert closed
 
 
 def test_get_session_raises(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -113,6 +168,8 @@ def test_get_session_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     class Model:
         pass
 
-    monkeypatch.setattr("flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None)
-    with pytest.raises(RuntimeError):
-        get_session(Model)
+    monkeypatch.setattr(
+        "flarchitect.utils.session.get_config_or_model_meta", lambda *_, **__: None
+    )
+    with pytest.raises(RuntimeError), get_session(Model):
+        pass

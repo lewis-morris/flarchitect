@@ -9,7 +9,8 @@ setups so that models do not need to implement their own
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
 
 from flask import current_app
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -17,24 +18,18 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 
-def get_session(model: type[DeclarativeBase] | None = None) -> Session:
-    """Return the active SQLAlchemy :class:`~sqlalchemy.orm.Session`.
+def _resolve_session(model: type[DeclarativeBase] | None = None) -> Session:
+    """Resolve an active SQLAlchemy session for the given model.
 
-    The session is resolved using the following strategies in order:
-
-    1. A custom ``API_SESSION_GETTER`` callable supplied via configuration.
-    2. ``Flask-SQLAlchemy``'s ``db.session`` if running inside a Flask
-       application.
-    3. A ``query`` attribute on the provided model.
-    4. A legacy ``get_session`` method on the model.
-    5. Creating a session from the model's bound engine.
+    This function contains the session resolution logic and is used internally
+    by :func:`get_session`.
 
     Args:
-        model: Optional SQLAlchemy declarative model used when searching
-            for a session.
+        model: Optional SQLAlchemy declarative model used when searching for a
+            session.
 
     Returns:
-        The resolved :class:`~sqlalchemy.orm.Session` instance.
+        Session: The resolved SQLAlchemy session instance.
 
     Raises:
         RuntimeError: If no session can be determined.
@@ -42,12 +37,14 @@ def get_session(model: type[DeclarativeBase] | None = None) -> Session:
 
     # 1. Configurable getter from Flask config or model meta
     try:
-        custom_getter: Callable[[], Session] | None = get_config_or_model_meta("API_SESSION_GETTER", model=model, default=None)
+        custom_getter: Callable[[], Session] | None = get_config_or_model_meta(
+            "API_SESSION_GETTER", model=model, default=None
+        )
         if callable(custom_getter):
             session = custom_getter()
             if session is not None:
                 return session
-    except Exception:
+    except Exception:  # pragma: no cover - defensive
         pass
 
     # 2. Flask-SQLAlchemy global session
@@ -57,7 +54,7 @@ def get_session(model: type[DeclarativeBase] | None = None) -> Session:
             session = getattr(ext, "session", None)
             if session is not None:
                 return session
-    except Exception:
+    except Exception:  # pragma: no cover - defensive
         pass
 
     if model is not None:
@@ -83,4 +80,32 @@ def get_session(model: type[DeclarativeBase] | None = None) -> Session:
             SessionMaker = sessionmaker(bind=engine)
             return SessionMaker()
 
-    raise RuntimeError("Unable to determine database session; configure API_SESSION_GETTER or bind an engine.")
+    raise RuntimeError(
+        "Unable to determine database session; configure API_SESSION_GETTER or bind an engine."
+    )
+
+
+@contextmanager
+def get_session(model: type[DeclarativeBase] | None = None) -> Iterator[Session]:
+    """Yield the active SQLAlchemy :class:`~sqlalchemy.orm.Session`.
+
+    The session is resolved using :func:`_resolve_session` and is automatically
+    closed when the context manager exits.
+
+    Args:
+        model: Optional SQLAlchemy declarative model used when searching for a
+            session.
+
+    Yields:
+        Session: The resolved SQLAlchemy session instance.
+
+    Raises:
+        RuntimeError: If no session can be determined.
+    """
+
+    session = _resolve_session(model)
+    try:
+        yield session
+    finally:
+        with suppress(Exception):  # pragma: no cover - defensive
+            session.close()

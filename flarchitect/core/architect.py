@@ -680,10 +680,15 @@ class Architect(AttributeInitializerMixin):
         query = getattr(user_model, "query", None)
         if query is None:
             try:
-                session = get_session(user_model)
+                with get_session(user_model) as session:
+                    for usr in session.query(user_model).all():
+                        stored = getattr(usr, hash_field, None)
+                        if stored and getattr(usr, check_method)(token):
+                            set_current_user(usr)
+                            return True
             except Exception:
                 return False
-            query = session.query(user_model)
+            return False
 
         for usr in query.all():
             stored = getattr(usr, hash_field, None)

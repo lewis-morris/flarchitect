@@ -53,8 +53,7 @@ def store_refresh_token(
         user_lookup: User lookup field value as a string.
         expires_at: Token expiration timestamp.
     """
-    with _lock:
-        session = get_session(RefreshToken)
+    with _lock, get_session(RefreshToken) as session:
         _ensure_table(session)
         session.merge(
             RefreshToken(
@@ -76,10 +75,11 @@ def get_refresh_token(token: str) -> RefreshToken | None:
     Returns:
         RefreshToken | None: Stored refresh token or ``None`` if not found.
     """
-    session = get_session(RefreshToken)
-    _ensure_table(session)
-    session.expire_all()
-    return session.get(RefreshToken, token)
+    with get_session(RefreshToken) as session:
+        _ensure_table(session)
+        session.expire_all()
+        result = session.get(RefreshToken, token)
+    return result
 
 
 def delete_refresh_token(token: str) -> None:
@@ -88,8 +88,7 @@ def delete_refresh_token(token: str) -> None:
     Args:
         token: Encoded refresh token string.
     """
-    with _lock:
-        session = get_session(RefreshToken)
+    with _lock, get_session(RefreshToken) as session:
         _ensure_table(session)
         instance = session.get(RefreshToken, token)
         if instance is not None:

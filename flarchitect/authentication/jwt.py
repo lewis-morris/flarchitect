@@ -251,15 +251,15 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
 
     # Query the user by lookup_field and pk
     try:
-        user = (
-            get_session(usr_model_class)
-            .query(usr_model_class)
-            .filter(
-                getattr(usr_model_class, lookup_field) == lookup_value,
-                getattr(usr_model_class, pk_field) == pk_value,
+        with get_session(usr_model_class) as session:
+            user = (
+                session.query(usr_model_class)
+                .filter(
+                    getattr(usr_model_class, lookup_field) == lookup_value,
+                    getattr(usr_model_class, pk_field) == pk_value,
+                )
+                .one()
             )
-            .one()
-        )
     except NoResultFound as exc:
         raise CustomHTTPException(status_code=404, reason="User not found") from exc
 
@@ -311,15 +311,15 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
 
     # Query the user by primary key or lookup field (like username)
     try:
-        user = (
-            get_session(usr_model_class)
-            .query(usr_model_class)
-            .filter(
-                getattr(usr_model_class, lookup_field) == payload[lookup_field],
-                getattr(usr_model_class, pk) == payload[pk],
+        with get_session(usr_model_class) as session:
+            user = (
+                session.query(usr_model_class)
+                .filter(
+                    getattr(usr_model_class, lookup_field) == payload[lookup_field],
+                    getattr(usr_model_class, pk) == payload[pk],
+                )
+                .one()
             )
-            .one()
-        )
     except NoResultFound as exc:
         raise CustomHTTPException(status_code=404, reason="User not found") from exc
 
