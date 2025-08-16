@@ -63,7 +63,9 @@ from flarchitect.utils.response_filters import _filter_response_data
         ),
     ],
 )
-def test_filter_response_data_removes_and_keeps_keys(monkeypatch: pytest.MonkeyPatch, config: dict[str, bool], expected_keys: set[str]) -> None:
+def test_filter_response_data_removes_and_keeps_keys(
+    monkeypatch: pytest.MonkeyPatch, config: dict[str, bool], expected_keys: set[str]
+) -> None:
     """Ensure ``_filter_response_data`` honors configuration switches.
 
     Args:
@@ -72,7 +74,7 @@ def test_filter_response_data_removes_and_keeps_keys(monkeypatch: pytest.MonkeyP
         expected_keys: Keys that should remain after filtering.
     """
     data: dict[str, Any] = {
-        "datetime": "2024-01-01T00:00:00Z",
+        "datetime": "2024-01-01T00:00:00+00:00",
         "api_version": "v1",
         "status_code": 200,
         "response_ms": 10,
@@ -83,7 +85,9 @@ def test_filter_response_data_removes_and_keeps_keys(monkeypatch: pytest.MonkeyP
         "payload": {"id": 1},
     }
 
-    def fake_get_config_or_model_meta(key: str, *_, default: Any | None = None, **__) -> Any:
+    def fake_get_config_or_model_meta(
+        key: str, *_, default: Any | None = None, **__
+    ) -> Any:
         """Return configuration override for the given key."""
         return config.get(key, default)
 
