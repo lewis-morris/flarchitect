@@ -391,10 +391,11 @@ class RouteCreator(AttributeInitializerMixin):
 
         for base in self.api_base_model:
             try:
-                get_session(base)
+                with get_session(base):
+                    pass
             except Exception as exc:  # pragma: no cover - configuration error
                 raise ValueError(
-                    "If FULL_AUTO is True, API_BASE_MODEL must be bound to a SQLAlchemy session."
+                    "If FULL_AUTO is True, API_BASE_MODEL must be bound to a SQLAlchemy session.",
                 ) from exc
 
     def _validate_authentication_setup(self):
@@ -517,8 +518,8 @@ class RouteCreator(AttributeInitializerMixin):
         for base in self.api_base_model:
             for model_class in base.__subclasses__():
                 if hasattr(model_class, "__table__") and hasattr(model_class, "Meta"):
-                    session = get_session(model_class)
-                    self.make_all_model_routes(model_class, session)
+                    with get_session(model_class) as session:
+                        self.make_all_model_routes(model_class, session)
                 else:
                     logger.debug(
                         4,
@@ -629,14 +630,18 @@ class RouteCreator(AttributeInitializerMixin):
                 )
 
                 query = getattr(user, "query", None)
+                usr = None
                 if query is None:
                     try:
-                        session = get_session(user)
-                        query = session.query(user)
+                        with get_session(user) as session:
+                            for candidate in session.query(user).all():
+                                stored = getattr(candidate, hash_field, None)
+                                if stored and getattr(candidate, check_method)(token):
+                                    usr = candidate
+                                    break
                     except Exception:
-                        query = None
-                usr = None
-                if query is not None:
+                        usr = None
+                else:
                     for candidate in query.all():
                         stored = getattr(candidate, hash_field, None)
                         if stored and getattr(candidate, check_method)(token):
