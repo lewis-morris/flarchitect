@@ -9,6 +9,7 @@ and track their expiration.
 from __future__ import annotations
 
 import datetime
+from contextlib import AbstractContextManager, closing
 from threading import Lock
 
 from sqlalchemy import DateTime, String
@@ -42,6 +43,14 @@ def _ensure_table(session: Session) -> None:
     RefreshToken.metadata.create_all(bind=session.get_bind())
 
 
+def _managed_session() -> AbstractContextManager[Session]:
+    """Return a context manager that ensures the session is closed."""
+    session = get_session(RefreshToken)
+    if hasattr(session, "__enter__") and hasattr(session, "__exit__"):
+        return session  # type: ignore[return-value]
+    return closing(session)
+
+
 def store_refresh_token(
     token: str, user_pk: str, user_lookup: str, expires_at: datetime.datetime
 ) -> None:
@@ -53,8 +62,7 @@ def store_refresh_token(
         user_lookup: User lookup field value as a string.
         expires_at: Token expiration timestamp.
     """
-    with _lock:
-        session = get_session(RefreshToken)
+    with _lock, _managed_session() as session:
         _ensure_table(session)
         session.merge(
             RefreshToken(
@@ -76,10 +84,11 @@ def get_refresh_token(token: str) -> RefreshToken | None:
     Returns:
         RefreshToken | None: Stored refresh token or ``None`` if not found.
     """
-    session = get_session(RefreshToken)
-    _ensure_table(session)
-    session.expire_all()
-    return session.get(RefreshToken, token)
+    with _managed_session() as session:
+        _ensure_table(session)
+        session.expire_all()
+        result = session.get(RefreshToken, token)
+    return result
 
 
 def delete_refresh_token(token: str) -> None:
@@ -88,8 +97,7 @@ def delete_refresh_token(token: str) -> None:
     Args:
         token: Encoded refresh token string.
     """
-    with _lock:
-        session = get_session(RefreshToken)
+    with _lock, _managed_session() as session:
         _ensure_table(session)
         instance = session.get(RefreshToken, token)
         if instance is not None:
