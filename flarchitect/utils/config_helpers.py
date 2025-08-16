@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import current_app, request
+from flask import current_app, has_app_context, request
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
@@ -60,7 +60,8 @@ def get_config_or_model_meta(
 
     def search_in_flask_config(keys: list[str]) -> Any | None:
         app = current_app
-        with app.app_context():  # Ensure config is accessible outside request contexts
+
+        def _lookup() -> Any | None:
             for key in keys:
                 upper_key = key.upper()
                 prefixed_key = f"API_{upper_key}"
@@ -71,6 +72,12 @@ def get_config_or_model_meta(
                     return app.config[prefixed_key]
 
             return None
+
+        if has_app_context():  # Avoid pushing a new context unnecessarily
+            return _lookup()
+
+        with app.app_context():  # Ensure config is accessible outside request contexts
+            return _lookup()
 
     normalized_key = normalize_key(key)
     method_based_keys = generate_method_based_keys(normalized_key.replace("api_", ""))
