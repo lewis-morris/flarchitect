@@ -167,7 +167,6 @@ class Architect(AttributeInitializerMixin):
                 )
             else:
                 self.init_app(app, *args, **kwargs)
-                logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
 
     @staticmethod
     def _is_reloader_start() -> bool:
