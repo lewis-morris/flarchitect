@@ -37,9 +37,7 @@ def _resolve_session(model: type[DeclarativeBase] | None = None) -> Session:
 
     # 1. Configurable getter from Flask config or model meta
     try:
-        custom_getter: Callable[[], Session] | None = get_config_or_model_meta(
-            "API_SESSION_GETTER", model=model, default=None
-        )
+        custom_getter: Callable[[], Session] | None = get_config_or_model_meta("API_SESSION_GETTER", model=model, default=None)
         if callable(custom_getter):
             session = custom_getter()
             if session is not None:
@@ -80,9 +78,7 @@ def _resolve_session(model: type[DeclarativeBase] | None = None) -> Session:
             SessionMaker = sessionmaker(bind=engine)
             return SessionMaker()
 
-    raise RuntimeError(
-        "Unable to determine database session; configure API_SESSION_GETTER or bind an engine."
-    )
+    raise RuntimeError("Unable to determine database session; configure API_SESSION_GETTER or bind an engine.")
 
 
 @contextmanager

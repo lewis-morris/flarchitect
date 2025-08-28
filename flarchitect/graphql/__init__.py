@@ -70,9 +70,7 @@ SQLA_TYPE_MAPPING: dict[type, type[graphene.Scalar]] = {
 }
 
 
-def _convert_sqla_type(
-    column_type: Any, type_mapping: dict[type, type[graphene.Scalar]]
-) -> type[graphene.Scalar]:
+def _convert_sqla_type(column_type: Any, type_mapping: dict[type, type[graphene.Scalar]]) -> type[graphene.Scalar]:
     """Map a SQLAlchemy column type to a Graphene scalar.
 
     Args:
@@ -133,13 +131,9 @@ def _model_to_object_type(
     for rel in model.__mapper__.relationships:  # type: ignore[attr-defined]
         related_model = rel.mapper.class_
         if rel.uselist:
-            fields[rel.key] = graphene.List(
-                lambda related_model=related_model: object_types[related_model]
-            )
+            fields[rel.key] = graphene.List(lambda related_model=related_model: object_types[related_model])
         else:
-            fields[rel.key] = graphene.Field(
-                lambda related_model=related_model: object_types[related_model]
-            )
+            fields[rel.key] = graphene.Field(lambda related_model=related_model: object_types[related_model])
 
     return type(f"{model.__name__}Type", (graphene.ObjectType,), fields)
 
@@ -303,9 +297,7 @@ def create_schema_from_models(
 
         delete_args: dict[str, Any] = {}
         assert pk_column is not None
-        pk_type = _convert_sqla_type(
-            getattr(model.__table__.c, pk_column).type, mapping
-        )
+        pk_type = _convert_sqla_type(getattr(model.__table__.c, pk_column).type, mapping)
         delete_args[pk_column] = pk_type(required=True)
         DeleteArguments = type("Arguments", (), delete_args)
 

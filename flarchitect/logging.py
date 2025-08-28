@@ -33,9 +33,7 @@ def color_text_with_multiple_patterns(text: str) -> str:
     for pattern, (color, style) in patterns.items():
         text = re.sub(
             pattern,
-            lambda match, color=color, style=style: replace_with_color(
-                match, color, style
-            ),
+            lambda match, color=color, style=style: replace_with_color(match, color, style),
             text,
         )
 
@@ -56,9 +54,7 @@ class CustomLogger:
         """
         print(color_text_with_multiple_patterns(text))
 
-    def _log_with_prefix(
-        self, level: int, message: str, prefix: str, color: str | None = None
-    ) -> None:
+    def _log_with_prefix(self, level: int, message: str, prefix: str, color: str | None = None) -> None:
         """Internal helper to log with a prefix and optional colour."""
         if level <= self.verbosity_level:
             prefix_text = f"{prefix} {level}: ".ljust(10)

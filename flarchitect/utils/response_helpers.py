@@ -48,19 +48,11 @@ def create_response(
 
         status, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
         if isinstance(result, tuple):
-            status, value = (
-                (result[1], result[0])
-                if len(result) == 2 and isinstance(result[1], int)
-                else (HTTP_OK, result)
-            )
+            status, value = (result[1], result[0]) if len(result) == 2 and isinstance(result[1], int) else (HTTP_OK, result)
         if isinstance(value, dict):
             value_dict = value
-            value, count = value_dict.get("query", value_dict), get_count(
-                value_dict, value_dict.get("query")
-            )
-            next_url, previous_url = value_dict.get("next_url"), value_dict.get(
-                "previous_url"
-            )
+            value, count = value_dict.get("query", value_dict), get_count(value_dict, value_dict.get("query"))
+            next_url, previous_url = value_dict.get("next_url"), value_dict.get("previous_url")
         elif isinstance(value, CustomResponse):
             next_url, previous_url, count = (
                 value.next_url,
@@ -75,11 +67,7 @@ def create_response(
 
     if response_ms is None:
         # error responses were missing this. Added here to ensure it's always present.
-        response_ms = (
-            round((time.time() - g.start_time) * 1000, 0)
-            if g.get("start_time")
-            else "n/a"
-        )
+        response_ms = round((time.time() - g.start_time) * 1000, 0) if g.get("start_time") else "n/a"
 
     current_time_with_tz = datetime.now(timezone.utc).isoformat()
     data = {
@@ -95,29 +83,18 @@ def create_response(
     }
 
     data = _filter_response_data(data)
-    data = {
-        convert_case(
-            k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")
-        ): v
-        for k, v in data.items()
-    }
+    data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")): v for k, v in data.items()}
 
     # Optional hook allowing applications to post-process the outgoing payload.
     # ``API_FINAL_CALLBACK`` should be a callable that accepts the response
     # dictionary and returns the modified dictionary. This can be used to inject
     # custom metadata or otherwise mutate the payload before serialization.
-    final_callback: Callable[[dict[str, Any]], dict[str, Any]] | None = (
-        get_config_or_model_meta("API_FINAL_CALLBACK")
-    )
+    final_callback: Callable[[dict[str, Any]], dict[str, Any]] | None = get_config_or_model_meta("API_FINAL_CALLBACK")
     if final_callback:
         data = final_callback(data)
 
     if is_xml():
-        type_ = (
-            "text/xml"
-            if get_config_or_model_meta("API_XML_AS_TEXT", default=False)
-            else "application/xml"
-        )
+        type_ = "text/xml" if get_config_or_model_meta("API_XML_AS_TEXT", default=False) else "application/xml"
         response = Response(dict_to_xml(data), mimetype=type_)
     else:
         response = jsonify(data)

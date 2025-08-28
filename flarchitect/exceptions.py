@@ -61,9 +61,7 @@ def handle_http_exception(e: HTTPException) -> Response:
 
     prefix = get_config_or_model_meta("API_PREFIX", default="/api")
     if request.path.startswith(prefix):
-        return create_response(
-            status=e.code, errors={"error": e.name, "reason": e.description}
-        )
+        return create_response(status=e.code, errors={"error": e.name, "reason": e.description})
 
     # If not an API route, re-raise the exception to let Flask handle it
     return e
@@ -80,9 +78,7 @@ def _print_exception(e: Exception) -> None:
     traceback.print_exc()
 
 
-def _handle_exception(
-    error: str, status_code: int, error_name: str | None = None, print_exc: bool = True
-) -> Any:
+def _handle_exception(error: str, status_code: int, error_name: str | None = None, print_exc: bool = True) -> Any:
     """Handles exceptions and formats them into a standardised response."""
     if print_exc:
         import traceback
@@ -99,4 +95,3 @@ def _handle_exception(
 
 
 __all__ = ["CustomHTTPException", "_print_exception", "handle_http_exception", "_handle_exception"]
-

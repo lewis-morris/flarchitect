@@ -11,9 +11,7 @@ import json
 import subprocess
 
 
-def bump_version_if_needed(
-    base: str | None = None, head: str = "HEAD", dry_run: bool = False
-) -> str | None:
+def bump_version_if_needed(base: str | None = None, head: str = "HEAD", dry_run: bool = False) -> str | None:
     """Bump project version only when BumpWright recommends a release.
 
     The function first runs ``bumpwright decide``. If no bump level is

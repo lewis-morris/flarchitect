@@ -71,9 +71,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         self.app = app
         self.architect = architect
         # initialise per-instance containers to avoid shared mutable defaults
-        self.spec_groups: dict[str, list[dict[str, str | list[str]]]] = {
-            "x-tagGroups": []
-        }
+        self.spec_groups: dict[str, list[dict[str, str | list[str]]]] = {"x-tagGroups": []}
         self.api_keywords: list[str] = []
         super().__init__(*args, **self._prepare_api_spec_data(**kwargs))
 
@@ -163,15 +161,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Returns:
             dict: A dictionary containing the contact information.
         """
-        contact_info = {
-            k: self._get_config(f"API_CONTACT_{k.upper()}")
-            for k in ["name", "email", "url"]
-        }
-        return (
-            {"contact": {k: v for k, v in contact_info.items() if v}}
-            if any(contact_info.values())
-            else {}
-        )
+        contact_info = {k: self._get_config(f"API_CONTACT_{k.upper()}") for k in ["name", "email", "url"]}
+        return {"contact": {k: v for k, v in contact_info.items() if v}} if any(contact_info.values()) else {}
 
     def _get_license_info(self) -> dict[str, dict[str, str | None]]:
         """Retrieves license information for the API spec.
@@ -179,14 +170,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Returns:
             dict: A dictionary containing the license information.
         """
-        license_info = {
-            k: self._get_config(f"API_LICENCE_{k.upper()}") for k in ["name", "url"]
-        }
-        return (
-            {"license": {k: v for k, v in license_info.items() if v}}
-            if any(license_info.values())
-            else {}
-        )
+        license_info = {k: self._get_config(f"API_LICENCE_{k.upper()}") for k in ["name", "url"]}
+        return {"license": {k: v for k, v in license_info.items() if v}} if any(license_info.values()) else {}
 
     def _get_servers_info(self) -> dict[str, list[str] | None]:
         """Retrieves server URLs for the API spec.
@@ -208,9 +193,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             return {
                 "x-logo": {
                     "url": logo_url,
-                    "backgroundColor": self._get_config(
-                        "API_LOGO_BACKGROUND", "#ffffff"
-                    ),
+                    "backgroundColor": self._get_config("API_LOGO_BACKGROUND", "#ffffff"),
                     "altText": f"{self._get_config('API_TITLE', 'My API')} logo.",
                 }
             }
@@ -271,19 +254,12 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             "specification",
             __name__,
             static_folder=html_path,
-            url_prefix=self.documentation_url_prefix
-            or self._get_config("DOCUMENTATION_URL_PREFIX", "/"),
+            url_prefix=self.documentation_url_prefix or self._get_config("DOCUMENTATION_URL_PREFIX", "/"),
         )
 
-        documentation_url = get_config_or_model_meta(
-            "API_DOCUMENTATION_URL", default="/docs"
-        )
-        docs_password = get_config_or_model_meta(
-            "API_DOCUMENTATION_PASSWORD", default=None
-        )
-        docs_require_auth = get_config_or_model_meta(
-            "API_DOCUMENTATION_REQUIRE_AUTH", default=False
-        )
+        documentation_url = get_config_or_model_meta("API_DOCUMENTATION_URL", default="/docs")
+        docs_password = get_config_or_model_meta("API_DOCUMENTATION_PASSWORD", default=None)
+        docs_require_auth = get_config_or_model_meta("API_DOCUMENTATION_REQUIRE_AUTH", default=False)
         auth_method = get_config_or_model_meta("API_AUTHENTICATE_METHOD", default=None)
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
 
@@ -302,9 +278,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             if not (docs_password or docs_require_auth):
                 return None
 
-            if session.get("docs_authenticated") or getattr(
-                current_user, "is_authenticated", False
-            ):
+            if session.get("docs_authenticated") or getattr(current_user, "is_authenticated", False):
                 return None
 
             if request.method == "POST" and not json_only:
@@ -316,15 +290,9 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
                     return redirect(request.path)
 
                 if auth_method and user_model and username and password:
-                    lookup_field = get_config_or_model_meta(
-                        "API_USER_LOOKUP_FIELD", model=user_model, default=None
-                    )
-                    check_method = get_config_or_model_meta(
-                        "API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None
-                    )
-                    usr = user_model.query.filter(
-                        getattr(user_model, lookup_field) == username
-                    ).first()
+                    lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user_model, default=None)
+                    check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None)
+                    usr = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
                     if usr and getattr(usr, check_method)(password):
                         session["docs_authenticated"] = True
                         login_user(usr)
@@ -337,9 +305,7 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             if json_only:
                 return create_response(status=401, errors="Unauthorized")
 
-            docs_style = get_config_or_model_meta(
-                "API_DOCS_STYLE", default="redoc"
-            ).lower()
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
             allow_username = bool(auth_method and user_model)
             html = manual_render_absolute_template(
                 os.path.join(self.architect.get_templates_path(), "docs_login.html"),
@@ -384,16 +350,10 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
             if unauthorized:
                 return unauthorized
 
-            custom_headers = get_config_or_model_meta(
-                "API_DOCUMENTATION_HEADERS", default=""
-            ) or self._get_config("API_DOC_HTML_HEADERS", "")
-            docs_style = get_config_or_model_meta(
-                "API_DOCS_STYLE", default="redoc"
-            ).lower()
+            custom_headers = get_config_or_model_meta("API_DOCUMENTATION_HEADERS", default="") or self._get_config("API_DOC_HTML_HEADERS", "")
+            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
 
-            template_name = (
-                "swagger.html" if docs_style == "swagger" else "apispec.html"
-            )
+            template_name = "swagger.html" if docs_style == "swagger" else "apispec.html"
             return manual_render_absolute_template(
                 os.path.join(self.architect.get_templates_path(), template_name),
                 config=self.app.config,
@@ -404,14 +364,8 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
 
         self.architect.app.register_blueprint(specification)
 
-        prefix = self.documentation_url_prefix or self._get_config(
-            "DOCUMENTATION_URL_PREFIX", "/"
-        )
-        docs_url = (
-            documentation_url
-            if documentation_url.startswith("/")
-            else f"/{documentation_url}"
-        )
+        prefix = self.documentation_url_prefix or self._get_config("DOCUMENTATION_URL_PREFIX", "/")
+        docs_url = documentation_url if documentation_url.startswith("/") else f"/{documentation_url}"
         full_url = f"{prefix.rstrip('/')}{docs_url}"
         server_name = self.app.config.get("SERVER_NAME")
         if server_name:
@@ -456,9 +410,7 @@ def generate_swagger_spec(
         output_schema=output_schema,
         default=False,
     )
-    spec_template = initialize_spec_template(
-        http_method, many, rate_limit, error_responses
-    )
+    spec_template = initialize_spec_template(http_method, many, rate_limit, error_responses)
 
     append_parameters(
         spec_template,
@@ -497,9 +449,7 @@ def register_schemas(
     # plugin to avoid adding the same schema class twice, which would trigger
     # warnings from ``apispec``.
     plugin = next((p for p in spec.plugins if isinstance(p, MarshmallowPlugin)), None)
-    registered_refs = (
-        getattr(getattr(plugin, "converter", None), "refs", {}) if plugin else {}
-    )
+    registered_refs = getattr(getattr(plugin, "converter", None), "refs", {}) if plugin else {}
 
     for schema in [input_schema, output_schema]:
         if schema:
@@ -510,9 +460,7 @@ def register_schemas(
             existing_ref = registered_refs.get(schema_key)
             if existing_ref and not force_update:
                 if existing_ref != schema_name:
-                    spec.components.schemas[schema_name] = spec.components.schemas.pop(
-                        existing_ref
-                    )
+                    spec.components.schemas[schema_name] = spec.components.schemas.pop(existing_ref)
                     registered_refs[schema_key] = schema_name
                 continue
 
@@ -525,9 +473,7 @@ def register_schemas(
             registered_refs[schema_key] = schema_name
 
 
-def register_routes_with_spec(
-    architect: Architect, route_spec: list[dict[str, Any]] | None = None
-) -> None:
+def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, Any]] | None = None) -> None:
     """Register routes and schemas with the API spec.
 
     Args:
@@ -551,9 +497,7 @@ def register_routes_with_spec(
                 methods = rule.methods - {"OPTIONS", "HEAD"}
                 for http_method in methods:
                     summary = route_info.get("summary")
-                    route_info = scrape_extra_info_from_spec_data(
-                        route_info, method=http_method, summary=summary
-                    )
+                    route_info = scrape_extra_info_from_spec_data(route_info, method=http_method, summary=summary)
                     path = rule.rule
 
                     output_schema = route_info.get("output_schema")
@@ -567,9 +511,7 @@ def register_routes_with_spec(
                     error_responses = route_info.get("error_responses")
 
                     path_params = create_params_from_rule(model, rule, output_schema)
-                    final_query_params = create_query_params_from_rule(
-                        rule, methods, output_schema, many, model, custom_query_params
-                    )
+                    final_query_params = create_query_params_from_rule(rule, methods, output_schema, many, model, custom_query_params)
 
                     endpoint_spec = generate_swagger_spec(
                         http_method,

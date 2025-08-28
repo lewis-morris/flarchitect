@@ -95,13 +95,9 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     """
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta(
-        "API_JWT_EXPIRY_TIME", default=360
-    )
+    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_EXPIRY_TIME", default=360)
 
-    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get(
-        "ACCESS_SECRET_KEY"
-    )
+    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
     if ACCESS_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 
@@ -110,17 +106,14 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
 
 
-def generate_refresh_token(
-    usr_model: Any, expires_in_minutes: int | None = None
-) -> str:
+def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None) -> str:
     """Create a long-lived refresh token for ``usr_model``.
 
     The expiry time defaults to ``API_JWT_REFRESH_EXPIRY_TIME`` from the Flask
@@ -137,22 +130,17 @@ def generate_refresh_token(
         CustomHTTPException: If the refresh secret key is not configured.
     """
 
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
-        "REFRESH_SECRET_KEY"
-    )
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
     pk, lookup_field = get_pk_and_lookups()
-    exp_minutes = expires_in_minutes or get_config_or_model_meta(
-        "API_JWT_REFRESH_EXPIRY_TIME", default=2880
-    )
+    exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_REFRESH_EXPIRY_TIME", default=2880)
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(minutes=exp_minutes),
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
         "iat": datetime.datetime.now(datetime.timezone.utc),
     }
 
@@ -169,9 +157,7 @@ def generate_refresh_token(
     return token
 
 
-def decode_token(
-    token: str, secret_key: str, algorithm: str | None = None
-) -> dict[str, Any]:
+def decode_token(token: str, secret_key: str, algorithm: str | None = None) -> dict[str, Any]:
     """Decode a JWT and return its payload.
 
     Args:
@@ -213,9 +199,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         invalid or expired, or the user cannot be found.
     """
     # Verify refresh token
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get(
-        "REFRESH_SECRET_KEY"
-    )
+    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
     if REFRESH_SECRET_KEY is None:
         raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
 
@@ -228,18 +212,14 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
 
     stored_token = get_refresh_token(refresh_token)
     if stored_token is None:
-        raise CustomHTTPException(
-            status_code=403, reason="Invalid or expired refresh token"
-        )
+        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
 
     expires_at = stored_token.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
     if datetime.datetime.now(datetime.timezone.utc) > expires_at:
         delete_refresh_token(refresh_token)
-        raise CustomHTTPException(
-            status_code=403, reason="Invalid or expired refresh token"
-        )
+        raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
 
     # Get user identifiers from stored_token
     pk_field, lookup_field = get_pk_and_lookups()

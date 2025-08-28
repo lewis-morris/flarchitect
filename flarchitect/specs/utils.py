@@ -77,14 +77,10 @@ def scrape_extra_info_from_spec_data(
             missing.append("method")
         if not function:
             missing.append("function")
-        logger.log(
-            1, f"Missing data for documentation generation: {', '.join(missing)}"
-        )
+        logger.log(1, f"Missing data for documentation generation: {', '.join(missing)}")
 
     if spec_data.get("tag") is None:
-        new_tag = get_config_or_model_meta(
-            "tag", model, output_schema, input_schema, "Unknown"
-        )
+        new_tag = get_config_or_model_meta("tag", model, output_schema, input_schema, "Unknown")
         if new_tag:
             spec_data["tag"] = new_tag
     else:
@@ -93,9 +89,7 @@ def scrape_extra_info_from_spec_data(
     if not summary and get_config_or_model_meta("AUTO_NAME_ENDPOINTS", default=True):
         schema = spec_data.get("output_schema") or spec_data.get("input_schema")
         if schema:
-            spec_data["summary"] = make_endpoint_description(
-                schema, method, **spec_data
-            )
+            spec_data["summary"] = make_endpoint_description(schema, method, **spec_data)
     else:
         spec_data["summary"] = summary
 
@@ -111,9 +105,7 @@ def scrape_extra_info_from_spec_data(
         else:
             config_val = f"{method.lower()}" + description_type
 
-        new_desc = get_config_or_model_meta(
-            config_val, model, output_schema, input_schema, None
-        )
+        new_desc = get_config_or_model_meta(config_val, model, output_schema, input_schema, None)
         if new_desc:
             spec_data[description_type] = new_desc
 
@@ -151,9 +143,7 @@ def get_param_schema(converter) -> dict[str, str]:
         return {"type": "string"}
 
 
-def generate_delete_query_params(
-    schema: Schema, model: DeclarativeBase
-) -> list[dict[str, Any]]:
+def generate_delete_query_params(schema: Schema, model: DeclarativeBase) -> list[dict[str, Any]]:
     """Helper function to generate query parameters for DELETE method.
 
     Args:
@@ -165,9 +155,7 @@ def generate_delete_query_params(
     """
     query_params = []
 
-    if get_config_or_model_meta(
-        "API_ALLOW_CASCADE_DELETE", getattr(schema.Meta, "model", None), default=True
-    ):
+    if get_config_or_model_meta("API_ALLOW_CASCADE_DELETE", getattr(schema.Meta, "model", None), default=True):
         query_params.append(
             {
                 "name": "cascade_delete",
@@ -179,9 +167,7 @@ def generate_delete_query_params(
     return query_params
 
 
-def generate_get_query_params(
-    schema: Schema, model: DeclarativeBase
-) -> list[dict[str, Any]]:
+def generate_get_query_params(schema: Schema, model: DeclarativeBase) -> list[dict[str, Any]]:
     """Helper function to generate query parameters for GET method.
 
     Args:
@@ -223,9 +209,7 @@ def generate_get_query_params(
     return query_params
 
 
-def generate_additional_query_params(
-    methods: set, schema: Schema, model: DeclarativeBase
-) -> list[dict[str, Any]]:
+def generate_additional_query_params(methods: set, schema: Schema, model: DeclarativeBase) -> list[dict[str, Any]]:
     """Helper function to generate additional query parameters.
 
     Args:
@@ -279,9 +263,7 @@ def _add_request_body_to_spec_template(
     }
 
 
-def _add_response_to_spec_template(
-    spec_template: dict[str, Any], output_schema: Schema
-):
+def _add_response_to_spec_template(spec_template: dict[str, Any], output_schema: Schema):
     """Helper function to add a response to the spec template.
 
     Args:
@@ -307,9 +289,7 @@ def _add_response_to_spec_template(
     )
 
 
-def build_error_response(
-    status_code: int, links: dict[str, Any] | None = None
-) -> dict[str, Any]:
+def build_error_response(status_code: int, links: dict[str, Any] | None = None) -> dict[str, Any]:
     """Build a standardised error response for the OpenAPI specification.
 
     Args:
@@ -319,9 +299,7 @@ def build_error_response(
     Returns:
         Dict[str, Any]: Response block including example payload.
     """
-    example = create_response(
-        status=status_code, errors={"error": HTTP_STATUS_CODES.get(status_code)}
-    ).get_json()
+    example = create_response(status=status_code, errors={"error": HTTP_STATUS_CODES.get(status_code)}).get_json()
 
     response: dict[str, Any] = {
         "description": HTTP_STATUS_CODES.get(status_code),
@@ -357,18 +335,10 @@ def _initialize_base_responses(
     if 500 in error_responses or not error_responses:
         responses["500"] = build_error_response(500, links.get(500))
 
-    if (
-        method != "POST"
-        and not many
-        and (404 in error_responses or not error_responses)
-    ):
+    if method != "POST" and not many and (404 in error_responses or not error_responses):
         responses["404"] = build_error_response(404, links.get(404))
 
-    if (
-        method == "DELETE"
-        and not many
-        and (409 in error_responses or not error_responses)
-    ):
+    if method == "DELETE" and not many and (409 in error_responses or not error_responses):
         responses["409"] = build_error_response(409, links.get(409))
 
     return responses
@@ -459,15 +429,11 @@ def get_template_data_for_model(schema: Schema) -> dict[str, Any] | None:
         base_fields = get_model_columns(base_model)
 
         model_relationships = get_model_relationships(base_model)
-        model_relationship_names = [
-            convert_case(x.__name__, schema_case) for x in model_relationships
-        ]
+        model_relationship_names = [convert_case(x.__name__, schema_case) for x in model_relationships]
 
         if model_relationships:
             relationship_fields = get_model_columns(model_relationships[0])
-            relationship_resource = convert_case(
-                model_relationships[0].__name__, schema_case
-            )
+            relationship_resource = convert_case(model_relationships[0].__name__, schema_case)
         else:
             relationship_fields = []
             relationship_resource = None
@@ -485,9 +451,7 @@ def get_template_data_for_model(schema: Schema) -> dict[str, Any] | None:
     return None
 
 
-def generate_example_values(
-    now: datetime, yesterday: datetime, day_before_yesterday: datetime
-) -> dict[str, list[str]]:
+def generate_example_values(now: datetime, yesterday: datetime, day_before_yesterday: datetime) -> dict[str, list[str]]:
     """Helper function to generate example values for filter examples.
 
     Args:
@@ -587,9 +551,7 @@ def generate_operator_examples(
         if col_type in operators:
             chosen_operator = random.choice(operators[col_type])
             if chosen_operator in ["__in", "__nin"]:
-                chosen_values = ", ".join(
-                    random.choices(example_values.get(col_type, ["value"]), k=3)
-                )
+                chosen_values = ", ".join(random.choices(example_values.get(col_type, ["value"]), k=3))
                 examples.append(f"{column}{chosen_operator}=({chosen_values})")
             else:
                 chosen_value = random.choice(example_values.get(col_type, ["value"]))
@@ -598,9 +560,7 @@ def generate_operator_examples(
     return examples
 
 
-def get_table_name(
-    index: int, resource_name: str, fields: list[str], example_table: list[str]
-) -> str:
+def get_table_name(index: int, resource_name: str, fields: list[str], example_table: list[str]) -> str:
     """Helper function to generate table names for field examples.
 
     Args:
@@ -622,11 +582,7 @@ def get_table_name(
         current_fields = []
         for _ in range(5):
             table_choice = random.choice([resource_name, "OtherTable"])
-            field_choice = (
-                random.choice(temp_fields)
-                if table_choice == resource_name
-                else random.choice(example_table)
-            )
+            field_choice = random.choice(temp_fields) if table_choice == resource_name else random.choice(example_table)
             current_fields.append(f"{table_choice}.{field_choice}")
 
     return "fields=" + ",".join(current_fields)
@@ -648,11 +604,7 @@ def _prepare_patch_schema(input_schema: Schema | None) -> Schema | None:
     class_fields = {}
 
     # Iterate over all fields in the input schema
-    items = (
-        input_schema.fields.items()
-        if hasattr(input_schema, "fields")
-        else input_schema().fields.items()
-    )
+    items = input_schema.fields.items() if hasattr(input_schema, "fields") else input_schema().fields.items()
 
     for field_name, field_obj in items:
         # Deepcopy the field to avoid mutating the original field
@@ -698,9 +650,7 @@ def make_endpoint_description(schema: Schema, http_method: str, **kwargs) -> str
     many = kwargs.get("multiple")
     model = getattr(schema, "get_model", lambda: None)()
     name = (kwargs.get("model") or model or schema).__name__.replace("Schema", "")
-    name = convert_case(
-        name, get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
-    )
+    name = convert_case(name, get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"))
 
     parent = kwargs.get("parent")
     parent_name = parent.__name__ if parent else ""
@@ -742,11 +692,7 @@ def generate_fields_description(schema: Schema) -> str:
     if callable(schema):
         schema = schema()
 
-    fields = [
-        (k, v.metadata.get("description", ""))
-        for k, v in schema.fields.items()
-        if v and v.dump_only is False and not isinstance(v, RelatedList | Related)
-    ]
+    fields = [(k, v.metadata.get("description", "")) for k, v in schema.fields.items() if v and v.dump_only is False and not isinstance(v, RelatedList | Related)]
 
     if hasattr(schema, "Meta") and hasattr(schema.Meta, "model"):
         resource_name = schema.Meta.model.__name__
@@ -756,9 +702,7 @@ def generate_fields_description(schema: Schema) -> str:
             "OtherTable.id",
             "OtherTable.email",
         ]
-        example_fields = [
-            get_table_name(i, resource_name, fields, example_table) for i in range(3)
-        ]
+        example_fields = [get_table_name(i, resource_name, fields, example_table) for i in range(3)]
 
         full_path = os.path.join(get_html_path(), "redoc_templates/fields.html")
         schema_name = endpoint_namer(schema.Meta.model)
@@ -816,9 +760,7 @@ def generate_filter_examples(schema: Schema) -> str:
 
     full_path = os.path.join(get_html_path(), "redoc_templates/filters.html")
 
-    return manual_render_absolute_template(
-        full_path, examples=[example_one, example_two]
-    )
+    return manual_render_absolute_template(full_path, examples=[example_one, example_two])
 
 
 def convert_path_to_openapi(path: str) -> str:
@@ -905,24 +847,15 @@ def append_parameters(
 
     if rate_limit:
         description = spec_template.get("description", "")
-        spec_template["description"] = (
-            f"{description}\n**Rate Limited** - requests on this endpoint are limited to `{rate_limit}`."
-        )
+        spec_template["description"] = f"{description}\n**Rate Limited** - requests on this endpoint are limited to `{rate_limit}`."
 
     if input_schema:
-        _add_request_body_to_spec_template(
-            spec_template, http_method, input_schema, model
-        )
+        _add_request_body_to_spec_template(spec_template, http_method, input_schema, model)
 
     if output_schema:
         _add_response_to_spec_template(spec_template, output_schema)
 
-    if (
-        http_method == "GET"
-        and model
-        and many
-        and get_config_or_model_meta("API_ALLOW_FILTERS", model=model, default=True)
-    ):
+    if http_method == "GET" and model and many and get_config_or_model_meta("API_ALLOW_FILTERS", model=model, default=True):
         spec_template["parameters"].append(
             {
                 "name": "filters",
@@ -933,9 +866,7 @@ def append_parameters(
         )
 
         template_data = get_template_data_for_model(output_schema)
-        spec_template["parameters"].extend(
-            make_endpoint_params_description(output_schema, template_data)
-        )
+        spec_template["parameters"].extend(make_endpoint_params_description(output_schema, template_data))
 
     add_auth_to_spec(model, spec_template)
 
@@ -951,9 +882,7 @@ def add_auth_to_spec(model: DeclarativeBase, spec_template: dict[str, Any]):
         None
     """
     auth_on = get_config_or_model_meta("API_AUTHENTICATE", model=model, default=False)
-    auth_type = get_config_or_model_meta(
-        "API_AUTHENTICATE_METHOD", model=model, default=None
-    )
+    auth_type = get_config_or_model_meta("API_AUTHENTICATE_METHOD", model=model, default=None)
 
     if not auth_on:
         return
@@ -988,9 +917,7 @@ def add_auth_to_spec(model: DeclarativeBase, spec_template: dict[str, Any]):
         }
 
 
-def make_endpoint_params_description(
-    schema: Schema, data: dict[str, Any]
-) -> list[dict[str, Any]]:
+def make_endpoint_params_description(schema: Schema, data: dict[str, Any]) -> list[dict[str, Any]]:
     """Generates endpoint parameters description from a schema for the API docs.
 
     Args:
@@ -1002,9 +929,7 @@ def make_endpoint_params_description(
     """
     params = []
 
-    if get_config_or_model_meta(
-        "API_ALLOW_SELECT_FIELDS", getattr(schema.Meta, "model", None), default=True
-    ):
+    if get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", getattr(schema.Meta, "model", None), default=True):
         params.append(
             {
                 "name": "fields",
@@ -1014,59 +939,43 @@ def make_endpoint_params_description(
             }
         )
 
-    if get_config_or_model_meta(
-        "API_ALLOW_ORDER_BY", getattr(schema.Meta, "model", None), default=True
-    ):
+    if get_config_or_model_meta("API_ALLOW_ORDER_BY", getattr(schema.Meta, "model", None), default=True):
         params.append(
             {
                 "name": "order by",
                 "in": "query",
                 "schema": {"type": "string"},
-                "description": generate_x_description(
-                    data, "redoc_templates/order.html"
-                ),
+                "description": generate_x_description(data, "redoc_templates/order.html"),
             }
         )
 
-    if get_config_or_model_meta(
-        "API_ALLOW_JOIN", getattr(schema.Meta, "model", None), default=False
-    ):
+    if get_config_or_model_meta("API_ALLOW_JOIN", getattr(schema.Meta, "model", None), default=False):
         params.append(
             {
                 "name": "join",
                 "in": "query",
                 "schema": {"type": "string"},
-                "description": generate_x_description(
-                    data, "redoc_templates/joins.html"
-                ),
+                "description": generate_x_description(data, "redoc_templates/joins.html"),
             }
         )
 
-    if get_config_or_model_meta(
-        "API_ALLOW_GROUPBY", getattr(schema.Meta, "model", None), default=False
-    ):
+    if get_config_or_model_meta("API_ALLOW_GROUPBY", getattr(schema.Meta, "model", None), default=False):
         params.append(
             {
                 "name": "groupby",
                 "in": "query",
                 "schema": {"type": "string"},
-                "description": generate_x_description(
-                    data, "redoc_templates/group.html"
-                ),
+                "description": generate_x_description(data, "redoc_templates/group.html"),
             }
         )
 
-    if get_config_or_model_meta(
-        "API_ALLOW_AGGREGATION", getattr(schema.Meta, "model", None), default=False
-    ):
+    if get_config_or_model_meta("API_ALLOW_AGGREGATION", getattr(schema.Meta, "model", None), default=False):
         params.append(
             {
                 "name": "aggregation",
                 "in": "query",
                 "schema": {"type": "string"},
-                "description": generate_x_description(
-                    data, "redoc_templates/aggregate.html"
-                ),
+                "description": generate_x_description(data, "redoc_templates/aggregate.html"),
             }
         )
 
@@ -1094,9 +1003,7 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
                 "require_roles",
             }:
                 required_roles = decorator._args
-                any_of = getattr(
-                    decorator, "_any_of", decorator.__name__ == "roles_accepted"
-                )
+                any_of = getattr(decorator, "_any_of", decorator.__name__ == "roles_accepted")
                 roles_label = "Roles accepted" if any_of else "Roles required"
                 security = spec_template.setdefault("security", [])
                 if not any("bearerAuth" in scheme for scheme in security):
@@ -1105,9 +1012,7 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
 
     if required_roles and roles_label:
         roles_desc = ", ".join(required_roles)
-        spec_template["responses"]["401"][
-            "description"
-        ] += f" {roles_label}: {roles_desc}."
+        spec_template["responses"]["401"]["description"] += f" {roles_label}: {roles_desc}."
 
 
 def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
@@ -1122,29 +1027,17 @@ def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
     openapi_type_info = {}
     field_type = type(field_obj)
 
-    if (
-        hasattr(field_obj, "parent")
-        and hasattr(field_obj.parent, "Meta")
-        and hasattr(field_obj.parent.Meta, "model")
-    ):
-        openapi_type_info = get_description_and_example_add(
-            openapi_type_info, field_obj
-        )
+    if hasattr(field_obj, "parent") and hasattr(field_obj.parent, "Meta") and hasattr(field_obj.parent.Meta, "model"):
+        openapi_type_info = get_description_and_example_add(openapi_type_info, field_obj)
 
     openapi_type_info["type"] = type_mapping.get(field_type, "string")
 
     # Populate example with sensible defaults when none provided
-    if "example" not in openapi_type_info and (
-        example := _resolve_default_example(field_type)
-    ):
+    if "example" not in openapi_type_info and (example := _resolve_default_example(field_type)):
         openapi_type_info["example"] = example
 
     if field_type in [fields.DateTime, fields.Date, fields.Time]:
-        openapi_type_info["format"] = (
-            "date-time"
-            if field_type == fields.DateTime
-            else field_type.__name__.lower()
-        )
+        openapi_type_info["format"] = "date-time" if field_type == fields.DateTime else field_type.__name__.lower()
 
     if field_type == fields.Decimal and (fmt := field_obj.metadata.get("format")):
         # Add optional format for Decimal fields if provided in metadata
@@ -1160,9 +1053,7 @@ def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
     if field_type in [Nested, Related, RelatedList]:
         related_schema_name = get_related_schema_name(field_obj, field_type)
         if related_schema_name:
-            openapi_type_info = handle_nested_related_fields(
-                field_obj, field_type, related_schema_name, openapi_type_info
-            )
+            openapi_type_info = handle_nested_related_fields(field_obj, field_type, related_schema_name, openapi_type_info)
 
     return openapi_type_info
 
@@ -1219,17 +1110,13 @@ def handle_nested_related_fields(
     """
     if field_obj.many or field_type == RelatedList:
         openapi_type_info["type"] = "array"
-        openapi_type_info["items"] = {
-            "$ref": f"#/components/schemas/{related_schema_name}"
-        }
+        openapi_type_info["items"] = {"$ref": f"#/components/schemas/{related_schema_name}"}
     else:
         openapi_type_info["$ref"] = f"#/components/schemas/{related_schema_name}"
     return openapi_type_info
 
 
-def get_description_and_example_add(
-    openapi_type_info: dict[str, Any], field_obj: fields.Field
-) -> dict[str, Any]:
+def get_description_and_example_add(openapi_type_info: dict[str, Any], field_obj: fields.Field) -> dict[str, Any]:
     """Attach description and example metadata defined on a model field.
 
     Args:
@@ -1294,17 +1181,13 @@ def _resolve_default_example(field_type: type[fields.Field]) -> Any | None:
 
     defaults = example_fallbacks.copy()
     try:
-        overrides = get_config_or_model_meta(
-            "OPENAPI_FIELD_EXAMPLE_DEFAULTS", default={}
-        )
+        overrides = get_config_or_model_meta("OPENAPI_FIELD_EXAMPLE_DEFAULTS", default={})
     except RuntimeError:
         overrides = {}
     if isinstance(overrides, dict):
         for key, value in overrides.items():
             override_cls = getattr(fields, key, None)
-            if isinstance(override_cls, type) and issubclass(
-                override_cls, fields.Field
-            ):
+            if isinstance(override_cls, type) and issubclass(override_cls, fields.Field):
                 defaults[override_cls] = value
     return defaults.get(field_type)
 
@@ -1335,11 +1218,7 @@ def get_description(kwargs: dict[str, Any]) -> str:
         parent = kwargs["parent_model"]
         return f"Get multiple `{name}` records from the database based on the parent {endpoint_namer(parent)} id"
 
-    description = (
-        getattr(model.Meta, "description", {}).get(method)
-        if hasattr(model, "Meta")
-        else None
-    )
+    description = getattr(model.Meta, "description", {}).get(method) if hasattr(model, "Meta") else None
     if description:
         return description
 
@@ -1389,15 +1268,13 @@ def endpoint_namer(
     model_obj = model
     if model_obj is None:
         schema = input_schema or output_schema
-        model_obj = (
-            getattr(getattr(schema, "Meta", None), "model", None) if schema else None
-        )
+        model_obj = getattr(getattr(schema, "Meta", None), "model", None) if schema else None
     if model_obj is None:
         raise ValueError("A model or schema with a Meta.model attribute is required")
 
-    case = get_config_or_model_meta(
-        "API_ENDPOINT_CASE", default="kebab", model=model_obj
-    )
+    # Read directly from Flask config to avoid cross-test bleed-through from
+    # model metadata on plain classes. Defaults to kebab-case for endpoints.
+    case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab")
     converted_name = convert_case(model_obj.__name__, case)
     pluralized_name = pluralize_last_word(converted_name)
     return convert_case(pluralized_name, case)

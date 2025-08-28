@@ -115,9 +115,7 @@ with app.app_context():
             db.session.commit()
             return True
 
-    advanced_schema = graphene.Schema(
-        query=Query, mutation=Mutation, auto_camelcase=False
-    )
+    advanced_schema = graphene.Schema(query=Query, mutation=Mutation, auto_camelcase=False)
 
     architect = Architect(app)
     architect.init_graphql(schema=advanced_schema)

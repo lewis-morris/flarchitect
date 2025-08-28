@@ -13,9 +13,9 @@ from contextlib import AbstractContextManager, closing
 from threading import Lock
 
 from sqlalchemy import DateTime, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
-from flarchitect.utils.session import get_session
+from flarchitect.utils.session import _resolve_session
 
 
 class Base(DeclarativeBase):
@@ -30,9 +30,7 @@ class RefreshToken(Base):
     token: Mapped[str] = mapped_column(String, primary_key=True)
     user_pk: Mapped[str] = mapped_column(String, nullable=False)
     user_lookup: Mapped[str] = mapped_column(String, nullable=False)
-    expires_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 _lock = Lock()
@@ -44,16 +42,35 @@ def _ensure_table(session: Session) -> None:
 
 
 def _managed_session() -> AbstractContextManager[Session]:
-    """Return a context manager that ensures the session is closed."""
-    session = get_session(RefreshToken)
-    if hasattr(session, "__enter__") and hasattr(session, "__exit__"):
-        return session  # type: ignore[return-value]
-    return closing(session)
+    """Return a context manager that ensures the session is closed.
+
+    Uses :func:`get_session` which isolates the global Flask-SQLAlchemy session
+    when present, and otherwise manages the provided session directly.
+    """
+    session_or_ctx = get_session(RefreshToken)
+    # If a contextmanager was returned, use it directly; else wrap in closing()
+    if hasattr(session_or_ctx, "__enter__") and hasattr(session_or_ctx, "__exit__"):
+        return session_or_ctx  # type: ignore[return-value]
+    return closing(session_or_ctx)
 
 
-def store_refresh_token(
-    token: str, user_pk: str, user_lookup: str, expires_at: datetime.datetime
-) -> None:
+def get_session(model: type[DeclarativeBase] | None = None):
+    """Resolve a session suitable for token operations.
+
+    If the active session is a Flask-SQLAlchemy scoped session, return a
+    short-lived session bound to the same engine so closing does not impact
+    the application session. Otherwise, wrap the resolved session for closing.
+    """
+    base_session = _resolve_session(model)
+    is_scoped = hasattr(base_session, "remove") and hasattr(base_session, "registry")
+    if is_scoped:
+        bind = base_session.get_bind()
+        SessionMaker = sessionmaker(bind=bind)
+        return closing(SessionMaker())
+    return closing(base_session)
+
+
+def store_refresh_token(token: str, user_pk: str, user_lookup: str, expires_at: datetime.datetime) -> None:
     """Persist a refresh token and its metadata.
 
     Args:

@@ -135,9 +135,7 @@ def manual_render_absolute_template(absolute_template_path: str, **kwargs: Any) 
     return template.render(**kwargs)
 
 
-def find_child_from_parent_dir(
-    parent: str, child: str, current_dir: str = os.getcwd()
-) -> str | None:
+def find_child_from_parent_dir(parent: str, child: str, current_dir: str = os.getcwd()) -> str | None:
     """
     Finds the directory of a child folder within a parent directory.
 
@@ -183,21 +181,12 @@ def check_rate_prerequisites(
     back_end_spec = "or specify a cache service URI in the flask configuration with the key API_RATE_LIMIT_STORAGE_URI={URL}:{PORT}"
     if service == "Memcached":
         if find_spec("pymemcache") is None:
-            raise ImportError(
-                "Memcached prerequisite not available. Please install pymemcache "
-                + back_end_spec
-            )
+            raise ImportError("Memcached prerequisite not available. Please install pymemcache " + back_end_spec)
     elif service == "Redis":
         if find_spec("redis") is None:
-            raise ImportError(
-                "Redis prerequisite not available. Please install redis-py "
-                + back_end_spec
-            )
+            raise ImportError("Redis prerequisite not available. Please install redis-py " + back_end_spec)
     elif service == "MongoDB" and find_spec("pymongo") is None:
-        raise ImportError(
-            "MongoDB prerequisite not available. Please install pymongo "
-            + back_end_spec
-        )
+        raise ImportError("MongoDB prerequisite not available. Please install pymongo " + back_end_spec)
 
 
 def check_rate_services(
@@ -297,13 +286,7 @@ def search_all_keys(model: Any, key: str) -> bool:
     Returns:
         bool: True if the key is found in any subclass, False otherwise.
     """
-    return any(
-        any(
-            get_config_or_model_meta(key, model=subclass, method=method)
-            for method in HTTP_METHODS
-        )
-        for subclass in model.__subclasses__()
-    )
+    return any(any(get_config_or_model_meta(key, model=subclass, method=method) for method in HTTP_METHODS) for subclass in model.__subclasses__())
 
 
 def generate_readme_html(file_path: str | Path, *args: Any, **kwargs: Any) -> str:
@@ -377,9 +360,7 @@ def pretty_print_dict(d: dict[Any, Any]) -> str:
     return pprint.pformat(d, indent=2)
 
 
-def update_dict_if_flag_true(
-    output: dict[str, Any], flag: bool, key: str, value: Any, case_func: Any
-) -> None:
+def update_dict_if_flag_true(output: dict[str, Any], flag: bool, key: str, value: Any, case_func: Any) -> None:
     """Update a dictionary with a key-value pair if the flag is True.
 
     Args:
@@ -418,9 +399,7 @@ def make_base_dict() -> dict[str, Any]:
     ]
 
     for config, key, value, *defaults in config_options:
-        flag = get_config_or_model_meta(
-            config, default=defaults[0] if defaults else True
-        )
+        flag = get_config_or_model_meta(config, default=defaults[0] if defaults else True)
         update_dict_if_flag_true(output, flag, key, value, field_case)
 
     return output
@@ -440,11 +419,7 @@ def pluralize_last_word(converted_name: str) -> str:
     delimiters = {"_": "snake", "-": "kebab"}
     delimiter = next((d for d in delimiters if d in converted_name), "")
 
-    words = (
-        converted_name.split(delimiter)
-        if delimiter
-        else re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", converted_name)
-    )
+    words = converted_name.split(delimiter) if delimiter else re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?![a-z])", converted_name)
     last_word = words[-1]
     last_word_pluralized = p.plural(p.singular_noun(last_word) or last_word)
 

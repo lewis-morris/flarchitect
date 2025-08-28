@@ -15,12 +15,8 @@ from flarchitect import Architect
 class BaseModel(DeclarativeBase):
     """Base model with timestamp and soft delete support."""
 
-    created: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.utcnow
-    )
-    updated: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow
-    )
+    created: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
+    updated: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     def get_session(*_args: Any, **_kwargs: Any):

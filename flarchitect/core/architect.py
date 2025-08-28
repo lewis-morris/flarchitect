@@ -109,14 +109,10 @@ def jwt_authentication(func: F) -> F:
 
         auth = request.headers.get("Authorization")
         if not auth:
-            raise CustomHTTPException(
-                status_code=401, reason="Authorization header missing"
-            )
+            raise CustomHTTPException(status_code=401, reason="Authorization header missing")
         parts = auth.split()
         if parts[0].lower() != "bearer" or len(parts) != 2:
-            raise CustomHTTPException(
-                status_code=401, reason="Invalid Authorization header"
-            )
+            raise CustomHTTPException(status_code=401, reason="Invalid Authorization header")
         token = parts[1]
         usr = get_user_from_token(token, secret_key=None)
         if not usr:
@@ -161,10 +157,7 @@ class Architect(AttributeInitializerMixin):
 
         if app is not None:
             if self._is_reloader_start():
-
-                logger.debug(
-                    4, "Skipping Architect initialisation in reloader parent process"
-                )
+                logger.debug(4, "Skipping Architect initialisation in reloader parent process")
             else:
                 self.init_app(app, *args, **kwargs)
 
@@ -256,9 +249,7 @@ class Architect(AttributeInitializerMixin):
                 self.cache = SimpleCache(default_timeout=cache_timeout)
                 self.cache.init_app(app)
             else:
-                raise RuntimeError(
-                    "flask-caching is required when API_CACHE_TYPE is set"
-                )
+                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set")
 
         if self.get_config("API_ENABLE_CORS", False):
             if importlib.util.find_spec("flask_cors") is not None:
@@ -267,10 +258,7 @@ class Architect(AttributeInitializerMixin):
                 CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
             else:
                 resources = app.config.get("CORS_RESOURCES", {})
-                compiled = [
-                    (re.compile(pattern), opts.get("origins", "*"))
-                    for pattern, opts in resources.items()
-                ]
+                compiled = [(re.compile(pattern), opts.get("origins", "*")) for pattern, opts in resources.items()]
 
                 @app.after_request
                 def apply_cors_headers(response: Response) -> Response:
@@ -288,13 +276,9 @@ class Architect(AttributeInitializerMixin):
                     origin = request.headers.get("Origin")
                     for pattern, origins in compiled:
                         if pattern.match(path):
-                            allowed = (
-                                [origins] if isinstance(origins, str) else list(origins)
-                            )
+                            allowed = [origins] if isinstance(origins, str) else list(origins)
                             if "*" in allowed or (origin and origin in allowed):
-                                response.headers["Access-Control-Allow-Origin"] = (
-                                    "*" if "*" in allowed else origin
-                                )
+                                response.headers["Access-Control-Allow-Origin"] = "*" if "*" in allowed else origin
                             break
                     return response
 
@@ -325,19 +309,11 @@ class Architect(AttributeInitializerMixin):
             """
 
             view = app.view_functions.get(request.endpoint)
-            if (
-                not view
-                or getattr(view, "_auth_disabled", False)
-                or getattr(view, "_has_schema_constructor", False)
-            ):
+            if not view or getattr(view, "_auth_disabled", False) or getattr(view, "_has_schema_constructor", False):
                 return
             try:
-                self._handle_auth(
-                    model=None, output_schema=None, input_schema=None, auth_flag=True
-                )
-            except (
-                CustomHTTPException
-            ) as exc:  # pragma: no cover - integration behaviour
+                self._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
+            except CustomHTTPException as exc:  # pragma: no cover - integration behaviour
                 return create_response(status=exc.status_code, errors=exc.reason)
 
         @app.teardown_request
@@ -436,9 +412,7 @@ class Architect(AttributeInitializerMixin):
 
             if request.method == "GET":
                 try:
-                    template = importlib.resources.read_text(
-                        "graphene", "graphiql.html"
-                    )
+                    template = importlib.resources.read_text("graphene", "graphiql.html")
                 except (FileNotFoundError, ModuleNotFoundError):
                     template = DEFAULT_GRAPHIQL_HTML
                 return Response(template, mimetype="text/html")
@@ -551,11 +525,7 @@ class Architect(AttributeInitializerMixin):
             Callable: The decorated function.
         """
 
-        decorator = (
-            handle_many(output_schema, input_schema)
-            if many
-            else handle_one(output_schema, input_schema)
-        )
+        decorator = handle_many(output_schema, input_schema) if many else handle_one(output_schema, input_schema)
         return decorator(func)
 
     def _apply_rate_limit(
@@ -590,9 +560,7 @@ class Architect(AttributeInitializerMixin):
             return self.limiter.limit(rl)(func)
         if rl:
             rule = find_rule_by_function(self, func).rule
-            logger.error(
-                f"Rate limit definition not a string or not valid. Skipping for `{rule}` route."
-            )
+            logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
         return func
 
     def _authenticate_jwt(self) -> bool:
@@ -629,17 +597,13 @@ class Architect(AttributeInitializerMixin):
 
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
         lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", default=None)
-        check_method = get_config_or_model_meta(
-            "API_CREDENTIAL_CHECK_METHOD", default=None
-        )
+        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
 
         if not (user_model and lookup_field and check_method):
             return False
 
         try:
-            user = user_model.query.filter(
-                getattr(user_model, lookup_field) == username
-            ).first()
+            user = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
         except Exception:  # pragma: no cover
             return False
 
@@ -657,9 +621,7 @@ class Architect(AttributeInitializerMixin):
         if scheme.lower() != "api-key" or not token:
             return False
 
-        custom_method = get_config_or_model_meta(
-            "API_KEY_AUTH_AND_RETURN_METHOD", default=None
-        )
+        custom_method = get_config_or_model_meta("API_KEY_AUTH_AND_RETURN_METHOD", default=None)
         if callable(custom_method):
             user = custom_method(token)
             if user:
@@ -669,9 +631,7 @@ class Architect(AttributeInitializerMixin):
 
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
         hash_field = get_config_or_model_meta("API_CREDENTIAL_HASH_FIELD", default=None)
-        check_method = get_config_or_model_meta(
-            "API_CREDENTIAL_CHECK_METHOD", default=None
-        )
+        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", default=None)
 
         if not (user_model and hash_field and check_method):
             return False
@@ -735,9 +695,7 @@ class Architect(AttributeInitializerMixin):
         auth_flag = kwargs.get("auth")
         roles_tuple: tuple[str, ...] = ()
         if roles and roles is not True:
-            roles_tuple = (
-                tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
-            )
+            roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
 
         def decorator(f: Callable) -> Callable:
             local_roles_required = None
@@ -755,9 +713,7 @@ class Architect(AttributeInitializerMixin):
                     auth_flag=auth_flag,
                 )
 
-                f_decorated = self._apply_schemas(
-                    f, output_schema, input_schema, bool(many)
-                )
+                f_decorated = self._apply_schemas(f, output_schema, input_schema, bool(many))
                 f_decorated = self._apply_rate_limit(
                     f_decorated,
                     model=model,
@@ -806,9 +762,7 @@ class Architect(AttributeInitializerMixin):
         return decorator
 
     @classmethod
-    def get_templates_path(
-        cls, folder_name: str = "html", max_levels: int = 3
-    ) -> str | None:
+    def get_templates_path(cls, folder_name: str = "html", max_levels: int = 3) -> str | None:
         """Recursively search for ``folder_name`` within ancestor directories.
 
         Args:

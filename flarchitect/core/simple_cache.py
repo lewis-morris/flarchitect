@@ -58,9 +58,7 @@ class SimpleCache:
         """Remove expired entries from the cache."""
 
         now = time.time()
-        expired = [
-            key for key, (expires, _value) in self._cache.items() if expires < now
-        ]
+        expired = [key for key, (expires, _value) in self._cache.items() if expires < now]
         for key in expired:
             self._cache.pop(key, None)
 
@@ -86,9 +84,7 @@ class SimpleCache:
 
         self._cache[key] = (self._expires(timeout), value)
 
-    def cached(
-        self, timeout: int | None = None
-    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def cached(self, timeout: int | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to cache view function responses.
 
         Args:
