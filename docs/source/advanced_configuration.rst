@@ -168,7 +168,7 @@ example, helps client developers cache against the correct release:
      - Effect
    * - `API_DUMP_HYBRID_PROPERTIES <configuration.html#DUMP_HYBRID_PROPERTIES>`_
      - ``True``
-     - Include SQLAlchemy hybrid properties in serialized output.
+     - Include SQLAlchemy hybrid properties in serialised output.
    * - `API_DUMP_DATETIME <configuration.html#DUMP_DATETIME>`_
      - ``True``
      - Append the current UTC timestamp as ``datetime``.
@@ -184,6 +184,9 @@ example, helps client developers cache against the correct release:
    * - `API_DUMP_TOTAL_COUNT <configuration.html#DUMP_TOTAL_COUNT>`_
      - ``True``
      - Provide a ``total_count`` field for collection endpoints.
+   * - `API_DUMP_REQUEST_ID <configuration.html#DUMP_REQUEST_ID>`_
+     - ``False``
+     - Include the per-request correlation identifier as ``request_id``. The header ``X-Request-ID`` is always sent.
    * - `API_DUMP_NULL_NEXT_URL <configuration.html#DUMP_NULL_NEXT_URL>`_
      - ``True``
      - Show ``next_url`` with ``null`` when no further page exists.
@@ -268,7 +271,7 @@ With this configuration a nested object can be created in the same request::
 Depth limits
 ^^^^^^^^^^^^
 
-Once enabled, ``AutoSchema`` can deserialize nested relationship data during
+Once enabled, ``AutoSchema`` can deserialise nested relationship data during
 ``POST`` or ``PUT`` requests. Each related model must also opt in with
 ``Meta.allow_nested_writes`` and nesting is capped at **two levels** to avoid
 unbounded recursion. Any relationships beyond this depth are ignored.
@@ -320,8 +323,8 @@ change in a ``PATCH`` request::
         }
     }
 
-The nested ``author`` object is deserialized into an ``Author`` instance while
-responses continue to use the configured serialization type (URL, JSON, or
+The nested ``author`` object is deserialised into an ``Author`` instance while
+responses continue to use the configured serialisation type (URL, JSON, or
 dynamic).
 
 
@@ -668,4 +671,3 @@ return callbacks in configuration or on a model's ``Meta`` class.
         API_SETUP_CALLBACK = ensure_admin
 
 For more examples see the :doc:`extensions` page.
-

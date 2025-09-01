@@ -34,7 +34,7 @@ class CustomResponse:
     count: int | None = None
 
 
-def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> dict[str, Any] | tuple[dict[str, Any], int]:
+def serialise_output_with_mallow(output_schema: type[Schema], data: Any) -> dict[str, Any] | tuple[dict[str, Any], int]:
     """Serialise ``data`` using the provided Marshmallow schema.
 
     Args:
@@ -70,18 +70,18 @@ def check_serialise_method_and_return(
     schema_columns: list[str],
 ) -> list[dict[str, Any]] | dict[str, Any]:
     """
-    Checks if the serialization matches the schema or model columns.
+    Checks if the serialisation matches the schema or model columns.
     If not, returns the raw result.
 
     Args:
         result (Dict): The result dictionary.
-        schema (AutoSchema): The schema used for serialization.
+        schema (AutoSchema): The schema used for serialisation.
         model_columns (List[str]): The model columns.
         schema_columns (List[str]): The schema columns.
 
     Returns:
         list[dict[str, Any]] | dict[str, Any]:
-            Serialized data or the original result.
+            Serialised data or the original result.
     """
     output_list = result.pop("dictionary", [])
     if output_list:
@@ -89,4 +89,9 @@ def check_serialise_method_and_return(
         if any(x not in model_columns for x in output_keys) or any(x not in schema_columns for x in output_keys):
             return output_list
 
-    return serialize_output_with_mallow(schema, result)
+    return serialise_output_with_mallow(schema, result)
+
+
+# Backwards-compatible alias (US spelling)
+def serialize_output_with_mallow(output_schema: type[Schema], data: Any) -> dict[str, Any] | tuple[dict[str, Any], int]:
+    return serialise_output_with_mallow(output_schema, data)

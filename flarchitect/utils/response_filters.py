@@ -25,6 +25,11 @@ def _filter_response_data(data: dict[str, Any]) -> dict[str, Any]:
         if key in data and not get_config_or_model_meta(config_key, default=True):
             data.pop(key)
 
+    # Optional: expose correlation id in body when explicitly enabled
+    # Default is False (remain header-only via X-Request-ID)
+    if "request_id" in data and not get_config_or_model_meta("API_DUMP_REQUEST_ID", default=False):
+        data.pop("request_id")
+
     for key in ["next_url", "previous_url"]:
         if key in data and not data[key] and not get_config_or_model_meta(f"API_DUMP_NULL_{key.upper()}", default=True):
             data.pop(key)

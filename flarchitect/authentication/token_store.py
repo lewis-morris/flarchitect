@@ -12,7 +12,7 @@ import datetime
 from contextlib import AbstractContextManager, closing
 from threading import Lock
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 from flarchitect.utils.session import _resolve_session
@@ -31,6 +31,11 @@ class RefreshToken(Base):
     user_pk: Mapped[str] = mapped_column(String, nullable=False)
     user_lookup: Mapped[str] = mapped_column(String, nullable=False)
     expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.datetime.now(datetime.timezone.utc))
+    last_used_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    revoked_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    replaced_by: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 _lock = Lock()
@@ -88,6 +93,8 @@ def store_refresh_token(token: str, user_pk: str, user_lookup: str, expires_at: 
                 user_pk=user_pk,
                 user_lookup=user_lookup,
                 expires_at=expires_at,
+                created_at=datetime.datetime.now(datetime.timezone.utc),
+                revoked=False,
             )
         )
         session.commit()
@@ -107,6 +114,9 @@ def get_refresh_token(token: str) -> RefreshToken | None:
         _ensure_table(session)
         session.expire_all()
         result = session.get(RefreshToken, token)
+        # Hide revoked tokens from normal retrieval
+        if result is not None and result.revoked:
+            return None
     return result
 
 
@@ -124,3 +134,49 @@ def delete_refresh_token(token: str) -> None:
             session.delete(instance)
             session.commit()
             session.expire_all()
+
+
+def revoke_refresh_token(token: str) -> None:
+    """Mark a refresh token as revoked.
+
+    This function preserves the row for auditing instead of deleting it.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    with _lock, _managed_session() as session:
+        _ensure_table(session)
+        instance = session.get(RefreshToken, token)
+        if instance is not None:
+            instance.revoked = True
+            instance.revoked_at = now
+            session.add(instance)
+            session.commit()
+            session.expire_all()
+
+
+def mark_refresh_token_used(token: str, *, replaced_by: str | None = None) -> None:
+    """Update auditing fields when a refresh token is used.
+
+    Args:
+        token: The refresh token being used.
+        replaced_by: Optional new refresh token string created via rotation.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc)
+    with _lock, _managed_session() as session:
+        _ensure_table(session)
+        instance = session.get(RefreshToken, token)
+        if instance is not None:
+            instance.last_used_at = now
+            if replaced_by:
+                instance.replaced_by = replaced_by
+            session.add(instance)
+            session.commit()
+            session.expire_all()
+
+
+def rotate_refresh_token(old_token: str, new_token: str) -> None:
+    """Rotate a refresh token by revoking the old and linking to the new.
+
+    Sets ``last_used_at`` and ``replaced_by`` on the old token and marks it revoked.
+    """
+    mark_refresh_token_used(old_token, replaced_by=new_token)
+    revoke_refresh_token(old_token)

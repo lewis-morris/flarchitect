@@ -9,58 +9,93 @@ from sqlalchemy.orm import DeclarativeBase
 from flarchitect.database.utils import _extract_model_attributes
 from flarchitect.utils.config_helpers import get_config_or_model_meta, is_xml
 
+# Simple module-level caches to avoid repeated reflection per request
+_SCHEMA_SUBCLASS_CACHE: dict[tuple[type, bool | None], Callable | None] = {}
+_DYNAMIC_SCHEMA_CACHE: dict[tuple[type, type], type] = {}
+
 
 def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable | None:
-    """Search for the AutoSchema subclass matching the model and dump flag.
+    """Locate an ``AutoSchema`` subclass for a model and usage (dump/load).
+
+    Why/How:
+        flarchitect lets you provide bespoke input/output schemas per model by
+        subclassing ``AutoSchema``. This helper scans known subclasses and
+        returns the one tied to ``model`` and the requested direction
+        (``dump`` for output, ``False`` for input).
 
     Args:
-        model (Callable): The model to search for.
-        dump (Optional[bool]): Whether to search for a dump or load schema.
+        model: The SQLAlchemy model to match.
+        dump: When True, search for an output (dump) schema; when False, for an
+            input (load) schema. ``None`` returns any match.
 
     Returns:
-        Optional[Callable]: The matching subclass of AutoSchema, if found.
+        The matching ``AutoSchema`` subclass if found, otherwise ``None``.
     """
     from flarchitect.schemas.bases import AutoSchema
 
-    schema_base = get_config_or_model_meta("API_BASE_SCHEMA", model=model, default=AutoSchema)
+    if model is None:
+        return None
+
+    schema_base = get_config_or_model_meta("API_BASE_SCHEMA", model=model, default=AutoSchema) or AutoSchema
+
+    cache_key = (model, dump)
+    if cache_key in _SCHEMA_SUBCLASS_CACHE:
+        return _SCHEMA_SUBCLASS_CACHE[cache_key]
 
     for subclass in schema_base.__subclasses__():
         schema_model = getattr(subclass.Meta, "model", None)
         if schema_model == model and (getattr(subclass, "dump", False) is dump or getattr(subclass, "dump", None)):
+            _SCHEMA_SUBCLASS_CACHE[cache_key] = subclass
             return subclass
+    _SCHEMA_SUBCLASS_CACHE[cache_key] = None
     return None
 
 
 def create_dynamic_schema(base_class: Callable, model_class: Callable) -> Callable:
-    """Create a dynamic schema for ``model_class`` inheriting from ``base_class``.
+    """Create a schema subclass for ``model_class`` at runtime.
+
+    Why/How:
+        When no explicit schema is provided, we generate a lightweight class
+        deriving from ``base_class`` with a ``Meta.model`` binding so the rest
+        of the pipeline can introspect fields and produce OpenAPI metadata.
 
     Args:
-        base_class (Callable): The base class to inherit from.
-        model_class (Callable): The model class to associate with.
+        base_class: The base schema class (typically ``AutoSchema``).
+        model_class: The SQLAlchemy model to associate with.
 
     Returns:
-        Callable: The dynamically created schema class.
+        The dynamically created schema class.
     """
 
     class Meta:
         model = model_class
+
+    cache_key = (base_class, model_class)
+    if cache_key in _DYNAMIC_SCHEMA_CACHE:
+        return _DYNAMIC_SCHEMA_CACHE[cache_key]
 
     dynamic_class = new_class(
         f"{model_class.__name__}Schema",
         (base_class,),
         exec_body=lambda ns: ns.update(Meta=Meta),
     )
+    _DYNAMIC_SCHEMA_CACHE[cache_key] = dynamic_class
     return dynamic_class
 
 
 def get_input_output_from_model_or_make(model: Callable, **kwargs) -> tuple[Callable, Callable]:
-    """Get or create input and output schema instances for the model.
+    """Return input/output schema instances for a model, creating them if needed.
+
+    Why/How:
+        Prefers user-supplied ``AutoSchema`` subclasses when present; otherwise
+        falls back to dynamic classes. Flags like ``API_ADD_RELATIONS`` and
+        ``API_DUMP_HYBRID_PROPERTIES`` influence which base is used.
 
     Args:
-        model (Callable): The model to get the schemas from.
+        model: The model to derive schemas for.
 
     Returns:
-        Tuple[Callable, Callable]: The input and output schema instances.
+        A tuple of ``(input_schema, output_schema)`` instances.
     """
     from flarchitect.schemas.bases import AutoSchema
 
@@ -80,23 +115,23 @@ def get_input_output_from_model_or_make(model: Callable, **kwargs) -> tuple[Call
     return input_schema, output_schema
 
 
-def deserialize_data(input_schema: type[Schema], response: Response) -> dict[str, Any] | tuple[dict[str, Any], int]:
-    """
-    Utility function to deserialize data using a given Marshmallow schema.
+def deserialise_data(input_schema: type[Schema], response: Response) -> dict[str, Any] | tuple[dict[str, Any], int]:
+    """Deserialise request data using a Marshmallow schema.
+
+    Why/How:
+        Normalises inbound JSON (or XML) against ``input_schema`` and ignores
+        relationship fields that arrive as plain strings (for example URLs) so
+        PATCH operations can submit previous GET payloads without manual
+        sanitisation.
 
     Args:
-        input_schema (Type[Schema]): Marshmallow schema to be used for
-            deserialization.
-        response (Response): The response object containing data to be
-            deserialized.
+        input_schema: Marshmallow schema (class or instance) to validate and
+            deserialise with.
+        response: Flask response proxy providing the request data.
 
     Returns:
-        Union[Dict[str, Any], Tuple[Dict[str, Any], int]]: The deserialized
-            data if successful, or a tuple containing errors and a status code
-            if there's an error. Fields representing relationships are ignored
-            if they are provided as plain strings (e.g., URLs), allowing patch
-            operations to submit full response payloads without manual
-            sanitization.
+        The deserialised data on success, or ``(errors, 400)`` on validation
+        failure.
     """
     try:
         data = request.data.decode() if is_xml() else response.json
@@ -134,26 +169,34 @@ def deserialize_data(input_schema: type[Schema], response: Response) -> dict[str
             input_schema = _prepare_patch_schema(input_schema)
 
         try:
-            deserialized_data = input_schema().load(data=data)
+            deserialised_data = input_schema().load(data=data)
         except TypeError:
-            deserialized_data = input_schema.load(data=data)
+            deserialised_data = input_schema.load(data=data)
 
-        return deserialized_data
+        return deserialised_data
     except ValidationError as err:
         return err.messages, 400
 
 
+# Backwards-compatible alias (US spelling)
+def deserialize_data(input_schema: type[Schema], response: Response) -> dict[str, Any] | tuple[dict[str, Any], int]:
+    return deserialise_data(input_schema, response)
+
+
 def filter_keys(model: type[DeclarativeBase], schema: type[Schema], data_dict_list: list[dict]) -> list[dict]:
-    """
-    Filters keys from the data dictionary based on model attributes and schema fields.
+    """Filter input dictionaries to fields present on the model or schema.
+
+    Why/How:
+        Removes unknown keys before deserialisation to keep inputs aligned with
+        the model’s attributes and declared schema fields.
 
     Args:
-        model (Type[DeclarativeBase]): The SQLAlchemy model class.
-        schema (Type[Schema]): The Marshmallow schema class.
-        data_dict_list (List[Dict]): List of data dictionaries to be filtered.
+        model: The SQLAlchemy model class.
+        schema: The Marshmallow schema class.
+        data_dict_list: List of input dictionaries.
 
     Returns:
-        List[Dict]: The filtered list of data dictionaries.
+        Filtered list of dictionaries.
     """
     model_keys, model_properties = _extract_model_attributes(model)
     schema_fields = set(schema._declared_fields.keys())
@@ -163,28 +206,26 @@ def filter_keys(model: type[DeclarativeBase], schema: type[Schema], data_dict_li
 
 
 def dump_schema_if_exists(schema: Schema, data: dict | DeclarativeBase, is_list: bool = False) -> dict[str, Any] | list[dict[str, Any]]:
-    """
-    Serialize the data using the schema if the data exists.
+    """Serialise data with ``schema`` when present.
 
     Args:
-        schema (Schema): The schema to use for serialization.
-        data (Union[dict, DeclarativeBase]): The data to serialize.
-        is_list (bool): Whether the data is a list.
+        schema: Marshmallow schema instance to use for serialisation.
+        data: Object or dict to serialise.
+        is_list: Set True when ``data`` is a list.
 
     Returns:
-        Union[Dict[str, Any], List[Dict[str, Any]]]: The serialized data.
+        Serialised data, or ``[]``/``None`` when no input is provided.
     """
     return schema.dump(data, many=is_list) if data else ([] if is_list else None)
 
 
 def list_schema_fields(schema: Schema) -> list[str]:
-    """
-    Returns the list of fields in a Marshmallow schema.
+    """Return field names declared on a Marshmallow schema.
 
     Args:
-        schema (Schema): The schema to extract fields from.
+        schema: The schema to inspect.
 
     Returns:
-        List[str]: List of field names.
+        List of field names.
     """
     return list(schema.fields.keys())

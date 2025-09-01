@@ -253,6 +253,25 @@ Routing and Behaviour
           the settings are delegated to it; otherwise a minimal
           ``Access-Control-Allow-Origin`` header is applied based on
           ``CORS_RESOURCES``.
+    * - ``API_ENABLE_WEBSOCKETS``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Enables the optional WebSocket endpoint for real-time event broadcasts.
+          When ``True`` and the optional dependency ``flask_sock`` is installed,
+          a WebSocket route is registered (see ``API_WEBSOCKET_PATH``). If the
+          dependency is missing, the feature is skipped.
+
+    * - ``API_WEBSOCKET_PATH``
+
+          :bdg:`default:` ``/ws``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - URL path exposed by the built-in WebSocket endpoint. Change this to
+          align with your routing scheme, e.g., ``/realtime``.
     * - .. _XML_AS_TEXT:
           ``API_XML_AS_TEXT``
 
@@ -507,6 +526,36 @@ Authentication Settings
           :bdg-secondary:`Optional` 
 
         - Name of the authentication method used, such as ``jwt`` or ``basic``. Determines which auth backend to apply. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - ``API_ROLE_MAP``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``dict | list[str] | str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Config-driven roles for endpoints. Keys may be HTTP methods (``GET``, ``POST``, ``PATCH``, ``DELETE``),
+          ``GET_MANY``/``GET_ONE`` for GET granularity, ``RELATION_GET`` for relation routes, or ``ALL``/``*`` as a fallback.
+          Values can be a list/str of roles (all required) or a dict ``{"roles": [..], "any_of": True}``.
+          Example::
+
+              API_ROLE_MAP = {
+                  "GET": ["viewer"],
+                  "POST": {"roles": ["editor", "admin"], "any_of": True},
+                  "DELETE": ["admin"],
+              }
+    * - ``API_ROLES_REQUIRED``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Simple fallback: list of roles that must all be present on every endpoint for that model.
+    * - ``API_ROLES_ACCEPTED``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Simple fallback: list of roles where any grants access on every endpoint for that model.
     * - .. _CREDENTIAL_HASH_FIELD:
           ``API_CREDENTIAL_HASH_FIELD``
 
@@ -561,6 +610,48 @@ Authentication Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Minutes an access token remains valid before requiring a refresh.
+    * - .. _JWT_ALGORITHM:
+          ``API_JWT_ALGORITHM``
+
+          :bdg:`default:` ``HS256``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Algorithm used to sign and verify JWTs. Common choices are ``HS256``
+          (HMAC with SHA-256) and ``RS256`` (RSA with SHA-256). Must match the
+          algorithm used by your tokens.
+    * - .. _JWT_ALLOWED_ALGORITHMS:
+          ``API_JWT_ALLOWED_ALGORITHMS``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str | list[str]``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Allow-list of acceptable algorithms during verification. Accepts a comma-separated string or a Python list. Defaults to the single configured algorithm.
+    * - .. _JWT_LEEWAY:
+          ``API_JWT_LEEWAY``
+
+          :bdg:`default:` ``0``
+          :bdg:`type` ``int``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Number of seconds allowed for clock skew when validating ``exp``/``iat``.
+    * - .. _JWT_ISSUER:
+          ``API_JWT_ISSUER``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Issuer claim to embed and enforce when decoding tokens.
+    * - .. _JWT_AUDIENCE:
+          ``API_JWT_AUDIENCE``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Audience claim to embed and enforce when decoding tokens.
     * - .. _JWT_REFRESH_EXPIRY_TIME:
           ``API_JWT_REFRESH_EXPIRY_TIME``
 
@@ -569,6 +660,55 @@ Authentication Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Minutes a refresh token stays valid. Defaults to two days (``2880`` minutes).
+
+    * - .. _ACCESS_SECRET_KEY:
+          ``ACCESS_SECRET_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for HS*` :bdg-dark-line:`Global`
+
+        - Secret used to sign and verify access tokens for HMAC algorithms (e.g. ``HS256``).
+    * - .. _REFRESH_SECRET_KEY:
+          ``REFRESH_SECRET_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for HS*` :bdg-dark-line:`Global`
+
+        - Secret used to sign and verify refresh tokens for HMAC algorithms.
+    * - .. _ACCESS_PRIVATE_KEY:
+          ``ACCESS_PRIVATE_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for RS*` :bdg-dark-line:`Global`
+
+        - PEM-encoded private key for signing access tokens when using RSA (e.g. ``RS256``).
+    * - .. _ACCESS_PUBLIC_KEY:
+          ``ACCESS_PUBLIC_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for RS*` :bdg-dark-line:`Global`
+
+        - PEM-encoded public key for verifying access tokens when using RSA.
+    * - .. _REFRESH_PRIVATE_KEY:
+          ``REFRESH_PRIVATE_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for RS*` :bdg-dark-line:`Global`
+
+        - PEM-encoded private key for signing refresh tokens when using RSA.
+    * - .. _REFRESH_PUBLIC_KEY:
+          ``REFRESH_PUBLIC_KEY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Required for RS*` :bdg-dark-line:`Global`
+
+        - PEM-encoded public key for verifying refresh tokens when using RSA.
 
 Callback Hooks
 ~~~~~~~~~~~~~~
@@ -709,6 +849,14 @@ Response Metadata
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Includes the total number of available records in list responses, aiding pagination UX.
+    * - .. _DUMP_REQUEST_ID:
+          ``API_DUMP_REQUEST_ID``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Includes the per-request correlation ID in the JSON response body. The header ``X-Request-ID`` is always present.
     * - .. _DUMP_NULL_NEXT_URL:
           ``API_DUMP_NULL_NEXT_URL``
 
@@ -912,4 +1060,3 @@ Endpoint Summaries
         - Sets the summary for ``PATCH`` endpoints used in the OpenAPI docs.
           Example: ``patch_summary = "Update selected fields of a book"``.
           Provides readers with a concise explanation of partial updates.
-

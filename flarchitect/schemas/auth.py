@@ -44,7 +44,7 @@ class LoginSchema(Schema):
 
 
 class TokenSchema(Schema):
-    """Serializes access and refresh tokens with the user primary key."""
+    """Serialises access and refresh tokens with the user primary key."""
 
     access_token = fields.String(required=True)
     refresh_token = fields.String(required=True)

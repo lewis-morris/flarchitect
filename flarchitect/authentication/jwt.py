@@ -1,5 +1,6 @@
 import datetime
 import os
+from collections.abc import Sequence
 from typing import Any
 
 import jwt
@@ -30,6 +31,86 @@ def get_jwt_algorithm() -> str:
     return get_config_or_model_meta("API_JWT_ALGORITHM", default="HS256")
 
 
+def get_allowed_algorithms() -> list[str]:
+    """Allowed algorithms list for verification.
+
+    Returns:
+        list[str]: Algorithms permitted when decoding tokens. Defaults to the
+        single configured algorithm if an explicit allow-list is not provided.
+    """
+
+    configured = get_config_or_model_meta("API_JWT_ALLOWED_ALGORITHMS", default=None)
+    if configured:
+        # Accept list/tuple or comma-separated string
+        if isinstance(configured, list | tuple | set):
+            return [str(a) for a in configured]
+        return [s.strip() for s in str(configured).split(",") if s.strip()]
+    return [get_jwt_algorithm()]
+
+
+def _is_rs_alg(alg: str) -> bool:
+    return alg.upper().startswith("RS")
+
+
+def _get_access_signing_key(algorithm: str) -> str:
+    if _is_rs_alg(algorithm):
+        key = os.environ.get("ACCESS_PRIVATE_KEY") or current_app.config.get("ACCESS_PRIVATE_KEY")
+        if key is None:
+            # Fall back for compatibility in case private/public not set but single key provided
+            key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+        if key is None:
+            raise CustomHTTPException(status_code=500, reason="ACCESS_PRIVATE_KEY missing")
+        return key
+    # HS* symmetric
+    key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+    if key is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
+    return key
+
+
+def _get_access_verifying_key(algorithm: str) -> str:
+    if _is_rs_alg(algorithm):
+        key = os.environ.get("ACCESS_PUBLIC_KEY") or current_app.config.get("ACCESS_PUBLIC_KEY")
+        if key is None:
+            # Allow fallback to ACCESS_SECRET_KEY to ease migration if a single key is provided
+            key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+        if key is None:
+            raise CustomHTTPException(status_code=500, reason="ACCESS_PUBLIC_KEY missing")
+        return key
+    key = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
+    if key is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
+    return key
+
+
+def _get_refresh_signing_key(algorithm: str) -> str:
+    if _is_rs_alg(algorithm):
+        key = os.environ.get("REFRESH_PRIVATE_KEY") or current_app.config.get("REFRESH_PRIVATE_KEY")
+        if key is None:
+            key = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+        if key is None:
+            raise CustomHTTPException(status_code=500, reason="REFRESH_PRIVATE_KEY missing")
+        return key
+    key = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+    if key is None:
+        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
+    return key
+
+
+def _get_refresh_verifying_key(algorithm: str) -> str:
+    if _is_rs_alg(algorithm):
+        key = os.environ.get("REFRESH_PUBLIC_KEY") or current_app.config.get("REFRESH_PUBLIC_KEY")
+        if key is None:
+            key = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+        if key is None:
+            raise CustomHTTPException(status_code=500, reason="REFRESH_PUBLIC_KEY missing")
+        return key
+    key = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
+    if key is None:
+        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
+    return key
+
+
 def create_jwt(
     payload: dict[str, Any],
     secret_key: str,
@@ -50,11 +131,18 @@ def create_jwt(
     """
 
     now = datetime.datetime.now(datetime.timezone.utc)
+    # Optional claims from config
+    issuer = get_config_or_model_meta("API_JWT_ISSUER", default=None)
+    audience = get_config_or_model_meta("API_JWT_AUDIENCE", default=None)
     payload = {
         **payload,
         "exp": now + datetime.timedelta(minutes=exp_minutes),
         "iat": now,
     }
+    if issuer:
+        payload["iss"] = issuer
+    if audience:
+        payload["aud"] = audience
     token = jwt.encode(payload, secret_key, algorithm=algorithm)
     return token, payload
 
@@ -97,11 +185,8 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     pk, lookup_field = get_pk_and_lookups()
     exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_EXPIRY_TIME", default=360)
 
-    ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY") or current_app.config.get("ACCESS_SECRET_KEY")
-    if ACCESS_SECRET_KEY is None:
-        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
-
     algorithm = get_jwt_algorithm()
+    ACCESS_SECRET_KEY = _get_access_signing_key(algorithm)
 
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
@@ -130,10 +215,6 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
         CustomHTTPException: If the refresh secret key is not configured.
     """
 
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
-    if REFRESH_SECRET_KEY is None:
-        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
-
     pk, lookup_field = get_pk_and_lookups()
     exp_minutes = expires_in_minutes or get_config_or_model_meta("API_JWT_REFRESH_EXPIRY_TIME", default=2880)
 
@@ -145,6 +226,7 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
     }
 
     algorithm = get_jwt_algorithm()
+    REFRESH_SECRET_KEY = _get_refresh_signing_key(algorithm)
     token, payload = create_jwt(payload, REFRESH_SECRET_KEY, exp_minutes, algorithm)
 
     store_refresh_token(
@@ -157,14 +239,22 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
     return token
 
 
-def decode_token(token: str, secret_key: str, algorithm: str | None = None) -> dict[str, Any]:
+def decode_token(
+    token: str,
+    secret_key: str,
+    algorithm: str | None = None,
+    *,
+    allowed_algorithms: Sequence[str] | None = None,
+) -> dict[str, Any]:
     """Decode a JWT and return its payload.
 
     Args:
         token: The encoded JWT.
         secret_key: The secret key used to decode the token.
-        algorithm: Optional JWT algorithm to use for decoding. Defaults to the
+        algorithm: Optional JWT algorithm hint. When not provided, uses the
             configured algorithm.
+        allowed_algorithms: Optional explicit list of allowed algorithms for
+            verification. Defaults to configured allow-list.
 
     Returns:
         dict[str, Any]: The decoded token payload.
@@ -174,12 +264,28 @@ def decode_token(token: str, secret_key: str, algorithm: str | None = None) -> d
     """
 
     algorithm = algorithm or get_jwt_algorithm()
+    allowed = list(allowed_algorithms or get_allowed_algorithms())
+    # Leeway and validation params
+    leeway = get_config_or_model_meta("API_JWT_LEEWAY", default=0)
+    issuer = get_config_or_model_meta("API_JWT_ISSUER", default=None)
+    audience = get_config_or_model_meta("API_JWT_AUDIENCE", default=None)
 
     try:
-        payload = jwt.decode(token, secret_key, algorithms=[algorithm])
+        payload = jwt.decode(
+            token,
+            secret_key,
+            algorithms=allowed,
+            leeway=leeway,
+            issuer=issuer if issuer else None,
+            audience=audience if audience else None,
+        )
         return payload
     except jwt.ExpiredSignatureError as exc:
         raise CustomHTTPException(status_code=401, reason="Token has expired") from exc
+    except jwt.InvalidIssuerError as exc:
+        raise CustomHTTPException(status_code=401, reason="Invalid token") from exc
+    except jwt.InvalidAudienceError as exc:
+        raise CustomHTTPException(status_code=401, reason="Invalid token") from exc
     except jwt.InvalidTokenError as exc:
         raise CustomHTTPException(status_code=401, reason="Invalid token") from exc
 
@@ -199,15 +305,21 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
         invalid or expired, or the user cannot be found.
     """
     # Verify refresh token
-    REFRESH_SECRET_KEY = os.environ.get("REFRESH_SECRET_KEY") or current_app.config.get("REFRESH_SECRET_KEY")
-    if REFRESH_SECRET_KEY is None:
-        raise CustomHTTPException(status_code=500, reason="REFRESH_SECRET_KEY missing")
+    algorithm = get_jwt_algorithm()
+    REFRESH_SECRET_KEY = _get_refresh_verifying_key(algorithm)
 
     try:
         decode_token(refresh_token, REFRESH_SECRET_KEY)
     except CustomHTTPException as exc:
         if exc.reason == "Token has expired":
-            delete_refresh_token(refresh_token)
+            # Expired tokens are invalid; keep row for audit but ensure not usable
+            try:
+                from flarchitect.authentication.token_store import revoke_refresh_token
+
+                revoke_refresh_token(refresh_token)
+            except Exception:
+                # Best-effort; if token store is unavailable, proceed with error
+                pass
         raise
 
     stored_token = get_refresh_token(refresh_token)
@@ -246,7 +358,15 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     # Generate new access token
     new_access_token = generate_access_token(user)
 
-    delete_refresh_token(refresh_token)
+    # Mark the refresh token as used and revoked (single-use semantics)
+    try:
+        from flarchitect.authentication.token_store import mark_refresh_token_used, revoke_refresh_token
+
+        mark_refresh_token_used(refresh_token)
+        revoke_refresh_token(refresh_token)
+    except Exception:
+        # Best-effort auditing; do not block token refresh on audit storage
+        pass
 
     return new_access_token, user
 
@@ -278,6 +398,11 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         or current_app.config.get("ACCESS_SECRET_KEY")
     )
     # fmt: on
+    if access_secret_key is None:
+        # If using RS*, fall back to public key config
+        alg = get_jwt_algorithm()
+        if _is_rs_alg(alg):
+            access_secret_key = os.environ.get("ACCESS_PUBLIC_KEY") or current_app.config.get("ACCESS_PUBLIC_KEY")
     if access_secret_key is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
 

@@ -1,6 +1,6 @@
 from typing import Any
 
-from flask import current_app, has_app_context, request
+from flask import current_app, g, has_app_context, has_request_context, request
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase
 
@@ -59,7 +59,11 @@ def get_config_or_model_meta(
         return None
 
     def search_in_flask_config(keys: list[str]) -> Any | None:
-        app = current_app
+        try:
+            app = current_app
+        except Exception:
+            # Outside of an application context; cannot read config here
+            return None
 
         def _lookup() -> Any | None:
             for key in keys:
@@ -89,15 +93,39 @@ def get_config_or_model_meta(
     ]
     keys_for_config = method_based_keys + [normalized_key]
 
-    sources_checks = [
-        ("model", search_in_sources(sources, keys_for_sources)),
-        ("config", search_in_flask_config(keys_for_config)),
-        ("default", default),
-    ]
+    # Request-local memoization cache (only caches positive lookups)
+    cache_key: tuple = (
+        normalized_key,
+        getattr(model, "__name__", None) if model is not None else None,
+        getattr(type(output_schema), "__name__", None) if output_schema is not None else None,
+        getattr(type(input_schema), "__name__", None) if input_schema is not None else None,
+        bool(allow_join),
+        method.lower() if isinstance(method, str) else str(method),
+        bool(return_from_config),
+    )
 
-    for from_ob, result in sources_checks:
-        if result is not None and result != [] and result != {}:  # This checks both for None and empty list
-            return (result, from_ob) if return_from_config else result
+    if has_request_context():
+        cache = getattr(g, "_flarch_cfg_cache", None)
+        if cache is None:
+            cache = {}
+            g._flarch_cfg_cache = cache
+        if cache_key in cache:
+            return cache[cache_key]
+
+    # Perform lookups
+    model_result = search_in_sources(sources, keys_for_sources)
+    if model_result is not None and model_result != [] and model_result != {}:
+        out = (model_result, "model") if return_from_config else model_result
+        if has_request_context():
+            g._flarch_cfg_cache[cache_key] = out
+        return out
+
+    cfg_result = search_in_flask_config(keys_for_config)
+    if cfg_result is not None and cfg_result != [] and cfg_result != {}:
+        out = (cfg_result, "config") if return_from_config else cfg_result
+        if has_request_context():
+            g._flarch_cfg_cache[cache_key] = out
+        return out
 
     return (default, "default") if return_from_config else default
 

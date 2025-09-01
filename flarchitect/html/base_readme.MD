@@ -67,7 +67,7 @@ Common Error Codes:
 
 ## API Key Authentication
 
-To secure access and ensure only authorized users can make requests, our API implements API Key Authentication. When
+To secure access and ensure only authorised users can make requests, our API implements API Key Authentication. When
 making requests to protected endpoints, include your API key in the request header:
 
 - Authorization: ApiKey {your_api_key_here}

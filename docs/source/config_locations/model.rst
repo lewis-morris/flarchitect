@@ -1,7 +1,7 @@
 Config Models
 ==============================
 
-    Global < Global Method < **Model** < Model Method
+    Global < **Model** < Model Method
 
 
 :bdg-dark-line:`Model`
@@ -13,7 +13,7 @@ These values are defined as Meta class attributes in your `SQLAlchemy`_ models.
 
 Values defined here apply per model and can only be overridden by :bdg-dark-line:`Model Method` configuration values.
 
-Overrides :bdg-dark-line:`Global`, :bdg-dark-line:`Global Method`
+Overrides :bdg-dark-line:`Global`
 
 Example
 --------------
@@ -32,4 +32,4 @@ Example
             # a description of this model applied to all endpoints for this model
             description = "Models an author of a book"
             # the rate limit across all HTTP methods for this model
-            rate_limit = "10 per minute"
+            rate_limit = "10 per minute"  # see :ref:`RATE_LIMIT <RATE_LIMIT>`

@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## Unreleased
+
+### Features
+
+- Performance: request-local caching for configuration/meta lookups.
+- Performance: memoization of dynamic schema class creation and subclass lookups.
+- Observability: correlation IDs added to every response via `X-Request-ID`.
+  - New: optional `request_id` in JSON body via `API_DUMP_REQUEST_ID` (disabled by default).
+- Observability: optional structured JSON logging (`API_JSON_LOGS=True`) with request context and latency.
+
+### Bug Fixes
+
+<!-- Replace the placeholders below with concrete entries -->
+- TBD: first bug fix summary.
+- TBD: second bug fix summary.
+- TBD: third bug fix summary.
+
 ## v1.1.0 (2025-08-14)
 
 ### Bug Fixes

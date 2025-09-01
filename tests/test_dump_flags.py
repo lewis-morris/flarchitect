@@ -31,3 +31,27 @@ def test_disable_total_count():
     resp = client.get("/api/books/1").json
     assert "total_count" not in resp
     assert "response_ms" in resp
+
+
+def test_request_id_not_in_body_by_default():
+    """By default, request_id is only returned via header, not body."""
+    app = create_app({})
+    client = app.test_client()
+    r = client.get("/api/books/1")
+    body = r.get_json()
+    assert "request_id" not in body
+    # But header should be present
+    assert r.headers.get("X-Request-ID")
+
+
+def test_request_id_in_body_when_enabled():
+    """request_id appears in body when API_DUMP_REQUEST_ID=True."""
+    app = create_app({"API_DUMP_REQUEST_ID": True})
+    client = app.test_client()
+    r = client.get("/api/books/1")
+    body = r.get_json()
+    rid_header = r.headers.get("X-Request-ID")
+    assert "request_id" in body
+    assert isinstance(body["request_id"], str)
+    # Value should match header correlation id
+    assert body["request_id"] == rid_header

@@ -45,13 +45,15 @@ from flarchitect.utils.core_utils import convert_case
 
 
 class EnumField(fields.Field):
-    """Custom field to handle Enum serialization and deserialization by their keys."""
+    """Custom field to handle Enum serialisation and deserialisation by key."""
 
     def __init__(self, enum, by_value=False, **kwargs):
-        """
-        :param enum: The Enum class to use.
-        :param by_value: If True, serialize/deserialize using Enum values instead of keys.
-        :param kwargs: Additional keyword arguments.
+        """Initialise the field.
+
+        Args:
+            enum: The Enum class to use.
+            by_value: If True, serialise/deserialise using Enum values instead of keys.
+            **kwargs: Additional keyword arguments.
         """
         self.enum = enum
         self.by_value = by_value
@@ -133,7 +135,12 @@ class AutoSchema(Base):
         include_children = True
 
     def __init__(self, *args, render_nested=True, **kwargs):
-        """Initialize the AutoSchema instance."""
+        """Initialise the ``AutoSchema`` instance.
+
+        Why/How:
+            Configures field generation against the bound model, sets case
+            conversion preferences and prepares context for nested rendering.
+        """
         self.render_nested = render_nested
         self.depth = kwargs.pop("depth", 0)
         only_fields = kwargs.pop("only", None)
@@ -190,10 +197,12 @@ class AutoSchema(Base):
         mapper = class_mapper(self.model)
         for attribute, mapper_property in mapper.all_orm_descriptors.items():
             original_attribute = attribute
-            attribute = self._convert_case(attribute)
-
-            if self._should_skip_attribute(attribute):
+            # Determine if we should skip based on the original attribute
+            if self._should_skip_attribute(original_attribute):
                 continue
+
+            # Convert case, preserving leading underscore when configured to show them
+            attribute = self._convert_case(original_attribute)
 
             # Access the actual property from the InstrumentedAttribute
             prop = getattr(mapper_property, "property", None)
@@ -213,12 +222,25 @@ class AutoSchema(Base):
         # print("Load fields:", self.load_fields)  # Should match self.fields
 
     def _convert_case(self, attribute: str) -> str:
-        """Convert the attribute name to the appropriate case."""
-        field_case = get_config_or_model_meta("API_FIELD_CASE", model=self.model, default="snake_case")
-        return convert_case(attribute, field_case)
+        """Convert the attribute name to the appropriate case.
+
+        Preserves a leading underscore when ``API_IGNORE_UNDERSCORE_ATTRIBUTES``
+        is ``False`` so that hidden fields remain visibly prefixed in outputs.
+        """
+        field_case = get_config_or_model_meta("API_FIELD_CASE", model=self.model, default="snake")
+        has_leading_underscore = attribute.startswith("_")
+        # Convert without the leading underscore to get correct casing
+        base = attribute.lstrip("_") if has_leading_underscore else attribute
+        converted = convert_case(base, field_case)
+        if has_leading_underscore and not get_config_or_model_meta("API_IGNORE_UNDERSCORE_ATTRIBUTES", model=self.model, default=True):
+            return f"_{converted}"
+        return converted
 
     def _should_skip_attribute(self, attribute: str) -> bool:
-        """Determine if the attribute should be skipped."""
+        """Determine if the attribute should be skipped.
+
+        Uses the original attribute name to detect a leading underscore.
+        """
         return attribute.startswith("_") and get_config_or_model_meta("API_IGNORE_UNDERSCORE_ATTRIBUTES", model=self.model, default=True)
 
     def _handle_relationship(

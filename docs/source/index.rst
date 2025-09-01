@@ -17,8 +17,12 @@ flarchitect
 
    models
    authentication
+   auth_cookbook
    validation
    extensions
+   plugins
+   websockets
+   manual_routes
    openapi
    graphql
    error_handling
@@ -92,4 +96,3 @@ Need finer control? The :doc:`Advanced Configuration <advanced_configuration>` g
 Want to see **flarchitect** in action? Define your models, plug the library into your `Flask`_ app, and you'll get CRUD endpoints, schemas, and interactive docs instantly. The :doc:`Quick Start <quickstart>` walks through a complete example.
 
 `View Demos <https://github.com/lewis-morris/flarchitect/tree/master/demo>`__
-

@@ -40,7 +40,7 @@ def schema_name_resolver(schema: Schema) -> str:
 
     schema_cls = schema if isinstance(schema, type) else schema.__class__
     model = getattr(getattr(schema_cls, "Meta", None), "model", None)
-    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
+    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel") or "camel"
     return convert_case(schema_cls.__name__.replace("Schema", ""), case)
 
 
@@ -268,7 +268,7 @@ def _add_response_to_spec_template(spec_template: dict[str, Any], output_schema:
 
     Args:
         spec_template (Dict[str, Any]): The OpenAPI specification template to enhance.
-        output_schema (Schema): The Marshmallow schema for response data serialization.
+        output_schema (Schema): The Marshmallow schema for response data serialisation.
 
     Returns:
         None
@@ -810,6 +810,26 @@ def initialize_spec_template(
     return {"responses": responses, "parameters": []}
 
 
+def initialise_spec_template(
+    method: str,
+    many: bool = False,
+    rate_limit: bool = False,
+    error_responses: list[int] | None = None,
+    links: dict[int, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """UK spelling wrapper for ``initialize_spec_template``.
+
+    Mirrors arguments and behaviour; provided for naming consistency.
+    """
+    return initialize_spec_template(
+        method,
+        many=many,
+        rate_limit=rate_limit,
+        error_responses=error_responses,
+        links=links,
+    )
+
+
 def append_parameters(
     spec_template: dict[str, Any],
     query_params: list[dict[str, Any]],
@@ -828,7 +848,7 @@ def append_parameters(
         path_params (List[Dict[str, Any]]): A list of dictionaries defining path parameters.
         http_method (str): The HTTP method (GET, POST, PUT, DELETE, PATCH).
         input_schema (Optional[Schema]): The Marshmallow schema for request body validation.
-        output_schema (Optional[Schema]): The Marshmallow schema for response data serialization.
+        output_schema (Optional[Schema]): The Marshmallow schema for response data serialisation.
         model (Optional[DeclarativeBase]): The SQLAlchemy model for database interactions.
         many (bool): Whether the endpoint returns multiple items.
 
@@ -1015,6 +1035,11 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
         spec_template["responses"]["401"]["description"] += f" {roles_label}: {roles_desc}."
 
 
+def handle_authorisation(f: Callable, spec_template: dict[str, Any]):
+    """UK spelling wrapper for ``handle_authorization``."""
+    return handle_authorization(f, spec_template)
+
+
 def get_openapi_meta_data(field_obj: fields.Field) -> dict[str, Any]:
     """Convert a Marshmallow field to an OpenAPI type.
 
@@ -1083,7 +1108,7 @@ def get_related_schema_name(field_obj: fields.Field, field_type: type) -> str | 
     else:
         return None
 
-    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel")
+    case = get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel") or "camel"
     return convert_case(name.replace("Schema", ""), case)
 
 
@@ -1274,7 +1299,7 @@ def endpoint_namer(
 
     # Read directly from Flask config to avoid cross-test bleed-through from
     # model metadata on plain classes. Defaults to kebab-case for endpoints.
-    case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab")
+    case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
     converted_name = convert_case(model_obj.__name__, case)
     pluralized_name = pluralize_last_word(converted_name)
     return convert_case(pluralized_name, case)

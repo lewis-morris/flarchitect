@@ -11,25 +11,27 @@ from werkzeug.exceptions import HTTPException
 
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.exceptions import _handle_exception as _handle_exception
-from flarchitect.schemas.utils import deserialize_data
+from flarchitect.schemas.utils import deserialise_data
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR
 from flarchitect.utils.response_helpers import create_response
-from flarchitect.utils.responses import serialize_output_with_mallow
+from flarchitect.utils.responses import serialise_output_with_mallow
 
 if TYPE_CHECKING:  # pragma: no cover - used only for type checking
     from flarchitect.schemas.bases import AutoSchema
 
 
 def add_dict_to_query(f: Callable) -> Callable:
-    """Decorator that adds a dictionary to the query result.
+    """Add a ``dictionary`` key to outputs containing SQLAlchemy row objects.
 
-    This is used when the result is an SQLAlchemy result
-    object and not an ORM model, typically in custom queries.
+    Why/How:
+        Custom queries often return Core row objects rather than ORM models.
+        This wrapper converts those rows to plain dictionaries under
+        ``output["dictionary"]`` to make serialisation and testing easier.
 
     Returns:
-        Callable: Decorated function with additional dictionary in the result.
+        Decorated function that augments the result payload when applicable.
     """
 
     @wraps(f)
@@ -49,13 +51,18 @@ def add_dict_to_query(f: Callable) -> Callable:
 
 
 def add_page_totals_and_urls(f: Callable) -> Callable:
-    """Decorator that adds pagination information (totals and URLs) to the query result.
+    """Attach pagination totals and navigation URLs to a result payload.
+
+    Why/How:
+        Uses the current request URL and the returned ``page``, ``limit`` and
+        ``total_count`` values to calculate ``next_url``, ``previous_url``,
+        ``current_page`` and ``total_pages``.
 
     Args:
-        f (Callable): Function to decorate.
+        f: Function to decorate.
 
     Returns:
-        Callable: Decorated function with pagination information added.
+        Decorated function with pagination keys added when possible.
     """
 
     @wraps(f)
@@ -97,17 +104,17 @@ def add_page_totals_and_urls(f: Callable) -> Callable:
 
 
 def _construct_url(parsed_url, query_params, page, total_count, limit):
-    """Helper function to construct next and previous URLs for pagination.
+    """Construct a pagination URL for a specific page if within bounds.
 
     Args:
-        parsed_url: Parsed URL.
-        query_params: Query parameters to encode.
-        page: The current page number.
+        parsed_url: Parsed URL tuple from :func:`urllib.parse.urlparse`.
+        query_params: Mapping of query parameters to encode.
+        page: Target page number.
         total_count: Total number of items.
-        limit: Number of items per page.
+        limit: Items per page.
 
     Returns:
-        str: Constructed URL.
+        The constructed URL string or ``None`` if out of range.
     """
     if 0 < page <= total_count // limit:
         query_params["page"] = [str(page)]
@@ -116,29 +123,32 @@ def _construct_url(parsed_url, query_params, page, total_count, limit):
 
 
 def handle_many(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
-    """
-    A decorator to handle multiple records from a route.
+    """Serialise a list response and optionally deserialise input.
+
+    Why/How:
+        Wraps a route that returns multiple items, applying the supplied
+        Marshmallow schema for output and, if provided, validating input via
+        ``input_schema``.
 
     Args:
-        output_schema (Schema): The Marshmallow schema to serialize the output.
+        output_schema: Marshmallow schema class used to serialise the output.
+        input_schema: Optional schema to deserialise request data.
 
     Returns:
-        Callable: The decorated function.
+        The decorated function.
     """
     return _handle_decorator(output_schema, input_schema, many=True)
 
 
 def handle_one(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
-    """
-    A decorator to handle a single record from a route.
+    """Serialise a single-item response and optionally deserialise input.
 
     Args:
-        output_schema (Schema): The Marshmallow schema to serialize the output.
-        input_schema (Schema, optional):
-            The Marshmallow schema to validate and deserialize input.
+        output_schema: Marshmallow schema class used to serialise the output.
+        input_schema: Optional schema to deserialise request data.
 
     Returns:
-        Callable: The decorated function.
+        The decorated function.
     """
     return _handle_decorator(output_schema, input_schema, many=False)
 
@@ -148,28 +158,24 @@ def _handle_decorator(
     input_schema: type[AutoSchema] | None,
     many: bool,
 ) -> Callable:
-    """
-    A base decorator to handle input and output using Marshmallow schemas.
+    """Base decorator to handle input and output using Marshmallow schemas.
 
     Args:
-        output_schema (Schema):
-            The Marshmallow schema to serialize output.
-        input_schema (Schema, optional):
-            The Marshmallow schema to validate and deserialize input.
-        many (bool):
-            Indicates whether the operation involves multiple records.
+        output_schema: Schema used to serialise output.
+        input_schema: Schema used to deserialise input.
+        many: Whether the route returns multiple records.
 
     Returns:
-        Callable: The decorated function.
+        The decorated function.
     """
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        @standardize_response
+        @standardise_response
         @fields(output_schema, many=many)
         def wrapper(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
             if input_schema:
-                data_or_error = deserialize_data(input_schema, request)
+                data_or_error = deserialise_data(input_schema, request)
                 if isinstance(data_or_error, tuple):  # Error occurred during deserialization
                     case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
                     error = {convert_case(k, case): v for k, v in data_or_error[0].items()}
@@ -180,21 +186,27 @@ def _handle_decorator(
             new_output_schema: type[AutoSchema] | None = kwargs.pop("schema", None)
             result = func(*args, **kwargs)
 
-            return serialize_output_with_mallow(new_output_schema, result) if new_output_schema else result
+            return serialise_output_with_mallow(new_output_schema, result) if new_output_schema else result
 
         return wrapper
 
     return decorator
 
 
-def standardize_response(func: Callable) -> Callable:
-    """Standardise API responses and invoke error callbacks when needed.
+def standardise_response(func: Callable) -> Callable:
+    """Standardise API responses and trigger error callbacks consistently.
+
+    Why/How:
+        Ensures responses follow a uniform envelope via
+        :func:`flarchitect.utils.response_helpers.create_response`, catches
+        common exceptions and routes them through a central handler, then calls
+        any configured error callback.
 
     Args:
         func: The route handler to wrap.
 
     Returns:
-        Callable: A wrapper that returns a :class:`~flask.Response`.
+        A wrapper that returns a :class:`flask.Response`.
     """
 
     @wraps(func)
@@ -253,18 +265,25 @@ def standardize_response(func: Callable) -> Callable:
     return decorated_function
 
 
+# Backwards-compatible alias (US spelling)
+def standardize_response(func: Callable) -> Callable:  # pragma: no cover - shim
+    return standardise_response(func)
+
+
 def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
-    """
-    A decorator to specify which fields to return in the response.
+    """Control which fields are serialised on the response.
+
+    Why/How:
+        Reads an optional ``fields`` query parameter and re‑instantiates the
+        output schema with ``only`` to reduce payload size. Falls back to the
+        full schema when the parameter is absent.
 
     Args:
-        model_schema (Type["AutoSchema"]):
-            The Marshmallow schema to serialize the output.
-        many (bool):
-            Indicates whether the operation involves multiple records.
+        model_schema: Marshmallow schema class for the response.
+        many: Whether the endpoint returns a collection.
 
     Returns:
-        Callable: The decorated function.
+        The decorated function.
     """
 
     def decorator(func: Callable) -> Callable:

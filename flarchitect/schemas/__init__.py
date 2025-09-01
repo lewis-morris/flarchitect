@@ -1,4 +1,4 @@
-"""Marshmallow schemas and utilities for serialization and validation."""
+"""Marshmallow schemas and utilities for serialisation and validation."""
 
 from .auth import LoginSchema, RefreshSchema, TokenSchema
 from .bases import AutoSchema, Base, DeleteSchema

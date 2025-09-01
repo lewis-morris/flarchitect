@@ -20,12 +20,14 @@ from flarchitect.authentication.jwt import (
     get_pk_and_lookups,
     refresh_access_token,
 )
+from flarchitect.authentication.token_store import rotate_refresh_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.utils import get_primary_key_info, get_url_pk
 from flarchitect.database.operations import CrudService
 from flarchitect.database.utils import get_models_relationships, get_primary_keys
 from flarchitect.exceptions import CustomHTTPException, handle_http_exception
 from flarchitect.logging import logger
+from flarchitect.plugins import PluginManager
 from flarchitect.schemas.auth import LoginSchema, RefreshSchema, TokenSchema
 from flarchitect.schemas.utils import get_input_output_from_model_or_make
 from flarchitect.specs.utils import (
@@ -38,7 +40,7 @@ from flarchitect.specs.utils import (
 )
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import convert_case
-from flarchitect.utils.general import AttributeInitializerMixin
+from flarchitect.utils.general import AttributeInitialiserMixin
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.session import get_session
 
@@ -109,6 +111,8 @@ def _route_function_factory(
     get_field: str | None,
     join_model: type[DeclarativeBase] | None,
     output_schema: Schema | None,
+    http_method: str = "GET",
+    plugins: PluginManager | None = None,
 ) -> Callable:
     """Construct the route function tying together hooks and action.
 
@@ -121,21 +125,37 @@ def _route_function_factory(
         post_hook (Callable | None): Post-hook.
         get_field (str | None): Field used for lookups.
         join_model (type[DeclarativeBase] | None): Related model for joins.
-        output_schema (Schema | None): Schema used for output serialization.
+        output_schema (Schema | None): Schema used for output serialisation.
 
     Returns:
         Callable: Configured Flask route function.
     """
 
     def route_function(id: int | None = None, **hook_kwargs: Any) -> Any:
+        # Plugin pre-hook
+        if plugins:
+            ctx = {
+                "model": service.model,
+                "method": http_method,
+                "many": many,
+                "id": id,
+                "field": get_field,
+                "join_model": join_model,
+                "output_schema": output_schema,
+            }
+            upd = plugins.before_model_op(ctx | hook_kwargs)
+            if isinstance(upd, dict):
+                hook_kwargs.update(upd)
+
+        pre_kwargs = dict(hook_kwargs)
+        pre_kwargs.setdefault("id", id)
+        pre_kwargs.setdefault("field", get_field)
+        pre_kwargs.setdefault("join_model", join_model)
+        pre_kwargs.setdefault("output_schema", output_schema)
         hook_kwargs = _global_pre_process(
             service,
             global_pre_hook,
-            id=id,
-            field=get_field,
-            join_model=join_model,
-            output_schema=output_schema,
-            **hook_kwargs,
+            **pre_kwargs,
         )
         hook_kwargs = _pre_process(service, pre_hook, **hook_kwargs)
         action_kwargs: dict[str, Any] = {"lookup_val": id} if id else {}
@@ -147,7 +167,39 @@ def _route_function_factory(
         action_kwargs["model"] = hook_kwargs.get("model")
 
         output = action(**action_kwargs) or abort(404)
-        return _post_process(service, post_hook, output, **hook_kwargs)
+        final_output = _post_process(service, post_hook, output, **hook_kwargs)
+
+        # Plugin post-hook
+        if plugins:
+            ctx_after = {
+                "model": hook_kwargs.get("model", service.model),
+                "method": http_method,
+                "many": many,
+                "id": id,
+                "field": get_field,
+                "join_model": join_model,
+                "output_schema": output_schema,
+            }
+            maybe = plugins.after_model_op(ctx_after | hook_kwargs, final_output)
+            if maybe is not None:
+                final_output = maybe
+
+        # Attempt to broadcast change events to WS subscribers
+        try:
+            from flarchitect.core.websockets import broadcast_change
+
+            broadcast_change(
+                model=hook_kwargs.get("model", service.model),
+                method=http_method,
+                payload=final_output,
+                id=id,
+                many=many,
+            )
+        except Exception:
+            # best-effort; broadcasting should never break the response
+            pass
+
+        return final_output
 
     return route_function
 
@@ -283,10 +335,12 @@ def create_route_function(
         get_field,
         join_model,
         kwargs.get("output_schema"),
+        method,
+        plugins=kwargs.get("plugins"),
     )
 
 
-class RouteCreator(AttributeInitializerMixin):
+class RouteCreator(AttributeInitialiserMixin):
     """Automatically construct API routes for configured models.
 
     RouteCreator inspects SQLAlchemy models and their associated schemas to
@@ -299,7 +353,7 @@ class RouteCreator(AttributeInitializerMixin):
         architect: Parent Architect supplying the Flask application.
         api_full_auto: Enables automatic route generation during initialisation.
         api_base_model: Base model or models used to discover resources.
-        api_base_schema: Default schema used for serialization.
+        api_base_schema: Default schema used for serialisation.
         db_service: CRUD service class used for database interactions.
         session: SQLAlchemy session or sessions bound to the models.
         blueprint: Flask blueprint where generated routes are registered.
@@ -457,6 +511,83 @@ class RouteCreator(AttributeInitializerMixin):
                         4,
                         f"Skipping model |{model_class.__name__}| because it does not have a table or Meta class.",
                     )
+
+    # ----- Roles resolution helpers -----
+    def _normalize_roles_spec(self, spec: Any, default_any_of: bool = False) -> tuple[list[str] | None, bool]:
+        """Normalise a roles specification to a concrete list and any_of flag.
+
+        Args:
+            spec: Roles definition which may be a list/tuple/str/dict/bool.
+            default_any_of: Fallback for ``any_of`` when not declared.
+
+        Returns:
+            Tuple of (roles list or None, any_of flag).
+        """
+        if spec is None:
+            return None, False
+        if spec is True:
+            # True means "auth only"; we don't attach a role decorator
+            return None, default_any_of
+        if isinstance(spec, list | tuple):
+            return list(spec), default_any_of
+        if isinstance(spec, str):
+            return [spec], default_any_of
+        if isinstance(spec, dict):
+            roles = spec.get("roles", [])
+            any_of = bool(spec.get("any_of", default_any_of))
+            if isinstance(roles, str):
+                roles = [roles]
+            if isinstance(roles, list | tuple) and roles:
+                return list(roles), any_of
+            return None, any_of
+        return None, default_any_of
+
+    def _resolve_roles_for_route(
+        self,
+        *,
+        model: Callable | None,
+        http_method: str,
+        is_many: bool = False,
+        is_relation: bool = False,
+    ) -> tuple[list[str] | None, bool]:
+        """Resolve roles and any_of for a specific route from config/metadata.
+
+        Order of precedence:
+        1) ``API_ROLE_MAP`` (dict or list/str) on model or app config.
+           - Keys checked in order: relation-specific → GET granularity → method → ALL → *
+           - Values can be list[str], str, or {roles: [...], any_of: bool}.
+        2) ``API_ROLES_REQUIRED`` (list) → all-of semantics.
+        3) ``API_ROLES_ACCEPTED`` (list) → any-of semantics.
+        """
+        role_map = get_config_or_model_meta("API_ROLE_MAP", model=model, default=None)
+        if role_map is not None:
+            keys: list[str] = []
+            method = http_method.upper()
+            if is_relation:
+                keys.append(f"RELATION_{method}")
+                if method == "GET":
+                    keys.append("RELATION_GET_MANY" if is_many else "RELATION_GET_ONE")
+            if method == "GET":
+                keys.append("GET_MANY" if is_many else "GET_ONE")
+            keys.append(method)
+            keys.extend(["ALL", "*"])
+
+        if isinstance(role_map, dict):
+            for k in keys:
+                if k in role_map:
+                    return self._normalize_roles_spec(role_map[k])
+        else:
+            return self._normalize_roles_spec(role_map)
+
+        required = get_config_or_model_meta("API_ROLES_REQUIRED", model=model, default=None)
+        if required is not None:
+            return self._normalize_roles_spec(required, default_any_of=False)
+
+        accepted = get_config_or_model_meta("API_ROLES_ACCEPTED", model=model, default=None)
+        if accepted is not None:
+            return self._normalize_roles_spec(accepted, default_any_of=True)
+
+        return None, False
 
     def make_auth_routes(self):
         """Create the authentication routes for the API."""
@@ -694,8 +825,12 @@ class RouteCreator(AttributeInitializerMixin):
                 # Let your application's error handlers manage the response
                 raise e
 
-            # Generate a new refresh token
+            # Generate a new refresh token and rotate the old one (single-use)
             new_refresh_token = generate_refresh_token(user)
+            import contextlib
+            with contextlib.suppress(Exception):
+                # Rotation is best-effort; failure should not expose the old token
+                rotate_refresh_token(refresh_token, new_refresh_token)
 
             pk, lookup_field = get_pk_and_lookups()
             # Return the new tokens
@@ -841,6 +976,14 @@ class RouteCreator(AttributeInitializerMixin):
             f"Collecting main model data for --{model.__name__}-- with expected url |{method}|:`{base_url}`.",
         )
 
+        # Resolve roles config for this route
+        roles_list, roles_any_of = self._resolve_roles_for_route(
+            model=model,
+            http_method=http_method,
+            is_many=many,
+            is_relation=False,
+        )
+
         return {
             "model": model,
             "many": many,
@@ -850,6 +993,9 @@ class RouteCreator(AttributeInitializerMixin):
             "output_schema": output_schema_class,
             "session": session,
             "input_schema": (input_schema_class if http_method in ["POST", "PATCH"] else None),
+            # Attach roles for schema_constructor if configured
+            "roles": roles_list if roles_list else False,
+            "roles_any_of": roles_any_of if roles_list else False,
         }
 
     def _prepare_relation_route_data(self, relation_data: dict[str, Any], session: Any) -> dict[str, Any]:
@@ -880,6 +1026,14 @@ class RouteCreator(AttributeInitializerMixin):
             f"Collecting parent/child model relationship for --{parent_model.__name__}-- and --{child_model.__name__}-- with expected url `{relation_url}`.",
         )
 
+        # Resolve roles for relation route (child inherits role policy by default)
+        roles_list, roles_any_of = self._resolve_roles_for_route(
+            model=child_model,
+            http_method="GET",
+            is_many=(relation_data["join_type"][-4:].lower() == "many" or relation_data.get("many", False)),
+            is_relation=True,
+        )
+
         return {
             "child_model": child_model,
             "model": child_model,
@@ -892,6 +1046,9 @@ class RouteCreator(AttributeInitializerMixin):
             "join_key": relation_data["right_column"],
             "output_schema": output_schema_class,
             "session": session,
+            # Attach roles for schema_constructor if configured
+            "roles": roles_list if roles_list else False,
+            "roles_any_of": roles_any_of if roles_list else False,
         }
 
     def generate_route(self, **kwargs: dict[str, Any]):
@@ -916,6 +1073,7 @@ class RouteCreator(AttributeInitializerMixin):
             join_model=kwargs.get("parent_model"),
             get_field=kwargs.get("join_key"),
             output_schema=kwargs.get("output_schema"),
+            plugins=self.architect.plugins,
         )
 
         unique_route_function = self._create_unique_route_function(

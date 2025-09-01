@@ -24,7 +24,7 @@ That's all that's required to make the model available through the generated API
 Dump types
 ----------
 
-``flarchitect`` can serialize model responses in different formats, controlled
+``flarchitect`` can serialise model responses in different formats, controlled
 by `API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE>`_ or ``Meta.serialization_type``. Supported dump
 types are:
 
@@ -46,7 +46,7 @@ Nested relationship dumping
 ---------------------------
 
 `API_ADD_RELATIONS <configuration.html#ADD_RELATIONS>`_ controls whether relationship fields are included in the
-serialized response. Disable it to return only column data, or use
+serialised response. Disable it to return only column data, or use
 ``?dump_relationships=false`` on a request to temporarily suppress all
 relationships.
 
@@ -54,7 +54,7 @@ relationships.
 embedded. Increasing the depth exposes deeper links or objects but may add
 overhead.
 
-For ``API_SERIALIZATION_TYPE="dynamic"``, clients can choose which
+For `API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE>`_ set to ``"dynamic"``, clients can choose which
 relationships to embed by supplying a comma-separated ``join`` parameter, e.g.
 ``?join=books,publisher``. Any relationships not listed are returned as URLs.
 
@@ -81,7 +81,7 @@ JSON dump (depth ``1``)::
         ]
     }
 
-JSON dump (depth ``2`` with ``API_SERIALIZATION_DEPTH=2`` or ``?join=books,publisher``)::
+JSON dump (depth ``2`` with `API_SERIALIZATION_DEPTH <configuration.html#SERIALIZATION_DEPTH>`_ = ``2`` or ``?join=books,publisher``)::
 
     GET /api/authors/1?dump=json
     {
@@ -101,4 +101,3 @@ Hybrid dump::
         "books": "/api/authors/1/books",
         "publisher": {"id": 5, "name": "ACME"}
     }
-

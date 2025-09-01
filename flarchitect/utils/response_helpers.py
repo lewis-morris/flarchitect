@@ -36,7 +36,7 @@ def create_response(
 
     Notes:
         If the application configuration defines ``API_FINAL_CALLBACK`` it will
-        be invoked with the assembled response payload prior to serialization.
+        be invoked with the assembled response payload prior to serialisation.
         This allows custom mutation of the outgoing data, such as injecting
         additional metadata.
 
@@ -70,6 +70,11 @@ def create_response(
         response_ms = round((time.time() - g.start_time) * 1000, 0) if g.get("start_time") else "n/a"
 
     current_time_with_tz = datetime.now(timezone.utc).isoformat()
+    # Best-effort request id from Flask context (set by Architect.before_request)
+    try:
+        request_id = getattr(g, "request_id", None)
+    except Exception:
+        request_id = None
     data = {
         "api_version": current_app.config.get("API_VERSION"),
         "datetime": current_time_with_tz,
@@ -81,14 +86,18 @@ def create_response(
         "next_url": next_url,
         "previous_url": previous_url,
     }
+    # Only add when available; filtering controls visibility by config
+    if request_id:
+        data["request_id"] = request_id
 
     data = _filter_response_data(data)
-    data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake_case")): v for k, v in data.items()}
+    # Default to 'snake' to match supported case values
+    data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake")): v for k, v in data.items()}
 
     # Optional hook allowing applications to post-process the outgoing payload.
     # ``API_FINAL_CALLBACK`` should be a callable that accepts the response
     # dictionary and returns the modified dictionary. This can be used to inject
-    # custom metadata or otherwise mutate the payload before serialization.
+    # custom metadata or otherwise mutate the payload before serialisation.
     final_callback: Callable[[dict[str, Any]], dict[str, Any]] | None = get_config_or_model_meta("API_FINAL_CALLBACK")
     if final_callback:
         data = final_callback(data)

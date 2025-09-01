@@ -103,7 +103,13 @@ Example response:
 
 This structured payload is produced by :func:`create_response` and shows the
 standard metadata flarchitect includes by default. To return a bare list,
-disable the metadata fields via the ``API_DUMP_*`` configuration options.
+disable the metadata fields via the ``API_DUMP_*`` configuration options, for example:
+
+- `API_DUMP_DATETIME <configuration.html#DUMP_DATETIME>`_
+- `API_DUMP_VERSION <configuration.html#DUMP_VERSION>`_
+- `API_DUMP_STATUS_CODE <configuration.html#DUMP_STATUS_CODE>`_
+- `API_DUMP_RESPONSE_MS <configuration.html#DUMP_RESPONSE_MS>`_
+- `API_DUMP_TOTAL_COUNT <configuration.html#DUMP_TOTAL_COUNT>`_
 
 From Model to API
 ----------------------------------------
@@ -155,4 +161,3 @@ Next steps
 
 To secure the API and define user roles, see :doc:`authentication` and the
 :ref:`defining-roles` section.
-

@@ -13,17 +13,22 @@ F = TypeVar("F", bound=Callable[..., Any])
 def require_roles(*roles: str, any_of: bool = False) -> Callable[[F], F]:
     """Enforce role-based access on the decorated function.
 
+    Why/How:
+        Validates that the authenticated user exposes required roles on
+        ``current_user.roles``. When ``any_of`` is True, possession of any
+        listed role is sufficient; otherwise all roles are required.
+
     Args:
-        *roles: Role names to validate against ``current_user.roles``.
-        any_of: When ``True`` any listed role grants access. Defaults to
-            ``False`` requiring *all* roles.
+        *roles: Role names to check against ``current_user.roles``.
+        any_of: When True, allow access if any role matches; when False, all
+            roles must be present.
 
     Returns:
-        Callable[[F], F]: A decorator enforcing the role check.
+        A decorator enforcing the role check.
 
     Raises:
-        CustomHTTPException: ``401`` when no user is authenticated or ``403``
-            when roles do not match.
+        CustomHTTPException: 401 when unauthenticated, 403 when roles do not
+            satisfy the requirement.
     """
 
     def decorator(func: F) -> F:
@@ -66,13 +71,22 @@ def require_roles(*roles: str, any_of: bool = False) -> Callable[[F], F]:
 
 
 def roles_required(*roles: str) -> Callable[[F], F]:
-    """Backward compatible wrapper requiring all listed roles."""
+    """Backward compatible wrapper requiring all listed roles.
+
+    Why/How:
+        Alias for :func:`require_roles` configured with ``any_of=False`` for
+        readability when all roles are mandatory.
+    """
 
     return require_roles(*roles)
 
 
 def roles_accepted(*roles: str) -> Callable[[F], F]:
-    """Backward compatible wrapper requiring any of the listed roles."""
+    """Backward compatible wrapper requiring any of the listed roles.
+
+    Why/How:
+        Alias for :func:`require_roles` configured with ``any_of=True``.
+    """
 
     return require_roles(*roles, any_of=True)
 

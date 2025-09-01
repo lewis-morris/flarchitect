@@ -437,7 +437,8 @@ def validate_table_and_column(table_name: str, column_name: str, all_columns: di
     """
     from flarchitect.utils.general import get_config_or_model_meta
 
-    field_case = get_config_or_model_meta("API_FIELD_CASE", default="snake_case")
+    # Ensure default matches supported values in convert_case
+    field_case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
     column_name = convert_case(column_name, field_case)
 
     all_models_columns = all_columns.get(table_name)

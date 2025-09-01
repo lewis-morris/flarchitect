@@ -79,6 +79,12 @@ class AttributeInitializerMixin:
                 setattr(self, key, kwargs[key])
 
 
+class AttributeInitialiserMixin(AttributeInitializerMixin):
+    """UK spelling alias of :class:`AttributeInitializerMixin`."""
+
+    pass
+
+
 def find_html_directory(starting_directory: str | None = None) -> str | None:
     """Locate the nearest ``html`` directory by searching parent folders.
 
@@ -238,23 +244,32 @@ def check_rate_services(
             prereq_checker(service_name)
         return uri
 
+    # Allow disabling auto-detection in constrained environments (e.g. sandboxes/CI)
+    if config_getter("API_RATE_LIMIT_AUTODETECT", default=True) is False:
+        return None
+
     for service, port in services.items():
-        sock = socket_factory(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
         try:
-            sock.connect(("127.0.0.1", port))
-            sock.close()
-            prereq_checker(service)
+            sock = socket_factory(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            try:
+                sock.connect(("127.0.0.1", port))
+                sock.close()
+                prereq_checker(service)
 
-            rate_type = {
-                "Memcached": f"memcached://127.0.0.1:{port}",
-                "Redis": f"redis://127.0.0.1:{port}",
-                "MongoDB": f"mongodb://127.0.0.1:{port}",
-            }
-            return rate_type[service]
+                rate_type = {
+                    "Memcached": f"memcached://127.0.0.1:{port}",
+                    "Redis": f"redis://127.0.0.1:{port}",
+                    "MongoDB": f"mongodb://127.0.0.1:{port}",
+                }
+                return rate_type[service]
 
-        except OSError:
-            continue
+            except OSError:
+                # Nothing listening on this port; try the next service
+                continue
+        except PermissionError:
+            # Sockets disabled by the runtime (e.g. sandbox). Fall back to in-memory.
+            return None
 
     return None
 
@@ -381,7 +396,8 @@ def make_base_dict() -> dict[str, Any]:
         Dict[str, Any]: The base dictionary with configuration settings.
     """
     output = {"value": "..."}
-    field_case = get_config_or_model_meta("API_FIELD_CASE", default="snake_case")
+    # Default to 'snake' which is recognised by convert_case
+    field_case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
 
     config_options = [
         ("API_DUMP_DATETIME", "datetime", "2024-01-01T00:00:00.0000+00:00"),

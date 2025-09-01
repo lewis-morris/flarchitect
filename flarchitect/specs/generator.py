@@ -21,14 +21,14 @@ from flarchitect.logging import logger
 from flarchitect.specs.utils import (
     append_parameters,
     convert_path_to_openapi,
-    handle_authorization,
-    initialize_spec_template,
+    handle_authorisation,
+    initialise_spec_template,
     schema_name_resolver,
     scrape_extra_info_from_spec_data,
 )
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.general import (
-    AttributeInitializerMixin,
+    AttributeInitialiserMixin,
     generate_readme_html,
     get_html_path,
     make_base_dict,
@@ -42,7 +42,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported only for type hints
     from flarchitect import Architect
 
 
-class CustomSpec(APISpec, AttributeInitializerMixin):
+class CustomSpec(APISpec, AttributeInitialiserMixin):
     """A subclass of APISpec for specifying tag groups with extended features."""
 
     app: Flask
@@ -75,6 +75,13 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         self.api_keywords: list[str] = []
         super().__init__(*args, **self._prepare_api_spec_data(**kwargs))
 
+        # Reset MarshmallowPlugin schema refs to avoid cross-app/test bleed.
+        import contextlib
+        with contextlib.suppress(Exception):
+            plugin = next((p for p in self.plugins if isinstance(p, MarshmallowPlugin)), None)
+            if plugin and getattr(getattr(plugin, "converter", None), "refs", None) is not None:
+                plugin.converter.refs.clear()  # type: ignore[attr-defined]
+
         if self._should_create_docs():
             self.architect.api_spec = self
             self._create_specification_blueprint()
@@ -86,7 +93,15 @@ class CustomSpec(APISpec, AttributeInitializerMixin):
         Returns:
             dict: The API specification as a dictionary.
         """
+        # Notify plugins that spec build is starting/completing
+        import contextlib
+        with contextlib.suppress(Exception):
+            self.architect.plugins.spec_build_started(self)
         spec_dict = super().to_dict()
+        with contextlib.suppress(Exception):
+            maybe = self.architect.plugins.spec_build_completed(spec_dict)
+            if isinstance(maybe, dict):
+                spec_dict = maybe
         if self.spec_groups:
             spec_dict.update(self.spec_groups)
         return spec_dict
@@ -410,7 +425,7 @@ def generate_swagger_spec(
         output_schema=output_schema,
         default=False,
     )
-    spec_template = initialize_spec_template(http_method, many, rate_limit, error_responses)
+    spec_template = initialise_spec_template(http_method, many, rate_limit, error_responses)
 
     append_parameters(
         spec_template,
@@ -422,7 +437,7 @@ def generate_swagger_spec(
         model,
         many,
     )
-    handle_authorization(f, spec_template)
+    handle_authorisation(f, spec_template)
 
     return spec_template
 

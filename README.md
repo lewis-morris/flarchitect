@@ -22,12 +22,34 @@ If you're new here, welcome! flarchitect gets you from data models to a fully fl
 - **Soft delete** – hide and restore records without permanently removing them.
 - **GraphQL integration** – expose your models through a single `/graphql` endpoint when you need more flexible queries.
 
+### Performance & Observability
+
+- **Request-local config caching** – repeated calls to resolve config/model meta are cached per request to reduce overhead.
+- **Schema class caching** – dynamic schema classes and subclass lookups are cached to skip repeated reflection.
+- **Correlation IDs** – every response includes `X-Request-ID` (propagates inbound header when present).
+- **Structured logs (optional)** – JSON logs include method, path, status, latency and `request_id`.
+
 ### Optional extras
 
 - **Rate limiting & structured responses** – configurable throttling and consistent response schema.
 - **Field validation** – built-in validators for emails, URLs, IPs and more.
 - **Nested writes** – send related objects in POST/PUT payloads when `API_ALLOW_NESTED_WRITES` is `True`.
 - **CORS support** – enable cross-origin requests with `API_ENABLE_CORS`.
+
+### Real-time updates (optional)
+
+Enable lightweight WebSocket broadcasts for CRUD changes:
+
+```python
+app.config.update(
+    API_ENABLE_WEBSOCKETS=True,
+    API_WEBSOCKET_PATH="/ws",  # optional
+)
+```
+
+Install the optional dependency: `pip install flask-sock`. Clients can connect
+to `ws://<host>/ws?topic=<model>` (or omit `topic` to receive all events).
+See the docs page “WebSockets” for details and examples.
 
 ## Installation
 
@@ -69,38 +91,129 @@ curl http://localhost:5000/api/authors
 
 ## Authentication
 
-flarchitect ships with ready-to-use JWT, Basic and API key authentication. Choose strategies with
+flarchitect ships with ready‑to‑use JWT, Basic and API key authentication. Enable one or more strategies with
 `API_AUTHENTICATE_METHOD`.
+
+What you get out of the box:
+
+- A set of `/auth` endpoints when JWT is enabled: `/auth/login`, `/auth/logout`, `/auth/refresh`.
+- Consistent error responses (HTTP 401/403) with a clear `reason` string.
+- Helpers for per‑route protection and role checks.
 
 ### JWT
 
+Configuration (the minimal set):
+
 ```python
-app.config["API_AUTHENTICATE_METHOD"] = ["jwt"]
-app.config["ACCESS_SECRET_KEY"] = "access-secret"
-app.config["REFRESH_SECRET_KEY"] = "refresh-secret"
-app.config["API_USER_MODEL"] = User
-app.config["API_USER_LOOKUP_FIELD"] = "username"
-app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+app.config.update(
+    API_AUTHENTICATE_METHOD=["jwt"],
+    ACCESS_SECRET_KEY="access-secret",     # or set env var ACCESS_SECRET_KEY
+    REFRESH_SECRET_KEY="refresh-secret",   # or set env var REFRESH_SECRET_KEY
+    API_USER_MODEL=User,                    # your SQLAlchemy model
+    API_USER_LOOKUP_FIELD="username",      # field used to find the user
+    API_CREDENTIAL_CHECK_METHOD="check_password",  # method on User to verify password
+)
 ```
+
+Endpoints and payloads:
+
+- `POST /auth/login` with JSON `{"username": "alice", "password": "secret"}` returns
+  `{ "access_token": "...", "refresh_token": "...", "user_pk": 1 }` on success.
+- `POST /auth/refresh` with JSON `{ "refresh_token": "..." }` returns a new access token.
+- `POST /auth/logout` clears user context (stateless logout; refresh tokens are invalidated on use/expiry).
+
+Protecting routes:
+
+- Via decorator: `from flarchitect.core.architect import jwt_authentication` and decorate the view: `@jwt_authentication`.
+- Via schema wrapper: `@architect.schema_constructor(output_schema=..., auth=True)` when generating routes with Architect.
+
+Token settings and key resolution:
+
+- Access token lifetime: `API_JWT_EXPIRY_TIME` (minutes, default `360`).
+- Refresh token lifetime: `API_JWT_REFRESH_EXPIRY_TIME` (minutes, default `2880`).
+- Algorithm: `API_JWT_ALGORITHM` (`HS256` by default). To restrict verification to specific algorithms, set `API_JWT_ALLOWED_ALGORITHMS` (list or comma‑separated string).
+- Issuer and audience: set `API_JWT_ISSUER` and/or `API_JWT_AUDIENCE` to include and enforce `iss`/`aud` claims.
+- Clock skew: allow small time drift during verification with `API_JWT_LEEWAY` (seconds, default `0`).
+- RS256 support: when `API_JWT_ALGORITHM="RS256"`, sign with `ACCESS_PRIVATE_KEY` and verify with `ACCESS_PUBLIC_KEY` (PEM strings). Refresh tokens use `REFRESH_PRIVATE_KEY`/`REFRESH_PUBLIC_KEY`. For backwards compatibility, if only `ACCESS_SECRET_KEY`/`REFRESH_SECRET_KEY` are provided they are used to verify, but key pairs are recommended.
+- `get_user_from_token(secret_key=...)` secret selection order: explicit argument > `ACCESS_SECRET_KEY` env var > Flask `ACCESS_SECRET_KEY` config (or public key when using RS*).
+
+Refresh token rotation and revocation:
+
+- Refresh tokens are single‑use: calling `/auth/refresh` revokes the old refresh token and issues a new one.
+- Revocation (deny‑list) and auditing: the refresh token store records `created_at`, `last_used_at`, `revoked`, `revoked_at`, and links to the `replaced_by` token for traceability. Admins can revoke tokens programmatically via `flarchitect.authentication.token_store.revoke_refresh_token`.
 
 ### Basic
 
 ```python
-app.config["API_AUTHENTICATE_METHOD"] = ["basic"]
-app.config["API_USER_MODEL"] = User
-app.config["API_USER_LOOKUP_FIELD"] = "username"
-app.config["API_CREDENTIAL_CHECK_METHOD"] = "check_password"
+app.config.update(
+    API_AUTHENTICATE_METHOD=["basic"],
+    API_USER_MODEL=User,
+    API_USER_LOOKUP_FIELD="username",
+    API_CREDENTIAL_CHECK_METHOD="check_password",
+)
 ```
+
+Usage: send an `Authorization: Basic <base64(username:password)>` header. You can also protect routes via
+`@architect.schema_constructor(..., auth=True)`.
 
 ### API key
 
+Two options:
+
+1) Provide a custom lookup function that both authenticates and returns the user:
+
 ```python
-app.config["API_AUTHENTICATE_METHOD"] = ["api_key"]
-app.config["API_KEY_AUTH_AND_RETURN_METHOD"] = lookup_user_by_token
-# app.config["API_CREDENTIAL_HASH_FIELD"] = "api_key_hash"  # optional
+def lookup_user_by_token(token: str) -> User | None:
+    return User.query.filter_by(api_key=token).first()
+
+app.config.update(
+    API_AUTHENTICATE_METHOD=["api_key"],
+    API_KEY_AUTH_AND_RETURN_METHOD=staticmethod(lookup_user_by_token),
+)
 ```
 
-See the [authentication docs](docs/source/authentication.rst) for full configuration details and custom strategies.
+2) Or use a hashed field and a verification method on the model:
+
+```python
+app.config.update(
+    API_AUTHENTICATE_METHOD=["api_key"],
+    API_USER_MODEL=User,
+    API_CREDENTIAL_HASH_FIELD="api_key_hash",
+    API_CREDENTIAL_CHECK_METHOD="check_api_key",
+)
+```
+
+Usage: send an `Authorization: Api-Key <token>` header.
+
+Role‑based access control:
+
+```python
+from flarchitect.authentication import require_roles
+
+@app.get("/admin")
+@jwt_authentication
+@require_roles("admin")
+def admin_panel():
+    ...
+```
+
+You can also protect all generated CRUD routes without decorators using a
+config‑driven map:
+
+```python
+app.config.update(
+    API_AUTHENTICATE_METHOD=["jwt"],
+    API_ROLE_MAP={
+        "GET": ["viewer"],
+        "POST": {"roles": ["editor", "admin"], "any_of": True},
+        "DELETE": ["admin"],
+    },
+)
+```
+
+See docs: Authentication → Role‑based access → Config‑driven roles.
+
+See the full Authentication guide in the hosted docs for advanced configuration and custom strategies.
 
 ## OpenAPI specification
 
@@ -121,6 +234,57 @@ architect = Architect(app)  # OpenAPI served at /openapi.json, docs served at /d
 The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
 [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
 document.
+
+## Performance: Caching
+
+Two low-risk caches improve request throughput without changing public APIs:
+
+- Config/meta cache: `get_config_or_model_meta` caches positive lookups per request.
+  This avoids repeated Flask config and model `Meta` introspection during routing,
+  schema generation and auth checks.
+- Schema class cache: dynamic schema classes and subclass lookups are memoised at
+  module level. Schema instances are still created per call so request-specific
+  options (e.g. `join`, `dump_relationships`, recursion depth) remain correct.
+
+No configuration is required to enable these caches. They are safe in multi-threaded
+environments and reset naturally between requests.
+
+## Observability: Request IDs and JSON logs
+
+Every request is assigned a correlation ID and returned via the `X-Request-ID`
+response header. If a client sends its own `X-Request-ID`, that value is propagated.
+To also include the correlation ID in the JSON response body, opt in with:
+
+```python
+app.config["API_DUMP_REQUEST_ID"] = True  # default False
+```
+
+Enable structured JSON logs for production:
+
+```python
+app.config.update(
+    API_JSON_LOGS=True,       # emit JSON lines with context
+    API_VERBOSITY_LEVEL=1,    # 0=quiet, higher=more verbose
+    API_LOG_REQUESTS=True,    # default True; per-request completion log
+)
+```
+
+Example log line (pretty-printed for readability):
+
+```
+{
+  "event": "log",
+  "lvl": 1,
+  "message": "Completed GET /api/items -> 200",
+  "method": "GET",
+  "path": "/api/items",
+  "request_id": "e5f9c0c8f2ac4c58b6a1c5b6d8d3e9a1",
+  "latency_ms": 12
+}
+```
+
+When `API_JSON_LOGS` is `False` (default), logs are colourised for humans and the
+`X-Request-ID` header remains available for correlation.
 
 ## GraphQL
 
@@ -233,6 +397,12 @@ export REFRESH_SECRET_KEY=refresh
 pytest
 ```
 
+To run tests with coverage (HTML + XML reports), use:
+
+```bash
+bash scripts/coverage.sh
+```
+
 ## Versioning & Releases
 
 The package version is defined in `pyproject.toml` and exposed as `flarchitect.__version__`. A GitHub Actions workflow automatically publishes to PyPI when the version changes on `master`.
@@ -244,7 +414,19 @@ To publish a new release:
 
 Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
 
+## UK English API Names
+
+This project now uses UK English spellings for public helpers while maintaining backwards‑compatible aliases:
+
+- `deserialise_data` (alias: `deserialize_data`)
+- `serialise_output_with_mallow` (alias: `serialize_output_with_mallow`)
+- `standardise_response` (alias: `standardize_response`)
+- `initialise_spec_template` (alias: `initialize_spec_template`)
+- `handle_authorisation` (alias: `handle_authorization`)
+- `AttributeInitialiserMixin` (alias class of `AttributeInitializerMixin`)
+
+Existing code using the US spellings continues to work. Prefer the UK forms in new code and documentation.
+
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
-

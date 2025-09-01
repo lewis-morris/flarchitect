@@ -16,7 +16,7 @@ Intro
 In `flarchitect`, configuration options are essential for customising the API and its accompanying documentation.
 These settings can be provided through `Flask`_ config values or directly within `SQLAlchemy`_ model classes using ``Meta`` classes.
 
-Beyond the basics, the extension supports hooks and advanced flags for post-serialization callbacks, rate limiting, field exclusion, blueprint naming, endpoint naming via ``API_ENDPOINT_NAMER``, soft deletion, and per-method documentation summaries.
+Beyond the basics, the extension supports hooks and advanced flags for post-serialisation callbacks, rate limiting, field exclusion, blueprint naming, endpoint naming via `API_ENDPOINT_NAMER <configuration.html#ENDPOINT_NAMER>`_, soft deletion, and per-method documentation summaries.
 
 `Flask`_ config values offer a straightforward, standardised way to modify the extension's behaviour at a global or model level.
 
@@ -76,7 +76,7 @@ Please note the badge for each configuration value, as it defines where the valu
             class Config:
                 API_TITLE = "My API"           # text shown in documentation header
                 API_PREFIX = "/v1"             # apply a versioned base route
-                API_CREATE_DOCS = True          # generate ReDoc documentation
+                API_CREATE_DOCS = True          # generate Redoc documentation
 
         See the :doc:`Global <config_locations/global_>` page for more information.
 
@@ -89,7 +89,7 @@ Please note the badge for each configuration value, as it defines where the valu
         They are applied in the `SQLAlchemy`_ model's ``Meta`` class, omit the ``API_`` prefix, and are written in lowercase.
 
         Configure this level when a single model requires behaviour different from the rest of the application,
-        such as marking a model read only, changing its serialization depth, or blocking specific methods.
+        such as marking a model read only, changing its serialisation depth, or blocking specific methods.
         Options correspond directly to the global keys but in lowercase without the prefix (for example ``rate_limit``
         or ``pagination_size_default``) and accept the same data types noted in the configuration table.
 

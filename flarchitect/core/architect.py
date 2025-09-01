@@ -23,11 +23,12 @@ from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.logging import logger
+from flarchitect.plugins import PluginManager
 from flarchitect.specs.generator import CustomSpec
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import handle_many, handle_one
 from flarchitect.utils.general import (
-    AttributeInitializerMixin,
+    AttributeInitialiserMixin,
     check_rate_services,
     validate_flask_limiter_rate_limit_string,
 )
@@ -77,34 +78,42 @@ DEFAULT_GRAPHIQL_HTML = """<!DOCTYPE html>
 
 
 def jwt_authentication(func: F) -> F:
-    """Decorator enforcing JSON Web Token (JWT) authentication.
+    """Enforce JSON Web Token (JWT) authentication for manual routes.
+
+    Why/How:
+        Use this decorator on hand‑written Flask views to apply the same
+        request authentication used by automatically generated endpoints. The
+        wrapper validates the ``Authorization: Bearer <token>`` header,
+        resolves the current user and stores it in context for downstream
+        logic. This keeps bespoke routes consistent with the rest of the API
+        without duplicating authentication code.
 
     Args:
-        func (Callable[..., Any]): The view function to wrap.
+        func: The view function to be wrapped.
 
     Returns:
-        Callable[..., Any]: A wrapped function that validates the request's JWT
-        before executing ``func``.
+        The wrapped function that validates the request's JWT before invoking
+        ``func``.
 
     Raises:
-        CustomHTTPException: If the ``Authorization`` header is missing,
-        malformed, or the provided token is invalid.
+        CustomHTTPException: If the ``Authorization`` header is missing or
+            malformed, or if the provided token is invalid.
     """
 
     @wraps(func)
     def auth_wrapped(*args: Any, **kwargs: Any) -> Any:
-        """Validate a request's JWT before executing ``func``.
+        """Validate a request's JWT then forward to ``func``.
 
         Args:
             *args: Positional arguments forwarded to ``func``.
             **kwargs: Keyword arguments forwarded to ``func``.
 
         Returns:
-            Any: The result of ``func`` if authentication succeeds.
+            The result of ``func`` when authentication succeeds.
 
         Raises:
-            CustomHTTPException: If the Authorization header or token is
-                missing or invalid.
+            CustomHTTPException: When the authorisation header is absent or
+                invalid, or the token fails verification.
         """
 
         auth = request.headers.get("Authorization")
@@ -123,13 +132,15 @@ def jwt_authentication(func: F) -> F:
     return cast(F, auth_wrapped)
 
 
-class Architect(AttributeInitializerMixin):
-    """Main orchestrator for the Flask extension.
+class Architect(AttributeInitialiserMixin):
+    """Orchestrate flarchitect services for a Flask app.
 
-    The ``Architect`` centralizes initialisation, route creation, API
-    specification generation, caching, CORS handling, and request
-    authentication. It exposes helpers and configuration that allow an
-    application to be wired up with minimal boilerplate.
+    Why/How:
+        This class ties together route generation, OpenAPI specification
+        creation, caching, CORS handling, rate limiting and request
+        authentication. Instantiate with a Flask application (or call
+        :meth:`init_app`) to register all required hooks and endpoints with
+        minimal boilerplate while keeping behaviour configurable per app/model.
     """
 
     app: Flask
@@ -139,17 +150,20 @@ class Architect(AttributeInitializerMixin):
     route_spec: list[dict[str, Any]] | None = None
     limiter: Limiter
     cache: "Cache | None" = None
+    plugins: PluginManager
 
     def __init__(self, app: Flask | None = None, *args, **kwargs):
-        """Initialise the Architect extension.
+        """Initialise the extension and optionally bind to a Flask app.
 
-        The Flask development server runs the application twice when the
-        automatic reloader is enabled. To avoid duplicate initialisation and
-        the noisy log output that comes with it, setup is skipped during the
-        reloader's parent process and only performed for the serving process.
+        Why/How:
+            Accepts an optional ``app`` so you can either construct and bind in
+            one step or configure the instance first and later call
+            :meth:`init_app`. In development the Flask reloader imports the app
+            twice; to prevent duplicate set‑up we detect the parent process and
+            skip initialisation there.
 
         Args:
-            app: The Flask application instance.
+            app: Optional Flask application instance to register with.
             *args: Positional arguments forwarded to :meth:`init_app`.
             **kwargs: Keyword arguments forwarded to :meth:`init_app`.
         """
@@ -163,18 +177,16 @@ class Architect(AttributeInitializerMixin):
 
     @staticmethod
     def _is_reloader_start() -> bool:
-        """Return ``True`` when executing in the reloader's parent process.
+        """Detect the Flask reloader's parent process.
 
-        Flask's development reloader spawns a supervisory process that imports
-        the application before starting a child process to serve requests. The
-        parent process exposes a ``WERKZEUG_SERVER_FD`` environment variable
-        while the child sets ``WERKZEUG_RUN_MAIN`` to ``"true"``. By combining
-        these signals we can skip one-time setup during the parent's initial
-        import without affecting production deployments where neither variable
-        is present.
+        Why/How:
+            The development reloader spawns a supervisor that imports the app
+            before creating a child process to serve requests. We check
+            environment variables set by Werkzeug to avoid running one‑time
+            initialisation twice.
 
         Returns:
-            bool: ``True`` if running as the reloader parent, otherwise ``False``.
+            True if running as the reloader parent, otherwise False.
         """
 
         run_main = os.environ.get("WERKZEUG_RUN_MAIN")
@@ -182,53 +194,39 @@ class Architect(AttributeInitializerMixin):
         return server_fd is not None and run_main != "true"
 
     def init_app(self, app: Flask, *args: Any, **kwargs: Any) -> None:
-        """Initialise the extension for a given :class:`flask.Flask` app.
+        """Register services and hooks on the Flask app.
 
-        The method wires core services into ``app``, enabling optional
-        behaviours such as response caching, Cross-Origin Resource Sharing
-        (CORS) headers and automatic OpenAPI documentation. Any additional
-        ``kwargs`` are forwarded to :meth:`init_api` and
-        :meth:`init_apispec`.
+        Why/How:
+            Wires core services into ``app``: caching, CORS, automatic OpenAPI
+            documentation, rate limiting and global authentication. Extra
+            ``kwargs`` are forwarded to :meth:`init_api` and
+            :meth:`init_apispec` for route/spec creation.
 
         Args:
             app: The Flask application to register with.
             *args: Positional arguments forwarded to
                 :class:`~flarchitect.utils.general.AttributeInitializerMixin`.
             **kwargs: Optional keyword arguments affecting initialisation.
-                Supported keys include:
+                Recognised keys include ``cache``, ``enable_cors`` and
+                ``create_docs``.
 
-                ``cache`` (dict | bool, optional): Configuration for caching
-                responses. When truthy, ``API_CACHE_TYPE`` and
-                ``API_CACHE_TIMEOUT`` are used to set up caching.
-
-                ``enable_cors`` (bool, optional): Enable CORS handling when
-                ``True``. The ``CORS_RESOURCES`` mapping defines allowed
-                origins.
-
-                ``create_docs`` (bool, optional): Generate ReDoc and OpenAPI
-                documentation when ``True``.
-
-        Examples:
-            Basic initialisation::
-
-                architect = Architect()
-                architect.init_app(app)
-
-            With optional features::
-
-                architect = Architect()
-                architect.init_app(
-                    app,
-                    cache={"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 300},
-                    enable_cors=True,
-                    create_docs=True,
-                )
-
+        Returns:
+            None. The Flask app is modified in place.
         """
         super().__init__(app, *args, **kwargs)
         self._register_app(app)
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
+        # Enable structured JSON logs if configured
+        try:
+            logger.json_mode = bool(self.get_config("API_JSON_LOGS", False))
+        except Exception:
+            logger.json_mode = False
         self.api_spec = None
+        # Load plugins
+        try:
+            self.plugins = PluginManager.from_config(self.get_config("API_PLUGINS", []))
+        except Exception:
+            self.plugins = PluginManager()
 
         self.cache = None
         cache_type = self.get_config("API_CACHE_TYPE")
@@ -268,8 +266,7 @@ class Architect(AttributeInitializerMixin):
                         response: The outgoing Flask response.
 
                     Returns:
-                        Response: The modified response with any relevant CORS
-                        headers added.
+                        The response with any relevant CORS headers added.
                     """
 
                     path = request.path
@@ -287,6 +284,17 @@ class Architect(AttributeInitializerMixin):
         if get_config_or_model_meta("API_CREATE_DOCS", default=True):
             self.init_apispec(app=app, **kwargs)
 
+        # Optional: enable built-in lightweight WebSocket endpoint if configured
+        if self.get_config("API_ENABLE_WEBSOCKETS", False):
+            try:
+                from flarchitect.core.websockets import init_websockets
+
+                path = self.get_config("API_WEBSOCKET_PATH", "/ws")
+                init_websockets(self, path=path)
+            except Exception:
+                # best-effort; do not fail app init if WS cannot be set up
+                pass
+
         logger.log(2, "Creating rate limiter")
         storage_uri = check_rate_services()
         self.app.config["RATELIMIT_HEADERS_ENABLED"] = True
@@ -298,44 +306,95 @@ class Architect(AttributeInitializerMixin):
             storage_uri=storage_uri if storage_uri else None,
         )
 
+        # Correlation IDs and request timing
+        @app.before_request
+        def _assign_request_id_and_timer() -> None:  # pragma: no cover - Flask integration
+            import contextlib
+            with contextlib.suppress(Exception):
+                import time as _t
+
+                rid = request.headers.get("X-Request-ID")
+                if not rid:
+                    import uuid as _uuid
+
+                    rid = _uuid.uuid4().hex
+                from flask import g as _g
+
+                _g.request_id = rid
+                _g._flarch_req_start = _t.perf_counter()
+            with contextlib.suppress(Exception):
+                self.plugins.request_started(request)
+
+        @app.after_request
+        def _attach_request_id_and_log(response: Response) -> Response:  # pragma: no cover - Flask integration
+            import contextlib
+            with contextlib.suppress(Exception):
+                from flask import g as _g
+
+                rid = getattr(_g, "request_id", None)
+                if rid:
+                    response.headers["X-Request-ID"] = rid
+
+                if get_config_or_model_meta("API_LOG_REQUESTS", default=True):
+                    # Single-line request log with context provided by logger
+                    logger.log(
+                        1,
+                        f"Completed {request.method} {request.path} -> {response.status_code}",
+                    )
+            # Allow plugins to modify/replace the response
+            with contextlib.suppress(Exception):
+                new_resp = self.plugins.request_finished(request, response)
+                return new_resp or response
+            return response
+
         @app.before_request
         def _global_authentication() -> None:
             """Authenticate requests for routes without ``schema_constructor``.
 
-            Routes decorated with :meth:`schema_constructor` handle
-            authentication themselves. This hook covers any additional view
-            functions so developers can rely on global configuration without
-            manual decoration.
+            Why/How:
+                Routes decorated with :meth:`schema_constructor` perform their
+                own authentication. This hook applies global auth to any other
+                view functions so developers do not need to decorate every
+                manual route individually.
             """
 
             view = app.view_functions.get(request.endpoint)
             if not view or getattr(view, "_auth_disabled", False) or getattr(view, "_has_schema_constructor", False):
                 return
+            import contextlib
             try:
+                ctx = {"model": None, "method": request.method}
+                self.plugins.before_authenticate(ctx)
                 self._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
+                self.plugins.after_authenticate(ctx, success=True, user=None)
             except CustomHTTPException as exc:  # pragma: no cover - integration behaviour
+                with contextlib.suppress(Exception):
+                    self.plugins.after_authenticate({"model": None, "method": request.method}, success=False, user=None)
                 return create_response(status=exc.status_code, errors=exc.reason)
 
         @app.teardown_request
         def clear_current_user(exception: BaseException | None = None) -> None:
-            """Remove the current user from the context after each request.
+            """Remove the current user from context after each request.
 
             Args:
-                exception (BaseException | None): Exception raised during the
-                    request lifecycle, if any.
+                exception: Exception raised during the request lifecycle, if any.
 
             Returns:
-                None: Flask ignores the return value of teardown callbacks.
+                None. Flask ignores the return value of teardown callbacks.
             """
 
             set_current_user(None)
 
     def _register_app(self, app: Flask):
-        """
-        Registers the app with the extension, and saves it to self.
+        """Attach this extension instance to the Flask app registry.
+
+        Why/How:
+            Stores the instance under a well‑known key in ``app.extensions`` so
+            other components can retrieve it later and to prevent duplicate
+            registration.
 
         Args:
-            app (Flask): The flask app.
+            app: The Flask application.
         """
         if FLASK_APP_NAME not in app.extensions:
             app.extensions[FLASK_APP_NAME] = self
@@ -477,8 +536,8 @@ class Architect(AttributeInitializerMixin):
 
         Args:
             model: Database model associated with the endpoint.
-            output_schema: Schema used to serialize responses.
-            input_schema: Schema used to deserialize requests.
+            output_schema: Schema used to serialise responses.
+            input_schema: Schema used to deserialise requests.
             auth_flag: Optional flag to disable authentication when ``False``.
 
         Raises:
@@ -499,9 +558,21 @@ class Architect(AttributeInitializerMixin):
             if not isinstance(auth_method, list):
                 auth_method = [auth_method]
 
+            context = {
+                "model": model,
+                "output_schema": output_schema,
+                "input_schema": input_schema,
+                "method": request.method,
+            }
+            import contextlib
+            with contextlib.suppress(Exception):
+                self.plugins.before_authenticate(context)
+
             for method_name in auth_method:
                 auth_func = getattr(self, f"_authenticate_{method_name}", None)
                 if callable(auth_func) and auth_func():
+                    with contextlib.suppress(Exception):
+                        self.plugins.after_authenticate(context, success=True, user=None)
                     return
 
             raise CustomHTTPException(status_code=401)
@@ -517,8 +588,8 @@ class Architect(AttributeInitializerMixin):
 
         Args:
             func: The view function to decorate.
-            output_schema: Schema used to serialize responses.
-            input_schema: Schema used to deserialize requests.
+            output_schema: Schema used to serialise responses.
+            input_schema: Schema used to deserialise requests.
             many: ``True`` if the route returns multiple objects.
 
         Returns:
@@ -541,8 +612,8 @@ class Architect(AttributeInitializerMixin):
         Args:
             func: The function to wrap.
             model: Database model associated with the endpoint.
-            output_schema: Schema used to serialize responses.
-            input_schema: Schema used to deserialize requests.
+            output_schema: Schema used to serialise responses.
+            input_schema: Schema used to deserialise requests.
 
         Returns:
             Callable: The rate-limited function or the original ``func`` if no
@@ -672,7 +743,7 @@ class Architect(AttributeInitializerMixin):
         model: DeclarativeBase | None = None,
         group_tag: str | None = None,
         many: bool | None = False,
-        roles: bool | list[str] | tuple[str, ...] | None = False,
+        roles: bool | list[str] | tuple[str, ...] | dict | None = False,
         **kwargs,
     ) -> Callable:
         """Decorate an endpoint with schema, role, and OpenAPI metadata.
@@ -693,8 +764,14 @@ class Architect(AttributeInitializerMixin):
         """
 
         auth_flag = kwargs.get("auth")
+        # Support roles provided as list/tuple/str or dict({"roles": [...], "any_of": bool})
         roles_tuple: tuple[str, ...] = ()
-        if roles and roles is not True:
+        roles_any_of_flag: bool = bool(kwargs.get("roles_any_of", False))
+        if roles and isinstance(roles, dict):
+            declared = roles.get("roles", [])
+            roles_tuple = tuple(declared) if isinstance(declared, list | tuple) else (str(declared),) if declared else ()
+            roles_any_of_flag = bool(roles.get("any_of", roles_any_of_flag))
+        elif roles and roles is not True:
             roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
 
         def decorator(f: Callable) -> Callable:
@@ -722,7 +799,7 @@ class Architect(AttributeInitializerMixin):
                 )
 
                 if roles and auth_flag is not False and local_roles_required:
-                    f_decorated = local_roles_required(*roles_tuple)(f_decorated)
+                    f_decorated = local_roles_required(*roles_tuple, any_of=roles_any_of_flag)(f_decorated)
 
                 return f_decorated(*_args, **_kwargs)
 
@@ -737,7 +814,7 @@ class Architect(AttributeInitializerMixin):
 
                 _marker.__name__ = "require_roles"
                 _marker._args = roles_tuple  # type: ignore[attr-defined]
-                _marker._any_of = False  # type: ignore[attr-defined]
+                _marker._any_of = roles_any_of_flag  # type: ignore[attr-defined]
                 wrapped._decorators = getattr(wrapped, "_decorators", [])
                 wrapped._decorators.append(_marker)  # type: ignore[attr-defined]
 
@@ -763,14 +840,19 @@ class Architect(AttributeInitializerMixin):
 
     @classmethod
     def get_templates_path(cls, folder_name: str = "html", max_levels: int = 3) -> str | None:
-        """Recursively search for ``folder_name`` within ancestor directories.
+        """Find a templates folder relative to this module.
+
+        Why/How:
+            Walks up parent directories to locate a named folder bundled with
+            the package (useful for serving GraphiQL/Redoc assets when packaged
+            as a module).
 
         Args:
-            folder_name: Name of the folder to search for. Defaults to "html".
-            max_levels: Maximum number of levels to search upward. Defaults to 3.
+            folder_name: Folder to search for, default "html".
+            max_levels: Maximum directory levels to ascend.
 
         Returns:
-            str | None: Path to the folder if found, otherwise ``None``.
+            Path to the folder if found, otherwise ``None``.
         """
         spec = importlib.util.find_spec(cls.__module__)
         source_dir: Path = Path(os.path.split(spec.origin)[0])
@@ -785,11 +867,16 @@ class Architect(AttributeInitializerMixin):
         return None
 
     def set_route(self, route: dict):
-        """
-        Adds a route to the route spec list, which is used to generate the api spec.
+        """Record a route definition for OpenAPI generation.
+
+        Why/How:
+            ``schema_constructor`` and auto‑generated endpoints call this to
+            collect the metadata used by the spec generator. The function also
+            annotates the wrapped view with a marker so downstream tooling can
+            identify it as managed by flarchitect.
 
         Args:
-            route (dict): The route object.
+            route: Route metadata dictionary.
         """
         if not hasattr(route["function"], "_decorators"):
             route["function"]._decorators = []

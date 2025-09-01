@@ -69,6 +69,10 @@ A number of configuration keys let you tailor the output:
 * `API_LOGO_URL <configuration.html#LOGO_URL>`_ – URL or static path to an image used as the logo.
 * `API_LOGO_BACKGROUND <configuration.html#LOGO_BACKGROUND>`_ – CSS colour value behind the logo (e.g.
   ``"#fff"`` or ``"transparent"``).
+* `API_CONTACT_NAME <configuration.html#CONTACT_NAME>`_, `API_CONTACT_EMAIL <configuration.html#CONTACT_EMAIL>`_,
+  `API_CONTACT_URL <configuration.html#CONTACT_URL>`_ – contact information shown in the spec.
+* `API_LICENCE_NAME <configuration.html#LICENCE_NAME>`_, `API_LICENCE_URL <configuration.html#LICENCE_URL>`_ – licence metadata.
+* `API_SERVER_URLS <configuration.html#SERVER_URLS>`_ – list of server entries (``url`` + ``description``) for environments.
 
 For example, to load a Markdown file into the specification's info section:
 
@@ -79,4 +83,3 @@ For example, to load a Markdown file into the specification's info section:
 The contents of ``docs/README.md`` are rendered in the spec's ``info`` section.
 
 See :doc:`configuration` for the full list of options.
-

@@ -30,6 +30,17 @@ _general = importlib.util.module_from_spec(_general_spec)
 _general_spec.loader.exec_module(_general)
 sys.modules["flarchitect.utils.general"] = _general
 
+# Clean up stubbed modules to avoid polluting subsequent tests that import
+# the real package. The loaded general module remains available via the
+# explicit sys.modules entry above.
+for _mod in [
+    "flarchitect.utils.core_utils",
+    "flarchitect.utils.config_helpers",
+    "flarchitect.utils",
+    "flarchitect",
+]:
+    sys.modules.pop(_mod, None)
+
 get_html_path = _general.get_html_path
 
 

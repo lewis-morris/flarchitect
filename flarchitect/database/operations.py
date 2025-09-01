@@ -477,15 +477,19 @@ class CrudService:
 
 
 def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=None, parent=None):
-    """
-    Recursively delete related objects based on foreign key constraints, optimized for performance.
+    """Recursively delete related objects following foreign key constraints.
+
+    Why/How:
+        Traverses relationships to remove dependent records when permitted.
+        Tracks visited instances to avoid cycles and redundant operations,
+        reducing database round‑trips on complex graphs.
 
     Args:
         obj: The SQLAlchemy model instance to delete.
         cascade_delete (bool): Whether to recursively delete related objects.
-        visited (set): Set of visited objects (identified by their class and primary keys) to avoid redundant deletion.
-        objects_touched (list): List of objects touched (deleted) during the recursive process.
-        parent: The parent object of the current recursion step, used to prevent backward traversal in cyclic relationships.
+        visited (set): Set of visited objects (by class and primary keys) to avoid redundant deletion.
+        objects_touched (list): Objects deleted during the recursion (for diagnostics).
+        parent: Parent object of the current step to prevent backward traversal in cyclic relationships.
     """
 
     def get_obj_id(obj):

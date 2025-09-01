@@ -16,7 +16,7 @@ comprehensive OpenAPI Redoc documentation.
 Ensure your models derive from a base class that provides a get_session method for database access. This setup is
 crucial for the API's ability to generate accurate schemas and perform database queries.
 
-- Extend DeclarativeBase and utilize `flask-SQLAlchemy` for seamless
+- Extend DeclarativeBase and utilise `flask-SQLAlchemy` for seamless
   integration. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/extensions.py#L10-L25)
 
 For `flask-SQLAlchemy` users, the following implementation is recommended:
@@ -49,21 +49,21 @@ API_TITLE = "Your API Title"
 API_VERSION = "Your API Version"
 ```
 
-## Initialize flarchitect
+## Initialise flarchitect
 
 With all extensions set up, instantiate `flarchitect` using your app's `app_context`. This step should follow the
-initialization of other extensions.
+initialisation of other extensions.
 
 Examples:
 
-- Initialize `flarchitect` in your extensions'
+- Initialise `flarchitect` in your extensions'
   setup. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/extensions.py#L26)
-- Further initialization within your app's
+- Further initialisation within your app's
   context. [View Example](https://github.com/lewis-morris/flarchitect/blob/master/demo/basic/basic/__init__.py#L28)
 
 ## Model Meta Class Attributes
 
-Enhance your `SQLAlchemy` models by adding a Meta class to organize documentation tags effectively
+Enhance your `SQLAlchemy` models by adding a Meta class to organise documentation tags effectively
 specifying `tag_group` and `tag`:
 
 ```python

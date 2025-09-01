@@ -1,7 +1,7 @@
 Config by Method Models
 ==============================
 
-    Global < Global Method < Model < **Model Method**
+    Global < Model < **Model Method**
 
 :bdg-dark-line:`Model Method`
 
