@@ -139,6 +139,11 @@ Token settings and key resolution:
 - RS256 support: when `API_JWT_ALGORITHM="RS256"`, sign with `ACCESS_PRIVATE_KEY` and verify with `ACCESS_PUBLIC_KEY` (PEM strings). Refresh tokens use `REFRESH_PRIVATE_KEY`/`REFRESH_PUBLIC_KEY`. For backwards compatibility, if only `ACCESS_SECRET_KEY`/`REFRESH_SECRET_KEY` are provided they are used to verify, but key pairs are recommended.
 - `get_user_from_token(secret_key=...)` secret selection order: explicit argument > `ACCESS_SECRET_KEY` env var > Flask `ACCESS_SECRET_KEY` config (or public key when using RS*).
 
+Auth route configuration:
+
+- Auto-registration can be disabled with `API_AUTO_AUTH_ROUTES=False`.
+- Change the refresh path with `API_AUTH_REFRESH_ROUTE` (default `/auth/refresh`).
+
 Refresh token rotation and revocation:
 
 - Refresh tokens are single‑use: calling `/auth/refresh` revokes the old refresh token and issues a new one.
@@ -215,6 +220,33 @@ app.config.update(
 
 See docs: Authentication → Role‑based access → Config‑driven roles.
 
+Enriched 403 responses on role mismatch:
+
+When a request fails role checks, the response includes contextual details to aid debugging and clients:
+
+```json
+{
+  "errors": {
+    "error": "forbidden",
+    "message": "Missing required role(s) for this action.",
+    "required_roles": ["editor", "admin"],
+    "any_of": false,
+    "method": "POST",
+    "path": "/api/widgets",
+    "resource": "widgets",
+    "user": {"id": 42, "username": "alice", "roles": ["member"]},
+    "lookup": {"pk": 42, "lookups": {"username": "alice"}},
+    "resolved_from": "POST",
+    "reason": "missing_roles"
+  }
+}
+```
+
+Notes:
+- Driven by `API_ROLE_MAP` with keys checked in order: `GET` (for GET), then method, then `ALL`, then `*`.
+- Accepts `"admin"`, `["editor","admin"]`, or `{ "roles": [...], "any_of": true }` shapes.
+- Uses best‑effort enrichment; when helper functions or config are absent, behaviour falls back to existing responses.
+
 See the full Authentication guide in the hosted docs for advanced configuration and custom strategies.
 
 ## OpenAPI specification
@@ -236,6 +268,25 @@ architect = Architect(app)  # Docs at /docs; JSON spec at /docs/apispec.json (ca
 The canonical JSON for the docs UI is configurable via ``API_DOCS_SPEC_ROUTE`` (default ``/docs/apispec.json``).
 The legacy top‑level ``API_SPEC_ROUTE`` (default ``/openapi.json``) now redirects to the docs JSON and will be removed in a future release.
 See the [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the document.
+
+### Relation route naming
+
+Control how the trailing segment of relation routes is generated and avoid collisions when multiple relationships target the same model.
+
+Configuration precedence: `Meta.relation_route_naming` (on the source/parent model) → `API_RELATION_ROUTE_NAMING` (global) → default "model".
+
+Allowed values:
+
+- `"model"` (default): Use the target model endpoint (e.g. `/api/friends/<int:id>/users`). Matches legacy behaviour.
+- `"relationship"`: Use the SQLAlchemy relationship key (`rel.key`) for the last segment (e.g. `/api/friends/<int:id>/user` and `/api/friends/<int:id>/friend`).
+- `"auto"`: Use `"relationship"` naming only when it avoids a collision (e.g. multi‑FK to the same model); otherwise fall back to `"model"`.
+
+Optional per‑relationship aliasing in the URL segment is supported when using relationship‑based naming via `Meta.relation_route_map = {"user": "owner", "friend": "contact"}` on the parent model.
+
+Notes:
+
+- Function names include a `_{rel_key}` suffix idempotently to avoid endpoint name collisions.
+- OpenAPI operationIds remain stable and unique under relationship‑based and auto modes.
 
 ## Performance: Caching
 

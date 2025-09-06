@@ -162,6 +162,19 @@ Clients include the access token with each request using the standard header::
 
    Authorization: Bearer <access-token>
 
+Auth routes configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The built‑in auth routes register automatically when JWT is enabled. You can
+adjust this behaviour via configuration:
+
+- ``API_AUTO_AUTH_ROUTES`` (bool, default ``True``): when ``False``, flarchitect
+  does not register the default ``/auth`` routes. This is useful if you want to
+  provide your own endpoints.
+- ``API_AUTH_REFRESH_ROUTE`` (str, default ``"/auth/refresh"``): path for the
+  refresh endpoint. The endpoint accepts ``{"refresh_token": "..."}`` and returns
+  a new access token using the standard response wrapper.
+
 Protecting manual routes
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

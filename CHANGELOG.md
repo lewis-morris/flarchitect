@@ -4,6 +4,16 @@
 
 ## Unreleased
 
+- Auth: Auto-register `POST` refresh route when JWT is enabled, with configurable path and idempotent registration
+  - New config: `API_AUTO_AUTH_ROUTES` (default `True`) to disable built-in auth endpoints.
+  - New config: `API_AUTH_REFRESH_ROUTE` (default `/auth/refresh`) to change the refresh path.
+  - Behaviour unchanged by default; uses existing response wrapper and token rotation.
+
+- Improve 403 role errors with required roles + context
+  - Added helpers to normalise/resolve role specs from `API_ROLE_MAP`.
+  - Enriched 403 responses on role mismatch with: `required_roles`, `any_of`, `method`, `path`, `resource`, best‑effort `user` and `lookup`, `resolved_from`, and `reason`.
+  - Preserves existing behaviour for success paths and when configuration/helpers are absent.
+
 ### Features
 
 - Performance: request-local caching for configuration/meta lookups.
@@ -12,6 +22,7 @@
   - New: optional `request_id` in JSON body via `API_DUMP_REQUEST_ID` (disabled by default).
 - Observability: optional structured JSON logging (`API_JSON_LOGS=True`) with request context and latency.
 - Docs: spec JSON now served under `/docs/apispec.json` by default; add `API_DOCS_SPEC_ROUTE` to configure the docs JSON path. The top-level `API_SPEC_ROUTE` remains available for `/openapi.json`.
+- Routing: Configurable relation route naming via `API_RELATION_ROUTE_NAMING` and `Meta.relation_route_naming` ("model" | "relationship" | "auto"). Default remains "model" for compatibility. "auto" switches to relationship key naming only when it avoids collisions. Optional `Meta.relation_route_map` allows aliasing relationship keys in URLs when relationship‑based naming is used.
 
 ### Bug Fixes
 

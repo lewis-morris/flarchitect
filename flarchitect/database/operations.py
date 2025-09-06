@@ -294,16 +294,21 @@ class CrudService:
         base_model = self.model if other_model is None else other_model
 
         if not many and lookup_val:
-            if kwargs.get("join_model"):
-                query = self.session.query(base_model).join(kwargs.get("join_model"))
-
+            # When resolving singular relation endpoints (e.g., /parents/<id>/child),
+            # prefer a relationship-aware join to avoid ambiguous FK joins.
+            if kwargs.get("join_model") and kwargs.get("relation_name"):
+                # Query the related B model via a relationship from A using the A PK lookup
+                query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
             else:
-                query = self.session.query(base_model)
-                callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
-                if callback:
-                    query = callback(query, self.model, args_dict)
+                if kwargs.get("join_model"):
+                    query = self.session.query(base_model).join(kwargs.get("join_model"))
+                else:
+                    query = self.session.query(base_model)
+                    callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
+                    if callback:
+                        query = callback(query, self.model, args_dict)
 
-            query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
+                query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
 
             if get_config_or_model_meta("API_SOFT_DELETE", model=base_model, default=False):
                 show_deleted = request.args.get("include_deleted", None)
@@ -326,8 +331,9 @@ class CrudService:
 
             query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
 
-            # relationships i.e /authors/1/books was returning a 200 when author is None. This fixes it.
-            if query.count() == 0:
+            # relationships i.e /authors/1/books should 404 when the parent is missing or has no children
+            # Use a lightweight existence check to avoid complex join inference
+            if query.first() is None:
                 raise CustomHTTPException(404, f"{kwargs.get('join_model').__name__} not found.")
 
             query = self.filter_query_from_args(args_dict, query)

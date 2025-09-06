@@ -113,6 +113,7 @@ def _route_function_factory(
     output_schema: Schema | None,
     http_method: str = "GET",
     plugins: PluginManager | None = None,
+    relation_name: str | None = None,
 ) -> Callable:
     """Construct the route function tying together hooks and action.
 
@@ -152,6 +153,7 @@ def _route_function_factory(
         pre_kwargs.setdefault("field", get_field)
         pre_kwargs.setdefault("join_model", join_model)
         pre_kwargs.setdefault("output_schema", output_schema)
+        pre_kwargs.setdefault("relation_name", relation_name)
         hook_kwargs = _global_pre_process(
             service,
             global_pre_hook,
@@ -165,6 +167,7 @@ def _route_function_factory(
         action_kwargs["join_model"] = hook_kwargs.get("join_model")
         action_kwargs["id"] = hook_kwargs.get("id")
         action_kwargs["model"] = hook_kwargs.get("model")
+        action_kwargs["relation_name"] = hook_kwargs.get("relation_name")
 
         output = action(**action_kwargs) or abort(404)
         final_output = _post_process(service, post_hook, output, **hook_kwargs)
@@ -337,6 +340,7 @@ def create_route_function(
         kwargs.get("output_schema"),
         method,
         plugins=kwargs.get("plugins"),
+        relation_name=kwargs.get("relation_name"),
     )
 
 
@@ -590,23 +594,38 @@ class RouteCreator(AttributeInitialiserMixin):
         return None, False
 
     def make_auth_routes(self):
-        """Create the authentication routes for the API."""
-        auth_method = get_config_or_model_meta("API_AUTHENTICATE_METHOD", default=None)
+        """Create the authentication routes for the API.
+
+        Honours ``API_AUTO_AUTH_ROUTES`` (default True). When disabled, no
+        built‑in auth routes are registered. Supports ``API_AUTHENTICATE_METHOD``
+        as a string or a list of methods. Normalises values to lower‑case.
+        """
+        auto = get_config_or_model_meta("API_AUTO_AUTH_ROUTES", default=True)
+        if not auto:
+            return
+
+        methods_cfg = get_config_or_model_meta("API_AUTHENTICATE_METHOD", default=None)
         user = get_config_or_model_meta("API_USER_MODEL", default=None)
 
-        if not auth_method:
+        if not methods_cfg:
             return
+
+        # Normalise to a list[str] of lower‑case methods
+        if isinstance(methods_cfg, (list, tuple, set)):
+            auth_methods = [str(m).lower() for m in methods_cfg]
+        else:
+            auth_methods = [str(methods_cfg).lower()]
 
         from flask_login import LoginManager
 
         login_manager = LoginManager()
         login_manager.init_app(self.architect.app)
 
-        if "jwt" in auth_method:
+        if "jwt" in auth_methods:
             self._make_jwt_auth_routes(user)
-        elif "basic" in auth_method:
+        elif "basic" in auth_methods:
             self._make_basic_auth_routes(user)
-        elif "api_key" in auth_method:
+        elif "api_key" in auth_methods:
             self._make_api_key_auth_routes(user)
 
         @login_manager.user_loader
@@ -801,18 +820,14 @@ class RouteCreator(AttributeInitialiserMixin):
             None: The refresh route is registered on the Flask application.
         """
 
-        @self.architect.app.route("/auth/refresh", methods=["POST"])
-        @self.architect.schema_constructor(
-            input_schema=RefreshSchema,
-            output_schema=TokenSchema,
-            many=False,
-            group_tag="Authentication",
-            tag="Authentication",
-            summary="Refresh access token.",
-            auth=False,
-            # Explicitly document possible errors for this endpoint
-            error_responses=[400, 401, 403],
-        )
+        # Configurable path with safe default
+        path = get_config_or_model_meta("API_AUTH_REFRESH_ROUTE", default="/auth/refresh")
+
+        # Avoid duplicate registration if a POST rule already exists for path
+        for rule in self.architect.app.url_map.iter_rules():  # pragma: no cover - simple iteration
+            if str(rule.rule) == str(path) and "POST" in (rule.methods or set()):
+                return
+
         def refresh(*args, **kwargs):
             """Refresh a JWT access token using a refresh token."""
 
@@ -845,6 +860,21 @@ class RouteCreator(AttributeInitialiserMixin):
                 "refresh_token": new_refresh_token,
                 "user_pk": getattr(user, pk),
             }
+
+        # Apply schema/metadata wrapper and register dynamically to honour path
+        wrapped = self.architect.schema_constructor(
+            input_schema=RefreshSchema,
+            output_schema=TokenSchema,
+            many=False,
+            group_tag="Authentication",
+            tag="Authentication",
+            summary="Refresh access token.",
+            auth=False,
+            error_responses=[400, 401, 403],
+        )(refresh)
+
+        # Unique endpoint name stable across re-runs; add only once above
+        self.architect.app.add_url_rule(path, endpoint=wrapped.__name__, view_func=wrapped, methods=["POST"])
 
     def create_api_blueprint(self):
         """Register the API blueprint and error handlers."""
@@ -948,7 +978,13 @@ class RouteCreator(AttributeInitialiserMixin):
         """
         child = relation_data["child_model"]
         parent = relation_data["parent_model"]
-        self._add_relation_url_function_to_model(child=child, parent=parent, id_key=relation_data["join_key"])
+        self._add_relation_url_function_to_model(
+            child=child,
+            parent=parent,
+            id_key=relation_data["join_key"],
+            relation_name=relation_data.get("relation_name"),
+            relation_url_segment=relation_data.get("relation_url_segment"),
+        )
         self.generate_route(**relation_data)
 
     def _prepare_route_data(self, model: Callable, session: Any, http_method: str) -> dict[str, Any]:
@@ -1022,10 +1058,31 @@ class RouteCreator(AttributeInitialiserMixin):
 
         key = get_primary_key_info(parent_model)
 
+        parent_endpoint = self._get_url_naming_function(parent_model, pinput_schema_class, poutput_schema_class)
+        child_endpoint = self._get_url_naming_function(child_model, input_schema_class, output_schema_class)
+
+        # Resolve naming strategy for relation route
+        relation_key = relation_data.get("relationship") or relation_data.get("relation_name")
+        naming_mode = self._resolve_relation_route_naming(parent_model, child_model)
+        # Optional alias map (applies to URL segment only when relationship-based)
+        alias_map = get_config_or_model_meta("RELATION_ROUTE_MAP", model=parent_model, default={}) or {}
+        alias = alias_map.get(relation_key)
+        if naming_mode == "relationship":
+            final_segment = alias or relation_key
+        elif naming_mode == "auto":
+            # Check for potential collision using model-based segment; if collision, use relationship key
+            if self._would_model_segment_collide(parent_model, child_model, child_endpoint):
+                final_segment = alias or relation_key
+                naming_mode = "relationship"  # document effective choice
+            else:
+                final_segment = child_endpoint
+        else:
+            final_segment = child_endpoint
+
         relation_url = (
-            f"/{self._get_url_naming_function(parent_model, pinput_schema_class, poutput_schema_class)}"
+            f"/{parent_endpoint}"
             f"/<{key[1]}:{key[0]}>"
-            f"/{self._get_url_naming_function(child_model, input_schema_class, output_schema_class)}"
+            f"/{final_segment}"
         )
         logger.debug(
             4,
@@ -1046,9 +1103,13 @@ class RouteCreator(AttributeInitialiserMixin):
             "parent_model": parent_model,
             "many": relation_data["join_type"][-4:].lower() == "many" or relation_data.get("many", False),
             "method": "GET",
-            "relation_name": relation_data["relationship"],
+            # Keep raw relation key for idempotent function naming suffix
+            "relation_name": relation_key,
+            # Expose the URL segment actually used for to_url helper
+            "relation_url_segment": final_segment,
             "url": relation_url,
-            "name": f"{child_model.__name__.lower()}_join_to_{parent_model.__name__.lower()}",
+            # Ensure internal route name uniqueness by including relation key (idempotent)
+            "name": self._compose_relation_route_name(child_model, parent_model, relation_key),
             "join_key": relation_data["right_column"],
             "output_schema": output_schema_class,
             "session": session,
@@ -1056,6 +1117,50 @@ class RouteCreator(AttributeInitialiserMixin):
             "roles": roles_list if roles_list else False,
             "roles_any_of": roles_any_of if roles_list else False,
         }
+
+    def _compose_relation_route_name(self, child_model: Callable, parent_model: Callable, relation_key: str) -> str:
+        base = f"{child_model.__name__.lower()}_join_to_{parent_model.__name__.lower()}"
+        suffix = f"_{relation_key}" if not base.endswith(f"_{relation_key}") else ""
+        return base + suffix
+
+    def _resolve_relation_route_naming(self, parent_model: Callable, child_model: Callable) -> str:
+        # Per-model Meta has priority
+        model_pref = get_config_or_model_meta("RELATION_ROUTE_NAMING", model=parent_model, default=None)
+        if model_pref in {"model", "relationship", "auto"}:
+            return model_pref
+        # Global config
+        global_pref = get_config_or_model_meta("API_RELATION_ROUTE_NAMING", default=None)
+        if global_pref in {"model", "relationship", "auto"}:
+            return global_pref
+        # Back-compat: translate legacy API_RELATION_URL_STYLE
+        legacy = get_config_or_model_meta("API_RELATION_URL_STYLE", default=None)
+        if legacy == "relation-key":
+            return "relationship"
+        if legacy == "target-model":
+            return "model"
+        # Default: model-based naming for backward compatibility
+        return "model"
+
+    def _would_model_segment_collide(self, parent_model: Callable, child_model: Callable, child_endpoint: str) -> bool:
+        # If multiple relationships from parent -> same child, then child_endpoint would collide
+        try:
+            rels = get_models_relationships(parent_model)
+        except Exception:
+            return False
+        same_target = [r for r in rels if r.get("model") == child_model]
+        if len(same_target) > 1:
+            return True
+        # Also detect if any other relation would produce the same last segment as child_endpoint
+        # e.g., two different children sharing the same endpoint name
+        segments = set()
+        for r in rels:
+            mdl = r.get("model")
+            if mdl is None:
+                continue
+            inp, outp = get_input_output_from_model_or_make(mdl)
+            seg = self._get_url_naming_function(mdl, inp, outp)
+            segments.add(seg)
+        return list(segments).count(child_endpoint) > 1
 
     def generate_route(self, **kwargs: dict[str, Any]):
         """Generate the route for this method/model.
@@ -1087,6 +1192,7 @@ class RouteCreator(AttributeInitialiserMixin):
             kwargs["url"],
             http_method,
             kwargs.get("many", False),
+            relation_name=kwargs.get("relation_name"),
         )
 
         if http_method == "GET" and self.architect.cache:
@@ -1127,6 +1233,8 @@ class RouteCreator(AttributeInitialiserMixin):
         url: str,
         http_method: str,
         is_many: bool = False,
+        *,
+        relation_name: str | None = None,
     ) -> Callable:
         """Create a unique route function name.
 
@@ -1139,7 +1247,10 @@ class RouteCreator(AttributeInitialiserMixin):
             Callable: The unique route function.
         """
         # Ensure the function name is unique by differentiating between collection and single item routes
-        unique_function_name = f"route_wrapper_{http_method}_collection_{url.replace('/', '_')}" if is_many else f"route_wrapper_{http_method}_single_{url.replace('/', '_')}"
+        base = f"route_wrapper_{http_method}_{'collection' if is_many else 'single'}_{url.replace('/', '_')}"
+        if relation_name and not base.endswith(f"_{relation_name}"):
+            base = f"{base}_{relation_name}"
+        unique_function_name = base
 
         unique_route_function = FunctionType(
             route_function.__code__,
@@ -1185,7 +1296,7 @@ class RouteCreator(AttributeInitialiserMixin):
         logger.log(3, f"Adding method $to_url$ to model --{model.__name__}--")
         model.to_url = to_url
 
-    def _add_relation_url_function_to_model(self, id_key: str, child: Callable, parent: Callable):
+    def _add_relation_url_function_to_model(self, id_key: str, child: Callable, parent: Callable, relation_name: str | None = None, relation_url_segment: str | None = None):
         """Add a relation URL method to the model class.
 
         Args:
@@ -1196,16 +1307,30 @@ class RouteCreator(AttributeInitialiserMixin):
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
         parent_endpoint = get_config_or_model_meta("API_ENDPOINT_NAMER", parent, default=endpoint_namer)(parent)
         child_endpoint = get_config_or_model_meta("API_ENDPOINT_NAMER", child, default=endpoint_namer)(child)
+        # Use the same naming resolution as for route building
+        naming_mode = self._resolve_relation_route_naming(parent, child)
+        # Optional alias map for URL segment
+        alias_map = get_config_or_model_meta("RELATION_ROUTE_MAP", model=parent, default={}) or {}
+        alias = alias_map.get(relation_name) if relation_name else None
+        if relation_url_segment:
+            final_segment = relation_url_segment
+        elif naming_mode == "relationship" and relation_name:
+            final_segment = alias or relation_name
+        elif naming_mode == "auto" and relation_name:
+            # For auto, we rely on what _prepare_relation_route_data computed; fallback to relationship name
+            final_segment = relation_url_segment or alias or relation_name
+        else:
+            final_segment = child_endpoint
 
         def to_url(self):
             parent_pk = get_primary_keys(parent).key
-            return f"{api_prefix}/{parent_endpoint}/{getattr(self, parent_pk)}/{child_endpoint}"
+            return f"{api_prefix}/{parent_endpoint}/{getattr(self, parent_pk)}/{final_segment}"
 
         logger.log(
             3,
-            f"Adding relation method ${child_endpoint}_to_url$ to parent model --{parent.__name__}-- linking to --{child.__name__}--.",
+            f"Adding relation method ${final_segment}_to_url$ to parent model --{parent.__name__}-- linking to --{child.__name__}--.",
         )
-        setattr(parent, f"{child_endpoint.replace('-', '_')}_to_url", to_url)
+        setattr(parent, f"{final_segment.replace('-', '_')}_to_url", to_url)
 
     def _add_to_created_routes(self, **kwargs: dict[str, Any]):
         """Add a route to the created routes dictionary.
