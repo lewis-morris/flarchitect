@@ -99,11 +99,11 @@ def scrape_extra_info_from_spec_data(
 
     for description_type in ["summary", "description"]:
         if method.lower() == "get" and multiple:
-            config_val = f"{method.lower()}_many" + description_type
+            config_val = f"{method.lower()}_many_" + description_type
         elif method.lower() == "get" and not multiple:
-            config_val = f"{method.lower()}_single" + description_type
+            config_val = f"{method.lower()}_single_" + description_type
         else:
-            config_val = f"{method.lower()}" + description_type
+            config_val = f"{method.lower()}_" + description_type
 
         new_desc = get_config_or_model_meta(config_val, model, output_schema, input_schema, None)
         if new_desc:

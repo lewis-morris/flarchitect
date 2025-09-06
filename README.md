@@ -89,6 +89,8 @@ With the application running, try your new API in another terminal window:
 curl http://localhost:5000/api/authors
 ```
 
+Important: For models to be auto-registered for CRUD routes and included in the generated docs, each model must define an inner `Meta` class. The `tag` and `tag_group` attributes are optional and only influence how endpoints are grouped in the docs. Models without `Meta` are ignored by route generation and documentation.
+
 ## Authentication
 
 flarchitect ships with ready‑to‑use JWT, Basic and API key authentication. Enable one or more strategies with

@@ -33,14 +33,19 @@ SQLAlchemy, so no special ``get_session`` method is required.
     class Author(db.Model):
         __tablename__ = "author"
 
-        class Meta:
-            tag = "Author"
-            tag_group = "People/Companies"
+        class Meta:  # required for auto-registration; fields inside are optional
+            # Optional docs grouping:
+            # tag = "Author"
+            # tag_group = "People/Companies"
 
 This setup gives **flarchitect** access to your models. The library automatically
 locates the active SQLAlchemy session. For non-Flask setups, a custom session
 resolver can be supplied via `API_SESSION_GETTER <configuration.html#SESSION_GETTER>`_ in the Flask config; see
 :ref:`custom-session-getter` for details.
+
+.. warning::
+
+   The ``Meta`` inner class is required for automatic route generation and documentation. Models without ``Meta`` are ignored and will not have CRUD endpoints or entries in the docs until you add it. The ``tag`` and ``tag_group`` attributes are optional and only affect documentation grouping.
 
 Configure Flask
 ----------------------------------------

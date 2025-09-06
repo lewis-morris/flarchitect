@@ -23,6 +23,7 @@
 ### Documentation
 
 - Configuration: Add missing `DOCUMENTATION_URL_PREFIX` to the configuration reference; clarify default and example usage.
+- Docs: Clarify that models require a `Meta` inner class for auto-registration, while `tag` and `tag_group` are optional; warnings added in Quick Start, Models guide, and README.
 
 ## v1.1.0 (2025-08-14)
 
