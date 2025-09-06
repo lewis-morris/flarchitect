@@ -1,24 +1,18 @@
 [run]
 source = flarchitect
 omit =
+    # exclude non-source or external dirs only
     */tests/*
     */demo/*
     */docs/*
     */instance/*
     */env/*
-    flarchitect/authentication/*
-    flarchitect/core/*
-    flarchitect/database/*
-    flarchitect/schemas/*
-    flarchitect/logging.py
-    flarchitect/utils/general.py
-    flarchitect/utils/decorators.py
-    flarchitect/utils/config_helpers.py
-    flarchitect/utils/response_filters.py
-    flarchitect/utils/responses.py
-    flarchitect/utils/response_helpers.py
-    flarchitect/exceptions.py
-    flarchitect/specs/*
+    */.env/*
+    */.venv/*
+    */venv/*
+    */dist/*
+    */build/*
+    */.eggs/*
 
 [report]
 fail_under = 90

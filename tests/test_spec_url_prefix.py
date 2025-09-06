@@ -10,7 +10,7 @@ def test_redoc_spec_url_respects_prefix() -> None:
     resp = client.get("/api/docs")
     html = resp.get_data(as_text=True)
     assert resp.status_code == 200
-    assert 'spec-url="/api/apispec.json"' in html
+    assert 'spec-url="/api/docs/apispec.json"' in html
 
 
 def test_swagger_spec_url_respects_prefix() -> None:
@@ -20,4 +20,4 @@ def test_swagger_spec_url_respects_prefix() -> None:
     resp = client.get("/api/docs")
     html = resp.get_data(as_text=True)
     assert resp.status_code == 200
-    assert 'url: "/api/apispec.json"' in html
+    assert 'url: "/api/docs/apispec.json"' in html

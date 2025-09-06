@@ -101,7 +101,8 @@ FAQ
 .. dropdown:: Can I generate an OpenAPI specification document?
 
     Yes. When `API_CREATE_DOCS <configuration.html#CREATE_DOCS>`_ is enabled the schema is automatically
-    generated at start-up and served at ``/openapi.json``. See
+    generated at start-up and served at ``/openapi.json`` (and under the docs UI at
+    ``/docs/apispec.json``). See
     :doc:`openapi` for examples on exporting or customising the document.
 
 .. dropdown:: How do I update documentation after adding new models?
@@ -123,4 +124,3 @@ Troubleshooting
     Confirm the model has a ``Meta`` class and the endpoint isn't blocked by
     `API_BLOCK_METHODS <configuration.html#BLOCK_METHODS>`_. Rebuilding the application will refresh the
     specification.
-

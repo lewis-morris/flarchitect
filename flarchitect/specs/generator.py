@@ -331,7 +331,13 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
             )
             return html, 200
 
-        @specification.route("apispec.json")
+        # Determine the JSON spec route under the docs path
+        docs_json_url = get_config_or_model_meta(
+            "API_DOCS_SPEC_ROUTE",
+            default=f"{(documentation_url or '/docs').rstrip('/')}/apispec.json",
+        )
+
+        @specification.route(docs_json_url)
         def get_swagger_spec() -> dict | Response | tuple[str, int]:
             """Serve the Swagger spec as JSON.
 
@@ -343,6 +349,11 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
             if unauthorized:
                 return unauthorized
             return self.architect.to_api_spec()
+
+        # Backwards-compatibility: legacy endpoints still serve the same content
+        @specification.route("apispec.json")
+        def get_legacy_apispec() -> dict | Response | tuple[str, int]:  # pragma: no cover
+            return get_swagger_spec()
 
         @specification.route("swagger.json")
         def get_legacy_swagger_spec() -> dict | Response | tuple[str, int]:

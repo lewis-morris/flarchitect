@@ -220,7 +220,7 @@ def test_auth_routes_in_spec() -> None:
         architect.api.make_auth_routes()
         register_routes_with_spec(architect, architect.route_spec)
         client = app.test_client()
-        spec = client.get("/apispec.json").get_json()
+        spec = client.get("/docs/apispec.json").get_json()
 
     assert spec["paths"]["/auth/login"]["post"]["tags"] == ["Authentication"]
     assert spec["paths"]["/auth/login"]["post"]["summary"] == "Authenticate user and return JWT tokens."

@@ -119,7 +119,7 @@ Endpoints and payloads:
 
 - `POST /auth/login` with JSON `{"username": "alice", "password": "secret"}` returns
   `{ "access_token": "...", "refresh_token": "...", "user_pk": 1 }` on success.
-- `POST /auth/refresh` with JSON `{ "refresh_token": "..." }` returns a new access token.
+- `POST /auth/refresh` with JSON `{ "refresh_token": "..." }` returns a new access token. A leading `"Bearer "` prefix is tolerated and removed. Invalid refresh JWTs return `401`; unknown/revoked/expired refresh tokens return `403`.
 - `POST /auth/logout` clears user context (stateless logout; refresh tokens are invalidated on use/expiry).
 
 Protecting routes:
@@ -227,13 +227,13 @@ from flask import Flask
 from flarchitect import Architect
 
 app = Flask(__name__)
-architect = Architect(app)  # OpenAPI served at /openapi.json, docs served at /docs
+architect = Architect(app)  # Docs at /docs; JSON spec at /docs/apispec.json (canonical)
 
 ```
 
-The specification endpoint can be customised with ``API_SPEC_ROUTE``. See the
-[OpenAPI docs](docs/source/openapi.rst) for exporting or customising the
-document.
+The canonical JSON for the docs UI is configurable via ``API_DOCS_SPEC_ROUTE`` (default ``/docs/apispec.json``).
+The legacy top‑level ``API_SPEC_ROUTE`` (default ``/openapi.json``) now redirects to the docs JSON and will be removed in a future release.
+See the [OpenAPI docs](docs/source/openapi.rst) for exporting or customising the document.
 
 ## Performance: Caching
 

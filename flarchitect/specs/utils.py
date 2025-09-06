@@ -361,10 +361,14 @@ def _initialize_auth_responses(
     links = links or {}
     auth_on = get_config_or_model_meta("API_AUTHENTICATE", default=False)
 
-    if auth_on and (403 in error_responses or not error_responses):
-        responses["403"] = build_error_response(403, links.get(403))
+    # Include 401/403 when explicitly requested via error_responses OR when
+    # authentication is globally enabled and no explicit list was provided.
+    want_401 = (error_responses and 401 in error_responses) or (auth_on and not error_responses)
+    want_403 = (error_responses and 403 in error_responses) or (auth_on and not error_responses)
 
-    if auth_on and (401 in error_responses or not error_responses):
+    if want_403:
+        responses["403"] = build_error_response(403, links.get(403))
+    if want_401:
         responses["401"] = build_error_response(401, links.get(401))
 
     return responses
@@ -888,6 +892,37 @@ def append_parameters(
         template_data = get_template_data_for_model(output_schema)
         spec_template["parameters"].extend(make_endpoint_params_description(output_schema, template_data))
 
+    # Conditionally include common error responses:
+    # - 400: input validation errors or invalid query/pagination/filter params
+    # - 422: create/update integrity/type errors
+    # These are added only when relevant features are in play.
+    responses = spec_template.setdefault("responses", {})
+
+    # 400 Bad Request
+    should_include_400 = False
+    # Include when request body validation exists
+    if input_schema is not None:
+        should_include_400 = True
+    # Include for GET collection routes where filtering/ordering/join/grouping is enabled
+    if http_method == "GET" and many and model is not None:
+        if (
+            get_config_or_model_meta("API_ALLOW_FILTERS", model=model, default=True)
+            or get_config_or_model_meta("API_ALLOW_ORDER_BY", model=model, default=True)
+            or get_config_or_model_meta("API_ALLOW_JOIN", model=model, default=False)
+            or get_config_or_model_meta("API_ALLOW_GROUPBY", model=model, default=False)
+            or get_config_or_model_meta("API_ALLOW_AGGREGATION", model=model, default=False)
+        ):
+            should_include_400 = True
+        else:
+            # Even without extra features, pagination param validation may raise 400
+            should_include_400 = True
+    if should_include_400 and "400" not in responses:
+        responses["400"] = build_error_response(400)
+
+    # 422 Unprocessable Entity for write operations using auto CRUD
+    if model is not None and http_method in {"POST", "PUT", "PATCH"} and "422" not in responses:
+        responses["422"] = build_error_response(422)
+
     add_auth_to_spec(model, spec_template)
 
 
@@ -1032,7 +1067,14 @@ def handle_authorization(f: Callable, spec_template: dict[str, Any]):
 
     if required_roles and roles_label:
         roles_desc = ", ".join(required_roles)
-        spec_template["responses"]["401"]["description"] += f" {roles_label}: {roles_desc}."
+        # Ensure a 401 response exists; some routes may not have auth_on enabled
+        # but still declare role decorators for documentation. Initialise safely.
+        responses = spec_template.setdefault("responses", {})
+        if "401" not in responses:
+            responses["401"] = build_error_response(401)
+        responses["401"]["description"] = (
+            (responses["401"].get("description") or "Unauthorized") + f" {roles_label}: {roles_desc}."
+        )
 
 
 def handle_authorisation(f: Callable, spec_template: dict[str, Any]):

@@ -32,8 +32,10 @@ added later are included the next time the application boots.
 Accessing the spec
 ------------------
 
-The generated schema is automatically served at ``/openapi.json``. Override
-the URL with `API_SPEC_ROUTE <configuration.html#SPEC_ROUTE>`_ if you need to mount the document elsewhere.
+The canonical JSON schema is served under the docs path at ``/docs/apispec.json``
+and is configurable via ``API_DOCS_SPEC_ROUTE``. The legacy top‑level path
+``/openapi.json`` (``API_SPEC_ROUTE``) now redirects to the docs JSON and will be
+removed in a future release.
 
 Security scheme
 ---------------
@@ -83,3 +85,20 @@ For example, to load a Markdown file into the specification's info section:
 The contents of ``docs/README.md`` are rendered in the spec's ``info`` section.
 
 See :doc:`configuration` for the full list of options.
+
+Error responses in the spec
+---------------------------
+
+flarchitect includes common error responses in each operation based on your
+configuration and the route’s context:
+
+- 401/403: shown when ``API_AUTHENTICATE`` is enabled, or when a route explicitly declares them (e.g., ``/auth/refresh``).
+- 429: shown when a rate limit is configured via ``API_RATE_LIMIT``; standard rate-limit headers are documented.
+- 400: shown when a request body is validated (input schema present) or for list endpoints with filtering/pagination features enabled.
+- 422: shown on ``POST``/``PUT``/``PATCH`` for models, reflecting integrity/type errors.
+- 404: shown for single-resource lookups and relationship endpoints.
+- 409: shown for ``DELETE`` (conflicts with related data or cascade rules).
+- 500: included by default unless you override the error list.
+
+You can override the default set for a specific route by supplying
+``error_responses=[...]`` to ``@architect.schema_constructor``.

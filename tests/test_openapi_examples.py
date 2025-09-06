@@ -26,7 +26,7 @@ def test_spec_has_default_examples() -> None:
     """Generated OpenAPI spec includes default examples for numeric fields."""
     app = create_app()
     client = app.test_client()
-    spec = client.get("/openapi.json").get_json()
+    spec = client.get("/docs/apispec.json").get_json()
     author_id = spec["components"]["schemas"]["author"]["properties"]["id"]["example"]
     rating = spec["components"]["schemas"]["review"]["properties"]["rating"]["example"]
     assert author_id == 1

@@ -736,6 +736,7 @@ class RouteCreator(AttributeInitialiserMixin):
             tag="Authentication",
             summary="Authenticate user and return JWT tokens.",
             auth=False,
+            error_responses=[401],
         )
         def login(*args, **kwargs):
             """Authenticate a user and return JWT tokens."""
@@ -809,12 +810,17 @@ class RouteCreator(AttributeInitialiserMixin):
             tag="Authentication",
             summary="Refresh access token.",
             auth=False,
+            # Explicitly document possible errors for this endpoint
+            error_responses=[400, 401, 403],
         )
         def refresh(*args, **kwargs):
             """Refresh a JWT access token using a refresh token."""
 
             # Extract the refresh token from the request
             refresh_token = request.get_json().get("refresh_token")
+            # Normalise in case clients send "Bearer <token>" in the payload
+            if isinstance(refresh_token, str) and refresh_token.lower().startswith("bearer "):
+                refresh_token = refresh_token.split(" ", 1)[1].strip()
             if not refresh_token:
                 raise CustomHTTPException(status_code=400, reason="Refresh token is missing")
 

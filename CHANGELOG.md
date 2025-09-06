@@ -11,6 +11,7 @@
 - Observability: correlation IDs added to every response via `X-Request-ID`.
   - New: optional `request_id` in JSON body via `API_DUMP_REQUEST_ID` (disabled by default).
 - Observability: optional structured JSON logging (`API_JSON_LOGS=True`) with request context and latency.
+- Docs: spec JSON now served under `/docs/apispec.json` by default; add `API_DOCS_SPEC_ROUTE` to configure the docs JSON path. The top-level `API_SPEC_ROUTE` remains available for `/openapi.json`.
 
 ### Bug Fixes
 
@@ -63,3 +64,6 @@
 
 - Initial project created.
 - Minimal working example.
+### Testing & Quality
+
+- Increase unit test coverage above 90% with additional tests for responses serialisation, logging, core utilities, WebSocket event bus, and schema models. Mark the optional `init_websockets` endpoint as excluded from coverage as it requires `flask_sock` at runtime.

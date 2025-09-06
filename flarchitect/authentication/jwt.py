@@ -270,6 +270,15 @@ def decode_token(
     issuer = get_config_or_model_meta("API_JWT_ISSUER", default=None)
     audience = get_config_or_model_meta("API_JWT_AUDIENCE", default=None)
 
+    # Normalise common token formats (e.g., "Bearer <token>")
+    if isinstance(token, str) and token.lower().startswith("bearer "):
+        token = token.split(" ", 1)[1].strip()
+
+    # Basic structural validation to avoid PyJWT low-level errors
+    if not isinstance(token, str) or token.count(".") < 2:
+        # Keep message generic to avoid leaking details
+        raise CustomHTTPException(status_code=401, reason="Invalid token")
+
     try:
         payload = jwt.decode(
             token,

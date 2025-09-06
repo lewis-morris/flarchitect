@@ -9,7 +9,7 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
-from flask import Flask, Response, jsonify, request
+from flask import Flask, Response, jsonify, redirect, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
@@ -410,13 +410,15 @@ class Architect(AttributeInitialiserMixin):
         self.api_spec = CustomSpec(app=app, architect=self, **kwargs)
 
         if self.get_config("API_CREATE_DOCS", True):
+            # Serve a compatibility redirect from API_SPEC_ROUTE to the docs JSON route.
+            # The canonical JSON is served by the specification blueprint at API_DOCS_SPEC_ROUTE.
             spec_route = self.get_config("API_SPEC_ROUTE", "/openapi.json")
+            docs_spec_route = self.get_config("API_DOCS_SPEC_ROUTE", "/docs/apispec.json")
 
             @app.get(spec_route)
             def openapi_spec() -> Response:
-                """Return the generated OpenAPI specification as JSON."""
-                assert self.api_spec is not None
-                return jsonify(self.api_spec.to_dict())
+                """Redirect to the canonical docs JSON route."""
+                return redirect(docs_spec_route, code=308)
 
     def init_api(self, **kwargs):
         """Initialises the api object, which handles Flask route creation for models.

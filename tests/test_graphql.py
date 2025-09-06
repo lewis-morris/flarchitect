@@ -71,7 +71,7 @@ def test_graphql_query_and_mutation() -> None:
     assert response.status_code == 200
     assert response.json["data"]["all_items"] == [{"name": "Foo"}]
 
-    spec_resp = client.get("/openapi.json")
+    spec_resp = client.get("/docs/apispec.json")
     assert "/graphql" in spec_resp.get_json()["paths"]
 
 

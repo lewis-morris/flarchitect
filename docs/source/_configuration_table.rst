@@ -116,8 +116,15 @@ Documentation Settings
           :bdg:`type` ``str``
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
-        - Path where the raw OpenAPI document is served. Override to change the
-          URL exposed by the automatic endpoint.
+        - Deprecated: now redirects to the docs JSON path. Prefer ``API_DOCS_SPEC_ROUTE``.
+    * - ``API_DOCS_SPEC_ROUTE``
+
+          :bdg:`default:` ``/docs/apispec.json``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Path of the JSON document used by the documentation UI. Defaults to a
+          doc‑scoped path under ``API_DOCUMENTATION_URL``.
     * - .. _LOGO_URL:
           ``API_LOGO_URL``
 

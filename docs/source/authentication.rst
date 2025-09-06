@@ -69,7 +69,12 @@ Expired tokens also yield a ``401``:
       "value": null
     }
 
-Refresh failures, such as an invalid refresh token, respond with ``403``:
+Refresh failures fall into two categories:
+
+- Invalid refresh JWT (bad format, wrong signature, wrong ``iss``/``aud``) → ``401`` with reason ``Invalid token``.
+- Unknown, revoked or expired-in-store refresh token → ``403`` with reason ``Invalid or expired refresh token``.
+
+Example ``403`` response:
 
 .. code-block:: json
 
@@ -146,7 +151,9 @@ When JWT is enabled, flarchitect registers the following routes:
 
 ``POST /auth/refresh``
     Accepts JSON ``{"refresh_token": "<token>"}`` and returns a new access
-    token.
+    token. For robustness, a value prefixed with ``"Bearer "`` is accepted and
+    normalised (e.g., ``"Bearer <token>"``). Invalid refresh JWTs yield ``401``;
+    revoked or expired-in-store tokens return ``403``.
 
 ``POST /auth/logout``
     Stateless logout that clears the user context on the server.
