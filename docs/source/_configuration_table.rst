@@ -6,6 +6,7 @@ Essential configuration values needed to run ``flarchitect`` and control automat
 .. list-table::
 
     * - .. _TITLE:
+
           ``API_TITLE``
 
           :bdg:`default:` ``None``
