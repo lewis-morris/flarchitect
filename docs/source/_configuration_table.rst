@@ -61,6 +61,14 @@ Documentation Settings
 
 .. list-table::
 
+    * - .. _DOCUMENTATION_URL_PREFIX:
+          ``DOCUMENTATION_URL_PREFIX``
+
+          :bdg:`default:` ``/``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - URL prefix for the documentation blueprint. Useful when mounting the app or docs under a subpath (e.g., behind a reverse proxy). Affects both the docs page and its JSON spec route. Example: set to ``/api`` to serve docs at ``/api/docs`` and spec at ``/api/docs/apispec.json``.
     * - .. _CREATE_DOCS:
           ``API_CREATE_DOCS``
 

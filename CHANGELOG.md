@@ -20,6 +20,10 @@
 - TBD: second bug fix summary.
 - TBD: third bug fix summary.
 
+### Documentation
+
+- Configuration: Add missing `DOCUMENTATION_URL_PREFIX` to the configuration reference; clarify default and example usage.
+
 ## v1.1.0 (2025-08-14)
 
 ### Bug Fixes
