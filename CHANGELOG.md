@@ -26,10 +26,13 @@
 
 ### Bug Fixes
 
-<!-- Replace the placeholders below with concrete entries -->
-- TBD: first bug fix summary.
-- TBD: second bug fix summary.
-- TBD: third bug fix summary.
+- Serialization: Prevent DetachedInstanceError by eager-loading relations when `API_ADD_RELATIONS=true` and `API_SERIALIZATION_DEPTH>0`; add detached-safe attribute access.
+  - New: `API_SERIALIZATION_IGNORE_DETACHED` (default `True`) to gracefully skip unloaded relations during dump.
+  - Relation URL helpers now return safe defaults (`None`/`[]`) when objects are detached.
+
+- Routing: `to_url` now uses SQLAlchemy `Column.key` (mapped attribute name) rather than `Column.name` (DB column) when resolving primary key attributes, fixing AttributeError for models with renamed DB columns.
+
+- Decorators: Allow `output_schema=None` to bypass Marshmallow serialisation and return the raw handler output wrapped in the standard response envelope. Also filter wrapper kwargs to only those accepted by the handler's function signature to avoid `TypeError` from unexpected keywords (e.g. `model`).
 
 ### Documentation
 

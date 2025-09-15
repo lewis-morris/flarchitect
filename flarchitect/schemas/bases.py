@@ -34,6 +34,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON, JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, class_mapper
+from sqlalchemy.orm import exc as orm_exc
 from sqlalchemy_utils.types.email import EmailType
 
 from flarchitect.logging import logger
@@ -116,6 +117,25 @@ class Base(Schema):  # Inheriting from marshmallow's Schema
         #     (marshmallow 4 no longer accepts it)
         self.context: dict = context or {}
         super().__init__(*args, **kwargs)
+
+    def get_attribute(self, obj, attr, default):
+        """Safely resolve attributes during serialisation.
+
+        Guards against SQLAlchemy ``DetachedInstanceError`` when objects are
+        detached from their session at dump time. Controlled by
+        ``API_SERIALIZATION_IGNORE_DETACHED`` (default True). When enabled,
+        missing/unloaded attributes resolve to the provided ``default`` rather
+        than raising.
+        """
+        ignore_detached = get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True)
+        try:
+            return super().get_attribute(obj, attr, default)
+        except orm_exc.DetachedInstanceError:
+            if ignore_detached:
+                # Return a concrete null-ish value so the field serialises
+                # explicitly rather than being omitted as "missing".
+                return None
+            raise
 
     @classmethod
     def get_model(cls):
@@ -509,11 +529,27 @@ class AutoSchema(Base):
         Assumptions:
             Related objects implement a ``to_url`` method.
         """
-        related = getattr(obj, attribute)
+        try:
+            related = getattr(obj, attribute)
+        except orm_exc.DetachedInstanceError:
+            if get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True):
+                return None
+            raise
+
         if isinstance(related, list):
-            return [item.to_url() for item in related]
+            try:
+                return [item.to_url() for item in related]
+            except orm_exc.DetachedInstanceError:
+                if get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True):
+                    return []
+                raise
         elif related:
-            return related.to_url()
+            try:
+                return related.to_url()
+            except orm_exc.DetachedInstanceError:
+                if get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True):
+                    return None
+                raise
         else:
             return None
 
@@ -535,8 +571,12 @@ class AutoSchema(Base):
         """
 
         child_end = get_config_or_model_meta("API_ENDPOINT_NAMER", other_schema.Meta.model, default=endpoint_namer)(other_schema.Meta.model)
-
-        return getattr(obj, child_end.replace("-", "_") + "_to_url")()
+        try:
+            return getattr(obj, child_end.replace("-", "_") + "_to_url")()
+        except orm_exc.DetachedInstanceError:
+            if get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True):
+                return []
+            raise
 
     def add_relationship_field(
         self,

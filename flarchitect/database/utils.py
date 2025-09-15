@@ -12,6 +12,8 @@ from sqlalchemy.orm import (
     RelationshipProperty,
     class_mapper,
 )
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.orm import joinedload, selectinload
 
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.logging import logger
@@ -59,6 +61,56 @@ def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]
     """
 
     return [(relation.key, relation.mapper.class_.__name__) for relation in class_mapper(model).relationships]
+
+
+def _eager_options_for(model_cls: type[DeclarativeBase], depth: int = 1, _visited: frozenset[type[DeclarativeBase]] | None = None) -> list:
+    """Compose SQLAlchemy loader options to eager-load relationships up to ``depth``.
+
+    Prefers ``selectinload`` for collections to avoid row explosion, and
+    ``joinedload`` for scalar relationships. Recurses into related mappers until
+    ``depth`` is exhausted.
+
+    Args:
+        model_cls: SQLAlchemy declarative model class to inspect.
+        depth: Maximum relationship traversal depth (>=1 to include first level).
+        _visited: Guard set to avoid infinite recursion on cyclic graphs.
+
+    Returns:
+        list[LoaderOption]: Loader options suitable for passing to ``Query.options``.
+    """
+    if depth <= 0 or model_cls is None:
+        return []
+
+    visited = _visited or frozenset()
+    if model_cls in visited:
+        return []
+
+    opts: list = []
+    try:
+        mapper = sa_inspect(model_cls)
+    except Exception:  # pragma: no cover - defensive for non-mapped classes
+        return []
+
+    for rel in mapper.relationships:  # type: RelationshipProperty
+        try:
+            # Skip viewonly relationships to avoid unnecessary loader work
+            if getattr(rel, "viewonly", False):
+                continue
+            attr = getattr(model_cls, rel.key)
+        except Exception:
+            continue
+
+        # Prefer selectinload for collections to avoid row multiplication
+        loader = selectinload(attr) if rel.uselist else joinedload(attr)
+
+        if depth > 1:
+            sub = _eager_options_for(rel.mapper.class_, depth - 1, visited | {model_cls})
+            if sub:
+                loader = loader.options(*sub)
+
+        opts.append(loader)
+
+    return opts
 
 
 def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, DeclarativeBase]) -> tuple[dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]]:

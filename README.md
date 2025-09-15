@@ -124,6 +124,8 @@ Endpoints and payloads:
 - `POST /auth/refresh` with JSON `{ "refresh_token": "..." }` returns a new access token. A leading `"Bearer "` prefix is tolerated and removed. Invalid refresh JWTs return `401`; unknown/revoked/expired refresh tokens return `403`.
 - `POST /auth/logout` clears user context (stateless logout; refresh tokens are invalidated on use/expiry).
 
+Token payloads include both the user's primary key and lookup field (e.g. username/email) to support flexible client flows. Keys are derived via configured model/meta helpers; ensure `ACCESS_SECRET_KEY` and `REFRESH_SECRET_KEY` are set via env or Flask config.
+
 Protecting routes:
 
 - Via decorator: `from flarchitect.core.architect import jwt_authentication` and decorate the view: `@jwt_authentication`.

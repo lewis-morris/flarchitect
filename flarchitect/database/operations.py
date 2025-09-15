@@ -22,6 +22,7 @@ from flarchitect.database.utils import (
     get_table_and_column,
     parse_column_table_and_operator,
     validate_table_and_column,
+    _eager_options_for,
 )
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -293,6 +294,10 @@ class CrudService:
         """
         base_model = self.model if other_model is None else other_model
 
+        # Determine eager-loading preference based on configuration
+        eager_depth = int(get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=0) or 0)
+        eager_enabled = bool(get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True)) and eager_depth > 0
+
         if not many and lookup_val:
             # When resolving singular relation endpoints (e.g., /parents/<id>/child),
             # prefer a relationship-aware join to avoid ambiguous FK joins.
@@ -309,6 +314,12 @@ class CrudService:
                         query = callback(query, self.model, args_dict)
 
                 query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
+
+            # Apply eager-loader options for single-object fetches
+            if eager_enabled:
+                opts = _eager_options_for(base_model, eager_depth)
+                if opts:
+                    query = query.options(*opts)
 
             if get_config_or_model_meta("API_SOFT_DELETE", model=base_model, default=False):
                 show_deleted = request.args.get("include_deleted", None)
@@ -331,6 +342,12 @@ class CrudService:
 
             query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
 
+            # Apply eager options for related collection endpoints
+            if eager_enabled:
+                opts = _eager_options_for(self.model if other_model is None else other_model, eager_depth)
+                if opts:
+                    query = query.options(*opts)
+
             # relationships i.e /authors/1/books should 404 when the parent is missing or has no children
             # Use a lightweight existence check to avoid complex join inference
             if query.first() is None:
@@ -339,6 +356,12 @@ class CrudService:
             query = self.filter_query_from_args(args_dict, query)
         else:
             query = self.filter_query_from_args(args_dict)
+
+        # Apply eager options for general collection queries
+        if eager_enabled and 'query' in locals() and hasattr(query, 'options'):
+            opts = _eager_options_for(base_model, eager_depth)
+            if opts:
+                query = query.options(*opts)
 
         callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
         if callback:

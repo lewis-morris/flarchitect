@@ -26,6 +26,7 @@ flarchitect
    openapi
    graphql
    error_handling
+   hooks_cheatsheet
 
 .. toctree::
    :maxdepth: 2

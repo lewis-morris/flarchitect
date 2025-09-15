@@ -1279,7 +1279,9 @@ class RouteCreator(AttributeInitialiserMixin):
         Args:
             model (Callable): The model to add the function to.
         """
-        primary_keys = [key.name for key in model.__table__.primary_key]
+        # Use Column.key (Python attribute name) rather than Column.name (DB column)
+        # so models that map columns with a different DB name work correctly.
+        primary_keys = [col.key for col in model.__table__.primary_key]
         if len(primary_keys) > 1:
             logger.error(
                 1,

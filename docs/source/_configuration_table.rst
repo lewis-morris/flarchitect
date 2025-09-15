@@ -474,6 +474,15 @@ Serialisation Settings
           :bdg-secondary:`Optional` 
 
         - Depth for nested relationship serialisation. Higher numbers include deeper related objects, impacting performance.
+    * - .. _SERIALIZATION_IGNORE_DETACHED:
+
+          ``API_SERIALIZATION_IGNORE_DETACHED``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When enabled, gracefully skips unloaded/detached relationships during dump and returns ``None``/``[]`` instead of raising ``DetachedInstanceError``. Use in combination with ``API_SERIALIZATION_DEPTH`` to pre-load relations.
     * - .. _DUMP_HYBRID_PROPERTIES:
 
           ``API_DUMP_HYBRID_PROPERTIES``

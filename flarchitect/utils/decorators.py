@@ -122,7 +122,7 @@ def _construct_url(parsed_url, query_params, page, total_count, limit):
     return None
 
 
-def handle_many(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
+def handle_many(output_schema: type[AutoSchema] | None, input_schema: type[AutoSchema] | None = None) -> Callable:
     """Serialise a list response and optionally deserialise input.
 
     Why/How:
@@ -140,7 +140,7 @@ def handle_many(output_schema: type[AutoSchema], input_schema: type[AutoSchema] 
     return _handle_decorator(output_schema, input_schema, many=True)
 
 
-def handle_one(output_schema: type[AutoSchema], input_schema: type[AutoSchema] | None = None) -> Callable:
+def handle_one(output_schema: type[AutoSchema] | None, input_schema: type[AutoSchema] | None = None) -> Callable:
     """Serialise a single-item response and optionally deserialise input.
 
     Args:
@@ -154,7 +154,7 @@ def handle_one(output_schema: type[AutoSchema], input_schema: type[AutoSchema] |
 
 
 def _handle_decorator(
-    output_schema: type[AutoSchema],
+    output_schema: type[AutoSchema] | None,
     input_schema: type[AutoSchema] | None,
     many: bool,
 ) -> Callable:
@@ -170,23 +170,41 @@ def _handle_decorator(
     """
 
     def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        @standardise_response
-        @fields(output_schema, many=many)
-        def wrapper(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
+        # Core logic shared by both branches (with/without fields wrapper)
+        def _core(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
             if input_schema:
                 data_or_error = deserialise_data(input_schema, request)
-                if isinstance(data_or_error, tuple):  # Error occurred during deserialization
+                if isinstance(data_or_error, tuple):  # Error occurred during deserialisation
                     case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
                     error = {convert_case(k, case): v for k, v in data_or_error[0].items()}
                     raise CustomHTTPException(HTTP_BAD_REQUEST, error)
                 kwargs["deserialized_data"] = data_or_error
                 kwargs["model"] = getattr(input_schema.Meta, "model", None)
 
+            # Extract any schema injected by fields() so it isn't passed to func
             new_output_schema: type[AutoSchema] | None = kwargs.pop("schema", None)
-            result = func(*args, **kwargs)
 
+            # Filter kwargs to only those accepted by the target function
+            import inspect as _inspect
+            sig = _inspect.signature(func)
+            accepted = set(sig.parameters.keys())
+            filtered_kwargs = {k: v for k, v in kwargs.items() if k in accepted}
+
+            result = func(*args, **filtered_kwargs)
             return serialise_output_with_mallow(new_output_schema, result) if new_output_schema else result
+
+        # Assemble wrapper with or without the fields() decorator
+        if output_schema is not None:
+            @wraps(func)
+            @standardise_response
+            @fields(output_schema, many=many)
+            def wrapper(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
+                return _core(*args, **kwargs)
+        else:
+            @wraps(func)
+            @standardise_response
+            def wrapper(*args: Any, **kwargs: dict[str, Any]) -> dict[str, Any] | tuple:
+                return _core(*args, **kwargs)
 
         return wrapper
 
@@ -270,7 +288,7 @@ def standardize_response(func: Callable) -> Callable:  # pragma: no cover - shim
     return standardise_response(func)
 
 
-def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
+def fields(model_schema: type[AutoSchema] | None, many: bool = False) -> Callable:
     """Control which fields are serialised on the response.
 
     Why/How:
@@ -285,6 +303,13 @@ def fields(model_schema: type[AutoSchema], many: bool = False) -> Callable:
     Returns:
         The decorated function.
     """
+
+    # If no schema provided, return a no-op decorator
+    if model_schema is None:
+        def _noop(func: Callable) -> Callable:
+            return func
+
+        return _noop
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
