@@ -10,6 +10,7 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any
 
 from flask import Blueprint, abort, g, request
+from sqlalchemy import inspect as sa_inspect
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase, Session
 from werkzeug.exceptions import default_exceptions
@@ -1279,10 +1280,10 @@ class RouteCreator(AttributeInitialiserMixin):
         Args:
             model (Callable): The model to add the function to.
         """
-        # Use Column.key (Python attribute name) rather than Column.name (DB column)
-        # so models that map columns with a different DB name work correctly.
-        primary_keys = [col.key for col in model.__table__.primary_key]
-        if len(primary_keys) > 1:
+        # Resolve the first primary key attribute name from the mapper; prefer
+        # the mapped attribute (e.g., 'id') over the raw DB column name.
+        pk_cols = list(sa_inspect(model).primary_key)
+        if len(pk_cols) > 1:
             logger.error(
                 1,
                 f"Composite primary keys are not supported, failed to set method $to_url$ on --{model.__name__}--",
@@ -1293,7 +1294,14 @@ class RouteCreator(AttributeInitialiserMixin):
         url_naming_function = get_config_or_model_meta("API_ENDPOINT_NAMER", model, default=endpoint_namer)
 
         def to_url(self):
-            return f"{api_prefix}/{url_naming_function(model)}/{getattr(self, primary_keys[0])}"
+            try:
+                mapped_prop = sa_inspect(model).get_property_by_column(pk_cols[0])
+                attr_name = getattr(mapped_prop, "key", None)
+            except Exception:
+                attr_name = None
+            if not attr_name:
+                attr_name = getattr(pk_cols[0], "key", None) or getattr(pk_cols[0], "name", None)
+            return f"{api_prefix}/{url_naming_function(model)}/{getattr(self, attr_name)}"
 
         logger.log(3, f"Adding method $to_url$ to model --{model.__name__}--")
         model.to_url = to_url
