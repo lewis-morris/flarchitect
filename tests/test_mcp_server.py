@@ -31,36 +31,13 @@ class _FakeFastMCP:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
         self.tools: dict[str, dict[str, object]] = {}
-        self.list_resources_handler = None
-        self.read_resource_handler = None
+        self.resources: list[_FakeTextResource] = []
         self.run_called = False
         type(self).instances.append(self)
 
-    def list_resources(self, func=None):
-        if func is not None:
-            self.list_resources_handler = func
-            return func
-
-        def decorator(inner):
-            self.list_resources_handler = inner
-            return inner
-
-        return decorator
-
-    on_list_resources = list_resources
-
-    def read_resource(self, func=None):
-        if func is not None:
-            self.read_resource_handler = func
-            return func
-
-        def decorator(inner):
-            self.read_resource_handler = inner
-            return inner
-
-        return decorator
-
-    on_read_resource = read_resource
+    def add_resource(self, resource):
+        self.resources.append(resource)
+        return resource
 
     def tool(self, *args, **kwargs):
         if args and callable(args[0]):
@@ -119,19 +96,9 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
 
     fake_instance = _FakeFastMCP.instances[-1]
     assert {"search_docs", "get_doc_section"} <= set(fake_instance.tools.keys())
-    assert fake_instance.list_resources_handler is not None
-
-    resources_payload = asyncio.run(fake_instance.list_resources_handler())
-    if hasattr(resources_payload, "resources"):
-        resources = resources_payload.resources
-    else:
-        resources = resources_payload["resources"]
-    assert resources, "Expected list_resources to return at least one document"
-    first_resource = resources[0]
-    uri = getattr(first_resource, "uri", None)
-    if uri is None:
-        uri = first_resource["uri"]
-    assert uri.startswith("flarchitect-doc://")
+    assert fake_instance.resources, "Expected resources to be registered"
+    first_resource = fake_instance.resources[0]
+    assert first_resource.uri.startswith("flarchitect-doc://")
 
     search_tool = fake_instance.tools["search_docs"]["func"]
     result = asyncio.run(search_tool(query="guide"))
