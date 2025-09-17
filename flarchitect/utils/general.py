@@ -517,10 +517,30 @@ def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
         count = get_count(result, value)
         next_url = result.get("next_url")
         previous_url = result.get("previous_url")
+    elif _looks_like_response_container(result):
+        # ``CustomResponse`` exposes ``value``/``next_url``/``previous_url``
+        # so we extract them without importing the class to avoid cycles.
+        value = getattr(result, "value")
+        next_url = getattr(result, "next_url", None)
+        previous_url = getattr(result, "previous_url", None)
+        count = getattr(result, "count", count)
     else:
         value = result
 
     return status_code, value, count, next_url, previous_url
+
+
+def _looks_like_response_container(result: Any) -> bool:
+    """Best-effort test for objects that mimic ``CustomResponse``.
+
+    The project uses :class:`flarchitect.utils.responses.CustomResponse` to
+    package pagination metadata alongside a payload. Importing that class here
+    would introduce a circular dependency, so we duck-type against the expected
+    attributes instead.  This keeps :func:`handle_result` flexible whilst
+    retaining backwards compatibility.
+    """
+
+    return all(hasattr(result, attribute) for attribute in ("value", "next_url", "previous_url"))
 
 
 HTTP_OK = 200

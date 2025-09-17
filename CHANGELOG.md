@@ -26,6 +26,7 @@
 
 ### Bug Fixes
 
+- MCP: Restore compatibility with modern `fastmcp` releases by registering documentation resources and tools via the new high-level API, fixing `--backend fastmcp` startup failures.
 - Serialization: Prevent DetachedInstanceError by eager-loading relations when `API_ADD_RELATIONS=true` and `API_SERIALIZATION_DEPTH>0`; add detached-safe attribute access.
   - New: `API_SERIALIZATION_IGNORE_DETACHED` (default `True`) to gracefully skip unloaded relations during dump.
   - Relation URL helpers now return safe defaults (`None`/`[]`) when objects are detached.

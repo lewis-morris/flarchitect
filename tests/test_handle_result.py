@@ -87,3 +87,19 @@ def test_handle_result_error_dict():
     status, value, count, *_ = handle_result(result)
     assert status == HTTP_INTERNAL_SERVER_ERROR
     assert "id" in value["errors"]
+
+
+def test_handle_result_with_custom_like_container():
+    class DummyResponse:
+        value = {"id": 9}
+        next_url = "next"
+        previous_url = "prev"
+        count = None
+
+    status, value, count, next_url, previous_url = handle_result(DummyResponse())
+
+    assert status == HTTP_OK
+    assert value == {"id": 9}
+    assert count is None
+    assert next_url == "next"
+    assert previous_url == "prev"

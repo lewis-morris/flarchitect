@@ -6,9 +6,63 @@ from typing import Any
 from flask import Response, current_app, g, jsonify
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta, is_xml
-from flarchitect.utils.core_utils import convert_case, dict_to_xml, get_count
-from flarchitect.utils.general import HTTP_BAD_REQUEST, HTTP_OK
+from flarchitect.utils.core_utils import convert_case, dict_to_xml
+from flarchitect.utils.general import HTTP_BAD_REQUEST, handle_result
 from flarchitect.utils.response_filters import _filter_response_data
+
+
+def _prepare_response_components(
+    value: Any | None,
+    status: int,
+    errors: str | list | dict | None,
+    count: int | None,
+    next_url: str | None,
+    previous_url: str | None,
+    result: Any | None,
+) -> tuple[int, Any | None, str | list | dict | None, int | None, str | None, str | None]:
+    """Normalise response components before serialisation.
+
+    ``create_response`` accepts values both via the ``value`` parameter and
+    through the richer ``result`` argument. The latter is preferred and may be a
+    tuple, mapping or ``CustomResponse``-style container. This helper distils
+    those variants into consistent primitives which keeps the main function
+    focused on building the envelope.
+    """
+
+    if result is not None:
+        status, value, count, next_url, previous_url = handle_result(result)
+        errors = None if status < HTTP_BAD_REQUEST else value
+        if errors:
+            value = None
+    elif isinstance(value, tuple) and len(value) == 2 and isinstance(value[1], int):
+        status, value = value[1], value[0]
+
+    return status, value, errors, count, next_url, previous_url
+
+
+def _ensure_response_ms(response_ms: float | None) -> float | str:
+    """Return a response-time metric, falling back to ``g.start_time``.
+
+    When ``create_response`` is called in error handlers there may be no
+    explicit ``response_ms`` value supplied. We default to calculating it from
+    the Flask ``g`` object where the project records the request start time. If
+    even that is unavailable we emit ``"n/a"`` so the schema remains stable.
+    """
+
+    if response_ms is not None:
+        return response_ms
+
+    start_time = g.get("start_time") if hasattr(g, "get") else None
+    if start_time:
+        return round((time.time() - start_time) * 1000, 0)
+
+    return "n/a"
+
+
+def _extract_serialisable_value(value: Any | None) -> Any | None:
+    """Unwrap container types that expose a ``value`` attribute."""
+
+    return getattr(value, "value", value)
 
 
 def create_response(
@@ -43,31 +97,17 @@ def create_response(
     Returns:
         Response: A standardised response object.
     """
-    if result is not None:
-        from flarchitect.utils.responses import CustomResponse
+    status, value, errors, count, next_url, previous_url = _prepare_response_components(
+        value,
+        status,
+        errors,
+        count,
+        next_url,
+        previous_url,
+        result,
+    )
 
-        status, value, count, next_url, previous_url = HTTP_OK, result, 1, None, None
-        if isinstance(result, tuple):
-            status, value = (result[1], result[0]) if len(result) == 2 and isinstance(result[1], int) else (HTTP_OK, result)
-        if isinstance(value, dict):
-            value_dict = value
-            value, count = value_dict.get("query", value_dict), get_count(value_dict, value_dict.get("query"))
-            next_url, previous_url = value_dict.get("next_url"), value_dict.get("previous_url")
-        elif isinstance(value, CustomResponse):
-            next_url, previous_url, count = (
-                value.next_url,
-                value.previous_url,
-                value.count,
-            )
-        errors = None if status < HTTP_BAD_REQUEST else value
-        if errors:
-            value = None
-    elif isinstance(value, tuple) and len(value) == 2 and isinstance(value[1], int):
-        status, value = value[1], value[0]
-
-    if response_ms is None:
-        # error responses were missing this. Added here to ensure it's always present.
-        response_ms = round((time.time() - g.start_time) * 1000, 0) if g.get("start_time") else "n/a"
+    response_ms = _ensure_response_ms(response_ms)
 
     current_time_with_tz = datetime.now(timezone.utc).isoformat()
     # Best-effort request id from Flask context (set by Architect.before_request)
@@ -78,7 +118,7 @@ def create_response(
     data = {
         "api_version": current_app.config.get("API_VERSION"),
         "datetime": current_time_with_tz,
-        "value": value.value if hasattr(value, "value") else value,
+        "value": _extract_serialisable_value(value),
         "status_code": status,
         "errors": errors[0] if errors and isinstance(errors, list) else errors,
         "response_ms": response_ms,
