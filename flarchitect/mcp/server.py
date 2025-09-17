@@ -162,33 +162,13 @@ class ServerConfig:
 def build_index(project_root: Path) -> DocumentIndex:
     """Construct a :class:`DocumentIndex` with sensible defaults."""
 
-    doc_roots: list[Path] = []
-    aliases: dict[Path, str] = {}
-
     docs_source = project_root / "docs" / "source"
-    if docs_source.exists():
-        doc_roots.append(docs_source)
-        aliases[docs_source] = "docs/source"
-
-    docs_root = project_root / "docs"
-    if docs_root.exists() and docs_root != docs_source:
-        doc_roots.append(docs_root)
-        aliases[docs_root] = "docs"
-
-    project_docs = [
-        project_root / "README.md",
-        project_root / "CHANGELOG.md",
-        project_root / "SUGGESTIONS.md",
-        project_root / "AGENTS.md",
-    ]
-    extra_files = {path: path.name for path in project_docs if path.exists()}
-
-    if not doc_roots:
+    if not docs_source.exists():
         raise FileNotFoundError(
             "No documentation roots discovered. Provide --project-root pointing to the repository root or pass custom directories."
         )
 
-    return DocumentIndex(doc_roots, aliases=aliases, extra_files=extra_files)
+    return DocumentIndex(project_root, doc_path=docs_source)
 
 
 def create_server(

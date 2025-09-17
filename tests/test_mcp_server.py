@@ -67,14 +67,15 @@ class _FakeFastMCP:
 def doc_index(tmp_path: Path) -> DocumentIndex:
     docs_dir = tmp_path / "docs" / "source"
     docs_dir.mkdir(parents=True)
-    (docs_dir / "guide.rst").write_text("Guide\n====\n\nSome details.\n", encoding="utf-8")
-    readme = tmp_path / "README.md"
-    readme.write_text("# Overview\n\nProject intro.\n", encoding="utf-8")
-    return DocumentIndex(
-        [docs_dir],
-        aliases={docs_dir: "docs/source"},
-        extra_files={readme: "README.md"},
+    (docs_dir / "guide.rst").write_text(
+        "Guide\n====\n\nSome details about installation.\n",
+        encoding="utf-8",
     )
+    (docs_dir / "advanced_configuration.rst").write_text(
+        "Callbacks\n==========\n\nHooks for create, read, update, delete.\n",
+        encoding="utf-8",
+    )
+    return DocumentIndex(tmp_path)
 
 
 def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> None:
@@ -116,16 +117,15 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
     section = asyncio.run(get_section_tool(doc_id="docs/source/guide.rst", heading=None))
     assert "Guide" in section.structured_content["result"]["content"]
 
-    readme_section = asyncio.run(get_section_tool(doc_id="README", heading=None))
-    assert "Overview" in readme_section.structured_content["result"]["content"]
+    normalized_section = asyncio.run(get_section_tool(doc_id="GUIDE", heading=None))
+    assert "installation" in normalized_section.structured_content["result"]["content"].lower()
 
     list_docs_tool = fake_instance.tools["list_docs"]["func"]
     listed = asyncio.run(list_docs_tool())
     docs_payload = listed.structured_content["result"]
     titles = {item["title"] for item in docs_payload}
-    doc_ids = {item["doc_id"] for item in docs_payload}
     assert "Guide" in titles
-    assert "README.md" in doc_ids
+    assert any(item["doc_id"].endswith("guide.rst") for item in docs_payload)
 
     # The server wrapper should call the run method when serve() is invoked.
     assert fake_instance.run_called is False
