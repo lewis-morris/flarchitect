@@ -27,6 +27,7 @@
 ### Bug Fixes
 
 - MCP: Restore compatibility with modern `fastmcp` releases by registering documentation resources and tools via the new high-level API, fixing `--backend fastmcp` startup failures.
+- MCP: Return `structuredContent` plus JSON text outputs for `search_docs` and `get_doc_section`, complying with the 2025-06-18 MCP tool result schema.
 - Serialization: Prevent DetachedInstanceError by eager-loading relations when `API_ADD_RELATIONS=true` and `API_SERIALIZATION_DEPTH>0`; add detached-safe attribute access.
   - New: `API_SERIALIZATION_IGNORE_DETACHED` (default `True`) to gracefully skip unloaded relations during dump.
   - Relation URL helpers now return safe defaults (`None`/`[]`) when objects are detached.
@@ -41,6 +42,16 @@
 - Docs: Clarify that models require a `Meta` inner class for auto-registration, while `tag` and `tag_group` are optional; warnings added in Quick Start, Models guide, and README.
 - Developer tooling: Provide an optional `flarchitect-mcp-docs` MCP server exposing the Sphinx sources, README, CHANGELOG, and suggestions backlog with `search_docs`/`get_doc_section` tools plus a reusable `DocumentIndex` helper and support for the `fastmcp` backend (`--backend fastmcp`).
 - Docs: Expanded callbacks & plugins guide with full lifecycle, signatures, context keys and practical examples.
+
+## v1.2.0 (2025-06-18)
+
+### Features
+
+- MCP: Align the documentation MCP server with the 2025-06-18 specification, advertising capabilities during `initialize`, using slash-delimited method names, camelCase resource payloads, and structured tool results. Requires `modelcontextprotocol>=0.3.0` and `fastmcp>=0.3.0`.
+
+### Testing & Quality
+
+- Extend fastmcp regression tests to assert `structuredContent` outputs and availability of search/list handlers under the new method names.
 
 ## v1.1.0 (2025-08-14)
 

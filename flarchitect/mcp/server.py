@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import inspect
+import json
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -12,6 +13,53 @@ from typing import Any, Callable, Iterable, Optional, Sequence
 from flarchitect import __version__ as PACKAGE_VERSION
 
 from .index import DocumentIndex, DocumentRecord, SearchHit
+
+
+PROTOCOL_VERSION = "2025-06-18"
+DOC_URI_PREFIX = "flarchitect-doc://"
+
+_SEARCH_INPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "query": {"type": "string", "description": "Text to search for"},
+        "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 10,
+            "description": "Maximum number of results to return",
+        },
+    },
+    "required": ["query"],
+}
+
+_SECTION_INPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "doc_id": {
+            "type": "string",
+            "description": "Document identifier as returned by tools/list",
+        },
+        "heading": {
+            "type": ["string", "null"],
+            "description": "Optional heading to slice out of the document",
+        },
+    },
+    "required": ["doc_id"],
+}
+
+_TOOL_DEFINITIONS: tuple[tuple[str, str, dict[str, Any]], ...] = (
+    (
+        "search_docs",
+        "Search flarchitect documentation for matching text.",
+        _SEARCH_INPUT_SCHEMA,
+    ),
+    (
+        "get_doc_section",
+        "Return a full document or a named section by heading.",
+        _SECTION_INPUT_SCHEMA,
+    ),
+)
 
 
 @dataclass
@@ -104,10 +152,7 @@ def _create_fastmcp_server(config: ServerConfig, index: DocumentIndex):
             kwargs[field] = getattr(config, field)
     app = fastmcp_cls(**kwargs)
 
-    configured = _configure_fastmcp_modern(app, config, index) or _configure_fastmcp_legacy(
-        app, config, index
-    )
-    if not configured:
+    if not _configure_fastmcp(app, config, index):
         return None
 
     run_callable = _resolve_attr(app, ("serve", "run", "start"))
@@ -117,168 +162,102 @@ def _create_fastmcp_server(config: ServerConfig, index: DocumentIndex):
     return _CallableServer(run_callable)
 
 
-def _configure_fastmcp_modern(app: Any, config: ServerConfig, index: DocumentIndex) -> bool:
-    add_resource = getattr(app, "add_resource", None)
-    tool = getattr(app, "tool", None)
-    if add_resource is None or tool is None:
-        return False
-
-    try:
-        from typing import Annotated
-
-        from pydantic import Field
-
-        resources_module = import_module("fastmcp.resources")
-        TextResource = getattr(resources_module, "TextResource")
-
-        tools_module = import_module("fastmcp.tools")
-        ToolResultCls = getattr(tools_module, "ToolResult", None)
-        if ToolResultCls is None:
-            tool_submodule = import_module("fastmcp.tools.tool")
-            ToolResultCls = getattr(tool_submodule, "ToolResult")
-    except Exception:  # pragma: no cover - guard incompatible fastmcp builds
-        return False
-
-    try:
-        project_root = config.project_root
-        for record in index.list_documents():
-            try:
-                description = str(record.path.relative_to(project_root))
-            except ValueError:
-                description = record.path.name
-            resource = TextResource(
-                uri=f"flarchitect-doc://{record.doc_id}",
-                name=record.doc_id,
-                title=record.title,
-                description=description,
-                mime_type=_guess_mime(record),
-                text=record.content,
-            )
-            add_resource(resource)
-    except Exception:  # pragma: no cover - invalid TextResource wiring
-        return False
-
-    @tool(
-        name="search_docs",
-        description="Search flarchitect documentation for matching text.",
-    )
-    async def search_docs(
-        query: Annotated[str, Field(description="Text to search for")],
-        limit: Annotated[
-            int,
-            Field(
-                ge=1,
-                le=50,
-                description="Maximum number of results to return",
-            ),
-        ] = 10,
-    ) -> Any:
-        hits = index.search(query, limit=limit)
-        items = [_format_hit(index, hit) for hit in hits]
-        return ToolResultCls(structured_content=_wrap_result({"items": items}))
-
-    @tool(
-        name="get_doc_section",
-        description="Return a full document or a named section by heading.",
-    )
-    async def get_doc_section(
-        doc_id: Annotated[
-            str,
-            Field(
-                description="Document identifier as returned by list_resources",
-            ),
-        ],
-        heading: Annotated[
-            str | None,
-            Field(
-                description="Optional heading to slice out of the document",
-            ),
-        ] = None,
-    ) -> Any:
-        try:
-            record = index.get(doc_id)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        try:
-            content = index.get_section(doc_id, heading)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        payload = {
-            "doc_id": doc_id,
-            "title": record.title,
-            "heading": heading,
-            "content": content,
-            "url": _build_doc_url(doc_id),
-        }
-        return ToolResultCls(structured_content=_wrap_result(payload))
-
-    return True
-
-
-def _configure_fastmcp_legacy(app: Any, config: ServerConfig, index: DocumentIndex) -> bool:
-    list_hook = _resolve_attr(app, ("list_resources", "on_list_resources"))
-    read_hook = _resolve_attr(app, ("read_resource", "on_read_resource"))
+def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> bool:
+    list_hook = _resolve_attr(app, ("list_resources", "on_list_resources", "on_resources_list"))
+    read_hook = _resolve_attr(app, ("read_resource", "on_read_resource", "on_resources_read"))
     tool_hook = _resolve_attr(app, ("tool", "add_tool"))
+    initialize_hook = _resolve_attr(app, ("initialize", "on_initialize"))
 
     if list_hook is None or read_hook is None or tool_hook is None:
         return False
 
-    # Import MCP standard dataclasses for structured responses.
+    TextResource = None
+    ToolResultCls = None
     try:
-        standard = import_module("modelcontextprotocol.standard")
-        ListResourcesResult = getattr(standard, "ListResourcesResult")
-        ReadResourceResult = getattr(standard, "ReadResourceResult")
-        Resource = getattr(standard, "Resource")
-        ResourceContents = getattr(standard, "ResourceContents")
-        TextResourceContents = getattr(standard, "TextResourceContents")
-        Tool = getattr(standard, "Tool")
-        ToolResult = getattr(standard, "ToolResult")
-    except Exception:  # pragma: no cover - fall back to dict responses
-        ListResourcesResult = ReadResourceResult = ToolResult = None
-        Resource = ResourceContents = TextResourceContents = Tool = None
+        resources_module = import_module("fastmcp.resources")
+        TextResource = getattr(resources_module, "TextResource")
+    except Exception:  # pragma: no cover - best effort shim
+        TextResource = None
 
-    async def _list_resources_impl(*_: Any, **__: Any):
+    try:
+        tools_module = import_module("fastmcp.tools")
+        ToolResultCls = getattr(tools_module, "ToolResult", None)
+        if ToolResultCls is None:
+            try:
+                tool_module = import_module("fastmcp.tools.tool")
+                ToolResultCls = getattr(tool_module, "ToolResult", None)
+            except Exception:  # pragma: no cover - optional submodule
+                ToolResultCls = None
+    except Exception:  # pragma: no cover - best effort shim
+        ToolResultCls = None
+
+    from_standard = _load_standard_models()
+
+    async def _initialize_handler(*_: Any, **__: Any):
+        if from_standard.initialize_result is None:
+            return {
+                "protocolVersion": PROTOCOL_VERSION,
+                "serverInfo": {
+                    "name": config.name,
+                    "title": config.description,
+                    "version": config.version,
+                },
+                "capabilities": {
+                    "resources": {"listChanged": True},
+                    "tools": {"listChanged": True},
+                },
+            }
+        return from_standard.initialize_result(
+            protocolVersion=PROTOCOL_VERSION,
+            serverInfo={
+                "name": config.name,
+                "title": config.description,
+                "version": config.version,
+            },
+            capabilities=from_standard.server_capabilities(
+                resources=from_standard.resource_capabilities(listChanged=True),
+                tools=from_standard.tool_capabilities(listChanged=True),
+            ),
+        )
+
+    async def _list_resources_handler(*_: Any, **__: Any):
         resources = [
-            _build_resource_payload(Resource, record, config.project_root)
+            _build_resource_payload(
+                from_standard.resource,
+                TextResource,
+                record,
+                config.project_root,
+            )
             for record in index.list_documents()
         ]
-        if ListResourcesResult is not None:
-            return ListResourcesResult(resources=resources)
+        if from_standard.list_resources_result is not None:
+            return from_standard.list_resources_result(resources=resources)
         return {"resources": resources}
 
-    async def _read_resource_impl(request: Any):
-        uri = _get_field(request, "uri")
-        if uri is None:
+    async def _read_resource_handler(request: Any):
+        uri = _get_field(request, "uri") or _get_field(request, "params", {}).get("uri")
+        if not uri:
             raise ValueError("'uri' is required to read a resource")
-        doc_id = str(uri).replace("flarchitect-doc://", "", 1)
+        doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
         try:
             record = index.get(doc_id)
         except KeyError as exc:
             raise ValueError(f"No document with id '{doc_id}'") from exc
-        contents_payload = _build_text_contents_payload(
-            TextResourceContents,
+        contents = _build_text_contents_payload(
+            from_standard.text_contents,
             uri,
-            record.content,
+            record,
         )
-        if ReadResourceResult is not None:
-            return ReadResourceResult(contents=[contents_payload])
-        return {"contents": [contents_payload]}
+        if from_standard.read_resource_result is not None:
+            return from_standard.read_resource_result(contents=[contents])
+        return {"contents": [contents]}
 
-    async def _search_docs_impl(request: Any):
-        arguments = _get_field(request, "arguments", {}) or {}
-        query = arguments.get("query") or ""
-        limit = int(arguments.get("limit", 10))
-        hits = index.search(query, limit=limit)
-        items = [_format_hit(index, hit) for hit in hits]
-        result_payload = [{"type": "application/json", "body": _wrap_result({"items": items})}]
-        if ToolResult is not None:
-            return ToolResult(outputs=result_payload)
-        return {"outputs": result_payload}
+    async def _search_docs_tool(query: str, limit: int = 10) -> Any:
+        hits = index.search(query, limit=int(limit))
+        structured = {"items": [_format_hit(index, hit) for hit in hits]}
+        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
 
-    async def _get_doc_section_impl(request: Any):
-        arguments = _get_field(request, "arguments", {}) or {}
-        doc_id = arguments.get("doc_id")
-        heading = arguments.get("heading")
+    async def _get_doc_section_tool(doc_id: str, heading: str | None = None) -> Any:
         if not doc_id:
             raise ValueError("'doc_id' is required")
         try:
@@ -289,187 +268,196 @@ def _configure_fastmcp_legacy(app: Any, config: ServerConfig, index: DocumentInd
             content = index.get_section(doc_id, heading)
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
-        payload = {
+        structured = {
             "doc_id": doc_id,
             "title": record.title,
             "heading": heading,
             "content": content,
             "url": _build_doc_url(doc_id),
         }
-        result_payload = [{"type": "application/json", "body": _wrap_result(payload)}]
-        if ToolResult is not None:
-            return ToolResult(outputs=result_payload)
-        return {"outputs": result_payload}
+        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
 
-    _register_callback(list_hook, _list_resources_impl)
-    _register_callback(read_hook, _read_resource_impl)
+    _register_callback(list_hook, _list_resources_handler)
+    _register_callback(read_hook, _read_resource_handler)
 
     _register_tool(
         tool_hook,
-        _search_docs_impl,
+        _search_docs_tool,
         name="search_docs",
         description="Search flarchitect documentation for matching text.",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Text to search for"},
-                "limit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 10,
-                    "description": "Maximum number of results to return",
-                },
-            },
-            "required": ["query"],
-        },
-        Tool=Tool,
+        input_schema=_SEARCH_INPUT_SCHEMA,
+        from_standard=from_standard,
     )
 
     _register_tool(
         tool_hook,
-        _get_doc_section_impl,
+        _get_doc_section_tool,
         name="get_doc_section",
         description="Return a full document or a named section by heading.",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "doc_id": {
-                    "type": "string",
-                    "description": "Document identifier as returned by list_resources",
-                },
-                "heading": {
-                    "type": ["string", "null"],
-                    "description": "Optional heading to slice out of the document",
-                },
-            },
-            "required": ["doc_id"],
-        },
-        Tool=Tool,
+        input_schema=_SECTION_INPUT_SCHEMA,
+        from_standard=from_standard,
     )
 
+    if initialize_hook is not None:
+        _register_callback(initialize_hook, _initialize_handler)
+
     return True
+
+
+@dataclass(slots=True)
+class _StandardModels:
+    initialize_result: Any | None
+    server_capabilities: Any | None
+    resource_capabilities: Any | None
+    tool_capabilities: Any | None
+    list_resources_result: Any | None
+    read_resource_result: Any | None
+    resource: Any | None
+    text_contents: Any | None
+    tool: Any | None
+    tool_result: Any | None
+
+
+def _load_standard_models() -> _StandardModels:
+    try:
+        standard = import_module("modelcontextprotocol.standard")
+    except Exception:  # pragma: no cover - optional dependency
+        return _StandardModels(*(None,) * 10)
+
+    def _get(name: str) -> Any | None:
+        return getattr(standard, name, None)
+
+    return _StandardModels(
+        _get("InitializeResult"),
+        _get("ServerCapabilities"),
+        _get("ResourceServerCapabilities"),
+        _get("ToolServerCapabilities"),
+        _get("ListResourcesResult"),
+        _get("ReadResourceResult"),
+        _get("Resource"),
+        _get("TextResourceContents"),
+        _get("Tool"),
+        _get("ToolResult"),
+    )
+
+
+def _build_initialize_payload(config: ServerConfig, models: _StandardModels) -> Any:
+    server_info = {
+        "name": config.name,
+        "title": config.description,
+        "version": config.version,
+    }
+    capabilities = {
+        "resources": {"listChanged": True},
+        "tools": {"listChanged": True},
+    }
+    if models.initialize_result is None or models.server_capabilities is None:
+        return {
+            "protocolVersion": PROTOCOL_VERSION,
+            "serverInfo": server_info,
+            "capabilities": capabilities,
+        }
+    server_caps = models.server_capabilities(
+        resources=models.resource_capabilities(listChanged=True)
+        if models.resource_capabilities is not None
+        else None,
+        tools=models.tool_capabilities(listChanged=True)
+        if models.tool_capabilities is not None
+        else None,
+    )
+    return models.initialize_result(
+        protocolVersion=PROTOCOL_VERSION,
+        serverInfo=server_info,
+        capabilities=server_caps,
+    )
 
 
 def _create_reference_server(config: ServerConfig, index: DocumentIndex):
     try:
         from modelcontextprotocol.server import Server
-        from modelcontextprotocol.standard import (
-            ListResourcesResult,
-            ReadResourceResult,
-            Resource,
-            ResourceContents,
-            TextResourceContents,
-            Tool,
-            ToolResult,
-        )
         from modelcontextprotocol.types import (
             CallToolRequest,
+            InitializeRequest,
             ListResourcesRequest,
             ReadResourceRequest,
         )
     except ImportError:
         return None
 
+    from_standard = _load_standard_models()
+
     server = Server(config.name, config.version, description=config.description)
 
-    @server.list_resources()
-    async def _list_resources(_: ListResourcesRequest) -> ListResourcesResult:  # type: ignore[name-defined]
+    @server.method("initialize")
+    async def _initialize(_: InitializeRequest):  # type: ignore[name-defined]
+        return _build_initialize_payload(config, from_standard)
+
+    @server.method("resources/list")
+    async def _resources_list(_: ListResourcesRequest):  # type: ignore[name-defined]
         resources = [
-            _build_resource_payload(Resource, record, config.project_root)
+            _build_resource_payload(from_standard.resource, None, record, config.project_root)
             for record in index.list_documents()
         ]
-        return ListResourcesResult(resources=resources)
+        if from_standard.list_resources_result is not None:
+            return from_standard.list_resources_result(resources=resources)
+        return {"resources": resources}
 
-    @server.read_resource()
-    async def _read_resource(request: ReadResourceRequest) -> ReadResourceResult:  # type: ignore[name-defined]
-        uri = request.uri
-        doc_id = str(uri).replace("flarchitect-doc://", "", 1)
+    @server.method("resources/read")
+    async def _resources_read(request: ReadResourceRequest):  # type: ignore[name-defined]
+        uri = getattr(request, "uri", None) or getattr(request, "params", {}).get("uri")
+        if not uri:
+            raise ValueError("'uri' is required to read a resource")
+        doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
         try:
             record = index.get(doc_id)
         except KeyError as exc:
             raise ValueError(f"No document with id '{doc_id}'") from exc
-        contents = _build_text_contents_payload(
-            TextResourceContents,
-            uri,
-            record.content,
+        contents = _build_text_contents_payload(from_standard.text_contents, uri, record)
+        if from_standard.read_resource_result is not None:
+            return from_standard.read_resource_result(contents=[contents])
+        return {"contents": [contents]}
+
+    tool_definitions: list[Any] = []
+
+    @server.method("tools/list")
+    async def _tools_list(_: Any):  # type: ignore[name-defined]
+        return {"tools": list(tool_definitions)}
+
+    @server.method("tools/call")
+    async def _tools_call(request: CallToolRequest):  # type: ignore[name-defined]
+        tool_name = getattr(request, "name", None) or getattr(request, "tool", None)
+        arguments = _extract_arguments(request)
+        if tool_name == "search_docs":
+            hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
+            structured = {"items": [_format_hit(index, hit) for hit in hits]}
+            return _build_tool_result(None, from_standard.tool_result, structured)
+        if tool_name == "get_doc_section":
+            doc_id = arguments.get("doc_id")
+            if not doc_id:
+                raise ValueError("'doc_id' is required")
+            try:
+                record = index.get(doc_id)
+            except KeyError as exc:
+                raise ValueError(str(exc)) from exc
+            heading = arguments.get("heading")
+            try:
+                content = index.get_section(doc_id, heading)
+            except KeyError as exc:
+                raise ValueError(str(exc)) from exc
+            structured = {
+                "doc_id": doc_id,
+                "title": record.title,
+                "heading": heading,
+                "content": content,
+                "url": _build_doc_url(doc_id),
+            }
+            return _build_tool_result(None, from_standard.tool_result, structured)
+        raise ValueError(f"Unknown tool '{tool_name}'")
+
+    for definition in _TOOL_DEFINITIONS:
+        tool_definitions.append(
+            _build_tool_definition(from_standard.tool, *definition)
         )
-        return ReadResourceResult(contents=[contents])
-
-    @server.tool()
-    async def search_docs(request: CallToolRequest) -> ToolResult:  # type: ignore[name-defined]
-        params = request.arguments or {}
-        query = params.get("query") or ""
-        limit = int(params.get("limit", 10))
-        hits = index.search(query, limit=limit)
-        items = [_format_hit(index, hit) for hit in hits]
-        return ToolResult(outputs=[{"type": "application/json", "body": _wrap_result({"items": items})}])
-
-    _attach_tool_metadata(
-        search_docs,
-        Tool,
-        name="search_docs",
-        description="Search flarchitect documentation for matching text.",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Text to search for"},
-                "limit": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 50,
-                    "default": 10,
-                    "description": "Maximum number of results to return",
-                },
-            },
-            "required": ["query"],
-        },
-    )
-
-    @server.tool()
-    async def get_doc_section(request: CallToolRequest) -> ToolResult:  # type: ignore[name-defined]
-        params = request.arguments or {}
-        doc_id = params.get("doc_id")
-        heading = params.get("heading")
-        if not doc_id:
-            raise ValueError("'doc_id' is required")
-        try:
-            record = index.get(doc_id)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        try:
-            content = index.get_section(doc_id, heading)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        payload = {
-            "doc_id": doc_id,
-            "title": record.title,
-            "heading": heading,
-            "content": content,
-            "url": _build_doc_url(doc_id),
-        }
-        return ToolResult(outputs=[{"type": "application/json", "body": _wrap_result(payload)}])
-
-    _attach_tool_metadata(
-        get_doc_section,
-        Tool,
-        name="get_doc_section",
-        description="Return a full document or a named section by heading.",
-        input_schema={
-            "type": "object",
-            "properties": {
-                "doc_id": {
-                    "type": "string",
-                    "description": "Document identifier as returned by list_resources",
-                },
-                "heading": {
-                    "type": ["string", "null"],
-                    "description": "Optional heading to slice out of the document",
-                },
-            },
-            "required": ["doc_id"],
-        },
-    )
 
     return server
 
@@ -504,7 +492,7 @@ def _register_tool(
     name: str,
     description: str,
     input_schema: dict[str, Any],
-    Tool: Any,
+    from_standard: _StandardModels,
 ) -> None:
     metadata = {"name": name, "description": description, "inputSchema": input_schema}
     decorator = None
@@ -520,7 +508,13 @@ def _register_tool(
     else:
         decorator(func)
 
-    _attach_tool_metadata(func, Tool, name=name, description=description, input_schema=input_schema)
+    _attach_tool_metadata(
+        func,
+        from_standard.tool,
+        name=name,
+        description=description,
+        input_schema=input_schema,
+    )
 
 
 def _resolve_attr(obj: Any, names: Sequence[str]) -> Optional[Callable[..., Any]]:
@@ -531,40 +525,134 @@ def _resolve_attr(obj: Any, names: Sequence[str]) -> Optional[Callable[..., Any]
     return None
 
 
-def _build_resource_payload(Resource: Any, record: DocumentRecord, project_root: Path) -> Any:
-    uri = f"flarchitect-doc://{record.doc_id}"
-    description = str(record.path.relative_to(project_root))
+def _build_resource_payload(
+    standard_resource: Any,
+    fastmcp_resource: Any,
+    record: DocumentRecord,
+    project_root: Path,
+) -> Any:
+    try:
+        description = str(record.path.relative_to(project_root))
+    except ValueError:
+        description = record.path.name
+    mime = _guess_mime(record)
+    base = {
+        "uri": _build_doc_url(record.doc_id),
+        "name": record.doc_id,
+        "title": record.title,
+        "description": description,
+        "mimeType": mime,
+        "mime_type": mime,
+    }
+
+    fastmcp_payload = dict(base)
+    fastmcp_payload["text"] = record.content
+    obj = _instantiate(fastmcp_resource, fastmcp_payload)
+    if obj is not None:
+        return obj
+
+    obj = _instantiate(standard_resource, base)
+    if obj is not None:
+        return obj
+
+    return {
+        "uri": base["uri"],
+        "name": base["name"],
+        "title": base["title"],
+        "description": description,
+        "mimeType": mime,
+    }
+
+
+def _build_text_contents_payload(standard_contents: Any, uri: str, record: DocumentRecord) -> Any:
+    mime = _guess_mime(record)
     payload = {
         "uri": uri,
-        "name": record.title,
-        "description": description,
-        "mimeType": _guess_mime(record),
+        "name": record.doc_id,
+        "title": record.title,
+        "mimeType": mime,
+        "mime_type": mime,
+        "text": record.content,
     }
-    if Resource is not None:
-        return Resource(**payload)
-    return payload
+    obj = _instantiate(standard_contents, payload)
+    if obj is not None:
+        return obj
+    return {
+        "uri": uri,
+        "name": record.doc_id,
+        "title": record.title,
+        "mimeType": mime,
+        "text": record.content,
+    }
 
 
-def _build_text_contents_payload(TextResourceContents: Any, uri: str, content: str) -> Any:
-    payload = {"uri": uri, "text": content}
-    if TextResourceContents is not None:
-        return TextResourceContents(**payload)
-    return payload
+def _build_tool_result(fastmcp_result: Any, standard_result: Any, structured: dict[str, Any]) -> Any:
+    json_text = json.dumps(structured, ensure_ascii=False, indent=2)
+    content_entry = {
+        "type": "text",
+        "text": json_text,
+        "mimeType": "application/json",
+        "mediaType": "application/json",
+    }
+    payload = {
+        "content": [content_entry],
+        "structuredContent": structured,
+        "structured_content": structured,
+    }
+
+    obj = _instantiate(fastmcp_result, payload)
+    if obj is not None:
+        return obj
+
+    obj = _instantiate(standard_result, payload)
+    if obj is not None:
+        return obj
+
+    return {
+        "content": [
+            {
+                "type": "text",
+                "mimeType": "application/json",
+                "text": json_text,
+            }
+        ],
+        "structuredContent": structured,
+    }
 
 
-def _attach_tool_metadata(func: Any, Tool: Any, *, name: str, description: str, input_schema: dict[str, Any]) -> None:
-    if Tool is not None:
-        func.definition = Tool(  # type: ignore[attr-defined]
-            name=name,
-            description=description,
-            inputSchema=input_schema,
-        )
-    else:
-        func.definition = {  # type: ignore[attr-defined]
-            "name": name,
-            "description": description,
-            "inputSchema": input_schema,
-        }
+def _attach_tool_metadata(
+    func: Any,
+    tool_cls: Any,
+    *,
+    name: str,
+    description: str,
+    input_schema: dict[str, Any],
+) -> None:
+    func.definition = _build_tool_definition(tool_cls, name, description, input_schema)  # type: ignore[attr-defined]
+
+
+def _build_tool_definition(
+    tool_cls: Any,
+    name: str,
+    description: str,
+    input_schema: dict[str, Any],
+) -> Any:
+    definition_payload = {
+        "name": name,
+        "title": description,
+        "description": description,
+        "inputSchema": input_schema,
+        "input_schema": input_schema,
+    }
+    obj = _instantiate(tool_cls, definition_payload)
+    if obj is not None:
+        return obj
+    return {
+        "name": name,
+        "title": description,
+        "description": description,
+        "inputSchema": input_schema,
+    }
 
 
 def _guess_mime(record: DocumentRecord) -> str:
@@ -577,7 +665,46 @@ def _guess_mime(record: DocumentRecord) -> str:
 
 
 def _build_doc_url(doc_id: str) -> str:
-    return f"flarchitect-doc://{doc_id}"
+    return f"{DOC_URI_PREFIX}{doc_id}"
+
+
+def _instantiate(cls: Any, payload: dict[str, Any]) -> Any | None:
+    if cls is None:
+        return None
+    try:
+        signature = inspect.signature(cls)
+    except (TypeError, ValueError):
+        try:
+            return cls(**payload)
+        except TypeError:  # pragma: no cover - incompatible signature
+            return None
+
+    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in signature.parameters.values()):
+        try:
+            return cls(**payload)
+        except TypeError:  # pragma: no cover - incompatible signature
+            pass
+
+    kwargs: dict[str, Any] = {}
+    for name in signature.parameters:
+        if name in payload:
+            kwargs[name] = payload[name]
+            continue
+        camel = _to_camel(name)
+        if camel in payload:
+            kwargs[name] = payload[camel]
+    try:
+        return cls(**kwargs)
+    except TypeError:  # pragma: no cover - incompatible signature
+        return None
+
+
+def _to_camel(name: str) -> str:
+    parts = name.split("_")
+    if not parts:
+        return name
+    first, *rest = parts
+    return first + "".join(word.capitalize() for word in rest)
 
 
 def _wrap_result(payload: Any) -> dict[str, Any]:
@@ -609,6 +736,20 @@ def _get_field(obj: Any, name: str, default: Any = None) -> Any:
     if isinstance(obj, dict):
         return obj.get(name, default)
     return getattr(obj, name, default)
+
+
+def _extract_arguments(request: Any) -> dict[str, Any]:
+    if request is None:
+        return {}
+    arguments = _get_field(request, "arguments")
+    if isinstance(arguments, dict):
+        return dict(arguments)
+    params = _get_field(request, "params")
+    if isinstance(params, dict):
+        if isinstance(params.get("arguments"), dict):
+            return dict(params["arguments"])
+        return dict(params)
+    return {}
 
 
 def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:

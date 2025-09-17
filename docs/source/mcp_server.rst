@@ -32,9 +32,12 @@ Tools
 
    ``search_docs``
       Performs a case-insensitive substring search across the indexed documentation set and returns matching snippets with line numbers and headings.
+      Responses follow the MCP tool result schema and expose a JSON ``structuredContent`` body alongside a text ``application/json`` entry so humans and machines can consume the same payload.
+      Each search item provides ``doc_id``, ``title``, ``url`` (``flarchitect-doc://``), ``score`` (float), ``snippet``, and optional ``heading``/``line`` metadata for precise citations.
 
    ``get_doc_section``
       Fetches an entire document or a single heading. Markdown and reStructuredText headings are detected heuristically so callers can request focused sections such as ``{"doc_id": "docs/source/getting_started.rst", "heading": "Installation"}``.
+      The returned payload appears under ``structuredContent`` with ``doc_id``, ``title``, ``url``, and ``content`` keys (plus the requested ``heading`` when provided) and is mirrored in a JSON text content block for easy inspection.
 
 Incremental indexing
    The server loads content on startup using :class:`flarchitect.mcp.index.DocumentIndex`. Restart the process after documentation changes to refresh the cache.
@@ -65,6 +68,8 @@ Integration Tips
 * The ``DocumentIndex`` helper normalises document identifiers (``doc_id``) to match the ``flarchitect-doc://`` URIs. Use the ``list_resources`` capability of your MCP client to discover the available values.
 * When writing new documentation, prefer explicit headings so ``get_doc_section`` can slice sections accurately.
 * To test the server manually, run ``flarchitect-mcp-docs`` in one terminal and use an MCP client or curl-style helper to issue ``list_resources`` and ``call_tool`` requests.
+* Validate tool responses by confirming the ``structuredContent`` block. For example, calling ``search_docs`` with ``"home working summary"`` should return ``{"items": [...]}`` inside ``structuredContent`` (plus a text echo) including ``doc_id`` and ``snippet`` fields.
+* The server implements the 2025-06-18 MCP verbs (`resources/list`, `resources/read`, `tools/list`, and `tools/call`) and advertises capabilities during the initial handshake.
 
 
 Testing Strategy

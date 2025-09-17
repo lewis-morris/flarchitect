@@ -22,6 +22,7 @@ class _FakeToolResult:
             content = structured_content
         self.content = content
         self.structured_content = structured_content
+        self.structuredContent = structured_content
 
 
 class _FakeFastMCP:
@@ -29,14 +30,37 @@ class _FakeFastMCP:
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.resources: list[_FakeTextResource] = []
         self.tools: dict[str, dict[str, object]] = {}
+        self.list_resources_handler = None
+        self.read_resource_handler = None
         self.run_called = False
         type(self).instances.append(self)
 
-    def add_resource(self, resource):
-        self.resources.append(resource)
-        return resource
+    def list_resources(self, func=None):
+        if func is not None:
+            self.list_resources_handler = func
+            return func
+
+        def decorator(inner):
+            self.list_resources_handler = inner
+            return inner
+
+        return decorator
+
+    on_list_resources = list_resources
+
+    def read_resource(self, func=None):
+        if func is not None:
+            self.read_resource_handler = func
+            return func
+
+        def decorator(inner):
+            self.read_resource_handler = inner
+            return inner
+
+        return decorator
+
+    on_read_resource = read_resource
 
     def tool(self, *args, **kwargs):
         if args and callable(args[0]):
@@ -95,26 +119,34 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
 
     fake_instance = _FakeFastMCP.instances[-1]
     assert {"search_docs", "get_doc_section"} <= set(fake_instance.tools.keys())
-    assert fake_instance.resources, "Expected document resources to be registered"
+    assert fake_instance.list_resources_handler is not None
 
-    resource = fake_instance.resources[0]
-    assert resource.uri.startswith("flarchitect-doc://")
-    assert resource.text, "Resource should embed document content"
+    resources_payload = asyncio.run(fake_instance.list_resources_handler())
+    if hasattr(resources_payload, "resources"):
+        resources = resources_payload.resources
+    else:
+        resources = resources_payload["resources"]
+    assert resources, "Expected list_resources to return at least one document"
+    first_resource = resources[0]
+    uri = getattr(first_resource, "uri", None)
+    if uri is None:
+        uri = first_resource["uri"]
+    assert uri.startswith("flarchitect-doc://")
 
     search_tool = fake_instance.tools["search_docs"]["func"]
     result = asyncio.run(search_tool(query="guide"))
-    assert result.structured_content
-    wrapped = result.structured_content["result"]
-    assert wrapped["items"], "Expected search results"
-    first = wrapped["items"][0]
+    structured = result.structured_content
+    assert structured["items"], "Expected search results"
+    first = structured["items"][0]
     assert {"doc_id", "title", "url", "score", "snippet"} <= set(first.keys())
     assert first["url"].startswith("flarchitect-doc://")
     assert isinstance(first["score"], (int, float))
     assert first["snippet"]
+    assert result.content[0]["type"] == "text"
 
     get_section_tool = fake_instance.tools["get_doc_section"]["func"]
     section = asyncio.run(get_section_tool(doc_id="docs/source/guide.rst", heading=None))
-    assert "Guide" in section.structured_content["result"]["content"]
+    assert "Guide" in section.structured_content["content"]
 
     # The server wrapper should call the run method when serve() is invoked.
     assert fake_instance.run_called is False
