@@ -431,9 +431,9 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
         params = request.arguments or {}
         doc_id = params.get("doc_id")
         heading = params.get("heading")
-       if not doc_id:
-           raise ValueError("'doc_id' is required")
-       try:
+        if not doc_id:
+            raise ValueError("'doc_id' is required")
+        try:
             record = index.get(doc_id)
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
