@@ -17,6 +17,7 @@ from .index import DocumentIndex, DocumentRecord, SearchHit
 
 PROTOCOL_VERSION = "2025-06-18"
 DOC_URI_PREFIX = "flarchitect-doc://"
+_READ_ONLY_ANNOTATIONS = {"readOnlyHint": True}
 
 _SEARCH_INPUT_SCHEMA = {
     "type": "object",
@@ -48,17 +49,103 @@ _SECTION_INPUT_SCHEMA = {
     "required": ["doc_id"],
 }
 
-_TOOL_DEFINITIONS: tuple[tuple[str, str, dict[str, Any]], ...] = (
-    (
-        "search_docs",
-        "Search flarchitect documentation for matching text.",
-        _SEARCH_INPUT_SCHEMA,
-    ),
-    (
-        "get_doc_section",
-        "Return a full document or a named section by heading.",
-        _SECTION_INPUT_SCHEMA,
-    ),
+_LIST_INPUT_SCHEMA = {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": False,
+}
+
+_LIST_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "result": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "doc_id": {"type": "string"},
+                    "title": {"type": "string"},
+                },
+                "required": ["doc_id", "title"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["result"],
+    "additionalProperties": False,
+}
+
+_SEARCH_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "result": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "doc_id": {"type": "string"},
+                    "title": {"type": "string"},
+                    "url": {"type": "string"},
+                    "uri": {"type": "string"},
+                    "score": {"type": "number"},
+                    "snippet": {"type": "string"},
+                    "line": {"type": "integer"},
+                    "heading": {"type": ["string", "null"]},
+                },
+                "required": ["doc_id", "title", "url", "uri", "score", "snippet", "line"],
+                "additionalProperties": True,
+            },
+        }
+    },
+    "required": ["result"],
+    "additionalProperties": False,
+}
+
+_SECTION_OUTPUT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "result": {
+            "type": "object",
+            "properties": {
+                "doc_id": {"type": "string"},
+                "title": {"type": "string"},
+                "heading": {"type": ["string", "null"]},
+                "content": {"type": "string"},
+                "url": {"type": "string"},
+            },
+            "required": ["doc_id", "title", "content", "url"],
+            "additionalProperties": True,
+        }
+    },
+    "required": ["result"],
+    "additionalProperties": False,
+}
+
+_TOOL_DEFINITIONS: tuple[dict[str, Any], ...] = (
+    {
+        "name": "list_docs",
+        "description": "List indexed documentation files.",
+        "input_schema": _LIST_INPUT_SCHEMA,
+        "output_schema": _LIST_OUTPUT_SCHEMA,
+        "tags": {"docs", "list"},
+        "annotations": _READ_ONLY_ANNOTATIONS,
+    },
+    {
+        "name": "search_docs",
+        "description": "Search flarchitect documentation for matching text.",
+        "input_schema": _SEARCH_INPUT_SCHEMA,
+        "output_schema": _SEARCH_OUTPUT_SCHEMA,
+        "tags": {"docs", "search"},
+        "annotations": _READ_ONLY_ANNOTATIONS,
+    },
+    {
+        "name": "get_doc_section",
+        "description": "Return a full document or a named section by heading.",
+        "input_schema": _SECTION_INPUT_SCHEMA,
+        "output_schema": _SECTION_OUTPUT_SCHEMA,
+        "tags": {"docs", "section"},
+        "annotations": _READ_ONLY_ANNOTATIONS,
+    },
 )
 
 
@@ -196,8 +283,23 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
         add_resource(resource)
 
     @tool_decorator(
+        name="list_docs",
+        description="List indexed documentation files.",
+        tags={"docs", "list"},
+        output_schema=_LIST_OUTPUT_SCHEMA,
+        annotations=_READ_ONLY_ANNOTATIONS,
+    )
+    async def list_docs() -> Any:
+        items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
+        structured = {"result": items}
+        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
+
+    @tool_decorator(
         name="search_docs",
         description="Search flarchitect documentation for matching text.",
+        tags={"docs", "search"},
+        output_schema=_SEARCH_OUTPUT_SCHEMA,
+        annotations=_READ_ONLY_ANNOTATIONS,
     )
     async def search_docs(
         query: Annotated[str, Field(description="Text to search for")],
@@ -217,6 +319,9 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
     @tool_decorator(
         name="get_doc_section",
         description="Return a full document or a named section by heading.",
+        tags={"docs", "section"},
+        output_schema=_SECTION_OUTPUT_SCHEMA,
+        annotations=_READ_ONLY_ANNOTATIONS,
     )
     async def get_doc_section(
         doc_id: Annotated[
@@ -235,20 +340,20 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
         if not doc_id:
             raise ValueError("'doc_id' is required")
         try:
-            record = index.get(doc_id)
+            resolved_id, record = _resolve_document_record(index, doc_id)
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
         try:
-            content = index.get_section(doc_id, heading)
+            content = index.get_section(resolved_id, heading)
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
         structured = {
             "result": {
-                "doc_id": doc_id,
+                "doc_id": resolved_id,
                 "title": record.title,
                 "heading": heading,
                 "content": content,
-                "url": _build_doc_url(doc_id),
+                "url": _build_doc_url(resolved_id),
             }
         }
         return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
@@ -370,13 +475,13 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
         async def _read_resource(uri: str) -> str:
             doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
             try:
-                record = index.get(doc_id)
+                _, record = _resolve_document_record(index, doc_id)
             except KeyError as exc:
                 raise ValueError(f"No document with id '{doc_id}'") from exc
             return record.content
 
         tool_definitions = [
-            _build_tool_definition(mcp_types.Tool, *definition)
+            _build_tool_definition(mcp_types.Tool, **definition)
             for definition in _TOOL_DEFINITIONS
         ]
 
@@ -386,6 +491,12 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
 
         @server.call_tool()
         async def _call_tool(name: str, arguments: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
+            if name == "list_docs":
+                items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
+                structured = {"result": items}
+                text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
+                return ([text], structured)
+
             if name == "search_docs":
                 hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
                 structured = {"result": [_format_hit(index, hit) for hit in hits]}
@@ -397,21 +508,21 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
                 if not doc_id:
                     raise ValueError("'doc_id' is required")
                 try:
-                    record = index.get(doc_id)
+                    resolved_id, record = _resolve_document_record(index, doc_id)
                 except KeyError as exc:
                     raise ValueError(str(exc)) from exc
                 heading = arguments.get("heading")
                 try:
-                    content = index.get_section(doc_id, heading)
+                    content = index.get_section(resolved_id, heading)
                 except KeyError as exc:
                     raise ValueError(str(exc)) from exc
                 structured = {
                     "result": {
-                        "doc_id": doc_id,
+                        "doc_id": resolved_id,
                         "title": record.title,
                         "heading": heading,
                         "content": content,
-                        "url": _build_doc_url(doc_id),
+                        "url": _build_doc_url(resolved_id),
                     }
                 }
                 text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
@@ -472,7 +583,7 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
             raise ValueError("'uri' is required to read a resource")
         doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
         try:
-            record = index.get(doc_id)
+            resolved_id, record = _resolve_document_record(index, doc_id)
         except KeyError as exc:
             raise ValueError(f"No document with id '{doc_id}'") from exc
         contents = _build_text_contents_payload(from_standard.text_contents, uri, record)
@@ -480,7 +591,10 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
             return from_standard.read_resource_result(contents=[contents])
         return {"contents": [contents]}
 
-    tool_definitions: list[Any] = []
+    tool_definitions: list[Any] = [
+        _build_tool_definition(from_standard.tool, **definition)
+        for definition in _TOOL_DEFINITIONS
+    ]
 
     @server.method("tools/list")
     async def _tools_list(_: Any):  # type: ignore[name-defined]
@@ -490,6 +604,10 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
     async def _tools_call(request: CallToolRequest):  # type: ignore[name-defined]
         tool_name = getattr(request, "name", None) or getattr(request, "tool", None)
         arguments = _extract_arguments(request)
+        if tool_name == "list_docs":
+            items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
+            structured = {"result": items}
+            return _build_tool_result(None, from_standard.tool_result, structured)
         if tool_name == "search_docs":
             hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
             structured = {"result": [_format_hit(index, hit) for hit in hits]}
@@ -499,30 +617,25 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
             if not doc_id:
                 raise ValueError("'doc_id' is required")
             try:
-                record = index.get(doc_id)
+                resolved_id, record = _resolve_document_record(index, doc_id)
             except KeyError as exc:
                 raise ValueError(str(exc)) from exc
             heading = arguments.get("heading")
             try:
-                content = index.get_section(doc_id, heading)
+                content = index.get_section(resolved_id, heading)
             except KeyError as exc:
                 raise ValueError(str(exc)) from exc
             structured = {
                 "result": {
-                    "doc_id": doc_id,
+                    "doc_id": resolved_id,
                     "title": record.title,
                     "heading": heading,
                     "content": content,
-                    "url": _build_doc_url(doc_id),
+                    "url": _build_doc_url(resolved_id),
                 }
             }
             return _build_tool_result(None, from_standard.tool_result, structured)
         raise ValueError(f"Unknown tool '{tool_name}'")
-
-    for definition in _TOOL_DEFINITIONS:
-        tool_definitions.append(
-            _build_tool_definition(from_standard.tool, *definition)
-        )
 
     return server
 
@@ -557,9 +670,18 @@ def _register_tool(
     name: str,
     description: str,
     input_schema: dict[str, Any],
+    output_schema: dict[str, Any] | None,
+    tags: set[str] | None,
+    annotations: dict[str, Any] | None,
     from_standard: _StandardModels,
 ) -> None:
     metadata = {"name": name, "description": description, "inputSchema": input_schema}
+    if output_schema is not None:
+        metadata["outputSchema"] = output_schema
+    if tags:
+        metadata["tags"] = sorted(tags)
+    if annotations:
+        metadata["annotations"] = annotations
     decorator = None
     try:
         decorator = hook(**metadata)
@@ -579,6 +701,9 @@ def _register_tool(
         name=name,
         description=description,
         input_schema=input_schema,
+        output_schema=output_schema,
+        tags=tags,
+        annotations=annotations,
     )
 
 
@@ -692,15 +817,30 @@ def _attach_tool_metadata(
     name: str,
     description: str,
     input_schema: dict[str, Any],
+    output_schema: dict[str, Any] | None,
+    tags: set[str] | None,
+    annotations: dict[str, Any] | None,
 ) -> None:
-    func.definition = _build_tool_definition(tool_cls, name, description, input_schema)  # type: ignore[attr-defined]
+    func.definition = _build_tool_definition(  # type: ignore[attr-defined]
+        tool_cls,
+        name=name,
+        description=description,
+        input_schema=input_schema,
+        output_schema=output_schema,
+        tags=tags,
+        annotations=annotations,
+    )
 
 
 def _build_tool_definition(
     tool_cls: Any,
+    *,
     name: str,
     description: str,
     input_schema: dict[str, Any],
+    output_schema: dict[str, Any] | None = None,
+    tags: set[str] | None = None,
+    annotations: dict[str, Any] | None = None,
 ) -> Any:
     definition_payload = {
         "name": name,
@@ -709,6 +849,13 @@ def _build_tool_definition(
         "inputSchema": input_schema,
         "input_schema": input_schema,
     }
+    if output_schema is not None:
+        definition_payload["outputSchema"] = output_schema
+        definition_payload["output_schema"] = output_schema
+    if tags:
+        definition_payload["tags"] = sorted(tags)
+    if annotations:
+        definition_payload["annotations"] = annotations
     obj = _instantiate(tool_cls, definition_payload)
     if obj is not None:
         return obj
@@ -717,6 +864,9 @@ def _build_tool_definition(
         "title": description,
         "description": description,
         "inputSchema": input_schema,
+        **({"outputSchema": output_schema} if output_schema is not None else {}),
+        **({"tags": sorted(tags)} if tags else {}),
+        **({"annotations": annotations} if annotations else {}),
     }
 
 
@@ -731,6 +881,24 @@ def _guess_mime(record: DocumentRecord) -> str:
 
 def _build_doc_url(doc_id: str) -> str:
     return f"{DOC_URI_PREFIX}{doc_id}"
+
+
+def _resolve_document_record(index: DocumentIndex, doc_id: str) -> tuple[str, DocumentRecord]:
+    candidates: list[str] = []
+    for candidate in (
+        doc_id,
+        doc_id.lower() if doc_id else doc_id,
+        f"{doc_id}.md" if doc_id else doc_id,
+    ):
+        if candidate and candidate not in candidates:
+            candidates.append(candidate)
+    for candidate in candidates:
+        try:
+            record = index.get(candidate)
+            return candidate, record
+        except KeyError:
+            continue
+    raise KeyError(f"No document with id '{doc_id}'")
 
 
 def _instantiate(cls: Any, payload: dict[str, Any]) -> Any | None:
@@ -783,12 +951,16 @@ def _format_hit(index: DocumentIndex, hit: SearchHit) -> dict[str, Any]:
     except KeyError:  # pragma: no cover - defensive guard
         title = hit.path.stem.replace("_", " ").title()
     url = _build_doc_url(hit.doc_id)
+    line_number = hit.line_number or 0
+    if line_number < 0:
+        line_number = 0
+    score = 1.0 / (1 + line_number)
     item = {
         "doc_id": hit.doc_id,
         "title": title,
         "url": url,
         "uri": url,
-        "score": 1.0,
+        "score": score,
         "snippet": hit.snippet,
         "line": hit.line_number,
     }
