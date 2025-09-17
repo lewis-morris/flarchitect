@@ -38,6 +38,7 @@
 
 - Configuration: Add missing `DOCUMENTATION_URL_PREFIX` to the configuration reference; clarify default and example usage.
 - Docs: Clarify that models require a `Meta` inner class for auto-registration, while `tag` and `tag_group` are optional; warnings added in Quick Start, Models guide, and README.
+- Developer tooling: Provide an optional `flarchitect-mcp-docs` MCP server exposing the Sphinx sources, README, CHANGELOG, and suggestions backlog with `search_docs`/`get_doc_section` tools plus a reusable `DocumentIndex` helper and support for the `fastmcp` backend (`--backend fastmcp`).
 - Docs: Expanded callbacks & plugins guide with full lifecycle, signatures, context keys and practical examples.
 
 ## v1.1.0 (2025-08-14)

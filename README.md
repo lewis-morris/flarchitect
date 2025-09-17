@@ -458,6 +458,21 @@ To run tests with coverage (HTML + XML reports), use:
 bash scripts/coverage.sh
 ```
 
+## MCP Documentation Server
+
+flarchitect ships with an optional [Model Context Protocol](https://modelcontextprotocol.io/) server so agents can browse and search the project documentation without bespoke adapters.
+
+1. Install the extra dependency group (ships `modelcontextprotocol` and `fastmcp`): `pip install flarchitect[mcp]` (or `uv pip install '.[mcp]'`).
+2. Start the server from your repository root: `flarchitect-mcp-docs --project-root . --backend fastmcp` to prefer the `fastmcp` runtime (falls back to the reference implementation if it is unavailable).
+3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and expose the Sphinx sources, `README.md`, `CHANGELOG.md`, and `SUGGESTIONS.md`.
+
+Available tools:
+
+- `search_docs` – substring search with snippets and line numbers.
+- `get_doc_section` – return an entire document or a specific heading slice (Markdown and reStructuredText are supported).
+
+The CLI reuses the `DocumentIndex` helper so file changes are picked up on restart. Use `--name`, `--description`, `--backend`, or `--project-root` to customise the advertised metadata, backend and docs location.
+
 ## Versioning & Releases
 
 The package version is defined in `pyproject.toml` and exposed as `flarchitect.__version__`. A GitHub Actions workflow automatically publishes to PyPI when the version changes on `master`.

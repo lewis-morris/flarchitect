@@ -46,6 +46,13 @@ flarchitect
 
 .. toctree::
    :maxdepth: 2
+   :caption: Developer Tooling
+   :hidden:
+
+   mcp_server
+
+.. toctree::
+   :maxdepth: 2
    :caption: Project Info
    :hidden:
 

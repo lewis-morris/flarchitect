@@ -94,9 +94,16 @@ cache = [
 graphql = [
   "graphene>=3.3",
 ]
+mcp = [
+  "modelcontextprotocol>=0.1.0",
+  "fastmcp>=0.1.0",
+]
 release = [
     "python-semantic-release>=10.3.1",
 ]
+
+[project.scripts]
+flarchitect-mcp-docs = "flarchitect.mcp.server:main"
 
 [tool.pytest.ini_options]
 # makes '.' (project root) a priority import location for tests
@@ -151,5 +158,3 @@ name = "origin"
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = true
-
-
