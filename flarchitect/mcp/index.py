@@ -4,11 +4,23 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable, Iterator, List, Mapping, Optional, Sequence
 
+from docutils.core import publish_parts
+from docutils.utils import SystemMessage
+
 
 _HEADING_CHARS = r"=-`:'\"^_*+#~<>"
+_EXCLUDED_FILENAMES = {"README.md", "SUGGESTIONS.md"}
+_SYNONYMS: dict[str, tuple[str, ...]] = {
+    "crud": ("create", "read", "update", "delete"),
+    "filters": ("filter", "filtering"),
+    "serialization": ("serialisation", "serialize", "serialise"),
+    "roles": ("role", "rbac"),
+    "callbacks": ("callback", "hook", "hooks"),
+}
 
 
 @dataclass(frozen=True)
@@ -48,17 +60,32 @@ class DocumentIndex:
 
     def __init__(
         self,
-        roots: Iterable[Path],
+        roots_or_project: Iterable[Path] | Path,
         *,
+        doc_path: Path | None = None,
         include_extensions: Iterable[str] = (".md", ".rst", ".txt"),
         aliases: Optional[Mapping[Path | str, str]] = None,
         extra_files: Optional[Mapping[Path | str, str | None]] = None,
     ) -> None:
-        self._roots: tuple[Path, ...] = tuple(sorted(Path(root).resolve() for root in roots))
+        if isinstance(roots_or_project, Path):
+            project_root = roots_or_project.resolve()
+            default_doc_path = doc_path.resolve() if doc_path is not None else (project_root / "docs" / "source")
+            self._roots = (default_doc_path,)
+            alias_input = aliases or {default_doc_path: "docs/source"}
+        else:
+            resolved_roots = tuple(sorted(Path(root).resolve() for root in roots_or_project))
+            if not resolved_roots:
+                raise ValueError("DocumentIndex requires at least one root directory")
+            self._roots = resolved_roots
+            alias_input = aliases or {}
         if not self._roots:
             raise ValueError("DocumentIndex requires at least one root directory")
 
-        alias_input = aliases or {}
+        missing_roots = [root for root in self._roots if not root.exists()]
+        if missing_roots:
+            missing_str = ", ".join(str(root) for root in missing_roots)
+            raise FileNotFoundError(f"Documentation root(s) not found: {missing_str}")
+
         alias_map: dict[Path, str] = {
             Path(key).resolve(): value.strip("/")
             for key, value in alias_input.items()
@@ -66,10 +93,7 @@ class DocumentIndex:
         self._aliases = {root: alias_map.get(root, "") for root in self._roots}
 
         self._include_extensions = tuple(sorted(ext.lower() for ext in include_extensions))
-        self._extra_files = {
-            Path(path).resolve(): (alias.strip("/") if alias else None)
-            for path, alias in (extra_files or {}).items()
-        }
+        self._extra_files = {}
         self._documents: dict[str, DocumentRecord] = {}
         self.refresh()
 
@@ -83,12 +107,6 @@ class DocumentIndex:
         documents: dict[str, DocumentRecord] = {}
         for root, path in self._iter_document_paths():
             doc_id = self._doc_id_for_path(root=root, path=path)
-            documents[doc_id] = _build_record(doc_id, path)
-
-        for path, alias in self._extra_files.items():
-            if not path.exists():  # pragma: no cover - defensive guard
-                continue
-            doc_id = (alias or path.name).replace("\\", "/")
             documents[doc_id] = _build_record(doc_id, path)
 
         self._documents = documents
@@ -128,26 +146,48 @@ class DocumentIndex:
         if not query.strip():
             return []
 
-        pattern = re.compile(re.escape(query), flags=re.IGNORECASE)
         results: list[SearchHit] = []
-        for record in self._documents.values():
-            lines = record.content.splitlines()
-            for line_number, line in enumerate(lines, start=1):
-                if pattern.search(line):
-                    heading = _heading_for_line(record.sections, line_number)
-                    snippet = line.strip()
-                    results.append(
-                        SearchHit(
-                            doc_id=record.doc_id,
-                            path=record.path,
-                            line_number=line_number,
-                            heading=heading,
-                            snippet=snippet,
+        seen: set[tuple[str, int]] = set()
+        for term in self._expand_terms(query):
+            pattern = re.compile(re.escape(term), flags=re.IGNORECASE)
+            for record in self._documents.values():
+                lines = record.content.splitlines()
+                for line_number, line in enumerate(lines, start=1):
+                    if pattern.search(line):
+                        key = (record.doc_id, line_number)
+                        if key in seen:
+                            continue
+                        heading = _heading_for_line(record.sections, line_number)
+                        snippet = line.strip()
+                        results.append(
+                            SearchHit(
+                                doc_id=record.doc_id,
+                                path=record.path,
+                                line_number=line_number,
+                                heading=heading,
+                                snippet=snippet,
+                            )
                         )
-                    )
-                    if len(results) >= limit:
-                        return results
+                        seen.add(key)
+                        if len(results) >= limit:
+                            return results
         return results
+
+    def _expand_terms(self, query: str) -> list[str]:
+        base_terms: list[str] = []
+        for term in [query, *re.split(r"\s+", query)]:
+            cleaned = term.strip()
+            if not cleaned:
+                continue
+            base_terms.append(cleaned)
+            synonyms = _SYNONYMS.get(cleaned.lower())
+            if synonyms:
+                base_terms.extend(synonyms)
+        seen: dict[str, None] = {}
+        for term in base_terms:
+            if term not in seen:
+                seen[term] = None
+        return list(seen.keys())
 
     def _iter_document_paths(self) -> Iterator[tuple[Path, Path]]:
         for root in self._roots:
@@ -158,7 +198,12 @@ class DocumentIndex:
                     yield root.parent, root
                 continue
             for path in root.rglob("*"):
-                if path.is_file() and path.suffix.lower() in self._include_extensions:
+                if (
+                    path.is_file()
+                    and path.suffix.lower() in self._include_extensions
+                    and not path.name.startswith(".")
+                    and path.name not in _EXCLUDED_FILENAMES
+                ):
                     yield root, path.resolve()
 
     def _doc_id_for_path(self, *, root: Path, path: Path) -> str:
