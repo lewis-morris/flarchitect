@@ -220,9 +220,17 @@ class DocumentIndex:
 
 
 def _build_record(doc_id: str, path: Path) -> DocumentRecord:
-    content = path.read_text(encoding="utf-8")
-    sections = list(_extract_sections(content))
-    title = sections[0].title if sections else path.stem.replace("_", " ").title()
+    raw_content = path.read_text(encoding="utf-8")
+    suffix = path.suffix.lower()
+
+    if suffix == ".rst":
+        title, content, sections = _parse_rst_document(raw_content, path)
+        if not sections:
+            sections = list(_extract_sections(content))
+    else:
+        content = raw_content
+        sections = list(_extract_sections(content))
+        title = sections[0].title if sections else path.stem.replace("_", " ").title()
     return DocumentRecord(
         doc_id=doc_id,
         path=path,
@@ -282,6 +290,96 @@ def _parse_heading(lines: List[str], index: int) -> Optional[tuple[str, int]]:
                 return title, 2
 
     return None
+
+
+class _RSTHTMLToTextParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._lines: list[str] = []
+        self._buffer: list[str] = []
+        self._heading_buffer: list[str] | None = None
+        self.sections: list[DocumentSection] = []
+
+    def handle_starttag(self, tag: str, attrs) -> None:  # type: ignore[override]
+        tag = tag.lower()
+        if tag in {"p", "div", "section", "ul", "ol", "li"}:
+            self._flush_buffer()
+        if tag == "br":
+            self._flush_buffer()
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            self._flush_buffer()
+            self._heading_buffer = []
+
+    def handle_endtag(self, tag: str) -> None:  # type: ignore[override]
+        tag = tag.lower()
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            if self._heading_buffer is not None:
+                title = " ".join(self._heading_buffer).strip()
+                self._heading_buffer = None
+                if title:
+                    self._append_line(title)
+                    start_line = len(self._lines)
+                    section = DocumentSection(
+                        title=title,
+                        anchor=_normalize_anchor(title),
+                        start_line=start_line,
+                        end_line=None,
+                    )
+                    if self.sections:
+                        last = self.sections[-1]
+                        if last.end_line is None:
+                            object.__setattr__(last, "end_line", start_line - 1)
+                    self.sections.append(section)
+            self._buffer = []
+        elif tag in {"p", "div", "section", "li", "ul", "ol", "br"}:
+            self._flush_buffer()
+
+    def handle_data(self, data: str) -> None:  # type: ignore[override]
+        text = data.strip()
+        if not text:
+            return
+        if self._heading_buffer is not None:
+            self._heading_buffer.append(text)
+        self._buffer.append(text)
+
+    def get_text(self) -> str:
+        self._flush_buffer()
+        if self.sections and self.sections[-1].end_line is None:
+            object.__setattr__(self.sections[-1], "end_line", len(self._lines))
+        return "\n".join(self._lines)
+
+    def _flush_buffer(self) -> None:
+        if not self._buffer:
+            return
+        line = " ".join(self._buffer).strip()
+        self._buffer.clear()
+        if not line:
+            return
+        self._lines.append(line)
+
+    def _append_line(self, line: str) -> None:
+        if line:
+            self._lines.append(line)
+
+
+def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[DocumentSection]]:
+    try:
+        parts = publish_parts(source=source, writer_name="html")
+        title = parts.get("title")
+        body = parts.get("body", "")
+    except (SystemMessage, ImportError):
+        sections = list(_extract_sections(source))
+        title = sections[0].title if sections else path.stem.replace("_", " ").title()
+        return title, source, sections
+
+    parser = _RSTHTMLToTextParser()
+    parser.feed(body)
+    plain_text = parser.get_text()
+    sections = parser.sections
+    if not sections:
+        sections = list(_extract_sections(plain_text))
+    resolved_title = (title or "").strip() or (sections[0].title if sections else path.stem.replace("_", " ").title())
+    return resolved_title, plain_text, sections
 
 
 def _normalize_anchor(value: str) -> str:
