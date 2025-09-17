@@ -10,7 +10,7 @@ The Model Context Protocol (MCP) server bundled with *flarchitect* exposes the p
 Quick Start
 -----------
 
-#. Install the optional dependency group (installs ``modelcontextprotocol`` and ``fastmcp``)::
+#. Install the optional dependency group (installs ``fastmcp``)::
 
       pip install flarchitect[mcp]
 
@@ -19,6 +19,11 @@ Quick Start
       flarchitect-mcp-docs --project-root . --backend fastmcp
 
 #. Configure your MCP-aware client to connect to the new ``flarchitect-docs`` endpoint. Resources use the ``flarchitect-doc://`` URI scheme and expose Markdown and reStructuredText sources directly.
+
+.. note::
+   The reference backend (`--backend reference`) requires the upstream ``mcp`` package. Install it manually when you need the pure JSON-RPC server::
+
+      pip install 'mcp @ git+https://github.com/modelcontextprotocol/python-sdk@main'
 
 
 What the Server Provides

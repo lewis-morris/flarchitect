@@ -128,7 +128,7 @@ def create_server(
     reference_server = _create_reference_server(config, index)
     if reference_server is None:
         raise RuntimeError(
-            "Unable to construct the reference MCP server. Ensure 'modelcontextprotocol' is installed via flarchitect[mcp]."
+            "Unable to construct the reference MCP server. Install the upstream 'mcp' package (https://github.com/modelcontextprotocol/python-sdk) to enable the reference backend."
         )
     return reference_server
 

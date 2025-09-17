@@ -95,8 +95,7 @@ graphql = [
   "graphene>=3.3",
 ]
 mcp = [
-  "modelcontextprotocol>=0.3.0",
-  "fastmcp>=0.3.0",
+  "fastmcp>=2.12.3",
 ]
 release = [
     "python-semantic-release>=10.3.1",

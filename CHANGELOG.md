@@ -47,7 +47,7 @@
 
 ### Features
 
-- MCP: Align the documentation MCP server with the 2025-06-18 specification, advertising capabilities during `initialize`, using slash-delimited method names, camelCase resource payloads, and structured tool results. Requires `modelcontextprotocol>=0.3.0` and `fastmcp>=0.3.0`.
+- MCP: Align the documentation MCP server with the 2025-06-18 specification, advertising capabilities during `initialize`, using slash-delimited method names, camelCase resource payloads, and structured tool results. Ships with `fastmcp>=0.3.0`; install the upstream ``mcp`` package separately if you need the reference backend.
 
 ### Testing & Quality
 

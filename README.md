@@ -462,8 +462,9 @@ bash scripts/coverage.sh
 
 flarchitect ships with an optional [Model Context Protocol](https://modelcontextprotocol.io/) server so agents can browse and search the project documentation without bespoke adapters.
 
-1. Install the extra dependency group (ships `modelcontextprotocol` and `fastmcp`): `pip install flarchitect[mcp]` (or `uv pip install '.[mcp]'`).
-2. Start the server from your repository root: `flarchitect-mcp-docs --project-root . --backend fastmcp` to prefer the `fastmcp` runtime (falls back to the reference implementation if it is unavailable).
+1. Install the extra dependency group (ships the `fastmcp` backend): `pip install flarchitect[mcp]` (or `uv pip install '.[mcp]'`).
+2. Start the server from your repository root: `flarchitect-mcp-docs --project-root . --backend fastmcp` to prefer the `fastmcp` runtime (falls back to the reference implementation if it is available).
+   - Need the reference backend? Install the upstream SDK manually: `pip install 'mcp @ git+https://github.com/modelcontextprotocol/python-sdk@main'`, then restart with `--backend reference`.
 3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and expose the Sphinx sources, `README.md`, `CHANGELOG.md`, and `SUGGESTIONS.md`.
 
 Available tools:
