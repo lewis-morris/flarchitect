@@ -103,8 +103,8 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
     search_tool = fake_instance.tools["search_docs"]["func"]
     result = asyncio.run(search_tool(query="guide"))
     structured = result.structured_content
-    assert structured["items"], "Expected search results"
-    first = structured["items"][0]
+    assert structured["result"], "Expected search results"
+    first = structured["result"][0]
     assert {"doc_id", "title", "url", "score", "snippet"} <= set(first.keys())
     assert first["url"].startswith("flarchitect-doc://")
     assert isinstance(first["score"], (int, float))
@@ -113,7 +113,7 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
 
     get_section_tool = fake_instance.tools["get_doc_section"]["func"]
     section = asyncio.run(get_section_tool(doc_id="docs/source/guide.rst", heading=None))
-    assert "Guide" in section.structured_content["content"]
+    assert "Guide" in section.structured_content["result"]["content"]
 
     # The server wrapper should call the run method when serve() is invoked.
     assert fake_instance.run_called is False

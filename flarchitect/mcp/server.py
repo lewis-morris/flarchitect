@@ -211,7 +211,7 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
         ] = 10,
     ) -> Any:
         hits = index.search(query, limit=int(limit))
-        structured = {"items": [_format_hit(index, hit) for hit in hits]}
+        structured = {"result": [_format_hit(index, hit) for hit in hits]}
         return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
 
     @tool_decorator(
@@ -243,11 +243,13 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
         except KeyError as exc:
             raise ValueError(str(exc)) from exc
         structured = {
-            "doc_id": doc_id,
-            "title": record.title,
-            "heading": heading,
-            "content": content,
-            "url": _build_doc_url(doc_id),
+            "result": {
+                "doc_id": doc_id,
+                "title": record.title,
+                "heading": heading,
+                "content": content,
+                "url": _build_doc_url(doc_id),
+            }
         }
         return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
 
@@ -386,7 +388,7 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
         async def _call_tool(name: str, arguments: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
             if name == "search_docs":
                 hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
-                structured = {"items": [_format_hit(index, hit) for hit in hits]}
+                structured = {"result": [_format_hit(index, hit) for hit in hits]}
                 text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
                 return ([text], structured)
 
@@ -404,11 +406,13 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
                 except KeyError as exc:
                     raise ValueError(str(exc)) from exc
                 structured = {
-                    "doc_id": doc_id,
-                    "title": record.title,
-                    "heading": heading,
-                    "content": content,
-                    "url": _build_doc_url(doc_id),
+                    "result": {
+                        "doc_id": doc_id,
+                        "title": record.title,
+                        "heading": heading,
+                        "content": content,
+                        "url": _build_doc_url(doc_id),
+                    }
                 }
                 text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
                 return ([text], structured)
@@ -488,7 +492,7 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
         arguments = _extract_arguments(request)
         if tool_name == "search_docs":
             hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
-            structured = {"items": [_format_hit(index, hit) for hit in hits]}
+            structured = {"result": [_format_hit(index, hit) for hit in hits]}
             return _build_tool_result(None, from_standard.tool_result, structured)
         if tool_name == "get_doc_section":
             doc_id = arguments.get("doc_id")
@@ -504,11 +508,13 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
             except KeyError as exc:
                 raise ValueError(str(exc)) from exc
             structured = {
-                "doc_id": doc_id,
-                "title": record.title,
-                "heading": heading,
-                "content": content,
-                "url": _build_doc_url(doc_id),
+                "result": {
+                    "doc_id": doc_id,
+                    "title": record.title,
+                    "heading": heading,
+                    "content": content,
+                    "url": _build_doc_url(doc_id),
+                }
             }
             return _build_tool_result(None, from_standard.tool_result, structured)
         raise ValueError(f"Unknown tool '{tool_name}'")
