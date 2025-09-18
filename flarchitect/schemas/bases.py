@@ -669,48 +669,49 @@ class AutoSchema(Base):
                     )
                     field_name = original_attribute
             elif dump_type == "dynamic":
+                # Only include this relationship if it appears in the join list.
+                # Accept both endpoint-style names (plural, kebab/snake/etc.)
+                # and relationship keys (often singular). Comma-separated values supported.
                 try:
-                    _ = request.args
+                    joins_param = request.args.get("join")
                 except RuntimeError:
                     return
 
-                if request and request.args.get("join"):
-                    joins = request.args.get("join")
-
-                    if not joins:
-                        return  # Exit early if no join parameter is provided
-
-                    url_naming_function = get_config_or_model_meta(
-                        "API_ENDPOINT_NAMER",
-                        relationship_property.mapper.class_,
-                        default=endpoint_namer,
-                    )
-                    name = url_naming_function(output_schema)
-
-                    if not iterable(joins):
-                        joins = [joins]
-
-                    if name in joins:
-                        if relationship_prop.uselist:
-                            # Always dump as a list of nested schemas
-                            self.add_to_fields(
-                                original_attribute,
-                                fields.List(fields.Nested(output_schema), **field_args),
-                                load=False,
-                            )
-                            field_name = original_attribute
-                        else:
-                            # Always dump as a nested schema
-                            self.add_to_fields(
-                                original_attribute,
-                                fields.Nested(output_schema, **field_args),
-                                load=False,
-                            )
-                            field_name = original_attribute
-                    else:
-                        return
-                else:
+                if not joins_param:
                     return
+
+                # Normalise tokens
+                tokens = {tok.strip().lower() for tok in str(joins_param).split(",") if tok.strip()}
+
+                # Compute candidate names for this relationship
+                related_model = relationship_property.mapper.class_
+                endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
+
+                endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
+                rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
+                rel_key_raw = original_attribute.lower()
+
+                candidates = {endpoint_name, rel_key_endpoint_case, rel_key_raw}
+
+                if tokens.isdisjoint(candidates):
+                    return
+
+                if relationship_prop.uselist:
+                    # Always dump as a list of nested schemas
+                    self.add_to_fields(
+                        original_attribute,
+                        fields.List(fields.Nested(output_schema), **field_args),
+                        load=False,
+                    )
+                    field_name = original_attribute
+                else:
+                    # Always dump as a nested schema
+                    self.add_to_fields(
+                        original_attribute,
+                        fields.Nested(output_schema, **field_args),
+                        load=False,
+                    )
+                    field_name = original_attribute
 
             elif dump_type == "hybrid":
                 if relationship_prop.uselist:

@@ -165,15 +165,35 @@ class CrudService:
             CustomHTTPException: If the field does not represent a relationship.
         """
         relationships = inspect(self.model).relationships
-        related_model = relationships.get(field_name)
+        # Try direct relationship key match first
+        related = relationships.get(field_name)
+        if related is not None:
+            return related.mapper.class_
 
-        if related_model is None:
-            raise CustomHTTPException(
-                401,
-                f"Field {field_name} does not represent a relationship in model {self.model.__name__}",
-            )
+        # Be flexible: allow endpoint-style names or case variations
+        target = (field_name or "").strip().lower()
+        from flarchitect.specs.utils import endpoint_namer
+        from flarchitect.utils.config_helpers import get_config_or_model_meta
+        from flarchitect.utils.core_utils import convert_case
 
-        return related_model.mapper.class_
+        endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
+
+        for rel in relationships.values():
+            model_cls = rel.mapper.class_
+            # Endpoint-style plural name (e.g., "authors")
+            endpoint_name = endpoint_namer(model_cls).lower()
+            # Relationship key in endpoint case (often singular)
+            rel_key_endpoint_case = convert_case(rel.key, endpoint_case).lower()
+            # Raw relationship key
+            rel_key_raw = rel.key.lower()
+
+            if target in {endpoint_name, rel_key_endpoint_case, rel_key_raw}:
+                return model_cls
+
+        raise CustomHTTPException(
+            401,
+            f"Field {field_name} does not represent a relationship in model {self.model.__name__}",
+        )
 
     def filter_query_from_args(self, args_dict: dict[str, str | int], query=None) -> Query:
         """Build a query applying joins, filters, grouping and aggregation.

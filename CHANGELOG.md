@@ -5,6 +5,7 @@
 ## Unreleased
 
 - API: Fix pagination with joins to apply DISTINCT on the base entity when no custom select/group/aggregation is requested so `limit` and `total_count` reflect base rows. Adds regression test for one‑to‑many join scenarios.
+- Schemas: Dynamic dump now recognises `join` tokens as either relationship keys (e.g., `author`) or endpoint-style plural names (e.g., `authors`), supports comma-separated multi-joins, and embeds multiple related resources accordingly. Regression tests added.
 
 - Auth: Auto-register `POST` refresh route when JWT is enabled, with configurable path and idempotent registration
   - New config: `API_AUTO_AUTH_ROUTES` (default `True`) to disable built-in auth endpoints.
