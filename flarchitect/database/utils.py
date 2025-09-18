@@ -240,14 +240,36 @@ def get_models_for_join(args_dict: dict[str, str], get_model_func: Callable[[str
 
     """
 
+    def _normalise(token: str) -> str:
+        return (token or "").strip().lower().replace("-", "_")
+
     models: dict[str, DeclarativeBase] = {}
     join_value = args_dict.get("join") or args_dict.get("join_models")
     if join_value:
-        for join in join_value.split(","):
-            model = get_model_func(join)
+        for raw in join_value.split(","):
+            token = _normalise(raw)
+            if not token:
+                continue
+
+            # Try raw token first
+            model = get_model_func(token)
+
+            # If not found, try singularise (drop trailing 's') or pluralise
             if not model:
-                raise CustomHTTPException(400, f"Invalid join model: {join}")
-            models[join] = model
+                # singular candidate
+                singular = token[:-1] if token.endswith("s") else token
+                if singular != token:
+                    model = get_model_func(singular)
+
+            if not model:
+                from flarchitect.specs.utils import pluralize_last_word  # lazy import to avoid circular
+                plural = pluralize_last_word(token)
+                if plural != token:
+                    model = get_model_func(plural)
+
+            if not model:
+                raise CustomHTTPException(400, f"Invalid join model: {raw}")
+            models[raw] = model
 
     return models
 

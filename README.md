@@ -512,3 +512,26 @@ Existing code using the US spellings continues to work. Prefer the UK forms in n
 ## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+### Per-request dump type and join semantics
+
+You can override the configured serialization type per request using the `dump` query parameter.
+
+- `dump=url` (default): relationships are rendered as URLs
+- `dump=json`: relationships are always inlined as nested objects
+- `dump=dynamic`: only relationships listed in `join` are inlined; others are URLs
+- `dump=hybrid`: to-one relationships are nested; collections are URLs
+
+Example:
+
+`GET /api/invoices?dump=dynamic&join=invoice-lines,payments,customer`
+
+The `join` parameter accepts comma-separated tokens matching either relationship keys (e.g. `author`) or endpoint-style plural names (e.g. `authors`). Tokens are normalised case-insensitively and with hyphens treated as underscores. Singular/plural forms are resolved automatically.
+
+You may also control SQL join semantics via `join_type`:
+
+- `join_type=inner` (default)
+- `join_type=left` (left outer join)
+- `join_type=outer` (left outer join)
+- `join_type=right` (best-effort right join; may behave like `left` depending on ORM relationship)
+
+Pagination continues to operate over distinct base entities after joins to avoid row multiplication.

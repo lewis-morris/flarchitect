@@ -233,8 +233,19 @@ class CrudService:
         query = query or self.session.query(self.model)
 
         if allow_join and join_models:
+            join_type = str(args_dict.get("join_type", "inner")).lower()
+            if join_type not in {"inner", "left", "right", "outer"}:
+                raise CustomHTTPException(400, f"Invalid join_type: {join_type}. Supported: inner,left,right,outer")
+
             for mdl in join_models.values():
-                query = query.join(mdl)
+                if join_type == "left" or join_type == "outer":
+                    query = query.outerjoin(mdl)
+                elif join_type == "right":
+                    # SQLAlchemy ORM has no direct RIGHT JOIN; `isouter=True` behaves as LEFT OUTER in most dialects.
+                    # Right join semantics require reversed join order; this is a best-effort fallback.
+                    query = query.join(mdl, isouter=True)
+                else:
+                    query = query.join(mdl)
 
             # When joining one-to-many relationships, the base entity rows can
             # be duplicated which breaks pagination semantics (limit applies to

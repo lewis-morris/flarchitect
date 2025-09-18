@@ -625,8 +625,15 @@ class AutoSchema(Base):
             relationship_prop = relationship_property.property
             field_args = {"dump_only": not relationship_prop.viewonly}
 
-            # Determine the serialization type
-            dump_type = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
+            # Determine the serialization type with per-request override
+            dump_override = None
+            try:
+                dump_override = request.args.get("dump")
+            except RuntimeError:
+                pass
+            configured_dump = str(get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url") or "url").lower()
+            candidate = str(dump_override or "").lower()
+            dump_type = candidate if candidate in {"url", "json", "dynamic", "hybrid"} else configured_dump
 
             if dump_type == "url":
                 if relationship_prop.uselist:
