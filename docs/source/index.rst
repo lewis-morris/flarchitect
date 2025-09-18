@@ -17,6 +17,7 @@ flarchitect
    :hidden:
 
    models
+   filtering
    joining
    custom_serialization
    authentication

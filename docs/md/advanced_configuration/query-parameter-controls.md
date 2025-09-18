@@ -5,11 +5,13 @@
 responses. These toggles may be disabled to enforce fixed behaviour.
 
 ## Filtering
-The API_ALLOW_FILTERS <configuration.html#ALLOW_FILTERS> flag enables a `filter` query parameter for
-constraining results. For example:
-```
-GET /api/books?filter=author_id__eq:1
-```
+Filtering is enabled by default and lets clients constrain results using
+`<field>__<operator>=<value>` predicates (e.g. `title__ilike=python`).
+Disable it globally or per model with
+API_ALLOW_FILTERS <configuration.html#ALLOW_FILTERS>.
+See Filtering <filtering> for the complete syntax, supported operators,
+OR conditions via `or[ ... ]`, and how to filter on joined models using
+`table.column` qualifications.
 
 ## Ordering
 Activate API_ALLOW_ORDER_BY <configuration.html#ALLOW_ORDER_BY> to allow sorting via `order_by`:

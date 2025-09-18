@@ -83,6 +83,7 @@
 - [Error Handling](/docs/md/error_handling/index.md): flarchitect standardises error reporting through a small set of helpers.
 - [Extensions](/docs/md/extensions/index.md): Callbacks let you hook into the request lifecycle to run custom logic around.
 - [Feature Overview](/docs/md/feature_overview/index.md): grouping/aggregation, pagination and response metadata.
+- [Filtering](/docs/md/filtering/index.md): explains how to enable/disable filtering, the syntax for predicates, how to.
 - [flarchitect](/docs/md/index/index.md): ![Coverage Report](/_static/coverage.svg).
 - [Hooks & Plugins Cheatsheet](/docs/md/hooks_cheatsheet/index.md): Quick reference for callbacks and plugin hooks: when they run, what they.
 - [Joining Related Resources](/docs/md/joining/index.md): relationships by joining tables at query time.
@@ -100,6 +101,7 @@
 - [Advanced Configuration](/docs/md/index/advanced-configuration.md): Need finer control? The Advanced Configuration <advanced_configuration> guide covers features like rate limiting, CORS, and custom cache backends.
 - [Available validators](/docs/md/validation/available-validators.md): Reference material.
 - [Backends](/docs/md/caching/backends.md): Timeout is controlled by API_CACHE_TIMEOUT <configuration.html#CACHE_TIMEOUT>.
+- [Basic syntax](/docs/md/filtering/basic-syntax.md): Use the pattern `<field>__<operator>=<value>`.
 - [Basic usage](/docs/md/manual_routes/basic-usage.md): Reference material.
 - [Basic usage](/docs/md/validation/basic-usage.md): Reference material.
 - [Callback quick reference](/docs/md/hooks_cheatsheet/callback-quick-reference.md): Reference material.
@@ -116,14 +118,17 @@
 - [Documentation metadata](/docs/md/manual_routes/documentation-metadata.md): Reference material.
 - [Dump types](/docs/md/models/dump-types.md): by API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> or `Meta.serialization_type`.
 - [Enable joins](/docs/md/joining/enable-joins.md): Reference material.
+- [Enable or disable filtering](/docs/md/filtering/enable-or-disable-filtering.md): Filtering is enabled by default.
 - [Enable The Endpoint](/docs/md/websockets/enable-the-endpoint.md): pip install flask-sock.
 - [Example](/docs/md/caching/example.md): Reference material.
 - [Example](/docs/md/global_/example.md): Reference material.
 - [Example](/docs/md/model/example.md): Reference material.
 - [Example](/docs/md/model_method/example.md): Reference material.
+- [Examples](/docs/md/filtering/examples.md): Reference material.
 - [Expected output (example)](/docs/md/joining/expected-output-example.md): With `dump=dynamic` and `join=invoice-lines,payments,customer` you can.
 - [Extending query parameters](/docs/md/extensions/extending-query-parameters.md): Use ADDITIONAL_QUERY_PARAMS <configuration.html#ADDITIONAL_QUERY_PARAMS> to document extra query parameters introduced in.
 - [Field validation](/docs/md/validation/field-validation.md): attribute on SQLAlchemy columns to determine which validators to apply.
+- [Filtering across joins](/docs/md/filtering/filtering-across-joins.md): When you join related models, you can qualify a filter with the table name using.
 - [handle_http_exception](/docs/md/error_handling/handle-http-exception.md): Register `handle_http_exception` as the Flask error handler for.
 - [Hook reference](/docs/md/plugins/hook-reference.md): Called at the beginning of each request.
 - [How It Works](/docs/md/websockets/how-it-works.md): subscribers and broadcasts events.
@@ -136,6 +141,7 @@
 - [Normalised join tokens](/docs/md/joining/normalised-join-tokens.md): The `join` query parameter accepts a comma‑separated list of relationship.
 - [Notes](/docs/md/plugins/notes.md): value wins (e.g., response replacement).
 - [Notes & Limitations](/docs/md/websockets/notes-limitations.md): development or single‑process servers.
+- [OR conditions](/docs/md/filtering/or-conditions.md): To express OR logic, wrap a comma‑separated list of full conditions inside a.
 - [Overview](/docs/md/websockets/overview.md): flarchitect ships with a lightweight, optional WebSocket integration intended.
 - [Pagination counts look wrong with joins](/docs/md/troubleshooting/pagination-counts-look-wrong-with-joins.md): join rows.
 - [Pagination with joins](/docs/md/joining/pagination-with-joins.md): Joining one‑to‑many relationships multiplies result rows at the SQL level.
@@ -151,6 +157,8 @@
 - [Serialisation modes](/docs/md/custom_serialization/serialisation-modes.md): all others remain URLs.
 - [Storage backends](/docs/md/rate_limiting/storage-backends.md): If none is provided, an in‑memory fallback is used (suitable for development.
 - [Subscription Model](/docs/md/websockets/subscription-model.md): Subscribe to a topic by connecting to the endpoint with an optional `topic`.
+- [Supported operators](/docs/md/filtering/supported-operators.md): The following operators are available.
+- [Tips and combinations](/docs/md/filtering/tips-and-combinations.md): sorting (`order_by`), pagination (`page`/`limit`), and dynamic nesting.
 - [Using _handle_exception](/docs/md/error_handling/using-handle-exception.md): For ad-hoc exception handling you can call `_handle_exception` directly.
 
 ## Developer Tooling
