@@ -865,19 +865,38 @@ def _build_doc_url(doc_id: str) -> str:
 
 def _resolve_document_record(index: DocumentIndex, doc_id: str) -> tuple[str, DocumentRecord]:
     candidates: list[str] = []
-    for candidate in (
-        doc_id,
-        doc_id.lower() if doc_id else doc_id,
-        f"{doc_id}.md" if doc_id else doc_id,
-    ):
-        if candidate and candidate not in candidates:
-            candidates.append(candidate)
+    base_candidates = [doc_id]
+    if doc_id:
+        lower = doc_id.lower()
+        if lower not in base_candidates:
+            base_candidates.append(lower)
+    for base in base_candidates:
+        if base and base not in candidates:
+            candidates.append(base)
+        if not base:
+            continue
+        for ext in (".md", ".rst"):
+            if base.lower().endswith(ext):
+                continue
+            extended = f"{base}{ext}"
+            if extended not in candidates:
+                candidates.append(extended)
     for candidate in candidates:
         try:
             record = index.get(candidate)
             return candidate, record
         except KeyError:
             continue
+    lowered = doc_id.lower()
+    for record in index.list_documents():
+        candidate_id = record.doc_id
+        candidate_lower = candidate_id.lower()
+        if candidate_lower == lowered:
+            return candidate_id, record
+        for suffix in ("", ".md", ".rst"):
+            target = f"/{lowered}{suffix}" if suffix else f"/{lowered}"
+            if candidate_lower.endswith(target):
+                return candidate_id, record
     raise KeyError(f"No document with id '{doc_id}'")
 
 

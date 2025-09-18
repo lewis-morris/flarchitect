@@ -374,11 +374,55 @@ def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[Documen
 
     parser = _RSTHTMLToTextParser()
     parser.feed(body)
-    plain_text = parser.get_text()
-    sections = parser.sections
+    body_text = parser.get_text()
+    parsed_sections = parser.sections
+
+    resolved_title = (title or "").strip() or path.stem.replace("_", " ").title()
+
+    body_lines = body_text.splitlines()
+    if resolved_title:
+        lines = [resolved_title, *body_lines]
+        sections: list[DocumentSection] = []
+        title_section = DocumentSection(
+            title=resolved_title,
+            anchor=_normalize_anchor(resolved_title),
+            start_line=1,
+            end_line=None,
+        )
+        adjusted_sections: list[DocumentSection] = []
+        for sec in parsed_sections:
+            adjusted_sections.append(
+                DocumentSection(
+                    title=sec.title,
+                    anchor=sec.anchor,
+                    start_line=sec.start_line + 1,
+                    end_line=(sec.end_line + 1) if sec.end_line is not None else None,
+                )
+            )
+        if adjusted_sections:
+            object.__setattr__(title_section, "end_line", adjusted_sections[0].start_line - 1)
+            if adjusted_sections[-1].end_line is None:
+                object.__setattr__(adjusted_sections[-1], "end_line", len(lines))
+        else:
+            object.__setattr__(title_section, "end_line", len(lines))
+        sections = [title_section, *adjusted_sections]
+    else:
+        lines = body_lines
+        sections = [
+            DocumentSection(
+                title=sec.title,
+                anchor=sec.anchor,
+                start_line=sec.start_line,
+                end_line=sec.end_line,
+            )
+            for sec in parsed_sections
+        ]
+        if sections and sections[-1].end_line is None:
+            object.__setattr__(sections[-1], "end_line", len(lines))
+
+    plain_text = "\n".join(line for line in lines if line).strip()
     if not sections:
         sections = list(_extract_sections(plain_text))
-    resolved_title = (title or "").strip() or (sections[0].title if sections else path.stem.replace("_", " ").title())
     return resolved_title, plain_text, sections
 
 
