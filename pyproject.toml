@@ -4,6 +4,12 @@
 requires = ["hatchling>=1.27.0", "packaging>=24.0"]  # packaging gives twine/uv 2.4 awareness
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+include = [
+  "docs/md/**/*",
+  "llms.txt"
+]
+
 [project]
 name = "flarchitect"
 version = "1.2.7"

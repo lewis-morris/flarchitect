@@ -43,6 +43,7 @@
 - Docs: Clarify that models require a `Meta` inner class for auto-registration, while `tag` and `tag_group` are optional; warnings added in Quick Start, Models guide, and README.
 - Developer tooling: Provide an optional `flarchitect-mcp-docs` MCP server exposing the Sphinx sources, README, CHANGELOG, and suggestions backlog with `search_docs`/`get_doc_section` tools plus a reusable `DocumentIndex` helper and support for the `fastmcp` backend (`--backend fastmcp`).
 - Docs: Expanded callbacks & plugins guide with full lifecycle, signatures, context keys and practical examples.
+- Docs: Convert the Sphinx sources into semantic Markdown chunks (`docs/md`), ship a generated `llms.txt` manifest, and add `tools/convert_docs.py` to keep AI-friendly docs in sync with the RST originals.
 
 ## v1.2.0 (2025-06-18)
 

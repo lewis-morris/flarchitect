@@ -7,6 +7,7 @@ import inspect
 import json
 from dataclasses import dataclass
 from importlib import import_module
+from importlib.util import find_spec
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional, Sequence
 
@@ -162,24 +163,39 @@ class ServerConfig:
 def build_index(project_root: Path) -> DocumentIndex:
     """Construct a :class:`DocumentIndex` with sensible defaults."""
 
-    docs_source = (project_root / "docs" / "source").resolve()
-    if docs_source.exists():
-        return DocumentIndex(project_root, doc_path=docs_source)
-
-    module_path = Path(__file__).resolve()
-    package_root = module_path.parents[1]
-    candidate_roots: list[tuple[Path, Path]] = [
-        (package_root, (package_root / "docs" / "source").resolve()),
-        (package_root.parent, (package_root.parent / "docs" / "source").resolve()),
+    project_docs = (project_root / "docs").resolve()
+    project_candidates = [
+        (project_root, project_docs / "md"),
+        (project_root, project_docs / "source"),
     ]
 
-    seen: set[Path] = {docs_source}
-    for root, doc_path in candidate_roots:
-        if doc_path in seen:
-            continue
-        seen.add(doc_path)
-        if doc_path.exists():
-            return DocumentIndex(root, doc_path=doc_path)
+    package_candidates: list[tuple[Path, Path]] = []
+    spec = find_spec("flarchitect")
+    if spec and spec.origin:
+        package_root = Path(spec.origin).resolve().parent
+        package_parent = package_root.parent
+        package_candidates.extend(
+            [
+                (package_root, (package_root / "docs" / "md").resolve()),
+                (package_root, (package_root / "docs" / "source").resolve()),
+                (package_parent, (package_parent / "docs" / "md").resolve()),
+                (package_parent, (package_parent / "docs" / "source").resolve()),
+            ]
+        )
+
+    llms_paths: dict[Path, str] = {}
+
+    def _register_llms(base: Path) -> None:
+        llms_file = (base / "llms.txt").resolve()
+        if llms_file.exists():
+            llms_paths[llms_file] = "llms.txt"
+
+    for root, candidate in [*project_candidates, *package_candidates]:
+        if candidate.exists():
+            _register_llms(root)
+            return DocumentIndex(root, doc_path=candidate, extra_files=llms_paths)
+        else:
+            _register_llms(root)
 
     raise FileNotFoundError(
         "No documentation roots discovered under project root or package. Provide --project-root pointing to the repository root or pass custom directories."
@@ -1026,6 +1042,11 @@ def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
         choices=["auto", "fastmcp", "reference"],
         default="auto",
         help="Select the MCP backend implementation (auto tries fastmcp then falls back to the reference server).",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"flarchitect-mcp-docs {PACKAGE_VERSION}",
     )
     return parser.parse_args(argv)
 

@@ -465,13 +465,23 @@ flarchitect ships with an optional [Model Context Protocol](https://modelcontext
 1. Install the extra dependency group (ships the `fastmcp` backend): `pip install flarchitect[mcp]` (or `uv pip install '.[mcp]'`).
 2. Start the server from your repository root: `flarchitect-mcp-docs --project-root . --backend fastmcp` to prefer the `fastmcp` runtime (falls back to the reference implementation if it is available).
    - Need the reference backend? Install the upstream SDK manually: `pip install 'mcp @ git+https://github.com/modelcontextprotocol/python-sdk@main'`, then restart with `--backend reference`.
-3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and expose the Sphinx sources under `docs/source`, converted to plain text for search. When that tree is missing under your project root, the CLI automatically falls back to the packaged documentation bundled with *flarchitect*.
+3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and serve the semantic-chunked Markdown under `docs/md` (with a packaged fallback when the directory is absent). The original reStructuredText sources are still used as input but converted on demand.
 
 Available tools:
 
 - `list_docs` – enumerate indexed document identifiers and titles for discovery.
 - `search_docs` – substring search with snippets and line numbers.
 - `get_doc_section` – return an entire document or a specific heading slice (Markdown and reStructuredText are supported).
+
+### Regenerating AI-ready docs
+
+The Markdown in `docs/md` and the discovery manifest `llms.txt` are generated from the Sphinx sources. Regenerate them after editing any `.rst` file:
+
+```bash
+python tools/convert_docs.py
+```
+
+The script chunks large guides into smaller Markdown files, strips Sphinx-only roles, and updates the root `llms.txt` (consumed by platforms that understand the [llms.txt](https://llmstxt.org) specification). Do not edit the generated Markdown or `llms.txt` by hand—changes will be overwritten on the next conversion.
 
 The CLI reuses the `DocumentIndex` helper so file changes are picked up on restart. Use `--name`, `--description`, `--backend`, or `--project-root` to customise the advertised metadata, backend and docs location.
 

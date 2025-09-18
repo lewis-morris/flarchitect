@@ -18,7 +18,7 @@ Quick Start
 
       flarchitect-mcp-docs --project-root . --backend fastmcp
 
-#. Configure your MCP-aware client to connect to the new ``flarchitect-docs`` endpoint. Resources use the ``flarchitect-doc://`` URI scheme and expose the normalised plain-text representation of the Sphinx sources.
+#. Configure your MCP-aware client to connect to the new ``flarchitect-docs`` endpoint. Resources use the ``flarchitect-doc://`` URI scheme and expose the semantic-chunked Markdown generated in ``docs/md`` (the server falls back to the packaged copy when the directory is missing).
 
 .. note::
    The reference backend (`--backend reference`) requires the upstream ``mcp`` package. Install it manually when you need the pure JSON-RPC server::
@@ -30,7 +30,7 @@ What the Server Provides
 ------------------------
 
 Resources
-   Every documentation file under ``docs/source`` is exposed as an MCP resource. Resource metadata includes a human-readable title, the file's relative path, and an appropriate ``mimeType`` (``text/markdown`` or ``text/x-rst``). When ``docs/source`` is missing from the supplied ``--project-root``, the CLI automatically falls back to the copy bundled with the installed *flarchitect* package so clients can still browse the canonical docs.
+   Every Markdown document under ``docs/md`` (plus ``llms.txt``) is exposed as an MCP resource. Resource metadata includes a human-readable title, the file's relative path, and an appropriate ``mimeType`` (``text/markdown`` or ``text/plain``). When ``docs/md`` is missing from the supplied ``--project-root``, the CLI automatically falls back to the copy bundled with the installed *flarchitect* package so clients can still browse the canonical docs. The original ``docs/source`` tree remains the authority; a conversion script keeps the Markdown in sync.
 
 Tools
    Three MCP tools are registered:
@@ -77,6 +77,8 @@ Integration Tips
 * To test the server manually, run ``flarchitect-mcp-docs`` in one terminal and use an MCP client or curl-style helper to issue ``list_resources`` and ``call_tool`` requests.
 * Validate tool responses by confirming the ``structuredContent`` block. For example, calling ``search_docs`` with ``"home working summary"`` should return ``{"result": [...]}`` inside ``structuredContent`` (plus a text echo) including ``doc_id`` and ``snippet`` fields.
 * The server implements the 2025-06-18 MCP verbs (`resources/list`, `resources/read`, `tools/list`, and `tools/call`) and advertises capabilities during the initial handshake.
+* The repository ships an ``llms.txt`` manifest (generated alongside the Markdown) so external tooling that follows the `llmstxt.org <https://llmstxt.org>`_ proposal can discover the curated documentation index.
+* Regenerate the Markdown chunks and ``llms.txt`` after updating ``docs/source`` by running ``python tools/convert_docs.py`` from the project root. The script is idempotent and will overwrite any manual edits to the generated files.
 
 
 Testing Strategy

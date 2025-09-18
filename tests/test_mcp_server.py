@@ -75,7 +75,9 @@ def doc_index(tmp_path: Path) -> DocumentIndex:
         "Callbacks\n==========\n\nHooks for create, read, update, delete.\n",
         encoding="utf-8",
     )
-    return DocumentIndex(tmp_path)
+    llms_file = tmp_path / "llms.txt"
+    llms_file.write_text("LLM index", encoding="utf-8")
+    return DocumentIndex(tmp_path, extra_files={llms_file: "llms.txt"})
 
 
 def test_build_index_falls_back_to_packaged_docs(tmp_path: Path) -> None:
@@ -84,7 +86,8 @@ def test_build_index_falls_back_to_packaged_docs(tmp_path: Path) -> None:
     documents = index.list_documents()
     assert documents, "Expected fallback index to expose packaged documentation"
     doc_ids = {doc.doc_id for doc in documents}
-    assert any(doc_id.startswith("docs/source/") for doc_id in doc_ids)
+    assert any(doc_id.startswith("docs/source/") or doc_id.startswith("docs/md/") for doc_id in doc_ids)
+    assert "llms.txt" in doc_ids
 
     hits = index.search("installation")
     assert hits, "Expected packaged docs to include installation guidance"
@@ -112,6 +115,8 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
     assert fake_instance.resources, "Expected resources to be registered"
     first_resource = fake_instance.resources[0]
     assert first_resource.uri.startswith("flarchitect-doc://")
+    resource_names = {resource.name for resource in fake_instance.resources}
+    assert "llms.txt" in resource_names
 
     search_tool = fake_instance.tools["search_docs"]["func"]
     result = asyncio.run(search_tool(query="guide"))
@@ -138,6 +143,7 @@ def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> 
     titles = {item["title"] for item in docs_payload}
     assert "Guide" in titles
     assert any(item["doc_id"].endswith("guide.rst") for item in docs_payload)
+    assert any(item["doc_id"] == "llms.txt" for item in docs_payload)
 
     # The server wrapper should call the run method when serve() is invoked.
     assert fake_instance.run_called is False

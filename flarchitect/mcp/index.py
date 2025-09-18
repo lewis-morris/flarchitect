@@ -75,7 +75,12 @@ class DocumentIndex:
             project_root = roots_or_project.resolve()
             default_doc_path = doc_path.resolve() if doc_path is not None else (project_root / "docs" / "source")
             self._roots = (default_doc_path,)
-            alias_input = aliases or {default_doc_path: "docs/source"}
+            alias_value = None
+            if aliases is not None:
+                alias_input = aliases
+            else:
+                alias_value = _default_alias(default_doc_path)
+                alias_input = {default_doc_path: alias_value} if alias_value is not None else {default_doc_path: ""}
         else:
             resolved_roots = tuple(sorted(Path(root).resolve() for root in roots_or_project))
             if not resolved_roots:
@@ -90,14 +95,18 @@ class DocumentIndex:
             missing_str = ", ".join(str(root) for root in missing_roots)
             raise FileNotFoundError(f"Documentation root(s) not found: {missing_str}")
 
-        alias_map: dict[Path, str] = {
-            Path(key).resolve(): value.strip("/")
-            for key, value in alias_input.items()
-        }
+        alias_map: dict[Path, str] = {}
+        for key, value in alias_input.items():
+            resolved = Path(key).resolve()
+            alias_map[resolved] = value.strip("/") if value else ""
         self._aliases = {root: alias_map.get(root, "") for root in self._roots}
 
         self._include_extensions = tuple(sorted(ext.lower() for ext in include_extensions))
-        self._extra_files = {}
+        self._extra_files: dict[Path, str | None] = {}
+        if extra_files:
+            for file_path, doc_id in extra_files.items():
+                resolved = Path(file_path).resolve()
+                self._extra_files[resolved] = doc_id
         self._documents: dict[str, DocumentRecord] = {}
         self.refresh()
 
@@ -111,6 +120,12 @@ class DocumentIndex:
         documents: dict[str, DocumentRecord] = {}
         for root, path in self._iter_document_paths():
             doc_id = self._doc_id_for_path(root=root, path=path)
+            documents[doc_id] = _build_record(doc_id, path)
+
+        for path, explicit_id in self._extra_files.items():
+            if not path.exists() or path.suffix.lower() not in self._include_extensions:
+                continue
+            doc_id = explicit_id or path.name
             documents[doc_id] = _build_record(doc_id, path)
 
         self._documents = documents
@@ -541,3 +556,12 @@ def _heading_for_line(sections: Sequence[DocumentSection], line_number: int) -> 
         elif section.start_line > line_number:
             break
     return match
+
+
+def _default_alias(path: Path) -> str | None:
+    parts = path.parts
+    if len(parts) >= 2 and parts[-2] == "docs" and parts[-1] == "md":
+        return "docs/md"
+    if len(parts) >= 2 and parts[-2] == "docs" and parts[-1] == "source":
+        return "docs/source"
+    return path.name if path.name else None

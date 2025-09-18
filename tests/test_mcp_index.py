@@ -80,3 +80,29 @@ def test_rst_with_sphinx_markup_is_normalised(sample_index: DocumentIndex) -> No
 
     hits = sample_index.search("handle_result")
     assert any(hit.doc_id == "docs/source/faq.rst" for hit in hits)
+
+
+def test_markdown_docs_are_indexed(tmp_path: Path) -> None:
+    md_root = tmp_path / "docs" / "md"
+    guide_dir = md_root / "guide"
+    guide_dir.mkdir(parents=True)
+    (guide_dir / "index.md").write_text(
+        """# Guide\n\nIntro paragraph for guide.\n\n## Details\n\nSome markdown content.\n""",
+        encoding="utf-8",
+    )
+
+    (guide_dir / "details.md").write_text(
+        """[← Back to Guide index](index.md)\n\n# Details\n\nExtended information about the guide.\n""",
+        encoding="utf-8",
+    )
+
+    index = DocumentIndex(tmp_path, doc_path=md_root)
+    doc_ids = {doc.doc_id for doc in index.list_documents()}
+    assert "docs/md/guide/index.md" in doc_ids
+    assert "docs/md/guide/details.md" in doc_ids
+
+    section_content = index.get_section("docs/md/guide/index.md", "Details")
+    assert "Some markdown content." in section_content
+
+    hits = index.search("extended information")
+    assert any(hit.doc_id == "docs/md/guide/details.md" for hit in hits)
