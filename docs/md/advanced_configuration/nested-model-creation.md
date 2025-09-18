@@ -2,7 +2,7 @@
 
 # Nested model creation
 Nested writes are disabled by default. Enable them globally with
-API_ALLOW_NESTED_WRITES or per model via
+API_ALLOW_NESTED_WRITES <configuration.html#ALLOW_NESTED_WRITES> or per model via
 `Meta.allow_nested_writes`.
 ```
 class Config:

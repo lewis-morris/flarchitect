@@ -23,7 +23,7 @@ class Author(db.Model):
 ```
 This setup gives **flarchitect** access to your models. The library automatically
 locates the active SQLAlchemy session. For non-Flask setups, a custom session
-resolver can be supplied via API_SESSION_GETTER in the Flask config; see
+resolver can be supplied via API_SESSION_GETTER <configuration.html#SESSION_GETTER> in the Flask config; see
 custom-session-getter for details.
 > **Warning**
 > The `Meta` inner class is required for automatic route generation and documentation. Models without `Meta` are ignored and will not have CRUD endpoints or entries in the docs until you add it. The `tag` and `tag_group` attributes are optional and only affect documentation grouping.

@@ -13,8 +13,8 @@ class Config:
     API_SOFT_DELETE_ATTRIBUTE = "deleted"
     API_SOFT_DELETE_VALUES = (False, True)
 ```
-API_SOFT_DELETE_ATTRIBUTE names the column that stores the deleted flag.
-API_SOFT_DELETE_VALUES is a tuple where the first value represents an
+API_SOFT_DELETE_ATTRIBUTE <configuration.html#SOFT_DELETE_ATTRIBUTE> names the column that stores the deleted flag.
+API_SOFT_DELETE_VALUES <configuration.html#SOFT_DELETE_VALUES> is a tuple where the first value represents an
 active record and the second marks it as deleted.
 
 ## Example model

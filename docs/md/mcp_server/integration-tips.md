@@ -7,6 +7,6 @@
 - To test the server manually, run `flarchitect-mcp-docs` in one terminal and use an MCP client or curl-style helper to issue `list_resources` and `call_tool` requests.
 - Validate tool responses by confirming the `structuredContent` block. For example, calling `search_docs` with `"home working summary"` should return `{"result": [...]}` inside `structuredContent` (plus a text echo) including `doc_id` and `snippet` fields.
 - The server implements the 2025-06-18 MCP verbs (resources/list, resources/read, tools/list, and tools/call) and advertises capabilities during the initial handshake.
-- The repository ships an `llms.txt` manifest (generated alongside the Markdown) so external tooling that follows the [llmstxt.org](https://llmstxt.org) proposal can discover the curated documentation index.
+- The repository ships an `llms.txt` manifest (generated alongside the Markdown) so external tooling that follows the llmstxt.org <[https://llmstxt.org](https://llmstxt.org)> proposal can discover the curated documentation index.
 - Regenerate the Markdown chunks and `llms.txt` after updating `docs/source` by running `python tools/convert_docs.py` from the project root. The script is idempotent and will overwrite any manual edits to the generated files.
 

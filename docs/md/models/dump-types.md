@@ -2,7 +2,7 @@
 
 # Dump types
 `flarchitect` can serialise model responses in different formats, controlled
-by API_SERIALIZATION_TYPE or `Meta.serialization_type`. Supported dump
+by API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> or `Meta.serialization_type`. Supported dump
 types are:
 - `url` (default) – represent related objects only by their URL links.
 - `json` – embed related objects as JSON objects.

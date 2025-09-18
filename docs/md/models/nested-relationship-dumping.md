@@ -1,14 +1,14 @@
 [← Back to SQLAlchemy Models index](index.md)
 
 # Nested relationship dumping
-API_ADD_RELATIONS controls whether relationship fields are included in the
+API_ADD_RELATIONS <configuration.html#ADD_RELATIONS> controls whether relationship fields are included in the
 serialised response. Disable it to return only column data, or use
 `?dump_relationships=false` on a request to temporarily suppress all
 relationships.
-API_SERIALIZATION_DEPTH limits how many levels of related resources are
+API_SERIALIZATION_DEPTH <configuration.html#SERIALIZATION_DEPTH> limits how many levels of related resources are
 embedded. Increasing the depth exposes deeper links or objects but may add
 overhead.
-For API_SERIALIZATION_TYPE set to `"dynamic"`, clients can choose which
+For API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> set to `"dynamic"`, clients can choose which
 relationships to embed by supplying a comma-separated `join` parameter, e.g.
 `?join=books,publisher`. Any relationships not listed are returned as URLs.
 
@@ -33,7 +33,7 @@ GET /api/authors/1?dump=json
     ]
 }
 ```
-JSON dump (depth `2` with API_SERIALIZATION_DEPTH = `2` or `?join=books,publisher`):
+JSON dump (depth `2` with API_SERIALIZATION_DEPTH <configuration.html#SERIALIZATION_DEPTH> = `2` or `?join=books,publisher`):
 ```
 GET /api/authors/1?dump=json
 {

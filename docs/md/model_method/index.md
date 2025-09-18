@@ -2,8 +2,8 @@
 
 > Global < Model < **Model Method**
 Model Method
-These values are defined as Meta class attributes in your `SQLAlchemy`_ models and configure specific behaviour per
-`HTTP method`_ for a specific model.
+These values are defined as Meta class attributes in your SQLAlchemy models and configure specific behaviour per
+HTTP method for a specific model.
 - They should always be lowercase
 - They should always omit any `API_` prefix.
 - They should be prefixed with the HTTP method you want to configure, e.g. `get_`, `post_`, `patch_`, `delete_`

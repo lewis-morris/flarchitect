@@ -24,9 +24,9 @@ Example response:
 This structured payload is produced by create_response and shows the
 standard metadata flarchitect includes by default. To return a bare list,
 disable the metadata fields via the `API_DUMP_*` configuration options, for example:
-- API_DUMP_DATETIME
-- API_DUMP_VERSION
-- API_DUMP_STATUS_CODE
-- API_DUMP_RESPONSE_MS
-- API_DUMP_TOTAL_COUNT
+- API_DUMP_DATETIME <configuration.html#DUMP_DATETIME>
+- API_DUMP_VERSION <configuration.html#DUMP_VERSION>
+- API_DUMP_STATUS_CODE <configuration.html#DUMP_STATUS_CODE>
+- API_DUMP_RESPONSE_MS <configuration.html#DUMP_RESPONSE_MS>
+- API_DUMP_TOTAL_COUNT <configuration.html#DUMP_TOTAL_COUNT>
 

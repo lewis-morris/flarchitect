@@ -9,12 +9,12 @@
 ---
 
 **Build APIs fast, customise at will.**
-**flarchitect** turns your `SQLAlchemy`_ models into a polished RESTful API complete with interactive `Redoc`_ or Swagger UI documentation.
-Hook it into your `Flask`_ application and you'll have endpoints, schemas and docs in moments. It reduces boilerplate while letting you tailor behaviour to your needs.
+**flarchitect** turns your SQLAlchemy models into a polished RESTful API complete with interactive Redoc or Swagger UI documentation.
+Hook it into your Flask application and you'll have endpoints, schemas and docs in moments. It reduces boilerplate while letting you tailor behaviour to your needs.
 What can it do?
 - Automatically create CRUD endpoints for your SQLAlchemy models.
-- Generate `Redoc`_ or Swagger UI documentation on the fly - no manual OpenAPI spec needed.
-- Be configured globally in `Flask`_ or per model or method via `Meta` attributes in your models.
+- Generate Redoc or Swagger UI documentation on the fly - no manual OpenAPI spec needed.
+- Be configured globally in Flask or per model or method via `Meta` attributes in your models.
 - Authenticate users with minimal effort - use JWTs, API keys or Basic Authentication.
 - Restrict endpoints to specific roles with roles-required.
 - Extend behaviour with response callbacks, custom validators and per-route hooks (advanced-extensions).

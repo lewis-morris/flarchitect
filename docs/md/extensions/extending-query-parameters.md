@@ -1,7 +1,7 @@
 [← Back to Extensions index](index.md)
 
 # Extending query parameters
-Use ADDITIONAL_QUERY_PARAMS to document extra query parameters introduced in
+Use ADDITIONAL_QUERY_PARAMS <configuration.html#ADDITIONAL_QUERY_PARAMS> to document extra query parameters introduced in
 a return callback. The value is a list of OpenAPI parameter objects.
 ```
 class Config:

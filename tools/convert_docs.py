@@ -435,7 +435,17 @@ def convert_rst_file(source: Path, target_root: Path) -> DocumentChunks:
     _prepare_rst_environment()
     text = source.read_text(encoding="utf-8")
     sanitized = _strip_sphinx_roles(text)
-    doctree = publish_doctree(sanitized, source_path=str(source))
+    settings_overrides = {
+        "report_level": 5,
+        "halt_level": 6,
+        "exit_status_level": 6,
+        "warning_stream": io.StringIO(),
+    }
+    doctree = publish_doctree(
+        sanitized,
+        source_path=str(source),
+        settings_overrides=settings_overrides,
+    )
 
     title_node = next((child for child in doctree.children if isinstance(child, nodes.title)), None)
     document_title = title_node.astext().strip() if title_node else source.stem.replace("_", " ").title()

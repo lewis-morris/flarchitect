@@ -21,8 +21,8 @@ class Config:
 ```
 See the Global <config_locations/global_> page for more information.
 Model
-Model configuration values override any global `Flask`_ configuration.
-They are applied in the `SQLAlchemy`_ model's `Meta` class, omit the `API_` prefix, and are written in lowercase.
+Model configuration values override any global Flask configuration.
+They are applied in the SQLAlchemy model's `Meta` class, omit the `API_` prefix, and are written in lowercase.
 Configure this level when a single model requires behaviour different from the rest of the application,
 such as marking a model read only, changing its serialisation depth, or blocking specific methods.
 Options correspond directly to the global keys but in lowercase without the prefix (for example `rate_limit`
@@ -40,7 +40,7 @@ class Article(db.Model):
 See the Model<config_locations/model> page for more information.
 Model Method
 Model method configuration values have the highest priority and override all other configuration.
-They are applied in the `SQLAlchemy`_ model's `Meta` class, omit the `API_` prefix, are lowercase, and are prefixed with the method.
+They are applied in the SQLAlchemy model's `Meta` class, omit the `API_` prefix, are lowercase, and are prefixed with the method.
 Use these settings to fine-tune behaviour for a specific model-method combination. This is useful when
 a model should provide different documentation summaries or authentication requirements per HTTP method.
 Any model-level option can be adapted by prefixing it with the

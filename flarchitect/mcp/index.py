@@ -12,7 +12,7 @@ from typing import Callable, Iterable, Iterator, List, Mapping, Optional, Sequen
 
 from docutils import nodes
 from docutils.core import publish_parts
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import Directive, directives, roles
 from docutils.utils import SystemMessage
 
 
@@ -526,6 +526,25 @@ def _prepare_rst_environment() -> None:
     directives.register_directive("tab-item", _PassthroughDirective)
     directives.register_directive("toctree", _IgnoreDirective)
     directives.register_directive("literalinclude", _LiteralIncludeDirective)
+
+    def _noop_role(role_name, rawtext, text, lineno, inliner, options=None, content=None):
+        return [nodes.Text(text)], []
+
+    for role_name in (
+        "bdg",
+        "bdg-dark-line",
+        "bdg-danger",
+        "bdg-secondary",
+        "ref",
+        "doc",
+        "class",
+        "mod",
+        "func",
+        "meth",
+        "data",
+        "program",
+    ):
+        roles.register_local_role(role_name, _noop_role)
 
 
 def _normalize_anchor(value: str) -> str:

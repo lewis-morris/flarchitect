@@ -1,10 +1,10 @@
 [← Back to Advanced Configuration index](index.md)
 
 # Caching backends
-`flarchitect` can cache GET responses when API_CACHE_TYPE is set. If
+`flarchitect` can cache GET responses when API_CACHE_TYPE <configuration.html#CACHE_TYPE> is set. If
 `flask-caching` is installed, any of its backends (such as Redis or
 Memcached) may be used. When `flask-caching` is **not** available and
-API_CACHE_TYPE is `"SimpleCache"`, a bundled
+API_CACHE_TYPE <configuration.html#CACHE_TYPE> is `"SimpleCache"`, a bundled
 `SimpleCache` provides an in-memory fallback. This lightweight cache is
 cleared when the process restarts and stores data only for the current
 worker, making it suitable for development or tests rather than
@@ -26,11 +26,11 @@ with rate-limit headers enabled by default. In production, you might point
 to a shared Redis cluster so that multiple application servers enforce the
 same limits.
 You can also cache `GET` responses by choosing a backend with
-API_CACHE_TYPE. When [flask-caching](https://flask-caching.readthedocs.io/)
-is installed, set API_CACHE_TYPE to any supported backend such as
+API_CACHE_TYPE <configuration.html#CACHE_TYPE>. When flask-caching <[https://flask-caching.readthedocs.io/](https://flask-caching.readthedocs.io/)>
+is installed, set API_CACHE_TYPE <configuration.html#CACHE_TYPE> to any supported backend such as
 `RedisCache`. If the extension is missing, specifying `SimpleCache`
 activates a small in-memory cache bundled with `flarchitect`; any other
-value will raise a RuntimeError. Use API_CACHE_TIMEOUT to control
+value will raise a RuntimeError. Use API_CACHE_TIMEOUT <configuration.html#CACHE_TIMEOUT> to control
 how long items remain cached.
 Example `RedisCache` setup with a `SimpleCache` fallback and a cached
 `GET` request:
@@ -57,7 +57,7 @@ with app.test_client() as client:
     client.get("/time")  # first call stored in cache
     client.get("/time")  # second call served from cache
 ```
-For a runnable example demonstrating cached responses see the [caching demo](https://github.com/lewis-morris/flarchitect/tree/master/demo/caching).
+For a runnable example demonstrating cached responses see the caching demo <[https://github.com/lewis-morris/flarchitect/tree/master/demo/caching](https://github.com/lewis-morris/flarchitect/tree/master/demo/caching)>.
 After securing throughput, you can also shape what your clients see in each
 payload.
 

@@ -2,10 +2,10 @@
 
 # Config Hierarchy
 To offer flexibility and control, **flarchitect** follows a hierarchy of configuration priorities:
-- **Lowest Priority – Global `Flask`_ config options** are added to `app.config` with an `API_` prefix
+- **Lowest Priority – Global Flask config options** are added to `app.config` with an `API_` prefix
     (for example `API_TITLE`). These defaults apply to every request unless overridden by a more specific
     configuration.  See Global<config_locations/global_> for details.
-- **Model-based – `SQLAlchemy`_ model ``Meta`` attributes** are written in lowercase without the `API_` prefix
+- **Model-based – SQLAlchemy model ``Meta`` attributes** are written in lowercase without the `API_` prefix
     (for example `rate_limit`) and override any global settings for that model.  See Model<config_locations/model>.
 - **Highest Priority – Model method-specific ``Meta`` attributes** prefix the lowercase option name with an HTTP
     method (such as `get_description` or `post_authenticate`) to target a single model-method combination.

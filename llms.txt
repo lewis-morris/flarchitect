@@ -60,7 +60,7 @@
 - [Core configuration](/docs/md/configuration/core-configuration.md): Some settings are essential for initialising the extension and controlling its.
 - [Core Settings](/docs/md/_configuration_table/core-settings.md): Essential configuration values needed to run `flarchitect` and control automatic route generation.
 - [Core Settings](/docs/md/configuration/core-settings.md): Essential configuration values needed to run `flarchitect` and control automatic route generation.
-- [CORS](/docs/md/advanced_configuration/cors.md): To enable [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
+- [CORS](/docs/md/advanced_configuration/cors.md): To enable Cross-Origin Resource Sharing (CORS) <[https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)>.
 - [Extensions, validators and hooks](/docs/md/advanced_configuration/extensions-validators-and-hooks.md): configuration files.
 - [Full auto mode](/docs/md/advanced_configuration/full-auto-mode.md): startup and registers CRUD routes for each one.
 - [Initialising with optional features](/docs/md/advanced_configuration/initialising-with-optional-features.md): behaviour like caching, CORS handling and automatic documentation.
@@ -102,12 +102,12 @@
 - [Configuration](/docs/md/extensions/configuration.md): Callbacks are referenced by the following configuration keys (global variants.
 - [CustomHTTPException](/docs/md/error_handling/customhttpexception.md): optional reason.
 - [Documentation metadata](/docs/md/manual_routes/documentation-metadata.md): Reference material.
-- [Dump types](/docs/md/models/dump-types.md): by API_SERIALIZATION_TYPE or `Meta.serialization_type`.
+- [Dump types](/docs/md/models/dump-types.md): by API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> or `Meta.serialization_type`.
 - [Enable The Endpoint](/docs/md/websockets/enable-the-endpoint.md): pip install flask-sock.
 - [Example](/docs/md/global_/example.md): Reference material.
 - [Example](/docs/md/model/example.md): Reference material.
 - [Example](/docs/md/model_method/example.md): Reference material.
-- [Extending query parameters](/docs/md/extensions/extending-query-parameters.md): Use ADDITIONAL_QUERY_PARAMS to document extra query parameters introduced in.
+- [Extending query parameters](/docs/md/extensions/extending-query-parameters.md): Use ADDITIONAL_QUERY_PARAMS <configuration.html#ADDITIONAL_QUERY_PARAMS> to document extra query parameters introduced in.
 - [Field validation](/docs/md/validation/field-validation.md): attribute on SQLAlchemy columns to determine which validators to apply.
 - [handle_http_exception](/docs/md/error_handling/handle-http-exception.md): Register `handle_http_exception` as the Flask error handler for.
 - [Hook reference](/docs/md/plugins/hook-reference.md): Called at the beginning of each request.
@@ -115,7 +115,7 @@
 - [Input and output schemas](/docs/md/manual_routes/input-and-output-schemas.md): You can validate request bodies and serialise responses with Marshmallow.
 - [Lifecycle at a glance](/docs/md/hooks_cheatsheet/lifecycle-at-a-glance.md): Reference material.
 - [Message Format](/docs/md/websockets/message-format.md): callbacks and serialisation.
-- [Nested relationship dumping](/docs/md/models/nested-relationship-dumping.md): API_ADD_RELATIONS controls whether relationship fields are included in the.
+- [Nested relationship dumping](/docs/md/models/nested-relationship-dumping.md): API_ADD_RELATIONS <configuration.html#ADD_RELATIONS> controls whether relationship fields are included in the.
 - [Notes](/docs/md/plugins/notes.md): value wins (e.g., response replacement).
 - [Notes & Limitations](/docs/md/websockets/notes-limitations.md): development or single‑process servers.
 - [Overview](/docs/md/websockets/overview.md): flarchitect ships with a lightweight, optional WebSocket integration intended.
@@ -135,7 +135,7 @@
 - [MCP Documentation Server](/docs/md/mcp_server/index.md): The Model Context Protocol (MCP) server bundled with *flarchitect* exposes the project's documentation so tools and agents can query, search, and cite it without bespoke glue code.
 - [Accessing the spec](/docs/md/openapi/accessing-the-spec.md): The canonical JSON schema is served under the docs path at `/docs/apispec.json`.
 - [Advanced usage](/docs/md/graphql/advanced-usage.md): and adds fields returning the related object types.
-- [Automatic generation](/docs/md/openapi/automatic-generation.md): When API_CREATE_DOCS is enabled (it is `True` by default) the.
+- [Automatic generation](/docs/md/openapi/automatic-generation.md): When API_CREATE_DOCS <configuration.html#CREATE_DOCS> is enabled (it is `True` by default) the.
 - [Configuration Reference](/docs/md/mcp_server/configuration-reference.md): **`--project-root`**.
 - [Customising the document](/docs/md/openapi/customising-the-document.md): the docs page.
 - [Documentation style](/docs/md/openapi/documentation-style.md): By default, flarchitect renders docs with Redoc.
@@ -154,4 +154,4 @@
 
 - [FAQ](/docs/md/faq/index.md): By default URL endpoints are `pluralised kebab-case`, resources are `camelCase` and resource fields are.
 - [Roadmap](/docs/md/roadmap/index.md): Reference material.
-- [Troubleshooting](/docs/md/faq/troubleshooting.md): Ensure API_CREATE_DOCS is set to `True` and that the.
+- [Troubleshooting](/docs/md/faq/troubleshooting.md): Ensure API_CREATE_DOCS <configuration.html#CREATE_DOCS> is set to `True` and that the.

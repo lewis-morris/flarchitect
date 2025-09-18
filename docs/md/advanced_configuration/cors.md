@@ -1,12 +1,12 @@
 [← Back to Advanced Configuration index](index.md)
 
 # CORS
-To enable [Cross-Origin Resource Sharing (CORS)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-for your API, set API_ENABLE_CORS to `True` in the application
+To enable Cross-Origin Resource Sharing (CORS) <[https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)>
+for your API, set API_ENABLE_CORS <configuration.html#ENABLE_CORS> to `True` in the application
 configuration. When active, CORS headers are applied to matching routes
 defined in `CORS_RESOURCES`.
 `CORS_RESOURCES` accepts a mapping of URL patterns to their respective
-options, mirroring the format used by [Flask-CORS](https://flask-cors.readthedocs.io/).
+options, mirroring the format used by Flask-CORS <[https://flask-cors.readthedocs.io/](https://flask-cors.readthedocs.io/)>.
 ```
 class Config:
     API_ENABLE_CORS = True
