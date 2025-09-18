@@ -224,52 +224,109 @@ def get_group_by_fields(
     return group_by_fields
 
 
-def get_models_for_join(args_dict: dict[str, str], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
-    """Build a mapping of models to join from the ``join`` query parameter.
+def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
+    """Build a mapping of models to join from query parameters.
+
+    Enhancements:
+    - Accept multiple ``join`` (or legacy ``join_models``) parameters and
+      aggregate all of their values.
+    - Support comma-separated lists within each value.
+    - Treat additional query keys that match relationship names as join tokens
+      (e.g. ``?join=invoice-lines&payments&customer``).
+    - Normalise tokens by trimming whitespace, lowercasing, and converting
+      hyphens to underscores before resolution.
+    - Try singular and plural variants when the initial token cannot be
+      resolved. Only raise a 400 when none match.
 
     Args:
-        args_dict: Mapping of request arguments.
-        get_model_func: Callback used to resolve a model name to a class.
+        args_dict: Mapping of request arguments. Values may be strings or lists
+            as produced by ``request.args.to_dict(flat=False)``.
+        get_model_func: Callback used to resolve a model/relationship name to a
+            class. May raise ``CustomHTTPException`` if unresolved.
 
     Returns:
-        dict[str, DeclarativeBase]: Requested join names mapped to model classes.
-        An empty dictionary is returned when no joins are requested.
+        dict[str, DeclarativeBase]: Requested join tokens mapped to model
+        classes. An empty dictionary is returned when no joins are requested.
 
     Raises:
-        CustomHTTPException: If a requested join model cannot be resolved.
-
+        CustomHTTPException: If a requested join model cannot be resolved after
+        trying normalisation, singular, and plural variants.
     """
 
     def _normalise(token: str) -> str:
         return (token or "").strip().lower().replace("-", "_")
 
+    def _ensure_list(val: Any) -> list[str]:
+        if val is None:
+            return []
+        if isinstance(val, (list, tuple, set)):
+            # flatten nested one-level lists of scalars
+            return [str(v) for v in val]
+        return [str(val)]
+
+    def _resolve_token(token: str) -> DeclarativeBase | None:
+        # Attempt raw token
+        try:
+            return get_model_func(token)
+        except CustomHTTPException:
+            pass
+
+        # Singular: drop trailing 's'
+        singular = token[:-1] if token.endswith("s") else token
+        if singular != token:
+            try:
+                return get_model_func(singular)
+            except CustomHTTPException:
+                pass
+
+        # Pluralise last word
+        from flarchitect.specs.utils import pluralize_last_word  # lazy import to avoid circular
+
+        plural = pluralize_last_word(token)
+        if plural != token:
+            try:
+                return get_model_func(plural)
+            except CustomHTTPException:
+                pass
+
+        return None
+
     models: dict[str, DeclarativeBase] = {}
-    join_value = args_dict.get("join") or args_dict.get("join_models")
-    if join_value:
-        for raw in join_value.split(","):
-            token = _normalise(raw)
-            if not token:
-                continue
 
-            # Try raw token first
-            model = get_model_func(token)
+    # 1) Collect tokens from join/join_models params (multiple allowed)
+    join_values: list[str] = []
+    for key in ("join", "join_models"):
+        if key in args_dict:
+            for v in _ensure_list(args_dict.get(key)):
+                # split on commas after normalisation preparation
+                for raw in str(v).split(","):
+                    norm = _normalise(raw)
+                    if norm:
+                        join_values.append(norm)
 
-            # If not found, try singularise (drop trailing 's') or pluralise
-            if not model:
-                # singular candidate
-                singular = token[:-1] if token.endswith("s") else token
-                if singular != token:
-                    model = get_model_func(singular)
+    # 2) Collect additional keys that may represent relationship names
+    reserved = {"join", "join_models", "join_type", "fields", "groupby", "orderby", "order_by", "page", "limit", "dump", "format", "include_deleted", "cascade_delete"}
+    candidate_keys = [k for k in args_dict.keys() if k not in reserved]
 
-            if not model:
-                from flarchitect.specs.utils import pluralize_last_word  # lazy import to avoid circular
-                plural = pluralize_last_word(token)
-                if plural != token:
-                    model = get_model_func(plural)
+    for key in candidate_keys:
+        # ignore keys that are obviously filter expressions (contain __ or .)
+        if "__" in key or "." in key:
+            continue
+        norm = _normalise(key)
+        if norm:
+            join_values.append(norm)
 
-            if not model:
-                raise CustomHTTPException(400, f"Invalid join model: {raw}")
-            models[raw] = model
+    # 3) Resolve tokens with fallbacks; collect unique in insertion order
+    seen: set[str] = set()
+    for token in join_values:
+        if token in seen:
+            continue
+        seen.add(token)
+        model = _resolve_token(token)
+        if not model:
+            # Use the original token in error message (pre-normalised best effort)
+            raise CustomHTTPException(400, f"Invalid join model: {token}")
+        models[token] = model
 
     return models
 

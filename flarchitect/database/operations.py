@@ -195,7 +195,7 @@ class CrudService:
             f"Field {field_name} does not represent a relationship in model {self.model.__name__}",
         )
 
-    def filter_query_from_args(self, args_dict: dict[str, str | int], query=None) -> Query:
+    def filter_query_from_args(self, args_dict: dict[str, Any], query=None) -> Query:
         """Build a query applying joins, filters, grouping and aggregation.
 
         Args:
@@ -206,21 +206,28 @@ class CrudService:
             Query with all requested transformations applied.
         """
 
+        # Flatten values to simple scalars for general processing while preserving
+        # the full argument structure for join parsing.
+        def _flatten_values(d: dict[str, Any]) -> dict[str, Any]:
+            return {k: (v[0] if isinstance(v, (list, tuple)) else v) for k, v in d.items()}
+
         allow_join = get_config_or_model_meta("API_ALLOW_JOIN", model=self.model, default=False)
         join_models = get_models_for_join(args_dict, self.fetch_related_model_by_name) if allow_join else {}
+        # Use flattened args for all non-join processing
+        flat_args = _flatten_values(args_dict)
 
         all_columns, all_models = get_all_columns_and_hybrids(self.model, join_models)
 
-        conditions = [condition for condition in generate_conditions_from_args(args_dict, self.model, all_columns, all_models, join_models) if condition is not None]
+        conditions = [condition for condition in generate_conditions_from_args(flat_args, self.model, all_columns, all_models, join_models) if condition is not None]
 
         allow_select = get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model=self.model, default=True)
-        select_fields = get_select_fields(args_dict, self.model, all_columns) if allow_select else []
+        select_fields = get_select_fields(flat_args, self.model, all_columns) if allow_select else []
 
         allow_group = get_config_or_model_meta("API_ALLOW_GROUPBY", model=self.model, default=False)
-        group_by_fields = get_group_by_fields(args_dict, all_columns, self.model) if allow_group else []
+        group_by_fields = get_group_by_fields(flat_args, all_columns, self.model) if allow_group else []
 
         allow_agg = get_config_or_model_meta("API_ALLOW_AGGREGATION", model=self.model, default=False)
-        aggregate_conditions = create_aggregate_conditions(args_dict) if allow_agg else {}
+        aggregate_conditions = create_aggregate_conditions(flat_args) if allow_agg else {}
         agg_fields = []
         for key, label in aggregate_conditions.items():
             column_name, table_name, func_name = parse_column_table_and_operator(key, self.model)
@@ -233,7 +240,7 @@ class CrudService:
         query = query or self.session.query(self.model)
 
         if allow_join and join_models:
-            join_type = str(args_dict.get("join_type", "inner")).lower()
+            join_type = str(flat_args.get("join_type", "inner")).lower()
             if join_type not in {"inner", "left", "right", "outer"}:
                 raise CustomHTTPException(400, f"Invalid join_type: {join_type}. Supported: inner,left,right,outer")
 
@@ -406,20 +413,22 @@ class CrudService:
         if callback:
             query = callback(query, self.model, args_dict)
 
+        # Flatten args for order/pagination values
+        flat_args = {k: (v[0] if isinstance(v, (list, tuple)) else v) for k, v in args_dict.items()}
         count = query.count()
-        order_query = self.order_query(args_dict, query)
+        order_query = self.order_query(flat_args, query)
 
         # Apply soft delete filtering before pagination to avoid operating on
         # paginated objects, which lack SQLAlchemy query attributes such as
         # ``column_descriptions``.
         filtered_query = self.apply_soft_delete_filter(order_query)
 
-        paginated_query, default_pagination_size = paginate_query(filtered_query, args_dict.get("page", 1), args_dict.get("limit"))
+        paginated_query, default_pagination_size = paginate_query(filtered_query, flat_args.get("page", 1), flat_args.get("limit"))
 
         return {
             "query": (paginated_query.all() if hasattr(paginated_query, "all") else (paginated_query.items if hasattr(paginated_query, "items") else paginated_query)),
-            "limit": (int(args_dict.get("limit")) if args_dict.get("limit") else default_pagination_size),
-            "page": int(args_dict.get("page")) if args_dict.get("page") else 1,
+            "limit": (int(flat_args.get("limit")) if flat_args.get("limit") else default_pagination_size),
+            "page": int(flat_args.get("page")) if flat_args.get("page") else 1,
             "total_count": count,
         }
 

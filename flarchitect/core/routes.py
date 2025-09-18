@@ -322,7 +322,8 @@ def create_route_function(
     post_hook = get_config_or_model_meta("API_RETURN_CALLBACK", model=service.model, default=None, method=method)
 
     action_map = {
-        "GET": lambda **action_kwargs: service.get_query(request.args.to_dict(), alt_field=get_field, **action_kwargs),
+        # Preserve repeated query params (e.g., ?join=a&join=b) by using flat=False
+        "GET": lambda **action_kwargs: service.get_query(request.args.to_dict(flat=False), alt_field=get_field, **action_kwargs),
         "DELETE": service.delete_object,
         "PATCH": service.update_object,
         "POST": service.add_object,
