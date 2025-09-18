@@ -9,6 +9,7 @@ semantics via `join_type`, and how this interacts with serialisation.
 
 - [Enable joins](enable-joins.md)
 - [Normalised join tokens](normalised-join-tokens.md)
+- [Validation and errors](validation-and-errors.md)
 - [Choosing SQL join semantics](choosing-sql-join-semantics.md)
 - [Pagination with joins](pagination-with-joins.md)
 - [Serialisation and joins](serialisation-and-joins.md)

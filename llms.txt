@@ -85,6 +85,7 @@
 - [Feature Overview](/docs/md/feature_overview/index.md): grouping/aggregation, pagination and response metadata.
 - [Filtering](/docs/md/filtering/index.md): explains how to enable/disable filtering, the syntax for predicates, how to.
 - [flarchitect](/docs/md/index/index.md): ![Coverage Report](/_static/coverage.svg).
+- [Grouping & Aggregation](/docs/md/grouping/index.md): functions when explicitly enabled.
 - [Hooks & Plugins Cheatsheet](/docs/md/hooks_cheatsheet/index.md): Quick reference for callbacks and plugin hooks: when they run, what they.
 - [Joining Related Resources](/docs/md/joining/index.md): relationships by joining tables at query time.
 - [Manual Routes](/docs/md/manual_routes/index.md): flarchitect can wrap your own Flask view functions with the same machinery it.
@@ -99,6 +100,7 @@
 - [Acceptable types](/docs/md/extensions/acceptable-types.md): Reference material.
 - [Additional helpers](/docs/md/manual_routes/additional-helpers.md): If you only need to protect a manual route with JWT and don’t require schema.
 - [Advanced Configuration](/docs/md/index/advanced-configuration.md): Need finer control? The Advanced Configuration <advanced_configuration> guide covers features like rate limiting, CORS, and custom cache backends.
+- [Aggregate functions](/docs/md/grouping/aggregate-functions.md): (`table.column`) when grouping across joins.
 - [Available validators](/docs/md/validation/available-validators.md): Reference material.
 - [Backends](/docs/md/caching/backends.md): Timeout is controlled by API_CACHE_TIMEOUT <configuration.html#CACHE_TIMEOUT>.
 - [Basic syntax](/docs/md/filtering/basic-syntax.md): Use the pattern `<field>__<operator>=<value>`.
@@ -109,6 +111,7 @@
 - [Callback types](/docs/md/extensions/callback-types.md): flarchitect recognises a number of callback hooks that allow you to run custom.
 - [Choosing SQL join semantics](/docs/md/joining/choosing-sql-join-semantics.md): Use `join_type` to control the SQL join operator applied to each related.
 - [Client Example](/docs/md/websockets/client-example.md): Reference material.
+- [Combining with joins and filters](/docs/md/grouping/combining-with-joins-and-filters.md): Grouping and aggregation work with joins, filters, `fields` selection and.
 - [Common keys](/docs/md/response_metadata/common-keys.md): Key | Default | Effect |.
 - [Common status codes](/docs/md/error_handling/common-status-codes.md): Reference material.
 - [Configuration](/docs/md/extensions/configuration.md): Callbacks are referenced by the following configuration keys (global variants.
@@ -119,6 +122,7 @@
 - [Dump types](/docs/md/models/dump-types.md): by API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> or `Meta.serialization_type`.
 - [Enable joins](/docs/md/joining/enable-joins.md): Reference material.
 - [Enable or disable filtering](/docs/md/filtering/enable-or-disable-filtering.md): Filtering is enabled by default.
+- [Enable support](/docs/md/grouping/enable-support.md): Both flags can be applied globally on the Flask config (`API_` prefix) or.
 - [Enable The Endpoint](/docs/md/websockets/enable-the-endpoint.md): pip install flask-sock.
 - [Example](/docs/md/caching/example.md): Reference material.
 - [Example](/docs/md/global_/example.md): Reference material.
@@ -129,6 +133,7 @@
 - [Extending query parameters](/docs/md/extensions/extending-query-parameters.md): Use ADDITIONAL_QUERY_PARAMS <configuration.html#ADDITIONAL_QUERY_PARAMS> to document extra query parameters introduced in.
 - [Field validation](/docs/md/validation/field-validation.md): attribute on SQLAlchemy columns to determine which validators to apply.
 - [Filtering across joins](/docs/md/filtering/filtering-across-joins.md): When you join related models, you can qualify a filter with the table name using.
+- [Group results](/docs/md/grouping/group-results.md): Once `API_ALLOW_GROUPBY` is active, clients can pass a comma-separated.
 - [handle_http_exception](/docs/md/error_handling/handle-http-exception.md): Register `handle_http_exception` as the Flask error handler for.
 - [Hook reference](/docs/md/plugins/hook-reference.md): Called at the beginning of each request.
 - [How It Works](/docs/md/websockets/how-it-works.md): subscribers and broadcasts events.
@@ -155,11 +160,13 @@
 - [Route handler signature](/docs/md/manual_routes/route-handler-signature.md): Decorated handlers may optionally accept `deserialized_data` to receive the.
 - [Serialisation and joins](/docs/md/joining/serialisation-and-joins.md): Joining models does not by itself inline related objects.
 - [Serialisation modes](/docs/md/custom_serialization/serialisation-modes.md): all others remain URLs.
+- [Spec documentation](/docs/md/grouping/spec-documentation.md): When either flag is enabled `flarchitect` adds explanatory cards to the.
 - [Storage backends](/docs/md/rate_limiting/storage-backends.md): If none is provided, an in‑memory fallback is used (suitable for development.
 - [Subscription Model](/docs/md/websockets/subscription-model.md): Subscribe to a topic by connecting to the endpoint with an optional `topic`.
 - [Supported operators](/docs/md/filtering/supported-operators.md): The following operators are available.
 - [Tips and combinations](/docs/md/filtering/tips-and-combinations.md): sorting (`order_by`), pagination (`page`/`limit`), and dynamic nesting.
 - [Using _handle_exception](/docs/md/error_handling/using-handle-exception.md): For ad-hoc exception handling you can call `_handle_exception` directly.
+- [Validation and errors](/docs/md/joining/validation-and-errors.md): Join support is opt‑in.
 
 ## Developer Tooling
 
@@ -174,6 +181,7 @@
 - [Documentation style](/docs/md/openapi/documentation-style.md): By default, flarchitect renders docs with Redoc.
 - [Error responses in the spec](/docs/md/openapi/error-responses-in-the-spec.md): flarchitect includes common error responses in each operation based on your.
 - [Exporting to a file](/docs/md/openapi/exporting-to-a-file.md): Reference material.
+- [Grouping and aggregation cards](/docs/md/openapi/grouping-and-aggregation-cards.md): When API_ALLOW_GROUPBY <configuration.html#ALLOW_GROUPBY> or.
 - [Integration Tips](/docs/md/mcp_server/integration-tips.md): Reference material.
 - [Quick start](/docs/md/graphql/quick-start.md): The simplest way to enable GraphQL is to feed your models to.
 - [Quick Start](/docs/md/mcp_server/quick-start.md): 3.

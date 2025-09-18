@@ -86,6 +86,17 @@ The contents of ``docs/README.md`` are rendered in the spec's ``info`` section.
 
 See :doc:`configuration` for the full list of options.
 
+Grouping and aggregation cards
+------------------------------
+
+When `API_ALLOW_GROUPBY <configuration.html#ALLOW_GROUPBY>`_ or
+`API_ALLOW_AGGREGATION <configuration.html#ALLOW_AGGREGATION>`_ is enabled the generated
+Redoc/Swagger spec automatically surfaces the extra query parameters.
+You will see dedicated cards explaining the ``groupby`` and aggregation
+syntax along with parameter entries for ``groupby`` and ``aggregation``.
+This keeps the interactive docs aligned with the :doc:`grouping` guide
+and helps client developers discover the available summarisation options.
+
 Error responses in the spec
 ---------------------------
 
@@ -94,7 +105,7 @@ configuration and the route’s context:
 
 - 401/403: shown when ``API_AUTHENTICATE`` is enabled, or when a route explicitly declares them (e.g., ``/auth/refresh``).
 - 429: shown when a rate limit is configured via ``API_RATE_LIMIT``; standard rate-limit headers are documented.
-- 400: shown when a request body is validated (input schema present) or for list endpoints with filtering/pagination features enabled.
+- 400: shown when a request body is validated (input schema present) or for list endpoints with filtering/pagination features enabled. When `API_ALLOW_JOIN <configuration.html#ALLOW_JOIN>`_ is enabled, invalid join tokens (unknown relationships) also produce ``400`` with a message like ``Invalid join model: <token>``.
 - 422: shown on ``POST``/``PUT``/``PATCH`` for models, reflecting integrity/type errors.
 - 404: shown for single-resource lookups and relationship endpoints.
 - 409: shown for ``DELETE`` (conflicts with related data or cascade rules).

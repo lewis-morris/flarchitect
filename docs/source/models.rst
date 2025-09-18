@@ -55,8 +55,9 @@ serialised response. Disable it to return only column data, or use
 relationships.
 
 `API_SERIALIZATION_DEPTH <configuration.html#SERIALIZATION_DEPTH>`_ limits how many levels of related resources are
-embedded. Increasing the depth exposes deeper links or objects but may add
-overhead.
+embedded. ``0`` (default) keeps them as URLs even with ``dump=json`` or
+``dump=dynamic``. Increase the depth to inline that many relationship levels
+before falling back to URLs.
 
 For `API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE>`_ set to ``"dynamic"``, clients can choose which
 relationships to embed by supplying a comma-separated ``join`` parameter, e.g.

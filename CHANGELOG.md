@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+- Serialization: Default `dump=dynamic` configurations now inline explicitly joined relationships even when `API_ADD_RELATIONS=false` and `API_SERIALIZATION_DEPTH=0`, keeping config-driven behaviour aligned with per-request overrides.
+
+- Serialization: Preserve URL-only relationship dumps when `API_SERIALIZATION_DEPTH=0` and `dump=json`, fixing a regression introduced by the dynamic join override.
+
+- Joins: Honor `dump=dynamic&join=...` when `API_ADD_RELATIONS=false` so explicitly requested relationships are included; add dictionary fallback when selecting joined-table fields to preserve those keys in responses. Docs updated and tests added.
+
 - API: Fix pagination with joins to apply DISTINCT on the base entity when no custom select/group/aggregation is requested so `limit` and `total_count` reflect base rows. Adds regression test for one‑to‑many join scenarios.
 - Schemas: Dynamic dump now recognises `join` tokens as either relationship keys (e.g., `author`) or endpoint-style plural names (e.g., `authors`), supports comma-separated multi-joins, and embeds multiple related resources accordingly. Regression tests added.
 
@@ -25,6 +31,7 @@
   - New: optional `request_id` in JSON body via `API_DUMP_REQUEST_ID` (disabled by default).
 - Observability: optional structured JSON logging (`API_JSON_LOGS=True`) with request context and latency.
 - Docs: spec JSON now served under `/docs/apispec.json` by default; add `API_DOCS_SPEC_ROUTE` to configure the docs JSON path. The top-level `API_SPEC_ROUTE` remains available for `/openapi.json`.
+- Docs: Surface grouping and aggregation support with new guides, configuration cross-links, and OpenAPI notes so summarisation queries are easier to discover.
 - Routing: Configurable relation route naming via `API_RELATION_ROUTE_NAMING` and `Meta.relation_route_naming` ("model" | "relationship" | "auto"). Default remains "model" for compatibility. "auto" switches to relationship key naming only when it avoids collisions. Optional `Meta.relation_route_map` allows aliasing relationship keys in URLs when relationship‑based naming is used.
 
 ### Bug Fixes
@@ -35,6 +42,7 @@
 - Serialization: Prevent DetachedInstanceError by eager-loading relations when `API_ADD_RELATIONS=true` and `API_SERIALIZATION_DEPTH>0`; add detached-safe attribute access.
   - New: `API_SERIALIZATION_IGNORE_DETACHED` (default `True`) to gracefully skip unloaded relations during dump.
   - Relation URL helpers now return safe defaults (`None`/`[]`) when objects are detached.
+- API: Forward decorator-injected kwargs when route handlers accept `**kwargs` so auto-generated POST/PATCH endpoints receive deserialised request payloads instead of `None`; covered by regression tests.
 
 - Routing: `to_url` now uses SQLAlchemy `Column.key` (mapped attribute name) rather than `Column.name` (DB column) when resolving primary key attributes, fixing AttributeError for models with renamed DB columns.
 

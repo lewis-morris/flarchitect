@@ -14,6 +14,7 @@ def app():
             "API_ALLOW_JOIN": True,
             "API_ADD_RELATIONS": True,
             "API_SERIALIZATION_TYPE": "url",  # explicit default for override test
+            "API_SERIALIZATION_DEPTH": 1,
         }
     )
     yield app
@@ -59,4 +60,3 @@ def test_join_type_left_includes_all_base_rows(client):
 
     assert left_total >= inner_total
     assert left_total == base_total
-

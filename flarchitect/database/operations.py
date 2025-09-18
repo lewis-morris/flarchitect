@@ -9,21 +9,27 @@ from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from flarchitect.core.utils import get_primary_key_info
 from flarchitect.database.inspections import get_model_columns, get_model_relationships
-from flarchitect.database.utils import (
-    AGGREGATE_FUNCS,
-    create_aggregate_conditions,
-    generate_conditions_from_args,
-    get_all_columns_and_hybrids,
-    get_group_by_fields,
-    get_models_for_join,
-    get_primary_key_filters,
-    get_related_b_query,
-    get_select_fields,
-    get_table_and_column,
-    parse_column_table_and_operator,
-    validate_table_and_column,
-    _eager_options_for,
-)
+
+# Import utility helpers with a graceful fallback for optional helpers such as
+# ``_eager_options_for`` which may not be present when tests monkeypatch the
+# ``flarchitect.database.utils`` module. The recursive delete fixture replaces
+# the module with a lightweight stub, so we resolve attributes dynamically.
+from flarchitect.database import utils as _db_utils
+
+
+AGGREGATE_FUNCS = _db_utils.AGGREGATE_FUNCS
+create_aggregate_conditions = _db_utils.create_aggregate_conditions
+generate_conditions_from_args = _db_utils.generate_conditions_from_args
+get_all_columns_and_hybrids = _db_utils.get_all_columns_and_hybrids
+get_group_by_fields = _db_utils.get_group_by_fields
+get_models_for_join = _db_utils.get_models_for_join
+get_primary_key_filters = _db_utils.get_primary_key_filters
+get_related_b_query = _db_utils.get_related_b_query
+get_select_fields = _db_utils.get_select_fields
+get_table_and_column = _db_utils.get_table_and_column
+parse_column_table_and_operator = _db_utils.parse_column_table_and_operator
+validate_table_and_column = _db_utils.validate_table_and_column
+_eager_options_for = getattr(_db_utils, "_eager_options_for", lambda *args, **kwargs: [])
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
@@ -480,9 +486,16 @@ class CrudService:
             if obj is None:
                 raise CustomHTTPException(404, f"{self.model.__name__} not found.")
 
+            payload = data_dict or {}
             allow_nested = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
-            update_payload = self._process_nested_relationships(self.model, data_dict.copy()) if allow_nested else data_dict
+            update_payload = self._process_nested_relationships(self.model, payload.copy()) if allow_nested else payload
+
+            mapper = inspect(self.model)
+            writable_keys = {column.key for column in mapper.columns}
+
             for key, value in update_payload.items():
+                if key not in writable_keys:
+                    continue
                 setattr(obj, key, value)
 
             callback = get_config_or_model_meta("API_UPDATE_CALLBACK", model=self.model, default=None)

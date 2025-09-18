@@ -10,6 +10,7 @@ def app():
             "API_ALLOW_JOIN": True,
             "API_ADD_RELATIONS": True,
             "API_SERIALIZATION_TYPE": "dynamic",
+            "API_SERIALIZATION_DEPTH": 1,
         }
     )
     yield app
@@ -35,4 +36,3 @@ def test_additional_keys_as_join_tokens(client):
     book = resp["value"][0]
     assert isinstance(book.get("author"), dict)
     assert isinstance(book.get("publisher"), dict)
-

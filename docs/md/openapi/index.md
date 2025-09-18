@@ -13,4 +13,5 @@ standard OpenAPI and can be consumed by external tools such as Postman.
 - [Security scheme](security-scheme.md)
 - [Exporting to a file](exporting-to-a-file.md)
 - [Customising the document](customising-the-document.md)
+- [Grouping and aggregation cards](grouping-and-aggregation-cards.md)
 - [Error responses in the spec](error-responses-in-the-spec.md)

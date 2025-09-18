@@ -473,7 +473,10 @@ Serialisation Settings
 
           :bdg-secondary:`Optional` 
 
-        - Depth for nested relationship serialisation. Higher numbers include deeper related objects, impacting performance.
+        - Depth for nested relationship serialisation. ``0`` (default) keeps
+          relationships as URLs even when ``dump=json``/``dump=dynamic``/``dump=hybrid``.
+          Increase to nest that many relationship levels before falling back to
+          URLs.
     * - .. _SERIALIZATION_IGNORE_DETACHED:
 
           ``API_SERIALIZATION_IGNORE_DETACHED``
@@ -569,7 +572,7 @@ Query Options
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Enables ``groupby`` query parameter for grouping results.
+        - Enables the ``groupby`` query parameter so queries can add SQL ``GROUP BY`` clauses. See :doc:`grouping` for examples.
     * - .. _ALLOW_AGGREGATION:
 
           ``API_ALLOW_AGGREGATION``
@@ -578,7 +581,7 @@ Query Options
           :bdg:`type` ``bool``
           :bdg-secondary:`Optional` :bdg-dark-line:`Model`
 
-        - Allows aggregate functions like ``field|label__sum`` for summarising data.
+        - Allows aggregate functions like ``field|label__sum`` or ``amount|avg_amount__avg``; pair with ``API_ALLOW_GROUPBY``. See :doc:`grouping` for the full syntax.
     * - .. _ALLOW_SELECT_FIELDS:
 
           ``API_ALLOW_SELECT_FIELDS``
@@ -714,6 +717,27 @@ Authentication Settings
             :bdg-secondary:`Optional`
 
           - Import path for the user model leveraged during authentication workflows. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - .. _AUTH_ME_ROUTE:
+
+          ``API_AUTH_ME_ROUTE``
+
+          :bdg:`default:` ``/auth/me``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Path for the current-user endpoint that returns the authenticated user
+          as JSON. Applies when a user model is configured and any supported
+          authentication method is enabled (``jwt``, ``basic``, ``api_key``, or
+          ``custom``). Example: set to ``/api/auth/me`` to expose the endpoint
+          under the API prefix.
+    * - ``API_EXPOSE_ME``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Controls whether the current-user endpoint is registered. Set to
+          ``False`` to disable it even when a user model is configured.
     * - .. _JWT_EXPIRY_TIME:
 
           ``API_JWT_EXPIRY_TIME``

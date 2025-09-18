@@ -44,4 +44,6 @@ function to a field name:
 ```
 GET /api/books?groupby=author_id&id|book_count__count=1
 ```
+See grouping for more end-to-end examples, supported functions and
+response shapes.
 

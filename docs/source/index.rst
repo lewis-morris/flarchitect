@@ -20,6 +20,7 @@ flarchitect
    filtering
    joining
    custom_serialization
+   grouping
    authentication
    auth_cookbook
    validation

@@ -184,11 +184,17 @@ def _handle_decorator(
             # Extract any schema injected by fields() so it isn't passed to func
             new_output_schema: type[AutoSchema] | None = kwargs.pop("schema", None)
 
-            # Filter kwargs to only those accepted by the target function
+            # Filter kwargs to only those accepted by the target function. If
+            # the target accepts ``**kwargs`` forward the full mapping so
+            # decorator-injected helpers (e.g. route factories) retain access
+            # to values like ``deserialized_data`` and ``model``.
             import inspect as _inspect
+
             sig = _inspect.signature(func)
+            accepts_var_kwargs = any(param.kind == _inspect.Parameter.VAR_KEYWORD for param in sig.parameters.values())
             accepted = set(sig.parameters.keys())
-            filtered_kwargs = {k: v for k, v in kwargs.items() if k in accepted}
+
+            filtered_kwargs = dict(kwargs) if accepts_var_kwargs else {k: v for k, v in kwargs.items() if k in accepted}
 
             result = func(*args, **filtered_kwargs)
             return serialise_output_with_mallow(new_output_schema, result) if new_output_schema else result
@@ -319,11 +325,17 @@ def fields(model_schema: type[AutoSchema] | None, many: bool = False) -> Callabl
 
             select_fields = request.args.get("fields")
             if select_fields and get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model_schema.Meta.model, default=True):
-                select_fields = [field.split(".")[-1] for field in select_fields.split(",")]
+                requested = [field.split(".")[-1] for field in select_fields.split(",")]
+                # Only pass fields that actually exist on the schema to avoid KeyErrors
+                try:
+                    available = set((model_schema().fields.keys()) if callable(model_schema) else model_schema.fields.keys())
+                except Exception:
+                    available = set()
+                filtered = [f for f in requested if f in available]
                 if callable(model_schema):
-                    kwargs["schema"] = model_schema(many=many, only=select_fields)
+                    kwargs["schema"] = model_schema(many=many, only=filtered) if filtered else model_schema(many=many)
                 else:
-                    kwargs["schema"] = model_schema.__class__(many=many, only=select_fields)
+                    kwargs["schema"] = model_schema.__class__(many=many, only=filtered) if filtered else model_schema.__class__(many=many)
             else:
                 if callable(model_schema):
                     kwargs["schema"] = model_schema(many=many)

@@ -270,8 +270,10 @@ class AutoSchema(Base):
         mapper_property: RelationshipProperty,
     ):
         """Handle adding a relationship field to the schema."""
-        if not get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True):
-            return
+        add_relations = get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True)
+        allow_join = get_config_or_model_meta("API_ALLOW_JOIN", model=self.model, default=False)
+
+        # Respect per-request opt-out for dumping relationships entirely
         try:
             if request.args.get("dump_relationships") in ["false", "False", "0"]:
                 return
@@ -280,6 +282,51 @@ class AutoSchema(Base):
             # initialised
             pass
 
+        # If relations are globally disabled, still allow explicit inclusion
+        # when joins are both allowed and requested for this relationship.
+        if not add_relations:
+            if not allow_join:
+                return
+            def _collect_join_tokens() -> set[str]:
+                try:
+                    values = []
+                    # all values for join and legacy join_models
+                    values.extend(request.args.getlist("join"))
+                    values.extend(request.args.getlist("join_models"))
+                    tokens: set[str] = set()
+                    for v in values:
+                        for raw in str(v).split(","):
+                            tok = raw.strip().lower().replace("-", "_")
+                            if tok:
+                                tokens.add(tok)
+                    # also treat additional keys as join tokens (when names match)
+                    reserved = {"join", "join_models", "join_type", "fields", "groupby", "orderby", "order_by", "page", "limit", "dump", "format", "include_deleted", "cascade_delete"}
+                    for k in request.args.keys():
+                        if k not in reserved and "__" not in k and "." not in k:
+                            tokens.add(k.strip().lower().replace("-", "_"))
+                    return tokens
+                except Exception:
+                    return set()
+
+            tokens = _collect_join_tokens()
+
+            # Compute candidate tokens for this relationship
+            from flarchitect.specs.utils import endpoint_namer
+            from flarchitect.utils.core_utils import convert_case
+
+            endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
+            related_model = mapper_property.property.mapper.class_
+            endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
+            rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
+            rel_key_raw = original_attribute.lower()
+            candidates = {endpoint_name, rel_key_endpoint_case, rel_key_raw}
+
+            requested = not tokens.isdisjoint(candidates)
+
+            if not requested:
+                return
+
+        # Either relations are enabled or an explicit join requested this one
         self.add_relationship_field(attribute, original_attribute, mapper_property)
 
     def _handle_column(self, attribute: str, original_attribute: str, mapper_property: ColumnProperty):
@@ -584,178 +631,143 @@ class AutoSchema(Base):
         original_attribute: str,
         relationship_property: RelationshipProperty,
     ) -> None:
-        """Add a schema field for a SQLAlchemy relationship.
+        """Add serialisation fields for a SQLAlchemy relationship."""
 
-        Args:
-            attribute (str): Name of the field exposed by the schema.
-            original_attribute (str): Name of the relationship attribute on the model.
-            relationship_property (RelationshipProperty): SQLAlchemy relationship
-                descriptor.
-
-        Returns:
-            None
-
-        Side Effects:
-            Modifies schema field mappings and updates field metadata. May add
-            additional load-only fields when nested writes are enabled.
-        """
         allow_nested_writes = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
         max_depth = 2 if allow_nested_writes else 1
         current_depth = self.context.get("current_depth", 0)
 
         if current_depth >= max_depth:
-            # # Exceeded maximum depth, include only the primary key reference
-            # related_model = relationship_property.mapper.class_
-            # primary_key = inspect(related_model).primary_key[0]
-            # field_type = type_mapping.get(type(primary_key.type), fields.Integer)
-            #
-            # self.add_to_fields(
-            #     original_attribute, field_type(data_key=attribute)
-            # )
             return
 
-        else:
-            # Include the nested schema and increment the depth
-            input_schema, output_schema = get_input_output_from_model_or_make(
-                relationship_property.mapper.class_,
-                context={"current_depth": current_depth + 1},
-            )
+        input_schema, output_schema = get_input_output_from_model_or_make(
+            relationship_property.mapper.class_,
+            context={"current_depth": current_depth + 1},
+        )
 
-            # Access the RelationshipProperty to get 'viewonly' and 'uselist'
-            relationship_prop = relationship_property.property
-            field_args = {"dump_only": not relationship_prop.viewonly}
+        relationship_prop = relationship_property.property
+        field_args = {"dump_only": not relationship_prop.viewonly}
 
-            # Determine the serialization type with per-request override
+        try:
+            dump_override = request.args.get("dump")
+        except RuntimeError:
             dump_override = None
+        dump_override = (dump_override or "").strip().lower()
+        raw_dump = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
+        if raw_dump is False:
+            configured_dump = "json"
+        else:
+            configured_dump = str(raw_dump or "url").strip().lower()
+        dump_type = dump_override if dump_override in {"url", "json", "dynamic", "hybrid"} else configured_dump
+
+        raw_depth = get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=None)
+
+        serialization_depth: int | None
+        if raw_depth in (None, "") or raw_depth is False:
+            serialization_depth = None
+        else:
             try:
-                dump_override = request.args.get("dump")
-            except RuntimeError:
-                pass
-            configured_dump = str(get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url") or "url").lower()
-            candidate = str(dump_override or "").lower()
-            dump_type = candidate if candidate in {"url", "json", "dynamic", "hybrid"} else configured_dump
+                serialization_depth = int(raw_depth)
+            except (TypeError, ValueError):
+                serialization_depth = None
 
-            if dump_type == "url":
-                if relationship_prop.uselist:
-                    # Serialize as a list of URLs
-                    self.add_to_fields(
-                        attribute,
-                        fields.Function(
-                            lambda obj: self.get_many_url(obj, original_attribute, input_schema),
-                            **field_args,
-                        ),
-                        load=False,
-                    )
-                    field_name = attribute
-                else:
-                    # Serialize as a single URL
-                    self.add_to_fields(
-                        attribute,
-                        fields.Function(
-                            lambda obj: self.get_url(obj, original_attribute, input_schema),
-                            **field_args,
-                        ),
-                        load=False,
-                    )
-                    field_name = attribute
-            elif dump_type == "json":
-                if relationship_prop.uselist:
-                    # Always dump as a list of nested schemas
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.List(fields.Nested(output_schema), **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
-                else:
-                    # Always dump as a nested schema
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.Nested(output_schema, **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
-            elif dump_type == "dynamic":
-                # Only include this relationship if it appears in the join list.
-                # Accept both endpoint-style names (plural, kebab/snake/etc.)
-                # and relationship keys (often singular). Comma-separated values supported.
-                try:
-                    joins_param = request.args.get("join")
-                except RuntimeError:
-                    return
+        if serialization_depth is not None and serialization_depth < 0:
+            serialization_depth = None
 
-                if not joins_param:
-                    return
-
-                # Normalise tokens
-                tokens = {tok.strip().lower() for tok in str(joins_param).split(",") if tok.strip()}
-
-                # Compute candidate names for this relationship
-                related_model = relationship_property.mapper.class_
-                endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
-
-                endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
-                rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
-                rel_key_raw = original_attribute.lower()
-
-                candidates = {endpoint_name, rel_key_endpoint_case, rel_key_raw}
-
-                if tokens.isdisjoint(candidates):
-                    return
-
-                if relationship_prop.uselist:
-                    # Always dump as a list of nested schemas
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.List(fields.Nested(output_schema), **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
-                else:
-                    # Always dump as a nested schema
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.Nested(output_schema, **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
-
-            elif dump_type == "hybrid":
-                if relationship_prop.uselist:
-                    # Serialize as a list of URLs
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.Function(
-                            lambda obj: self.get_many_url(obj, attribute, input_schema),
-                            **field_args,
-                        ),
-                        load=False,
-                    )
-                    field_name = original_attribute
-                else:
-                    # Serialize as a nested schema
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.Nested(output_schema, **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
+        def add_url_field() -> str:
+            if relationship_prop.uselist:
+                self.add_to_fields(
+                    attribute,
+                    fields.Function(lambda obj: self.get_many_url(obj, original_attribute, input_schema), **field_args),
+                    load=False,
+                )
             else:
-                # Fallback to JSON serialization if an unknown dump_type is provided
-                if relationship_prop.uselist:
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.List(fields.Nested(output_schema), **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
-                else:
-                    self.add_to_fields(
-                        original_attribute,
-                        fields.Nested(output_schema, **field_args),
-                        load=False,
-                    )
-                    field_name = original_attribute
+                self.add_to_fields(
+                    attribute,
+                    fields.Function(lambda obj: self.get_url(obj, original_attribute, input_schema), **field_args),
+                    load=False,
+                )
+            return attribute
+
+        def add_nested_field() -> str:
+            if relationship_prop.uselist:
+                self.add_to_fields(
+                    original_attribute,
+                    fields.List(fields.Nested(output_schema), **field_args),
+                    load=False,
+                )
+            else:
+                self.add_to_fields(
+                    original_attribute,
+                    fields.Nested(output_schema, **field_args),
+                    load=False,
+                )
+            return original_attribute
+
+        def collect_join_tokens() -> set[str]:
+            try:
+                values: list[str] = []
+                values.extend(request.args.getlist("join"))
+                values.extend(request.args.getlist("join_models"))
+                tokens: set[str] = set()
+                for v in values:
+                    for raw in str(v).split(","):
+                        tok = raw.strip().lower().replace("-", "_")
+                        if tok:
+                            tokens.add(tok)
+                reserved = {
+                    "join",
+                    "join_models",
+                    "join_type",
+                    "fields",
+                    "groupby",
+                    "orderby",
+                    "order_by",
+                    "page",
+                    "limit",
+                    "dump",
+                    "format",
+                    "include_deleted",
+                    "cascade_delete",
+                }
+                for key in request.args.keys():
+                    if key not in reserved and "__" not in key and "." not in key:
+                        tokens.add(key.strip().lower().replace("-", "_"))
+                return tokens
+            except Exception:
+                return set()
+
+        def depth_exceeded() -> bool:
+            return serialization_depth is not None and current_depth >= serialization_depth
+
+        if dump_type == "url":
+            field_name = add_url_field()
+        elif dump_type == "json":
+            field_name = add_url_field() if depth_exceeded() else add_nested_field()
+        elif dump_type == "dynamic":
+            tokens = collect_join_tokens()
+            if not tokens:
+                return
+            related_model = relationship_property.mapper.class_
+            endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
+            endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
+            rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
+            rel_key_raw = original_attribute.lower()
+            requested = not tokens.isdisjoint({endpoint_name, rel_key_endpoint_case, rel_key_raw})
+            if not requested:
+                return
+
+            # An explicit join request should inline the related payload even when the
+            # configured depth would normally fall back to URLs. This keeps
+            # ``API_SERIALIZATION_TYPE="dynamic"`` consistent with ``?dump=dynamic``.
+            field_name = add_nested_field()
+        elif dump_type == "hybrid":
+            if relationship_prop.uselist:
+                field_name = add_url_field()
+            else:
+                field_name = add_url_field() if depth_exceeded() else add_nested_field()
+        else:
+            field_name = add_nested_field()
 
         self._update_field_metadata(field_name)
 

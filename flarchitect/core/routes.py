@@ -23,6 +23,7 @@ from flarchitect.authentication.jwt import (
 )
 from flarchitect.authentication.token_store import rotate_refresh_token
 from flarchitect.authentication.user import set_current_user
+from flarchitect.authentication.user import get_current_user
 from flarchitect.core.utils import get_primary_key_info, get_url_pk
 from flarchitect.database.operations import CrudService
 from flarchitect.database.utils import get_models_relationships, get_primary_keys
@@ -630,6 +631,11 @@ class RouteCreator(AttributeInitialiserMixin):
         elif "api_key" in auth_methods:
             self._make_api_key_auth_routes(user)
 
+        # Provide /auth/me for any supported authentication method when
+        # a user model is configured (including custom auth).
+        if user is not None and bool(get_config_or_model_meta("API_EXPOSE_ME", default=True)):
+            self._create_me_route(user)
+
         @login_manager.user_loader
         def load_user(user_id):
             return user.get(user_id)
@@ -734,6 +740,39 @@ class RouteCreator(AttributeInitialiserMixin):
         self._create_jwt_login_route(user)
         self._create_jwt_logout_route(user)
         self._create_jwt_refresh_route(user)
+
+    def _create_me_route(self, user: Callable) -> None:
+        """Create the authenticated "me" route to return the current user.
+
+        Registers ``GET /auth/me`` which returns the authenticated user serialised
+        with the model's output schema. This endpoint requires authentication and
+        is available for any enabled auth method when a user model is configured.
+        """
+
+        # Avoid duplicate registration if a GET rule already exists for path
+        path = get_config_or_model_meta("API_AUTH_ME_ROUTE", default="/auth/me")
+        for rule in self.architect.app.url_map.iter_rules():  # pragma: no cover - simple iteration
+            if str(rule.rule) == path and "GET" in (rule.methods or set()):
+                return
+
+        # Build an output schema for the user model
+        _, out_schema = get_input_output_from_model_or_make(user)
+
+        @self.architect.app.route(path, methods=["GET"])
+        @self.architect.schema_constructor(
+            output_schema=out_schema,
+            model=user,
+            many=False,
+            group_tag="Authentication",
+            tag="Authentication",
+            summary="Return current authenticated user.",
+            error_responses=[401],
+        )
+        def me(*args, **kwargs):
+            usr = get_current_user()
+            if not usr:
+                raise CustomHTTPException(401, "Unauthorized")
+            return usr
 
     def _create_jwt_login_route(self, user: Callable) -> None:
         """Create the login route for JWT authentication.
