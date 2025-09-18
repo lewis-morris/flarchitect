@@ -6,6 +6,7 @@ flarchitect
    :caption: Getting Started
    :hidden:
 
+   feature_overview
    installation
    quickstart
    getting_started
@@ -16,6 +17,8 @@ flarchitect
    :hidden:
 
    models
+   joining
+   custom_serialization
    authentication
    auth_cookbook
    validation
@@ -34,6 +37,9 @@ flarchitect
    :hidden:
    
    configuration
+   rate_limiting
+   caching
+   response_metadata
    advanced_configuration
 
 
@@ -57,6 +63,7 @@ flarchitect
    :hidden:
 
    faq
+   troubleshooting
    roadmap
 
 .. image:: /_static/coverage.svg

@@ -75,16 +75,23 @@
 
 ## Guides
 
+- [Caching](/docs/md/caching/index.md): Speed up repeated requests by caching GET responses.
 - [Config by Method Models](/docs/md/model_method/index.md): Model Method.
 - [Config Globals](/docs/md/global_/index.md): Global.
 - [Config Models](/docs/md/model/index.md): Model.
+- [Custom Serialisation](/docs/md/custom_serialization/index.md): flarchitect controls how relationships are represented in responses through a.
 - [Error Handling](/docs/md/error_handling/index.md): flarchitect standardises error reporting through a small set of helpers.
 - [Extensions](/docs/md/extensions/index.md): Callbacks let you hook into the request lifecycle to run custom logic around.
+- [Feature Overview](/docs/md/feature_overview/index.md): grouping/aggregation, pagination and response metadata.
 - [flarchitect](/docs/md/index/index.md): ![Coverage Report](/_static/coverage.svg).
 - [Hooks & Plugins Cheatsheet](/docs/md/hooks_cheatsheet/index.md): Quick reference for callbacks and plugin hooks: when they run, what they.
+- [Joining Related Resources](/docs/md/joining/index.md): relationships by joining tables at query time.
 - [Manual Routes](/docs/md/manual_routes/index.md): flarchitect can wrap your own Flask view functions with the same machinery it.
 - [Plugins](/docs/md/plugins/index.md): flarchitect supports a lightweight plugin system for observing and customising.
+- [Rate Limiting](/docs/md/rate_limiting/index.md): Protect your API from abuse and manage throughput with flexible rate limits.
+- [Response Metadata](/docs/md/response_metadata/index.md): flarchitect can attach metadata to each response.
 - [SQLAlchemy Models](/docs/md/models/index.md): That's all that's required to make the model available through the generated API.
+- [Troubleshooting](/docs/md/troubleshooting/index.md): Troubleshooting covers Joins don’t work, Nested objects don’t appear, Pagination counts look wrong with joins.
 - [Validation](/docs/md/validation/index.md): flarchitect ships with a suite of field validators that hook directly into.
 - [WebSockets](/docs/md/websockets/index.md): WebSockets covers Overview, Enable The Endpoint, Subscription Model.
 - [Acceptable formats](/docs/md/extensions/acceptable-formats.md): For comprehensive configuration details see configuration.
@@ -92,18 +99,25 @@
 - [Additional helpers](/docs/md/manual_routes/additional-helpers.md): If you only need to protect a manual route with JWT and don’t require schema.
 - [Advanced Configuration](/docs/md/index/advanced-configuration.md): Need finer control? The Advanced Configuration <advanced_configuration> guide covers features like rate limiting, CORS, and custom cache backends.
 - [Available validators](/docs/md/validation/available-validators.md): Reference material.
+- [Backends](/docs/md/caching/backends.md): Timeout is controlled by API_CACHE_TIMEOUT <configuration.html#CACHE_TIMEOUT>.
 - [Basic usage](/docs/md/manual_routes/basic-usage.md): Reference material.
 - [Basic usage](/docs/md/validation/basic-usage.md): Reference material.
 - [Callback quick reference](/docs/md/hooks_cheatsheet/callback-quick-reference.md): Reference material.
 - [Callback signatures](/docs/md/extensions/callback-signatures.md): Setup‑style callbacks receive `model` and a set of keyword arguments.
 - [Callback types](/docs/md/extensions/callback-types.md): flarchitect recognises a number of callback hooks that allow you to run custom.
+- [Choosing SQL join semantics](/docs/md/joining/choosing-sql-join-semantics.md): Use `join_type` to control the SQL join operator applied to each related.
 - [Client Example](/docs/md/websockets/client-example.md): Reference material.
+- [Common keys](/docs/md/response_metadata/common-keys.md): Key | Default | Effect |.
 - [Common status codes](/docs/md/error_handling/common-status-codes.md): Reference material.
 - [Configuration](/docs/md/extensions/configuration.md): Callbacks are referenced by the following configuration keys (global variants.
+- [Configuration](/docs/md/rate_limiting/configuration.md): Reference material.
 - [CustomHTTPException](/docs/md/error_handling/customhttpexception.md): optional reason.
+- [Depth and relation inclusion](/docs/md/custom_serialization/depth-and-relation-inclusion.md): included at all.
 - [Documentation metadata](/docs/md/manual_routes/documentation-metadata.md): Reference material.
 - [Dump types](/docs/md/models/dump-types.md): by API_SERIALIZATION_TYPE <configuration.html#SERIALIZATION_TYPE> or `Meta.serialization_type`.
+- [Enable joins](/docs/md/joining/enable-joins.md): Reference material.
 - [Enable The Endpoint](/docs/md/websockets/enable-the-endpoint.md): pip install flask-sock.
+- [Example](/docs/md/caching/example.md): Reference material.
 - [Example](/docs/md/global_/example.md): Reference material.
 - [Example](/docs/md/model/example.md): Reference material.
 - [Example](/docs/md/model_method/example.md): Reference material.
@@ -113,18 +127,28 @@
 - [Hook reference](/docs/md/plugins/hook-reference.md): Called at the beginning of each request.
 - [How It Works](/docs/md/websockets/how-it-works.md): subscribers and broadcasts events.
 - [Input and output schemas](/docs/md/manual_routes/input-and-output-schemas.md): You can validate request bodies and serialise responses with Marshmallow.
+- [Joins don’t work](/docs/md/troubleshooting/joins-don-t-work.md): (singular), kebab‑ or snake‑case; tokens are normalised and singular/plural.
 - [Lifecycle at a glance](/docs/md/hooks_cheatsheet/lifecycle-at-a-glance.md): Reference material.
 - [Message Format](/docs/md/websockets/message-format.md): callbacks and serialisation.
+- [Nested objects don’t appear](/docs/md/troubleshooting/nested-objects-don-t-appear.md): Reference material.
 - [Nested relationship dumping](/docs/md/models/nested-relationship-dumping.md): API_ADD_RELATIONS <configuration.html#ADD_RELATIONS> controls whether relationship fields are included in the.
+- [Normalised join tokens](/docs/md/joining/normalised-join-tokens.md): The `join` query parameter accepts a comma‑separated list of relationship.
 - [Notes](/docs/md/plugins/notes.md): value wins (e.g., response replacement).
 - [Notes & Limitations](/docs/md/websockets/notes-limitations.md): development or single‑process servers.
 - [Overview](/docs/md/websockets/overview.md): flarchitect ships with a lightweight, optional WebSocket integration intended.
+- [Pagination counts look wrong with joins](/docs/md/troubleshooting/pagination-counts-look-wrong-with-joins.md): join rows.
+- [Pagination with joins](/docs/md/joining/pagination-with-joins.md): Joining one‑to‑many relationships multiplies result rows at the SQL level.
+- [Performance tips](/docs/md/troubleshooting/performance-tips.md): Reference material.
+- [Per‑request override](/docs/md/custom_serialization/per-request-override.md): Clients can override the mode with a `dump` query parameter.
 - [Plugin hooks](/docs/md/extensions/plugin-hooks.md): Plugins provide a structured way to observe and influence behaviour across the.
 - [Plugin hooks quick reference](/docs/md/hooks_cheatsheet/plugin-hooks-quick-reference.md): Reference material.
 - [Quick start](/docs/md/plugins/quick-start.md): Reference material.
 - [Request lifecycle and hook order](/docs/md/extensions/request-lifecycle-and-hook-order.md): This is the high‑level order in which flarchitect processes a request and where.
 - [Roles and authentication](/docs/md/manual_routes/roles-and-authentication.md): If your application uses role‑based access control, supply `roles` to require.
 - [Route handler signature](/docs/md/manual_routes/route-handler-signature.md): Decorated handlers may optionally accept `deserialized_data` to receive the.
+- [Serialisation and joins](/docs/md/joining/serialisation-and-joins.md): Joining models does not by itself inline related objects.
+- [Serialisation modes](/docs/md/custom_serialization/serialisation-modes.md): all others remain URLs.
+- [Storage backends](/docs/md/rate_limiting/storage-backends.md): If none is provided, an in‑memory fallback is used (suitable for development.
 - [Subscription Model](/docs/md/websockets/subscription-model.md): Subscribe to a topic by connecting to the endpoint with an optional `topic`.
 - [Using _handle_exception](/docs/md/error_handling/using-handle-exception.md): For ad-hoc exception handling you can call `_handle_exception` directly.
 
