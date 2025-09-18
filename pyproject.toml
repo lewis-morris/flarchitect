@@ -6,13 +6,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = [
+  "flarchitect/**/*",
   "docs/md/**/*",
   "llms.txt"
 ]
 
 [project]
 name = "flarchitect"
-version = "1.2.10"
+version = "1.3.0"
 description = "Automatic RESTful API generator with redoc"
 readme = "README.md"
 requires-python = ">=3.10"
