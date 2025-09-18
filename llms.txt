@@ -66,8 +66,8 @@
 - [Initialising with optional features](/docs/md/advanced_configuration/initialising-with-optional-features.md): behaviour like caching, CORS handling and automatic documentation.
 - [Intro](/docs/md/configuration/intro.md): In flarchitect, configuration options are essential for customising the API and its accompanying documentation.
 - [Nested model creation](/docs/md/advanced_configuration/nested-model-creation.md): Nested writes are disabled by default.
-- [Optional Settings](/docs/md/_configuration_table/optional-settings.md): doc‑scoped path under `API_DOCUMENTATION_URL`.
-- [Optional Settings](/docs/md/configuration/optional-settings.md): doc‑scoped path under `API_DOCUMENTATION_URL`.
+- [Optional Settings](/docs/md/_configuration_table/optional-settings.md): Reference material.
+- [Optional Settings](/docs/md/configuration/optional-settings.md): Reference material.
 - [Query parameter controls](/docs/md/advanced_configuration/query-parameter-controls.md): responses.
 - [Rate limiting](/docs/md/advanced_configuration/rate-limiting.md): Rate limits can be applied globally, per HTTP method or per model.
 - [Response metadata](/docs/md/advanced_configuration/response-metadata.md): keys let you toggle each field individually.

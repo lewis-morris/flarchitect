@@ -18,6 +18,7 @@ To allow access when the user has any of multiple roles, either set
 def edit_content():
     return {"message": "ok"}
 
+
 # equivalent
 @app.get("/content/edit-alt")
 @architect.schema_constructor(output_schema=HelloOut, roles={"roles": ["editor", "admin"], "any_of": True})

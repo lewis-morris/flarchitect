@@ -13,6 +13,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from flarchitect import Architect
 
+
 # Create a base model that all models will inherit from. This is a requirement for the auto
 
 # API creator to work. Don't, however, add to any of your models when using
@@ -21,19 +22,24 @@ from flarchitect import Architect
 class BaseModel(DeclarativeBase):
     """Base declarative model for all SQLAlchemy models."""
 
+
 # Create a new flask app
 app = Flask(__name__)
+
 
 # Create a new instance of the SQLAlchemy object and pass in the base model you have created.
 db = SQLAlchemy(model_class=BaseModel)
 
+
 # Set the database uri to an in memory database for this example.
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+
 
 # Set the required fields for flarchitect to work.
 app.config["API_TITLE"] = "My API"
 app.config["API_VERSION"] = "1.0"
 app.config["API_BASE_MODEL"] = db.Model
+
 
 # Create a new model that inherits from db.Model
 class Author(db.Model):
@@ -63,9 +69,11 @@ with app.app_context():
     # initialise the Architect object with the app context
     Architect(app)
 
+
 # Run the app
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 # To access the API documentation, navigate to http://localhost:5000/docs
 

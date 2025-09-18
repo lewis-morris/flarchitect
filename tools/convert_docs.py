@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import re
 from collections import defaultdict
 from dataclasses import dataclass
@@ -13,6 +14,8 @@ import shutil
 
 from docutils import nodes
 from docutils.core import publish_doctree
+from docutils.parsers.rst import Directive, directives, roles
+from docutils.utils import SystemMessage
 
 # Ensure project root is importable when executed directly.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -215,25 +218,37 @@ class MarkdownRenderer:
         return "\n".join([f"**{header}**", body]).strip()
 
     def _render_table(self, table: nodes.table) -> str:
-        headers: list[list[str]] = []
-        rows: list[list[str]] = []
+        body_rows: list[list[str]] = []
+        header_rows: list[list[str]] = []
         for tgroup in table.traverse(nodes.tgroup, include_self=True):
             for child in tgroup.children:
                 if isinstance(child, nodes.thead):
-                    headers.extend(self._extract_rows(child))
+                    header_rows.extend(self._extract_rows(child))
                 elif isinstance(child, nodes.tbody):
-                    rows.extend(self._extract_rows(child))
-        if not headers and rows:
-            headers = [rows[0]]
-            rows = rows[1:]
-        header_line = " | ".join(headers[0]) if headers else ""
-        separator = " | ".join(["---"] * len(headers[0])) if headers else ""
-        body_lines = [" | ".join(row) for row in rows]
-        lines = []
-        if header_line:
-            lines.extend([f"| {header_line} |", f"| {separator} |"])
-        for row_line in body_lines:
-            lines.append(f"| {row_line} |")
+                    body_rows.extend(self._extract_rows(child))
+
+        if not header_rows:
+            # Heuristic: when rows are two-column tuples (setting + details)
+            # add a meaningful header row to produce valid Markdown.
+            if body_rows and all(len(row) == 2 for row in body_rows):
+                header_rows = [["Setting", "Details"]]
+            elif body_rows:
+                header_rows = [[f"Column {i + 1}" for i in range(len(body_rows[0]))]]
+
+        lines: list[str] = []
+
+        if header_rows:
+            header = header_rows[0]
+            separator = ["---"] * len(header)
+            lines.append("| " + " | ".join(header) + " |")
+            lines.append("| " + " | ".join(separator) + " |")
+
+        for row in body_rows:
+            # Ensure row length matches header length by padding blanks.
+            if header_rows and len(row) < len(header_rows[0]):
+                row = row + [""] * (len(header_rows[0]) - len(row))
+            lines.append("| " + " | ".join(row) + " |")
+
         return "\n".join(lines)
 
     def _extract_rows(self, node: nodes.Node) -> list[list[str]]:
@@ -241,15 +256,66 @@ class MarkdownRenderer:
         for row in node.traverse(nodes.row, include_self=False):
             cells: list[str] = []
             for entry in row.traverse(nodes.entry, include_self=False):
-                text = self._render_block_children(entry)
-                cells.append(text or " ")
+                cells.extend(self._render_table_entry(entry))
             if cells:
                 rows.append(cells)
         return rows
 
+    def _render_table_entry(self, entry: nodes.Node) -> list[str]:
+        segments: list[str] = []
+        meta_parts: list[str] = []
+        description_parts: list[str] = []
+
+        for child in entry.children:
+            if isinstance(child, nodes.bullet_list):
+                for item in child.children:
+                    rendered = self._render_block(item, self.base_heading_level)
+                    if not rendered:
+                        continue
+                    item_text = self._strip_blockquote(rendered).strip()
+                    if item_text.startswith("- "):
+                        item_text = item_text[2:]
+                    description_parts.append(item_text.replace("\n", " "))
+            else:
+                rendered = self._render_block(child, self.base_heading_level)
+                if not rendered:
+                    continue
+                meta_text = self._strip_blockquote(rendered).replace("\n", "<br>").strip()
+                if meta_text:
+                    meta_parts.append(meta_text)
+
+        if meta_parts:
+            segments.append("<br>".join(meta_parts))
+        if description_parts:
+            segments.append(" ".join(description_parts))
+
+        if not segments:
+            text = entry.astext().strip()
+            return [text] if text else []
+
+        return [segment.strip() for segment in segments if segment.strip()]
+
+    @staticmethod
+    def _strip_blockquote(text: str) -> str:
+        lines = []
+        for line in text.splitlines():
+            lines.append(line.lstrip("> "))
+        return "\n".join(lines).strip()
+
     def _render_block_children(self, node: nodes.Node) -> str:
-        parts = [self._render_block(child, self.base_heading_level) for child in node.children]
-        return " ".join(part.strip() for part in parts if part)
+        chunks: list[str] = []
+        for child in node.children:
+            rendered = self._render_block(child, self.base_heading_level)
+            if not rendered:
+                continue
+            cleaned_lines: list[str] = []
+            for line in rendered.splitlines():
+                stripped = line.lstrip("> ").rstrip()
+                if stripped:
+                    cleaned_lines.append(stripped)
+            if cleaned_lines:
+                chunks.append("\n".join(cleaned_lines))
+        return "<br>".join(chunk.strip() for chunk in chunks if chunk.strip())
 
     # ------------------------------------------------------------------
     # Inline rendering helpers

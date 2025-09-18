@@ -36,6 +36,7 @@ class BaseModel(DeclarativeBase):
 
         return db.session
 
+
 # Global SQLAlchemy instance using the custom base model above.
 db = SQLAlchemy(model_class=BaseModel)
 

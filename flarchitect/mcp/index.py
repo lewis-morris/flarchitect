@@ -459,8 +459,11 @@ def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[Documen
 
 
 def _strip_sphinx_roles(source: str) -> str:
-    pattern = re.compile(r"\:([\w.+-]+)\:`([^`]+)`")
-    return pattern.sub(r"\2", source)
+    # Remove interpreted text roles such as ``:bdg:`value``` to leave only the payload.
+    source = re.sub(r"\:([\w.+-]+)\:`([^`]+)`", r"\2", source)
+    # Replace Sphinx-style references ``Foo`_``/``Foo`__`` with plain text.
+    source = re.sub(r"`([^`]+)`__?", r"\1", source)
+    return source
 
 
 @functools.lru_cache(maxsize=1)

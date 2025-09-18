@@ -9,6 +9,7 @@ Include a tenant identifier in JWTs and validate it on requests:
 # When issuing tokens
 payload = {"sub": user.id, "tenant_id": user.tenant_id, "roles": user.roles}
 
+
 # During request handling (pseudo‑code)
 @jwt_authentication
 def view():

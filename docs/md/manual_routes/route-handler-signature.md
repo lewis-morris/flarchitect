@@ -11,6 +11,7 @@ signature are passed, so both of the following are valid:
 def echo(deserialized_data=None):
     return deserialized_data
 
+
 # or
 @app.post("/echo2")
 @architect.schema_constructor(input_schema=ItemIn, output_schema=None)
