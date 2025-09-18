@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- API: Fix pagination with joins to apply DISTINCT on the base entity when no custom select/group/aggregation is requested so `limit` and `total_count` reflect base rows. Adds regression test for one‑to‑many join scenarios.
+
 - Auth: Auto-register `POST` refresh route when JWT is enabled, with configurable path and idempotent registration
   - New config: `API_AUTO_AUTH_ROUTES` (default `True`) to disable built-in auth endpoints.
   - New config: `API_AUTH_REFRESH_ROUTE` (default `/auth/refresh`) to change the refresh path.

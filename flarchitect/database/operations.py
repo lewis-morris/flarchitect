@@ -216,6 +216,14 @@ class CrudService:
             for mdl in join_models.values():
                 query = query.join(mdl)
 
+            # When joining one-to-many relationships, the base entity rows can
+            # be duplicated which breaks pagination semantics (limit applies to
+            # multiplied rows rather than distinct base rows). If the request
+            # is not selecting custom fields, grouping, or aggregating, ensure
+            # we paginate over distinct base rows.
+            if not select_fields and not group_by_fields and not agg_fields:
+                query = query.distinct()
+
         if agg_fields or group_by_fields:
             query = query.with_entities(*(group_by_fields + agg_fields))
         elif select_fields:
