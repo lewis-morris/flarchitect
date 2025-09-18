@@ -29,6 +29,18 @@ def sample_index(tmp_path: Path) -> DocumentIndex:
         "Callbacks allow create, read, update, delete hooks for filtering responses.",
     )
 
+    faq = docs_dir / "faq.rst"
+    faq.write_text(
+        """
+.. dropdown:: Can I extend the functionality of the API?
+
+    The :class:`flarchitect.Architect` integrates :doc:`plugins` and :ref:`hooks-cheatsheet`.
+    Use :func:`flarchitect.utils.handle_result` for custom responses.
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
     readme = tmp_path / "README.md"
     _create_markdown(readme, "Overview", "Project introduction.")
 
@@ -58,3 +70,13 @@ def test_search_returns_hits(sample_index: DocumentIndex) -> None:
     assert hits, "Expected synonym-backed search results"
     hit_doc_ids = {hit.doc_id for hit in hits}
     assert "docs/source/advanced_configuration.rst" in hit_doc_ids or "docs/source/guide.rst" in hit_doc_ids
+
+
+def test_rst_with_sphinx_markup_is_normalised(sample_index: DocumentIndex) -> None:
+    content = sample_index.get_section("docs/source/faq.rst", heading=None)
+    assert "flarchitect.Architect" in content
+    assert "flarchitect.utils.handle_result" in content
+    assert ":class:" not in content
+
+    hits = sample_index.search("handle_result")
+    assert any(hit.doc_id == "docs/source/faq.rst" for hit in hits)

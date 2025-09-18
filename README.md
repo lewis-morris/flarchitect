@@ -465,10 +465,11 @@ flarchitect ships with an optional [Model Context Protocol](https://modelcontext
 1. Install the extra dependency group (ships the `fastmcp` backend): `pip install flarchitect[mcp]` (or `uv pip install '.[mcp]'`).
 2. Start the server from your repository root: `flarchitect-mcp-docs --project-root . --backend fastmcp` to prefer the `fastmcp` runtime (falls back to the reference implementation if it is available).
    - Need the reference backend? Install the upstream SDK manually: `pip install 'mcp @ git+https://github.com/modelcontextprotocol/python-sdk@main'`, then restart with `--backend reference`.
-3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and expose the Sphinx sources, `README.md`, `CHANGELOG.md`, and `SUGGESTIONS.md`.
+3. Point your MCP-capable client at the process. Resources follow the `flarchitect-doc://<doc-id>` scheme and expose the Sphinx sources under `docs/source`, converted to plain text for search. When that tree is missing under your project root, the CLI automatically falls back to the packaged documentation bundled with *flarchitect*.
 
 Available tools:
 
+- `list_docs` – enumerate indexed document identifiers and titles for discovery.
 - `search_docs` – substring search with snippets and line numbers.
 - `get_doc_section` – return an entire document or a specific heading slice (Markdown and reStructuredText are supported).
 

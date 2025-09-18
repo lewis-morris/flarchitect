@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import io
+import functools
 import re
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Iterable, Iterator, List, Mapping, Optional, Sequence
+from typing import Callable, Iterable, Iterator, List, Mapping, Optional, Sequence
 
+from docutils import nodes
 from docutils.core import publish_parts
+from docutils.parsers.rst import Directive, directives
 from docutils.utils import SystemMessage
 
 
@@ -363,14 +367,27 @@ class _RSTHTMLToTextParser(HTMLParser):
 
 
 def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[DocumentSection]]:
+    _prepare_rst_environment()
+    sanitized_source = _strip_sphinx_roles(source)
     try:
-        parts = publish_parts(source=source, writer_name="html")
+        warning_buffer = io.StringIO()
+        parts = publish_parts(
+            source=sanitized_source,
+            source_path=str(path),
+            writer_name="html",
+            settings_overrides={
+                "report_level": 5,
+                "halt_level": 6,
+                "exit_status_level": 6,
+                "warning_stream": warning_buffer,
+            },
+        )
         title = parts.get("title")
         body = parts.get("body", "")
     except (SystemMessage, ImportError):
-        sections = list(_extract_sections(source))
+        sections = list(_extract_sections(sanitized_source))
         title = sections[0].title if sections else path.stem.replace("_", " ").title()
-        return title, source, sections
+        return title, sanitized_source, sections
 
     parser = _RSTHTMLToTextParser()
     parser.feed(body)
@@ -424,6 +441,73 @@ def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[Documen
     if not sections:
         sections = list(_extract_sections(plain_text))
     return resolved_title, plain_text, sections
+
+
+def _strip_sphinx_roles(source: str) -> str:
+    pattern = re.compile(r"\:([\w.+-]+)\:`([^`]+)`")
+    return pattern.sub(r"\2", source)
+
+
+@functools.lru_cache(maxsize=1)
+def _prepare_rst_environment() -> None:
+    class _PassthroughDirective(Directive):
+        has_content = True
+        optional_arguments = 1
+        final_argument_whitespace = True
+        option_spec: dict[str, Callable[[str], str]] = {}
+
+        def run(self):
+            container = nodes.container()
+            if self.content:
+                self.state.nested_parse(self.content, self.content_offset, container)
+            return list(container.children)
+
+    class _IgnoreDirective(Directive):
+        has_content = True
+        optional_arguments = 0
+
+        def run(self):
+            return []
+
+    class _LiteralIncludeDirective(Directive):
+        required_arguments = 1
+        optional_arguments = 0
+        final_argument_whitespace = False
+        has_content = False
+        option_spec = {
+            "language": directives.unchanged,
+            "linenos": directives.flag,
+        }
+
+        def run(self):
+            argument = self.arguments[0]
+            language = self.options.get("language")
+            show_linenos = "linenos" in self.options
+
+            settings = self.state.document.settings
+            source_candidate = (
+                getattr(settings, "_source", None)
+                or getattr(settings, "_source_path", None)
+                or self.state.document.current_source
+            )
+            base_path = Path(source_candidate or ".").resolve().parent
+            include_path = (base_path / argument).resolve()
+            try:
+                text = include_path.read_text(encoding="utf-8")
+            except OSError:
+                text = ""
+            literal = nodes.literal_block(text, text)
+            if language:
+                literal["language"] = language
+            if show_linenos:
+                literal["linenos"] = True
+            return [literal]
+
+    directives.register_directive("dropdown", _PassthroughDirective)
+    directives.register_directive("tab-set", _PassthroughDirective)
+    directives.register_directive("tab-item", _PassthroughDirective)
+    directives.register_directive("toctree", _IgnoreDirective)
+    directives.register_directive("literalinclude", _LiteralIncludeDirective)
 
 
 def _normalize_anchor(value: str) -> str:

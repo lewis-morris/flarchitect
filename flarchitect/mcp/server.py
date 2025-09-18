@@ -162,13 +162,28 @@ class ServerConfig:
 def build_index(project_root: Path) -> DocumentIndex:
     """Construct a :class:`DocumentIndex` with sensible defaults."""
 
-    docs_source = project_root / "docs" / "source"
-    if not docs_source.exists():
-        raise FileNotFoundError(
-            "No documentation roots discovered. Provide --project-root pointing to the repository root or pass custom directories."
-        )
+    docs_source = (project_root / "docs" / "source").resolve()
+    if docs_source.exists():
+        return DocumentIndex(project_root, doc_path=docs_source)
 
-    return DocumentIndex(project_root, doc_path=docs_source)
+    module_path = Path(__file__).resolve()
+    package_root = module_path.parents[1]
+    candidate_roots: list[tuple[Path, Path]] = [
+        (package_root, (package_root / "docs" / "source").resolve()),
+        (package_root.parent, (package_root.parent / "docs" / "source").resolve()),
+    ]
+
+    seen: set[Path] = {docs_source}
+    for root, doc_path in candidate_roots:
+        if doc_path in seen:
+            continue
+        seen.add(doc_path)
+        if doc_path.exists():
+            return DocumentIndex(root, doc_path=doc_path)
+
+    raise FileNotFoundError(
+        "No documentation roots discovered under project root or package. Provide --project-root pointing to the repository root or pass custom directories."
+    )
 
 
 def create_server(

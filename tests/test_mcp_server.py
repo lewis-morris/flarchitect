@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from flarchitect.mcp.index import DocumentIndex
-from flarchitect.mcp.server import ServerConfig, create_server
+from flarchitect.mcp.server import ServerConfig, build_index, create_server
 
 
 class _FakeTextResource:
@@ -76,6 +76,18 @@ def doc_index(tmp_path: Path) -> DocumentIndex:
         encoding="utf-8",
     )
     return DocumentIndex(tmp_path)
+
+
+def test_build_index_falls_back_to_packaged_docs(tmp_path: Path) -> None:
+    index = build_index(tmp_path)
+
+    documents = index.list_documents()
+    assert documents, "Expected fallback index to expose packaged documentation"
+    doc_ids = {doc.doc_id for doc in documents}
+    assert any(doc_id.startswith("docs/source/") for doc_id in doc_ids)
+
+    hits = index.search("installation")
+    assert hits, "Expected packaged docs to include installation guidance"
 
 
 def test_fastmcp_backend_registration(monkeypatch, doc_index: DocumentIndex) -> None:
