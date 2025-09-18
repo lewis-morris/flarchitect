@@ -12,7 +12,7 @@ include = [
 
 [project]
 name = "flarchitect"
-version = "1.2.8"
+version = "1.2.9"
 description = "Automatic RESTful API generator with redoc"
 readme = "README.md"
 requires-python = ">=3.10"
