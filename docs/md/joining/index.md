@@ -12,3 +12,4 @@ semantics via `join_type`, and how this interacts with serialisation.
 - [Choosing SQL join semantics](choosing-sql-join-semantics.md)
 - [Pagination with joins](pagination-with-joins.md)
 - [Serialisation and joins](serialisation-and-joins.md)
+- [Expected output (example)](expected-output-example.md)

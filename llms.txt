@@ -121,6 +121,7 @@
 - [Example](/docs/md/global_/example.md): Reference material.
 - [Example](/docs/md/model/example.md): Reference material.
 - [Example](/docs/md/model_method/example.md): Reference material.
+- [Expected output (example)](/docs/md/joining/expected-output-example.md): With `dump=dynamic` and `join=invoice-lines,payments,customer` you can.
 - [Extending query parameters](/docs/md/extensions/extending-query-parameters.md): Use ADDITIONAL_QUERY_PARAMS <configuration.html#ADDITIONAL_QUERY_PARAMS> to document extra query parameters introduced in.
 - [Field validation](/docs/md/validation/field-validation.md): attribute on SQLAlchemy columns to determine which validators to apply.
 - [handle_http_exception](/docs/md/error_handling/handle-http-exception.md): Register `handle_http_exception` as the Flask error handler for.
