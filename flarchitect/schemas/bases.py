@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from decimal import Decimal
 from typing import Any
 
 from flask import request
@@ -80,6 +81,23 @@ class EnumField(fields.Field):
             raise ValidationError(f"Invalid enum value. Expected one of: {valid}.") from e
 
 
+class NumericNumber(fields.Decimal):
+    """Serialise ``Numeric`` values as JSON-native numbers."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        kwargs.setdefault("as_string", False)
+        kwargs.setdefault("allow_nan", False)
+        super().__init__(*args, **kwargs)
+
+    def _serialize(self, value, attr, obj, **kwargs):  # type: ignore[override]
+        serialised = super()._serialize(value, attr, obj, **kwargs)
+        if serialised is None:
+            return None
+        if isinstance(serialised, Decimal):
+            return float(serialised)
+        return serialised
+
+
 # Mapping between SQLAlchemy types and Marshmallow fields
 type_mapping = {
     Integer: fields.Int,
@@ -94,7 +112,7 @@ type_mapping = {
     TIMESTAMP: fields.DateTime,  # Added TIMESTAMP
     JSON: fields.Raw,
     JSONB: fields.Raw,
-    Numeric: fields.Decimal,
+    Numeric: NumericNumber,
     BigInteger: fields.Int,
     LargeBinary: fields.Str,  # Consider using fields.Raw for binary data
     Enum: EnumField,  # Consider fields.Enum for stricter validation
@@ -402,6 +420,11 @@ class AutoSchema(Base):
 
             # Get additional attrs for the field based on the column's properties
             field_args = self._get_column_field_attrs(original_attribute, column_type)
+
+            if issubclass(field_type, NumericNumber) and isinstance(column_type, Numeric):
+                scale = getattr(column_type, "scale", None)
+                if scale is not None:
+                    field_args.setdefault("places", scale)
 
             # Instantiate the field
             field = field_type(data_key=attribute, **field_args)
