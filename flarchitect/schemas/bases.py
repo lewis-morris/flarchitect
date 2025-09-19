@@ -1,7 +1,7 @@
 import datetime
 import uuid
 from decimal import Decimal
-from typing import Any
+from typing import Any, get_type_hints, get_origin, get_args
 
 from flask import request
 from marshmallow import Schema, ValidationError, fields, post_dump, pre_dump
@@ -367,17 +367,37 @@ class AutoSchema(Base):
         if self._should_skip_attribute(attribute):
             return
 
-        field_type = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
+        model_cls = self.model if isinstance(self.model, type) else type(self.model)
+        descriptor = getattr(model_cls, original_attribute, None)
 
-        # Check if the attribute has a setter method
-        has_setter = (
-            hasattr(type(self.model), original_attribute) and isinstance(getattr(type(self.model), original_attribute), property) and getattr(type(self.model), original_attribute).fset is not None
-        )
+        if field_type is None and descriptor is not None:
+            # SQLAlchemy hybrid properties expose annotations on ``fget``
+            fget = getattr(descriptor, "fget", None)
+            if fget is not None:
+                try:
+                    field_type = get_type_hints(fget).get("return")
+                except Exception:
+                    field_type = None
+                if field_type is None:
+                    field_type = getattr(fget, "__annotations__", {}).get("return")
+
+        if field_type is not None:
+            origin = get_origin(field_type)
+            if origin is not None:
+                args = [arg for arg in get_args(field_type) if arg is not type(None)]
+                field_type = args[0] if len(args) == 1 else origin
+
+        resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
+
+        schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
+
+        # Check if the attribute has a setter method (properties/hybrids expose ``fset``)
+        has_setter = descriptor is not None and getattr(descriptor, "fset", None) is not None
 
         # If there's no setter, mark it as dump_only
         field_args = {"dump_only": not has_setter}
 
-        self.add_to_fields(original_attribute, field_type(data_key=attribute, **field_args), load=False)
+        self.add_to_fields(original_attribute, schema_field_cls(data_key=attribute, **field_args), load=False)
 
         self._update_field_metadata(original_attribute)
 
