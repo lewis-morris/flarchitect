@@ -1,6 +1,4 @@
 """Regression tests verifying API output types for diverse SQLAlchemy columns."""
-
-from __future__ import annotations
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
@@ -131,7 +129,7 @@ def app_with_mixed_types() -> tuple[Flask, int, dict[str, object]]:
             "smallint_value": seeded.smallint_value,
             "bigint_value": seeded.bigint_value,
             "float_value": seeded.float_value,
-            "numeric_value": str(seeded.numeric_value),
+            "numeric_value": float(seeded.numeric_value),
             "bool_value": seeded.bool_value,
             "date_value": seeded.date_value.isoformat(),
             "datetime_value": seeded.datetime_value.isoformat(),
@@ -174,6 +172,7 @@ def test_api_serialises_expected_python_types(app_with_mixed_types: tuple[Flask,
     assert isinstance(payload["smallint_value"], int)
     assert isinstance(payload["bigint_value"], int)
     assert isinstance(payload["float_value"], float)
+    assert isinstance(payload["numeric_value"], float)
     assert payload["numeric_value"] == expected["numeric_value"]
     assert isinstance(payload["bool_value"], bool)
     assert payload["date_value"] == expected["date_value"]
