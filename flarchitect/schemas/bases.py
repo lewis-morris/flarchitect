@@ -367,8 +367,13 @@ class AutoSchema(Base):
         if self._should_skip_attribute(attribute):
             return
 
-        model_cls = self.model if isinstance(self.model, type) else type(self.model)
-        descriptor = getattr(model_cls, original_attribute, None)
+        model_cls = None
+        if isinstance(self.model, type):
+            model_cls = self.model
+        elif self.model is not None:
+            model_cls = type(self.model)
+
+        descriptor = getattr(model_cls, original_attribute, None) if model_cls is not None else None
 
         if field_type is None and descriptor is not None:
             # SQLAlchemy hybrid properties expose annotations on ``fget``
