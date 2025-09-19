@@ -381,15 +381,17 @@ class AutoSchema(Base):
                 if field_type is None:
                     field_type = getattr(fget, "__annotations__", {}).get("return")
 
-        if field_type is not None:
-            origin = get_origin(field_type)
-            if origin is not None:
-                args = [arg for arg in get_args(field_type) if arg is not type(None)]
-                field_type = args[0] if len(args) == 1 else origin
+        if isinstance(field_type, type) and issubclass(field_type, fields.Field):
+            schema_field_cls = field_type
+        else:
+            if field_type is not None:
+                origin = get_origin(field_type)
+                if origin is not None:
+                    args = [arg for arg in get_args(field_type) if arg is not type(None)]
+                    field_type = args[0] if len(args) == 1 else origin
 
-        resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
-
-        schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
+            resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
+            schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
 
         # Check if the attribute has a setter method (properties/hybrids expose ``fset``)
         has_setter = descriptor is not None and getattr(descriptor, "fset", None) is not None
