@@ -156,7 +156,12 @@ def app_with_mixed_types() -> tuple[Flask, int, dict[str, object]]:
 
         Architect(app)
 
-    return app, record_id, expected_serialized
+    try:
+        yield app, record_id, expected_serialized
+    finally:
+        with app.app_context():
+            db.session.remove()
+            db.drop_all()
 
 
 def test_api_serialises_expected_python_types(app_with_mixed_types: tuple[Flask, int, dict[str, object]]) -> None:

@@ -33,6 +33,7 @@ from sqlalchemy import (
     Time,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
+from sqlalchemy.types import JSON as SQLAlchemyJSON
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, class_mapper
 from sqlalchemy.orm import exc as orm_exc
@@ -112,6 +113,7 @@ type_mapping = {
     TIMESTAMP: fields.DateTime,  # Added TIMESTAMP
     JSON: fields.Raw,
     JSONB: fields.Raw,
+    SQLAlchemyJSON: fields.Raw,
     Numeric: NumericNumber,
     BigInteger: fields.Int,
     LargeBinary: fields.Str,  # Consider using fields.Raw for binary data
