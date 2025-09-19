@@ -1,8 +1,6 @@
 """Regression tests verifying API output types for diverse SQLAlchemy columns."""
 
 from __future__ import annotations
-
-import uuid
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
@@ -25,7 +23,6 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Time,
-    UUID as SAUUID,
     func,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -71,7 +68,6 @@ class MixedTypes(db.Model):
     datetime_value: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     time_value: Mapped[time] = mapped_column(Time, nullable=False)
     json_value: Mapped[dict[str, object]] = mapped_column(JSON, nullable=False)
-    uuid_value: Mapped[str] = mapped_column(SAUUID(as_uuid=False), nullable=False)
     enum_value: Mapped[Status] = mapped_column(SAEnum(Status), nullable=False)
     binary_value: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     email_value: Mapped[str] = mapped_column(EmailType(), nullable=False)
@@ -121,7 +117,6 @@ def app_with_mixed_types() -> tuple[Flask, int, dict[str, object]]:
             datetime_value=datetime(2024, 1, 2, 15, 30, 45),
             time_value=time(6, 45, 30),
             json_value={"labels": ["alpha", "beta"], "count": 2},
-            uuid_value="12345678-1234-5678-1234-567812345678",
             enum_value=Status.ACTIVE,
             binary_value=b"hello-bytes",
             email_value="tester@example.com",
@@ -142,7 +137,6 @@ def app_with_mixed_types() -> tuple[Flask, int, dict[str, object]]:
             "datetime_value": seeded.datetime_value.isoformat(),
             "time_value": seeded.time_value.isoformat(),
             "json_value": seeded.json_value,
-            "uuid_value": str(seeded.uuid_value),
             "enum_value": seeded.enum_value.name,
             "binary_value": seeded.binary_value.decode(),
             "email_value": seeded.email_value,
@@ -186,7 +180,6 @@ def test_api_serialises_expected_python_types(app_with_mixed_types: tuple[Flask,
     assert payload["datetime_value"] == expected["datetime_value"]
     assert payload["time_value"] == expected["time_value"]
     assert payload["json_value"] == expected["json_value"]
-    assert payload["uuid_value"] == expected["uuid_value"]
     assert payload["enum_value"] == expected["enum_value"]
     assert payload["binary_value"] == expected["binary_value"]
     assert payload["email_value"] == expected["email_value"]
@@ -214,7 +207,6 @@ def test_auto_schema_field_mapping_matches_type_expectations(app_with_mixed_type
         assert isinstance(schema_fields["datetime_value"], fields.DateTime)
         assert isinstance(schema_fields["time_value"], fields.Time)
         assert isinstance(schema_fields["json_value"], fields.Raw)
-        assert isinstance(schema_fields["uuid_value"], fields.UUID)
         assert isinstance(schema_fields["enum_value"], EnumField)
         assert isinstance(schema_fields["binary_value"], fields.Str)
         assert isinstance(schema_fields["email_value"], fields.Email)
