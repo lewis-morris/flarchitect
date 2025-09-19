@@ -59,3 +59,43 @@ def test_create_response_handles_custom_response() -> None:
         assert data["next_url"] == "/next"
         assert data["previous_url"] == "/prev"
         assert data["total_count"] == 1
+
+
+def test_create_response_infers_status_from_value_tuple() -> None:
+    """Value tuples should update the HTTP status code."""
+    app = _make_app()
+    with app.test_request_context():
+        resp = create_response(value=({"msg": "created"}, 202))
+        data = resp.get_json()
+        assert data["value"] == {"msg": "created"}
+        assert data["status_code"] == 202
+        assert resp.status_code == 202
+
+
+def test_create_response_defaults_response_ms_when_missing() -> None:
+    """Missing timing data should fall back to ``n/a``."""
+    app = _make_app()
+    with app.test_request_context():
+        resp = create_response(result={"query": []})
+        data = resp.get_json()
+        assert data["response_ms"] == "n/a"
+
+
+def test_create_response_coerces_error_list_to_first_entry() -> None:
+    """When provided an error list, use the first item in the envelope."""
+    app = _make_app()
+    with app.test_request_context():
+        resp = create_response(errors=["failure"], status=400)
+        data = resp.get_json()
+        assert data["errors"] == "failure"
+        assert data["value"] is None
+        assert resp.status_code == 400
+
+
+def test_create_response_honours_explicit_response_ms() -> None:
+    """Explicit timing overrides g.start_time calculations."""
+    app = _make_app()
+    with app.test_request_context():
+        resp = create_response(result={"query": []}, response_ms=12.5)
+        data = resp.get_json()
+        assert data["response_ms"] == 12.5

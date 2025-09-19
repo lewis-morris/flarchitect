@@ -14,6 +14,16 @@ def test_custom_http_exception_to_dict() -> None:
     }
 
 
+def test_custom_http_exception_defaults_to_status_phrase() -> None:
+    exc = CustomHTTPException(404)
+    assert exc.to_dict() == {
+        "status_code": 404,
+        "status_text": "Not Found",
+        "reason": "Not Found",
+    }
+    assert exc.description == "Not Found"
+
+
 def test_handle_exception_returns_response() -> None:
     app = Flask(__name__)
     with app.test_request_context():
@@ -37,3 +47,14 @@ def test_handle_http_exception_returns_json() -> None:
         data = response.get_json()
         assert response.status_code == 401
         assert data["errors"] == {"error": "Unauthorized", "reason": "Auth required"}
+
+
+def test_handle_http_exception_passthrough_for_non_api_route() -> None:
+    app = Flask(__name__)
+    app.config["API_PREFIX"] = "/api"
+    app.config["API_PRINT_EXCEPTIONS"] = False
+
+    with app.test_request_context("/web/page"):
+        exc = CustomHTTPException(403, "Forbidden")
+        result = handle_http_exception(exc)
+        assert result is exc

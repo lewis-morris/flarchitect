@@ -38,6 +38,7 @@
 
 - MCP: Restore compatibility with modern `fastmcp` releases by registering documentation resources and tools via the new high-level API, fixing `--backend fastmcp` startup failures.
 - MCP: Return `structuredContent` plus JSON text outputs for `search_docs` and `get_doc_section`, complying with the 2025-06-18 MCP tool result schema.
+- API: Wrap aggregate functions around hybrid property SQL expressions so computed fields (e.g., `Invoice.total_outstanding`) can be summed/counting without psycopg2 binding errors, and normalise join tokens before building the column map to keep aliases like `payments` resolving for filter/order keys.
 - MCP: Use the Sphinx `docs/source` tree as the sole index, convert RST to plain text for search, and fall back to the packaged docs when `docs/source` is missing under `--project-root` so the CLI no longer aborts in embedded deployments.
 - Serialization: Prevent DetachedInstanceError by eager-loading relations when `API_ADD_RELATIONS=true` and `API_SERIALIZATION_DEPTH>0`; add detached-safe attribute access.
   - New: `API_SERIALIZATION_IGNORE_DETACHED` (default `True`) to gracefully skip unloaded relations during dump.

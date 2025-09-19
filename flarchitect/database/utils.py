@@ -47,6 +47,16 @@ AGGREGATE_FUNCS = {
 OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
 
 
+def normalise_join_token(token: str) -> str:
+    """Normalise a join token for consistent lookups.
+
+    Tokens are trimmed, lowercased, and hyphen characters are converted to
+    underscores. Passing ``None`` returns an empty string.
+    """
+
+    return (token or "").strip().lower().replace("-", "_")
+
+
 def fetch_related_classes_and_attributes(model: object) -> list[tuple[str, str]]:
     """Collect relationship attributes and their related class names.
 
@@ -133,14 +143,47 @@ def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, D
     ignore_underscore = get_config_or_model_meta(key="API_IGNORE_UNDERSCORE_ATTRIBUTES", model=model, default=True)
     schema_case = get_config_or_model_meta(key="API_SCHEMA_CASE", model=model, default="camel")
 
-    all_columns = {}
+    all_columns: dict[str, dict[str, hybrid_property | InstrumentedAttribute]] = {}
     all_models = [model] + list(join_models.values())
 
-    for mdl in all_models:
-        table_name = convert_case(mdl.__name__, schema_case)
-        all_columns[table_name] = {
-            attr: column for attr, column in mdl.__dict__.items() if isinstance(column, hybrid_property | InstrumentedAttribute) and (not ignore_underscore or not attr.startswith("_"))
+    column_cache: dict[type[DeclarativeBase], dict[str, hybrid_property | InstrumentedAttribute]] = {}
+
+    def _columns_for(mdl: type[DeclarativeBase]) -> dict[str, hybrid_property | InstrumentedAttribute]:
+        cached = column_cache.get(mdl)
+        if cached is not None:
+            return cached
+
+        collected = {
+            attr: column
+            for attr, column in mdl.__dict__.items()
+            if isinstance(column, hybrid_property | InstrumentedAttribute) and (not ignore_underscore or not attr.startswith("_"))
         }
+        column_cache[mdl] = collected
+        return collected
+
+    def _expanded_aliases(*names: str) -> set[str]:
+        aliases: set[str] = set()
+        for name in names:
+            if not name:
+                continue
+            aliases.add(name)
+            normalised = normalise_join_token(name)
+            if normalised:
+                aliases.add(normalised)
+        return aliases
+
+    def _register_aliases(mdl: type[DeclarativeBase], *names: str) -> None:
+        columns = _columns_for(mdl)
+        for alias in _expanded_aliases(*names):
+            if alias not in all_columns:
+                all_columns[alias] = columns
+
+    base_alias = convert_case(model.__name__, schema_case)
+    _register_aliases(model, base_alias, table_namer(model))
+
+    for token, mdl in join_models.items():
+        canonical = convert_case(mdl.__name__, schema_case)
+        _register_aliases(mdl, token, canonical, table_namer(mdl))
 
     return all_columns, all_models
 
@@ -253,9 +296,6 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
         trying normalisation, singular, and plural variants.
     """
 
-    def _normalise(token: str) -> str:
-        return (token or "").strip().lower().replace("-", "_")
-
     def _ensure_list(val: Any) -> list[str]:
         if val is None:
             return []
@@ -265,29 +305,51 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
         return [str(val)]
 
     def _resolve_token(token: str) -> DeclarativeBase | None:
-        # Attempt raw token
-        try:
-            return get_model_func(token)
-        except CustomHTTPException:
-            pass
+        def _attempt(name: str) -> DeclarativeBase | None:
+            try:
+                return get_model_func(name)
+            except CustomHTTPException:
+                return None
+
+        # Attempt the normalised token first
+        candidate = _attempt(token)
+        if candidate is not None:
+            return candidate
+
+        # Retry with hyphenated variant for endpoint-style matches
+        if "_" in token:
+            hyphenated = token.replace("_", "-")
+            candidate = _attempt(hyphenated)
+            if candidate is not None:
+                return candidate
 
         # Singular: drop trailing 's'
         singular = token[:-1] if token.endswith("s") else token
         if singular != token:
-            try:
-                return get_model_func(singular)
-            except CustomHTTPException:
-                pass
+            candidate = _attempt(singular)
+            if candidate is not None:
+                return candidate
+
+            if "_" in singular:
+                hyphenated = singular.replace("_", "-")
+                candidate = _attempt(hyphenated)
+                if candidate is not None:
+                    return candidate
 
         # Pluralise last word
         from flarchitect.specs.utils import pluralize_last_word  # lazy import to avoid circular
 
         plural = pluralize_last_word(token)
         if plural != token:
-            try:
-                return get_model_func(plural)
-            except CustomHTTPException:
-                pass
+            candidate = _attempt(plural)
+            if candidate is not None:
+                return candidate
+
+            if "_" in plural:
+                hyphenated = plural.replace("_", "-")
+                candidate = _attempt(hyphenated)
+                if candidate is not None:
+                    return candidate
 
         return None
 
@@ -300,7 +362,7 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
             for v in _ensure_list(args_dict.get(key)):
                 # split on commas after normalisation preparation
                 for raw in str(v).split(","):
-                    norm = _normalise(raw)
+                    norm = normalise_join_token(raw)
                     if norm:
                         join_values.append(norm)
 
@@ -312,7 +374,7 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
         # ignore keys that are obviously filter expressions (contain __ or .)
         if "__" in key or "." in key:
             continue
-        norm = _normalise(key)
+        norm = normalise_join_token(key)
         if norm:
             join_values.append(norm)
 
@@ -351,13 +413,21 @@ def get_table_column(key: str, all_columns: dict[str, dict[str, Any]]) -> tuple[
     operator = keys_split[1] if len(keys_split) > 1 else ""
 
     for table_name, columns in all_columns.items():
-        if "." in column_name:
-            table_name, column_name = column_name.split(".")
+        current_column = column_name
 
-        if column_name in columns:
-            return table_name, column_name, operator
+        if "." in current_column:
+            table_name, current_column = current_column.split(".", 1)
 
-    raise CustomHTTPException(400, f"Invalid column name: {column_name}")
+        # Aggregation filters allow ``<column>|<label>__<func>``; strip the label
+        # before validating the column name against the model metadata.
+        if "|" in current_column:
+            current_column = current_column.split("|", 1)[0]
+
+        if current_column in columns:
+            return table_name, current_column, operator
+
+    invalid_column = column_name.split("|", 1)[0] if "|" in column_name else column_name
+    raise CustomHTTPException(400, f"Invalid column name: {invalid_column}")
 
 
 def get_select_fields(

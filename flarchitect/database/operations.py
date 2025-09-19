@@ -4,6 +4,7 @@ from typing import Any
 from flask import request
 from sqlalchemy import and_, inspect
 from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
@@ -29,10 +30,32 @@ get_select_fields = _db_utils.get_select_fields
 get_table_and_column = _db_utils.get_table_and_column
 parse_column_table_and_operator = _db_utils.parse_column_table_and_operator
 validate_table_and_column = _db_utils.validate_table_and_column
+normalise_join_token = getattr(
+    _db_utils,
+    "normalise_join_token",
+    lambda token: (token or "").strip().lower().replace("-", "_"),
+)
+
+
+def _fallback_table_namer(model: DeclarativeBase | None = None) -> str:
+    """Gracefully derive a table name when the DB utils module is stubbed."""
+
+    if model is None:
+        return ""
+
+    table_name = getattr(model, "__tablename__", None)
+    if isinstance(table_name, str) and table_name:
+        return table_name
+
+    return getattr(model, "__name__", "").strip().lower()
+
+
+table_namer = getattr(_db_utils, "table_namer", _fallback_table_namer)
 _eager_options_for = getattr(_db_utils, "_eager_options_for", lambda *args, **kwargs: [])
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
+from flarchitect.utils.core_utils import convert_case
 
 __all__ = [
     "paginate_query",
@@ -224,6 +247,26 @@ class CrudService:
 
         all_columns, all_models = get_all_columns_and_hybrids(self.model, join_models)
 
+        schema_case = get_config_or_model_meta("API_SCHEMA_CASE", model=self.model, default="camel")
+
+        alias_to_model: dict[str, type[DeclarativeBase]] = {}
+
+        def _register_alias(model_cls: type[DeclarativeBase], *names: str) -> None:
+            for name in names:
+                if not name:
+                    continue
+                alias_to_model.setdefault(name, model_cls)
+                normalised = normalise_join_token(name)
+                if normalised:
+                    alias_to_model.setdefault(normalised, model_cls)
+
+        base_alias = convert_case(self.model.__name__, schema_case)
+        _register_alias(self.model, base_alias, table_namer(self.model))
+
+        for token, mdl in join_models.items():
+            canonical = convert_case(mdl.__name__, schema_case)
+            _register_alias(mdl, token, canonical, table_namer(mdl))
+
         conditions = [condition for condition in generate_conditions_from_args(flat_args, self.model, all_columns, all_models, join_models) if condition is not None]
 
         allow_select = get_config_or_model_meta("API_ALLOW_SELECT_FIELDS", model=self.model, default=True)
@@ -241,7 +284,9 @@ class CrudService:
             agg_func = AGGREGATE_FUNCS.get(func_name)
             if agg_func:
                 agg_label = label or f"{column_name}_{func_name}"
-                agg_fields.append(agg_func(model_column).label(agg_label))
+                owning_model = alias_to_model.get(table_name) or alias_to_model.get(normalise_join_token(table_name)) or self.model
+                target_column = getattr(owning_model, column_name) if isinstance(model_column, hybrid_property) else model_column
+                agg_fields.append(agg_func(target_column).label(agg_label))
 
         query = query or self.session.query(self.model)
 
