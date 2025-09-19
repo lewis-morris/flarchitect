@@ -285,7 +285,7 @@ def validate_flask_limiter_rate_limit_string(rate_limit_str: str) -> bool:
         bool: True if the rate limit string is valid, False otherwise.
     """
     pattern = re.compile(
-        r"^\d+\s+per\s+(\d+\s+)?(second|minute|hour|day|seconds|minutes|hours|days)$",
+        r"^[1-9]\d*\s+per\s+([1-9]\d*\s+)?(second|minute|hour|day|seconds|minutes|hours|days)$",
         re.IGNORECASE,
     )
     return bool(pattern.match(rate_limit_str))

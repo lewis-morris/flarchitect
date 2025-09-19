@@ -82,6 +82,14 @@ def test_handle_result_with_tuple_status():
     assert next_url is None and previous_url is None
 
 
+def test_handle_result_with_plain_dict():
+    status, value, count, next_url, previous_url = handle_result({"id": 5})
+    assert status == HTTP_OK
+    assert value == {"id": 5}
+    assert count == 1
+    assert next_url is None and previous_url is None
+
+
 def test_handle_result_error_dict():
     result = ({"errors": {"id": ["missing"]}}, HTTP_INTERNAL_SERVER_ERROR)
     status, value, count, *_ = handle_result(result)
