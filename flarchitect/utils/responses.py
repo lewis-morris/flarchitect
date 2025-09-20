@@ -15,7 +15,7 @@ from flarchitect.schemas.bases import AutoSchema
 from flarchitect.schemas.utils import dump_schema_if_exists, list_schema_fields
 from flarchitect.database.utils import list_model_columns
 from flarchitect.utils.core_utils import get_count
-from flarchitect.utils.general import HTTP_INTERNAL_SERVER_ERROR
+from flarchitect.utils.general import HTTP_INTERNAL_SERVER_ERROR, HTTP_UNPROCESSABLE_ENTITY
 
 
 @dataclass
@@ -87,7 +87,9 @@ def serialise_output_with_mallow(output_schema: type[Schema], data: Any) -> dict
         }
 
     except ValidationError as err:
-        return {"errors": err.messages}, HTTP_INTERNAL_SERVER_ERROR
+        return {"errors": err.messages}, HTTP_UNPROCESSABLE_ENTITY
+    except ValueError as err:
+        return {"errors": {"_schema": [str(err)]}}, HTTP_UNPROCESSABLE_ENTITY
 
 
 def check_serialise_method_and_return(

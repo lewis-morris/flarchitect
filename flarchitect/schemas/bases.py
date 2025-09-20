@@ -367,6 +367,19 @@ class AutoSchema(Base):
         if self._should_skip_attribute(attribute):
             return
 
+        if isinstance(field_type, str):
+            primitive_map: dict[str, Any] = {
+                "int": int,
+                "integer": int,
+                "float": float,
+                "bool": bool,
+                "boolean": bool,
+                "string": str,
+                "str": str,
+                "decimal": Decimal,
+            }
+            field_type = primitive_map.get(field_type.lower())
+
         model_cls = None
         if isinstance(self.model, type):
             model_cls = self.model

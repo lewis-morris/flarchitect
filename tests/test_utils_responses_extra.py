@@ -51,8 +51,9 @@ def test_serialise_output_with_mallow_dictionary_passthrough_for_extra_keys():
 def test_serialise_output_with_mallow_reports_validation_errors_for_list_payload():
     schema = ItemSchema()
     data = {"query": [{"x": "not-an-int"}]}
-    with pytest.raises(ValueError):
-        serialise_output_with_mallow(schema, data)
+    out, status = serialise_output_with_mallow(schema, data)
+    assert status == 422
+    assert out == {"errors": {"x": ["Not a valid integer."]}}
 
 
 def test_serialise_output_with_mallow_respects_explicit_total_count():
@@ -67,7 +68,7 @@ def test_serialise_output_with_mallow_uses_error_path():
     schema = ExplodingSchema()
     data = {"x": 1}
     out, status = serialise_output_with_mallow(schema, data)
-    assert status == 500
+    assert status == 422
     assert "errors" in out
 
 
