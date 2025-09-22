@@ -6,6 +6,7 @@ from typing import Any
 import jwt
 from flask import current_app
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.sql import sqltypes
 
 from flarchitect.authentication.token_store import (
     delete_refresh_token,
@@ -425,12 +426,69 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
 
     # Query the user by primary key or lookup field (like username)
     try:
+        if pk not in payload or lookup_field not in payload:
+            raise CustomHTTPException(status_code=401, reason="Invalid token payload")
+
+        pk_attr = getattr(usr_model_class, pk)
+        lookup_attr = getattr(usr_model_class, lookup_field)
+
+        def _coerce_value(value: Any, attr: Any) -> Any:
+            """Attempt to coerce ``value`` to the column's python type."""
+
+            if value is None:
+                return None
+
+            column = getattr(getattr(attr, "property", None), "columns", None)
+            if not column:
+                return value
+
+            try:
+                col_type = column[0].type
+            except (AttributeError, IndexError):  # pragma: no cover - defensive
+                return value
+
+            python_type: type | None = None
+            try:
+                python_type = col_type.python_type  # type: ignore[attr-defined]
+            except (AttributeError, NotImplementedError):
+                python_type = None
+
+            if python_type is None and isinstance(col_type, sqltypes.TypeDecorator):
+                try:
+                    python_type = col_type.impl.python_type  # type: ignore[attr-defined]
+                except (AttributeError, NotImplementedError):
+                    python_type = None
+
+            if python_type is int and isinstance(value, str):
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return value
+
+            impl = getattr(col_type, "impl", None)
+            if isinstance(col_type, (sqltypes.Integer, sqltypes.BigInteger, sqltypes.SmallInteger)) and isinstance(value, str):
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return value
+
+            if isinstance(impl, (sqltypes.Integer, sqltypes.BigInteger, sqltypes.SmallInteger)) and isinstance(value, str):
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return value
+
+            return value
+
+        pk_value = _coerce_value(payload.get(pk), pk_attr)
+        lookup_value = _coerce_value(payload.get(lookup_field), lookup_attr)
+
         with get_session(usr_model_class) as session:
             user = (
                 session.query(usr_model_class)
                 .filter(
-                    getattr(usr_model_class, lookup_field) == payload[lookup_field],
-                    getattr(usr_model_class, pk) == payload[pk],
+                    getattr(usr_model_class, lookup_field) == lookup_value,
+                    getattr(usr_model_class, pk) == pk_value,
                 )
                 .one()
             )
