@@ -29,6 +29,7 @@ html_title = "flarchitect"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 html_static_path = ["./_static"]
+html_extra_path = ["_extra"]
 html_css_files = [
     "colours.css",
     "custom.css",
