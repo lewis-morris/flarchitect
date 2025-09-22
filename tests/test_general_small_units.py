@@ -12,6 +12,10 @@ def test_update_dict_if_flag_true_and_pretty_print():
     general_utils.update_dict_if_flag_true(out, True, "response_ms", 15, "camel")
     assert "responseMs" in out and out["responseMs"] == 15
 
+    # callable conversion should also be honoured
+    general_utils.update_dict_if_flag_true(out, True, "mixed_key", 1, lambda key: key.upper())
+    assert out["MIXED_KEY"] == 1
+
     s = general_utils.pretty_print_dict({"a": 1})
     assert isinstance(s, str) and "'a': 1" in s
 

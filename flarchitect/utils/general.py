@@ -375,7 +375,13 @@ def pretty_print_dict(d: dict[Any, Any]) -> str:
     return pprint.pformat(d, indent=2)
 
 
-def update_dict_if_flag_true(output: dict[str, Any], flag: bool, key: str, value: Any, case_func: Any) -> None:
+def update_dict_if_flag_true(
+    output: dict[str, Any],
+    flag: bool,
+    key: str,
+    value: Any,
+    case_func: str | Callable[[str], str],
+) -> None:
     """Update a dictionary with a key-value pair if the flag is True.
 
     Args:
@@ -385,8 +391,16 @@ def update_dict_if_flag_true(output: dict[str, Any], flag: bool, key: str, value
         value (Any): The value to associate with the key.
         case_func (Any): The function to convert the case of the key.
     """
-    if flag:
-        output.update({convert_case(key, case_func): value})
+    if not flag:
+        return
+
+    converted: str
+    if callable(case_func):
+        converted = case_func(key)
+    else:
+        converted = convert_case(key, case_func) if case_func else key
+
+    output[converted] = value
 
 
 def make_base_dict() -> dict[str, Any]:
