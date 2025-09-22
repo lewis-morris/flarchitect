@@ -174,6 +174,7 @@
 - [API Documentation](/docs/md/openapi/index.md): flarchitect automatically generates an OpenAPI 3.0.2 document for every.
 - [MCP Documentation Server](/docs/md/mcp_server/index.md): The Model Context Protocol (MCP) server bundled with *flarchitect* exposes the project's documentation so tools and agents can query, search, and cite it without bespoke glue code.
 - [GraphQL](/docs/md/graphql/index.md): flarchitect can expose SQLAlchemy models through a GraphQL API.
+- [llms.txt Manifest](/docs/md/llms/index.md): The project ships an `llms.txt` manifest alongside the generated Markdown.
 - [Accessing the spec](/docs/md/openapi/accessing-the-spec.md): The canonical JSON schema is served under the docs path at `/docs/apispec.json`.
 - [Advanced usage](/docs/md/graphql/advanced-usage.md): and adds fields returning the related object types.
 - [Automatic generation](/docs/md/openapi/automatic-generation.md): When API_CREATE_DOCS <configuration.html#CREATE_DOCS> is enabled (it is `True` by default) the.
