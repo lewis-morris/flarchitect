@@ -669,6 +669,7 @@ def convert_all(source_dir: Path, target_dir: Path, llms_path: Path) -> None:
     extra_manifest_path.write_text(llms_text, encoding="utf-8")
 
 
+
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Convert RST docs to Markdown and generate llms.txt")
     parser.add_argument("--source", type=Path, default=PROJECT_ROOT / "docs" / "source")
