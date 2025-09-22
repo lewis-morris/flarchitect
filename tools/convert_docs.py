@@ -582,6 +582,7 @@ def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) ->
     def _hosted_link(path: str) -> str:
         return hosted_docs_base.rstrip("/") + "/" + path.lstrip("/")
 
+
     preferred_category_positions = {
         "Developer Tooling": {
             "openapi/index.md": 0,
@@ -612,6 +613,7 @@ def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) ->
                 continue
             seen_links.add(link_path)
             link = _hosted_link(link_path)
+
             description = chunk.summary.rstrip(".") + "."
             lines.append(f"- [{chunk.title}]({link}): {description}")
         lines.append("")
@@ -625,6 +627,7 @@ def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) ->
                 continue
             seen_links.add(link_path)
             link = _hosted_link(link_path)
+
             description = chunk.summary.rstrip(".") + "."
             lines.append(f"- [{chunk.title}]({link}): {description}")
         lines.append("")
@@ -672,6 +675,7 @@ def convert_all(source_dir: Path, target_dir: Path, llms_path: Path) -> None:
     extra_manifest_path = PROJECT_ROOT / "docs" / "source" / "_extra" / "llms.md"
     extra_manifest_path.parent.mkdir(parents=True, exist_ok=True)
     extra_manifest_path.write_text(llms_text, encoding="utf-8")
+
 
 
 def main(argv: Sequence[str] | None = None) -> None:

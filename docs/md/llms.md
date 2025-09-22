@@ -197,3 +197,4 @@
 - [FAQ](https://lewis-morris.github.io/flarchitect/faq/index.md): By default URL endpoints are `pluralised kebab-case`, resources are `camelCase` and resource fields are.
 - [Roadmap](https://lewis-morris.github.io/flarchitect/roadmap/index.md): Reference material.
 - [Troubleshooting](https://lewis-morris.github.io/flarchitect/faq/troubleshooting.md): Ensure API_CREATE_DOCS <configuration.html#CREATE_DOCS> is set to `True` and that the.
+
