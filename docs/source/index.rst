@@ -58,7 +58,7 @@ flarchitect
    :hidden:
 
    mcp_server
-   llms
+   llms.txt </llms.md>
 
 .. toctree::
    :maxdepth: 2

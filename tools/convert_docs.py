@@ -580,7 +580,7 @@ def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) ->
     preferred_category_positions = {
         "Developer Tooling": {
             "openapi/index.md": 0,
-            "llms/index.md": 1,
+            "llms.md": 1,
             "mcp_server/index.md": 2,
         }
     }
@@ -631,7 +631,7 @@ def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) ->
 
 def _create_llms_manifest_chunk(target_root: Path, llms_path: Path) -> DocumentChunks:
     summary = "Canonical llms.txt manifest for the flarchitect documentation set."
-    relative_path = Path("llms/index.md")
+    relative_path = Path("llms.md")
     chunk = SectionChunk(
         title="llms.txt Manifest",
         relative_path=relative_path,
@@ -640,7 +640,7 @@ def _create_llms_manifest_chunk(target_root: Path, llms_path: Path) -> DocumentC
     )
     return DocumentChunks(
         source_path=llms_path,
-        output_dir=target_root / "llms",
+        output_dir=target_root,
         chunks=[chunk],
     )
 
@@ -663,6 +663,11 @@ def convert_all(source_dir: Path, target_dir: Path, llms_path: Path) -> None:
 
     for chunks in doc_chunks:
         write_chunks(chunks, target_dir)
+
+    extra_manifest_path = PROJECT_ROOT / "docs" / "source" / "_extra" / "llms.md"
+    extra_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    extra_manifest_path.write_text(llms_text, encoding="utf-8")
+
 
 
 def main(argv: Sequence[str] | None = None) -> None:
