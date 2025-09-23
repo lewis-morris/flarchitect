@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from inspect import signature
 from typing import Any
 
 from flask import request
@@ -66,7 +67,13 @@ __all__ = [
 ]
 
 
-def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> tuple[Query, int]:
+def paginate_query(
+    sql_query: Query,
+    page: int = 0,
+    items_per_page: int | None = None,
+    *,
+    skip_count: bool = False,
+) -> tuple[Query, int]:
     """Applies pagination to a query.
 
     Args:
@@ -101,10 +108,24 @@ def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None =
 
     validate_pagination_params(page, items_per_page)
 
-    return (
-        sql_query.paginate(page=int(page), per_page=int(items_per_page), error_out=False),
-        default_pagination_size,
-    )
+    paginate_kwargs: dict[str, Any] = {
+        "page": int(page),
+        "per_page": int(items_per_page),
+        "error_out": False,
+    }
+
+    if skip_count:
+        paginate_callable = getattr(sql_query, "paginate", None)
+        if callable(paginate_callable):
+            try:
+                paginate_signature = signature(paginate_callable)
+            except (TypeError, ValueError):
+                paginate_signature = None
+
+            if paginate_signature and "count" in paginate_signature.parameters:
+                paginate_kwargs["count"] = False
+
+    return (sql_query.paginate(**paginate_kwargs), default_pagination_size)
 
 
 def apply_sorting_to_query(args_dict: dict[str, str | int], query: Query, base_model: Callable) -> Query:
@@ -474,7 +495,12 @@ class CrudService:
         # ``column_descriptions``.
         filtered_query = self.apply_soft_delete_filter(order_query)
 
-        paginated_query, default_pagination_size = paginate_query(filtered_query, flat_args.get("page", 1), flat_args.get("limit"))
+        paginated_query, default_pagination_size = paginate_query(
+            filtered_query,
+            flat_args.get("page", 1),
+            flat_args.get("limit"),
+            skip_count=True,
+        )
 
         return {
             "query": (paginated_query.all() if hasattr(paginated_query, "all") else (paginated_query.items if hasattr(paginated_query, "items") else paginated_query)),
