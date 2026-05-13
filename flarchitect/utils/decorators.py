@@ -236,53 +236,71 @@ def standardise_response(func: Callable) -> Callable:
     @wraps(func)
     def decorated_function(*args: Any, **kwargs: Any) -> Response:
         had_error = False
-        error: Any | None = None
+        error_payload: Any | None = None
         status_code: int | None = None
         value: Any | None = None
+        payload: dict[str, Any] | None = None
 
         try:
             result = func(*args, **kwargs)
-            out_resp = create_response(result=result)
+
+            # Preserve custom responses returned by the view so we do not
+            # double-wrap ``create_response`` results or discard status codes.
+            if isinstance(result, Response):
+                out_resp = result
+            elif isinstance(result, tuple) and result and isinstance(result[0], Response):
+                out_resp = result[0]
+                if len(result) > 1 and isinstance(result[1], int):
+                    out_resp.status_code = result[1]
+            else:
+                out_resp = create_response(result=result)
+
             status_code = out_resp.status_code
             payload = out_resp.get_json(silent=True) or {}
-            value = payload.get("value")
-            error = payload.get("errors")
-            if error or status_code > 299:
+            if isinstance(payload, dict):
+                value = payload.get("value")
+                error_payload = payload.get("errors")
+            if (error_payload is not None) or (status_code and status_code >= 400):
                 had_error = True
 
         except HTTPException as e:
             had_error = True
-            error = e.description
             status_code = e.code or HTTP_INTERNAL_SERVER_ERROR
-            value = {"error": e.name, "reason": e.description}
-            out_resp = _handle_exception(error, status_code, e.name, print_exc=True)
+            value = None
+            out_resp = _handle_exception(e.description, status_code, e.name, print_exc=True)
+            payload = out_resp.get_json(silent=True) or {}
+            error_payload = payload.get("errors") if isinstance(payload, dict) else None
 
         except ProgrammingError as e:
             had_error = True
             text = str(e).split(")")[1].split("\n")[0].strip().capitalize()
-            error = f"SQL Format Error: {text}"
             status_code = HTTP_BAD_REQUEST
             value = None
-            out_resp = _handle_exception(error, status_code)
+            out_resp = _handle_exception(f"SQL Format Error: {text}", status_code)
+            payload = out_resp.get_json(silent=True) or {}
+            error_payload = payload.get("errors") if isinstance(payload, dict) else None
 
         except CustomHTTPException as e:
             had_error = True
-            error = e.reason
             status_code = e.status_code
             value = None
-            out_resp = _handle_exception(error, status_code, e.error)
+            out_resp = _handle_exception(e.reason, status_code, e.error)
+            payload = out_resp.get_json(silent=True) or {}
+            error_payload = payload.get("errors") if isinstance(payload, dict) else None
 
         except Exception as e:
             had_error = True
-            error = str(e)
+            msg = str(e)
             status_code = HTTP_INTERNAL_SERVER_ERROR
             value = None
-            out_resp = _handle_exception(f"Internal Server Error: {error}", status_code)
+            out_resp = _handle_exception(f"Internal Server Error: {msg}", status_code)
+            payload = out_resp.get_json(silent=True) or {}
+            error_payload = payload.get("errors") if isinstance(payload, dict) else None
 
         finally:
             error_callback = get_config_or_model_meta("API_ERROR_CALLBACK")
             if error_callback and had_error:
-                error_callback(error, status_code, value)
+                error_callback(error_payload, status_code, value)
 
         return out_resp
 

@@ -31,7 +31,7 @@ def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable 
     Returns:
         The matching ``AutoSchema`` subclass if found, otherwise ``None``.
     """
-    from flarchitect.schemas.bases import AutoSchema
+    from flarchitect.schemas.bases import AutoSchema, lookup_auto_schema_subclass
 
     if model is None:
         return None
@@ -42,13 +42,9 @@ def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable 
     if cache_key in _SCHEMA_SUBCLASS_CACHE:
         return _SCHEMA_SUBCLASS_CACHE[cache_key]
 
-    for subclass in schema_base.__subclasses__():
-        schema_model = getattr(subclass.Meta, "model", None)
-        if schema_model == model and (getattr(subclass, "dump", False) is dump or getattr(subclass, "dump", None)):
-            _SCHEMA_SUBCLASS_CACHE[cache_key] = subclass
-            return subclass
-    _SCHEMA_SUBCLASS_CACHE[cache_key] = None
-    return None
+    subclass = lookup_auto_schema_subclass(model, dump, schema_base)
+    _SCHEMA_SUBCLASS_CACHE[cache_key] = subclass
+    return subclass
 
 
 def create_dynamic_schema(base_class: Callable, model_class: Callable) -> Callable:

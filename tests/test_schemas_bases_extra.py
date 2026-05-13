@@ -9,10 +9,13 @@ import pytest
 from flask import Flask
 from marshmallow import ValidationError, fields
 from sqlalchemy import Enum as SAEnum, ForeignKey, Integer, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.types import TypeDecorator
 
 from flarchitect.schemas.bases import AutoSchema, EnumField
+from flarchitect.schemas.utils import get_input_output_from_model_or_make
 
 
 class _Base(DeclarativeBase):
@@ -64,8 +67,16 @@ def flask_app() -> Flask:
 
 @pytest.fixture(autouse=True)
 def reset_schema_caches(monkeypatch: pytest.MonkeyPatch) -> None:
+    import flarchitect.schemas.bases as base_module
+
     monkeypatch.setattr("flarchitect.schemas.utils._SCHEMA_SUBCLASS_CACHE", {})
     monkeypatch.setattr("flarchitect.schemas.utils._DYNAMIC_SCHEMA_CACHE", {})
+    monkeypatch.setattr("flarchitect.schemas.bases._SCHEMA_FIELD_CACHE", {})
+    monkeypatch.setattr("flarchitect.schemas.bases._HYBRID_FIELD_CACHE", {})
+    monkeypatch.setattr(
+        "flarchitect.schemas.bases._AUTO_SCHEMA_REGISTRY",
+        {key: list(value) for key, value in base_module._AUTO_SCHEMA_REGISTRY.items()},
+    )
 
 
 class Colour(enum.Enum):
@@ -141,6 +152,25 @@ class UnannotatedHybridSchema(AutoSchema):
         model = UnannotatedHybrid
 
 
+class CustomJSONB(TypeDecorator):
+    """Simple ``TypeDecorator`` that wraps ``JSONB`` for regression coverage."""
+
+    impl = JSONB
+    cache_ok = True
+
+
+class DecoratedPayload(_Base):
+    __tablename__ = "decorated_payload"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    custom_json: Mapped[dict[str, Any] | None] = mapped_column(CustomJSONB(), nullable=True)
+
+
+class DecoratedPayloadSchema(AutoSchema):
+    class Meta:
+        model = DecoratedPayload
+
+
 def test_hybrid_property_uses_return_annotation(flask_app: Flask) -> None:
     with flask_app.app_context():
         schema = AnnotatedHybridSchema()
@@ -166,6 +196,23 @@ def test_hybrid_property_dump_preserves_numeric_type(flask_app: Flask) -> None:
 
     assert isinstance(payload["gross_total"], float)
     assert payload["gross_total"] == pytest.approx(123.45)
+
+
+def test_type_decorator_json_columns_map_to_raw_field(flask_app: Flask) -> None:
+    with flask_app.app_context():
+        input_schema, output_schema = get_input_output_from_model_or_make(DecoratedPayload)
+
+        assert "custom_json" in output_schema.fields
+        json_field = output_schema.fields["custom_json"]
+        assert isinstance(json_field, fields.Raw)
+        assert json_field.allow_none is True
+
+        with flask_app.test_request_context("/"):
+            loaded = input_schema.load({"custom_json": {"nested": True}})
+            assert loaded["custom_json"] == {"nested": True}
+
+            dumped = output_schema.dump(DecoratedPayload(custom_json={"nested": True}))
+            assert dumped["custom_json"] == {"nested": True}
 
 
 @pytest.mark.parametrize(

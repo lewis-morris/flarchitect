@@ -1,7 +1,9 @@
 import datetime
 import uuid
+from copy import deepcopy
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, get_type_hints, get_origin, get_args
+from typing import Any, TYPE_CHECKING, get_args, get_origin, get_type_hints
 
 from flask import request
 from marshmallow import Schema, ValidationError, fields, post_dump, pre_dump
@@ -33,7 +35,7 @@ from sqlalchemy import (
     Time,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
-from sqlalchemy.types import JSON as SQLAlchemyJSON
+from sqlalchemy.types import JSON as SQLAlchemyJSON, TypeDecorator
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, class_mapper
 from sqlalchemy.orm import exc as orm_exc
@@ -131,6 +133,112 @@ type_mapping = {
 }
 
 
+def register_type_mapping(sqlalchemy_type: Any, marshmallow_field: type[fields.Field]) -> None:
+    """Register or override a SQLAlchemy → Marshmallow field mapping.
+
+    Args:
+        sqlalchemy_type: SQLAlchemy type (class or instance) to recognise.
+        marshmallow_field: Marshmallow ``Field`` subclass that handles values of
+            ``sqlalchemy_type``.
+    """
+
+    type_mapping[sqlalchemy_type] = marshmallow_field
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+_SCHEMA_FIELD_CACHE: dict[tuple[type["AutoSchema"], bool, int, tuple[str, ...] | None], "_SchemaFieldCacheEntry"] = {}
+_HYBRID_FIELD_CACHE: dict[tuple[type[Any], str], tuple[type[fields.Field], dict[str, Any]]] = {}
+_AUTO_SCHEMA_REGISTRY: dict[tuple[type[Any], bool | None], list[type["AutoSchema"]]] = {}
+
+
+@dataclass(slots=True)
+class _SchemaFieldCacheEntry:
+    prototypes: dict[str, fields.Field]
+    declared_map: dict[str, str]
+    field_map: dict[str, str]
+    load_map: dict[str, str]
+    dump_map: dict[str, str]
+
+    @classmethod
+    def capture(cls, schema: "AutoSchema") -> "_SchemaFieldCacheEntry":
+        token_map: dict[int, str] = {}
+        prototypes: dict[str, fields.Field] = {}
+
+        def _token_for(field: fields.Field) -> str:
+            field_id = id(field)
+            token = token_map.get(field_id)
+            if token is None:
+                token = f"f{len(token_map)}"
+                token_map[field_id] = token
+                prototypes[token] = _clone_field(field)
+            return token
+
+        return cls(
+            prototypes=prototypes,
+            declared_map={name: _token_for(field) for name, field in schema.declared_fields.items()},
+            field_map={name: _token_for(field) for name, field in schema.fields.items()},
+            load_map={name: _token_for(field) for name, field in schema.load_fields.items()},
+            dump_map={name: _token_for(field) for name, field in schema.dump_fields.items()},
+        )
+
+    def instantiate(self, schema: "AutoSchema") -> None:
+        instantiated = {token: _clone_field(proto) for token, proto in self.prototypes.items()}
+        schema.declared_fields = {name: instantiated[token] for name, token in self.declared_map.items()}
+        schema.fields = {name: instantiated[token] for name, token in self.field_map.items()}
+        schema.load_fields = {name: instantiated[token] for name, token in self.load_map.items()}
+        schema.dump_fields = {name: instantiated[token] for name, token in self.dump_map.items()}
+
+
+def _clone_field(field: fields.Field) -> fields.Field:
+    cloned = deepcopy(field)
+    if hasattr(cloned, "parent"):
+        cloned.parent = None
+    if hasattr(cloned, "root"):
+        cloned.root = None
+    return cloned
+
+
+def _register_auto_schema_subclass(cls: type["AutoSchema"]) -> None:
+    meta = getattr(cls, "Meta", None)
+    model = getattr(meta, "model", None)
+    if model is None:
+        return
+
+    dump_value = getattr(cls, "dump", None)
+    if dump_value is True:
+        keys = [(model, True)]
+    elif dump_value is None:
+        keys = [(model, None)]
+    else:
+        keys = [(model, False)]
+
+    for key in keys:
+        registry = _AUTO_SCHEMA_REGISTRY.setdefault(key, [])
+        if cls not in registry:
+            registry.append(cls)
+
+
+def lookup_auto_schema_subclass(model: type[Any], dump: bool | None, schema_base: type["AutoSchema"]) -> type["AutoSchema"] | None:
+    if model is None:
+        return None
+
+    if dump is True:
+        search_keys = [(model, True)]
+    elif dump is False:
+        search_keys = [(model, False)]
+    else:
+        search_keys = [(model, None), (model, False), (model, True)]
+
+    for key in search_keys:
+        for candidate in _AUTO_SCHEMA_REGISTRY.get(key, []):
+            if issubclass(candidate, schema_base):
+                return candidate
+    return None
+
+
 class Base(Schema):  # Inheriting from marshmallow's Schema
     def __init__(self, *args, context=None, **kwargs):
         # 1️⃣  Stash the context *before* super().__init__
@@ -174,6 +282,10 @@ class AutoSchema(Base):
         add_hybrid_properties = True
         include_children = True
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        _register_auto_schema_subclass(cls)
+
     def __init__(self, *args, render_nested=True, **kwargs):
         """Initialise the ``AutoSchema`` instance.
 
@@ -184,6 +296,7 @@ class AutoSchema(Base):
         self.render_nested = render_nested
         self.depth = kwargs.pop("depth", 0)
         only_fields = kwargs.pop("only", None)
+        self._cache_only_key = self._normalise_only(only_fields)
 
         # Ensure context is set up properly
         super().__init__(*args, **kwargs)
@@ -203,6 +316,19 @@ class AutoSchema(Base):
 
         if only_fields:
             self._apply_only(only_fields)
+
+    @staticmethod
+    def _normalise_only(value: Any) -> tuple[str, ...] | None:
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)):
+            return tuple(value)
+        if isinstance(value, set):
+            return tuple(sorted(value))
+        return (value,)
+
+    def _build_field_cache_key(self) -> tuple[type["AutoSchema"], bool, int, tuple[str, ...] | None]:
+        return (self.__class__, bool(self.render_nested), int(self.depth or 0), self._cache_only_key)
 
     @pre_dump
     def pre_dump(self, data, **kwargs):
@@ -234,6 +360,13 @@ class AutoSchema(Base):
             logger.warning("self.Meta.model is None. Skipping field generation.")
             return
 
+        cache_key = self._build_field_cache_key()
+        cached_entry = _SCHEMA_FIELD_CACHE.get(cache_key)
+        if cached_entry is not None:
+            cached_entry.instantiate(self)
+            _rebind_cached_fields(self)
+            return
+
         mapper = class_mapper(self.model)
         for attribute, mapper_property in mapper.all_orm_descriptors.items():
             original_attribute = attribute
@@ -260,6 +393,8 @@ class AutoSchema(Base):
         # print("Final fields:", self.fields)
         # print("Dump fields:", self.dump_fields)  # Should match self.fields
         # print("Load fields:", self.load_fields)  # Should match self.fields
+
+        _SCHEMA_FIELD_CACHE[cache_key] = _SchemaFieldCacheEntry.capture(self)
 
     def _convert_case(self, attribute: str) -> str:
         """Convert the attribute name to the appropriate case.
@@ -386,38 +521,50 @@ class AutoSchema(Base):
         elif self.model is not None:
             model_cls = type(self.model)
 
-        descriptor = getattr(model_cls, original_attribute, None) if model_cls is not None else None
+        cache_key = (model_cls, original_attribute) if model_cls is not None else None
+        cached = _HYBRID_FIELD_CACHE.get(cache_key) if cache_key else None
 
-        if field_type is None and descriptor is not None:
-            # SQLAlchemy hybrid properties expose annotations on ``fget``
-            fget = getattr(descriptor, "fget", None)
-            if fget is not None:
-                try:
-                    field_type = get_type_hints(fget).get("return")
-                except Exception:
-                    field_type = None
-                if field_type is None:
-                    field_type = getattr(fget, "__annotations__", {}).get("return")
-
-        if isinstance(field_type, type) and issubclass(field_type, fields.Field):
-            schema_field_cls = field_type
+        if cached is not None:
+            schema_field_cls, cached_args = cached
+            field_args = dict(cached_args)
         else:
-            if field_type is not None:
-                origin = get_origin(field_type)
-                if origin is not None:
-                    args = [arg for arg in get_args(field_type) if arg is not type(None)]
-                    field_type = args[0] if len(args) == 1 else origin
+            descriptor = getattr(model_cls, original_attribute, None) if model_cls is not None else None
 
-            resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
-            schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
+            if field_type is None and descriptor is not None:
+                # SQLAlchemy hybrid properties expose annotations on ``fget``
+                fget = getattr(descriptor, "fget", None)
+                if fget is not None:
+                    try:
+                        field_type = get_type_hints(fget).get("return")
+                    except Exception:
+                        field_type = None
+                    if field_type is None:
+                        field_type = getattr(fget, "__annotations__", {}).get("return")
 
-        # Check if the attribute has a setter method (properties/hybrids expose ``fset``)
-        has_setter = descriptor is not None and getattr(descriptor, "fset", None) is not None
+            if isinstance(field_type, type) and issubclass(field_type, fields.Field):
+                schema_field_cls = field_type
+            else:
+                if field_type is not None:
+                    origin = get_origin(field_type)
+                    if origin is not None:
+                        args = [arg for arg in get_args(field_type) if arg is not type(None)]
+                        field_type = args[0] if len(args) == 1 else origin
 
-        # If there's no setter, mark it as dump_only
-        field_args = {"dump_only": not has_setter}
+                resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
+                schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
 
-        self.add_to_fields(original_attribute, schema_field_cls(data_key=attribute, **field_args), load=False)
+            # Check if the attribute has a setter method (properties/hybrids expose ``fset``)
+            has_setter = descriptor is not None and getattr(descriptor, "fset", None) is not None
+
+            # If there's no setter, mark it as dump_only
+            field_args = {"dump_only": not has_setter}
+
+            if cache_key:
+                _HYBRID_FIELD_CACHE[cache_key] = (schema_field_cls, dict(field_args))
+
+        field = schema_field_cls(data_key=attribute, **dict(field_args))
+
+        self.add_to_fields(original_attribute, field, load=False)
 
         self._update_field_metadata(original_attribute)
 
@@ -455,16 +602,18 @@ class AutoSchema(Base):
             )
         else:
             # Map the SQLAlchemy column type to a Marshmallow field type
-            field_type = type_mapping.get(type(column_type))
+            field_type, resolved_type = self._resolve_field_type(column_type)
             if not field_type:
                 logger.error(1, f"No field mapping for column type: {type(column_type)}")
                 return
 
             # Get additional attrs for the field based on the column's properties
-            field_args = self._get_column_field_attrs(original_attribute, column_type)
+            field_args = self._get_column_field_attrs(original_attribute, column_type, resolved_type)
 
-            if issubclass(field_type, NumericNumber) and isinstance(column_type, Numeric):
-                scale = getattr(column_type, "scale", None)
+            numeric_source = resolved_type or column_type
+
+            if issubclass(field_type, NumericNumber) and self._is_instance_or_subclass(numeric_source, Numeric):
+                scale = getattr(numeric_source, "scale", None)
                 if scale is not None:
                     field_args.setdefault("places", scale)
 
@@ -501,7 +650,7 @@ class AutoSchema(Base):
         if dump:
             self.dump_fields[attribute] = field
 
-    def _get_column_field_attrs(self, original_attribute: str, column_type: Any) -> dict[str, Any]:
+    def _get_column_field_attrs(self, original_attribute: str, column_type: Any, effective_type: Any | None = None) -> dict[str, Any]:
         """Compute Marshmallow field arguments for a model column.
 
         Args:
@@ -535,7 +684,7 @@ class AutoSchema(Base):
 
         field_args["validate"] = []
         # Check for column length constraints and add validation
-        field_args = self._add_validation(column, field_args)
+        field_args = self._add_validation(column, field_args, effective_type)
 
         # NO UNIQUE FIELD ANY MORE??!?
         # Mark fields as unique or primary keys
@@ -550,7 +699,124 @@ class AutoSchema(Base):
 
         return field_args
 
-    def _add_validation(self, column: Column, field_args: dict):
+    def _resolve_field_type(self, column_type: Any) -> tuple[type[fields.Field] | None, Any | None]:
+        """Resolve the Marshmallow field for a SQLAlchemy column type.
+
+        Handles ``TypeDecorator`` wrappers by traversing their ``impl`` chain
+        (and any dialect-specific implementations) until a known mapping is
+        located.
+        """
+
+        for candidate in self._iter_column_type_candidates(column_type):
+            field_type = self._lookup_field_mapping(candidate)
+            if field_type:
+                resolved = candidate
+                return field_type, resolved
+        return None, None
+
+    def _iter_column_type_candidates(self, column_type: Any):
+        """Yield potential SQLAlchemy types for mapping, unwrapping decorators."""
+
+        queue: list[Any] = [column_type]
+        seen_ids: set[int] = set()
+        seen_types: set[type] = set()
+
+        while queue:
+            current = queue.pop(0)
+
+            if isinstance(current, type):
+                if current in seen_types:
+                    continue
+                seen_types.add(current)
+            else:
+                marker = id(current)
+                if marker in seen_ids:
+                    continue
+                seen_ids.add(marker)
+
+            yield current
+
+            if isinstance(current, TypeDecorator):
+                impl = getattr(current, "impl", None)
+                if impl is not None:
+                    queue.append(impl)
+                    if isinstance(impl, type):
+                        try:
+                            queue.append(impl())
+                        except Exception:
+                            pass
+
+                loaded_impl = self._load_dialect_impl(current)
+                if loaded_impl is not None:
+                    queue.append(loaded_impl)
+
+    def _lookup_field_mapping(self, candidate: Any) -> type[fields.Field] | None:
+        if candidate in type_mapping:
+            return type_mapping[candidate]
+
+        keys: list[Any] = []
+        if isinstance(candidate, type):
+            keys.append(candidate)
+        else:
+            keys.append(type(candidate))
+
+        for key in keys:
+            field_type = type_mapping.get(key)
+            if field_type:
+                return field_type
+        return None
+
+    def _load_dialect_impl(self, decorator: TypeDecorator) -> Any | None:
+        loader = getattr(decorator, "load_dialect_impl", None)
+        if not callable(loader):
+            return None
+
+        try:
+            from sqlalchemy.dialects import registry
+
+            default_dialect_cls = registry.load("default")
+            dialect = default_dialect_cls()
+        except Exception:
+            return None
+
+        try:
+            return loader(dialect)
+        except Exception:
+            return None
+
+    def _is_instance_or_subclass(self, candidate: Any, expected: Any) -> bool:
+        try:
+            if isinstance(candidate, type):
+                return issubclass(candidate, expected)
+            return isinstance(candidate, expected)
+        except TypeError:
+            return False
+
+    def _safe_python_type(self, candidate: Any) -> type | None:
+        """Best-effort resolution of ``python_type`` for SQLAlchemy types."""
+
+        sources: list[Any] = []
+        if not isinstance(candidate, type):
+            sources.append(candidate)
+        if isinstance(candidate, type):
+            try:
+                instance = candidate()
+            except Exception:
+                instance = None
+            if instance is not None:
+                sources.append(instance)
+
+        for source in sources:
+            try:
+                return getattr(source, "python_type")
+            except NotImplementedError:
+                return None
+            except AttributeError:
+                continue
+
+        return None
+
+    def _add_validation(self, column: Column, field_args: dict, effective_type: Any | None = None):
         # custom validation by user
         if column.info.get("validate"):
             validator = validate_by_type(column.info.get("validate"))
@@ -560,33 +826,41 @@ class AutoSchema(Base):
             return field_args
 
         # Add validation to the field based on the column type in sql
-        if hasattr(column.type, "length") and column.type.__class__ is not Enum:
-            field_args["validate"].append(Length(max=column.type.length))
+        length_source = effective_type or column.type
+        length_value = getattr(length_source, "length", getattr(column.type, "length", None))
+        if length_value is not None and not self._is_instance_or_subclass(length_source, Enum):
+            field_args["validate"].append(Length(max=length_value))
 
-        if isinstance(column.type, Float | Numeric):
+        numeric_source = effective_type or column.type
+        if self._is_instance_or_subclass(numeric_source, (Float, Numeric)):
             field_args["validate"].append(Range(min=float("-inf"), max=float("inf")))
 
-        if isinstance(column.type, Integer):
+        integer_source = effective_type or column.type
+        if self._is_instance_or_subclass(integer_source, Integer):
             field_args["validate"].append(Range(min=-2147483648, max=2147483647))
 
         if get_config_or_model_meta("API_AUTO_VALIDATE", model=self.model, default=True):
             # todo add more validation and test
             column_name = column.name
             format_name = column.info.get("format")
+            type_source = effective_type or column.type
+            python_type = self._safe_python_type(type_source)
+            if python_type is None:
+                python_type = self._safe_python_type(column.type)
             try:
-                if ("email" in column_name and column.type.python_type is str) or (format_name == "email"):
+                if ("email" in column_name and python_type is str) or (format_name == "email"):
                     field_args["validate"].append(validate_by_type("email"))
-                elif ("url" in column_name and column.type.python_type is str) or (format_name in ["url", "uri", "url_path"]):
+                elif ("url" in column_name and python_type is str) or (format_name in ["url", "uri", "url_path"]):
                     field_args["validate"].append(validate_by_type("url"))
-                elif "date" in column_name or column.type.python_type is datetime.date or format_name == "date":
+                elif "date" in column_name or python_type is datetime.date or format_name == "date":
                     field_args["validate"].append(validate_by_type("date"))
-                elif column.type.python_type is datetime.time or format_name == "time":
+                elif python_type is datetime.time or format_name == "time":
                     field_args["validate"].append(validate_by_type("time"))
-                elif "datetime" in column_name or column.type.python_type is datetime.datetime or format_name == "datetime":
+                elif "datetime" in column_name or python_type is datetime.datetime or format_name == "datetime":
                     field_args["validate"].append(validate_by_type("datetime"))
-                elif "boolean" in column_name or column.type.python_type is bool or format_name == "boolean":
+                elif "boolean" in column_name or python_type is bool or format_name == "boolean":
                     field_args["validate"].append(validate_by_type("boolean"))
-                elif ("domain" in column_name and column.type.python_type is str) or (format_name == "domain"):
+                elif ("domain" in column_name and python_type is str) or (format_name == "domain"):
                     field_args["validate"].append(validate_by_type("domain"))
                 elif format_name == "ipv4":
                     field_args["validate"].append(validate_by_type("ipv4"))
@@ -711,6 +985,7 @@ class AutoSchema(Base):
         )
 
         relationship_prop = relationship_property.property
+        related_model = relationship_property.mapper.class_
         field_args = {"dump_only": not relationship_prop.viewonly}
 
         try:
@@ -741,32 +1016,58 @@ class AutoSchema(Base):
 
         def add_url_field() -> str:
             if relationship_prop.uselist:
-                self.add_to_fields(
-                    attribute,
-                    fields.Function(lambda obj: self.get_many_url(obj, original_attribute, input_schema), **field_args),
-                    load=False,
+                field = fields.Function(lambda obj: self.get_many_url(obj, original_attribute, input_schema), **field_args)
+                rel_meta = field.metadata.setdefault("_fa_relationship", {})
+                rel_meta.update(
+                    {
+                        "kind": "url",
+                        "url_kind": "many",
+                        "attribute": original_attribute,
+                        "related_model": related_model,
+                    },
                 )
+                self.add_to_fields(attribute, field, load=False)
             else:
-                self.add_to_fields(
-                    attribute,
-                    fields.Function(lambda obj: self.get_url(obj, original_attribute, input_schema), **field_args),
-                    load=False,
+                field = fields.Function(lambda obj: self.get_url(obj, original_attribute, input_schema), **field_args)
+                rel_meta = field.metadata.setdefault("_fa_relationship", {})
+                rel_meta.update(
+                    {
+                        "kind": "url",
+                        "url_kind": "single",
+                        "attribute": original_attribute,
+                        "related_model": related_model,
+                    },
                 )
+                self.add_to_fields(attribute, field, load=False)
             return attribute
 
         def add_nested_field() -> str:
             if relationship_prop.uselist:
-                self.add_to_fields(
-                    original_attribute,
-                    fields.List(fields.Nested(output_schema), **field_args),
-                    load=False,
+                field = fields.List(fields.Nested(output_schema), **field_args)
+                rel_meta = field.metadata.setdefault("_fa_relationship", {})
+                rel_meta.update(
+                    {
+                        "kind": "nested",
+                        "role": "output",
+                        "many": True,
+                        "attribute": original_attribute,
+                        "related_model": related_model,
+                    },
                 )
+                self.add_to_fields(original_attribute, field, load=False)
             else:
-                self.add_to_fields(
-                    original_attribute,
-                    fields.Nested(output_schema, **field_args),
-                    load=False,
+                field = fields.Nested(output_schema, **field_args)
+                rel_meta = field.metadata.setdefault("_fa_relationship", {})
+                rel_meta.update(
+                    {
+                        "kind": "nested",
+                        "role": "output",
+                        "many": False,
+                        "attribute": original_attribute,
+                        "related_model": related_model,
+                    },
                 )
+                self.add_to_fields(original_attribute, field, load=False)
             return original_attribute
 
         def collect_join_tokens() -> set[str]:
@@ -834,17 +1135,29 @@ class AutoSchema(Base):
         else:
             field_name = add_nested_field()
 
-        self._update_field_metadata(field_name)
+        self._update_field_metadata(original_attribute, field_name)
 
         if allow_nested_writes and not relationship_prop.viewonly:
             load_field = fields.List(fields.Nested(input_schema), load_only=True) if relationship_prop.uselist else fields.Nested(input_schema, load_only=True)
+            rel_meta = load_field.metadata.setdefault("_fa_relationship", {})
+            rel_meta.update(
+                {
+                    "kind": "nested",
+                    "role": "input",
+                    "many": bool(relationship_prop.uselist),
+                    "attribute": original_attribute,
+                    "related_model": related_model,
+                },
+            )
             self.add_to_fields(field_name, load_field, dump=False)
 
-    def _update_field_metadata(self, attribute: str) -> None:
+    def _update_field_metadata(self, attribute: str, schema_attribute: str | None = None) -> None:
         """Populate OpenAPI metadata for a field.
 
         Args:
             attribute (str): Field name whose metadata should be updated.
+            schema_attribute: Optional schema attribute key when it differs from
+                the model attribute (for example, case-converted names).
 
         Returns:
             None
@@ -852,13 +1165,41 @@ class AutoSchema(Base):
         Side Effects:
             Mutates the field's ``metadata`` dictionary in-place.
         """
-        field_obj = self.fields[attribute]  # Get the Marshmallow field object
+        field_key = schema_attribute or attribute
+        field_obj = (
+            self.fields.get(field_key)
+            or self.dump_fields.get(field_key)
+            or self.load_fields.get(field_key)
+        )
+        if field_obj is None:
+            return
+
         field_meta = field_obj.metadata  # Extract the existing metadata
 
         # Populate metadata from SQLAlchemy column ``info`` if available.
-        model_field = getattr(self.model, attribute, None)
-        if model_field is not None and hasattr(model_field, "info"):
-            info = model_field.info
+        info: dict[str, Any] | None = None
+        try:
+            mapper = class_mapper(self.model)
+        except Exception:
+            mapper = None
+
+        if mapper is not None:
+            try:
+                mapper_property = mapper.get_property(attribute)
+            except Exception:
+                mapper_property = None
+
+            if mapper_property is not None:
+                columns = getattr(mapper_property, "columns", None)
+                if columns:
+                    try:
+                        column = columns[0]
+                    except (IndexError, TypeError):
+                        column = None
+                    if column is not None and hasattr(column, "info"):
+                        info = column.info  # type: ignore[assignment]
+
+        if info:
             if desc := info.get("description"):
                 field_meta.setdefault("description", desc)
             if example := info.get("example"):
@@ -876,3 +1217,89 @@ class AutoSchema(Base):
         result = super().dump(obj, *args, **kwargs) if self.fields else self.__class__(context=self.context).dump(obj, *args, **kwargs)
         # print("Data after super().dump:", result)
         return result
+
+
+def _rebind_cached_fields(schema: "AutoSchema") -> None:
+    related_schema_cache: dict[tuple[type[Any], int], tuple[Schema, Schema]] = {}
+    seen: set[int] = set()
+
+    def _schemas_for(model_cls: type[Any]) -> tuple[Schema, Schema]:
+        current_depth = schema.context.get("current_depth", 0)
+        cache_key = (model_cls, current_depth)
+        cached = related_schema_cache.get(cache_key)
+        if cached is None:
+            cached = get_input_output_from_model_or_make(
+                model_cls,
+                context={"current_depth": current_depth + 1},
+            )
+            related_schema_cache[cache_key] = cached
+        return cached
+
+    for mapping_name in ("declared_fields", "fields", "load_fields", "dump_fields"):
+        mapping = getattr(schema, mapping_name)
+        for field_name, field_obj in mapping.items():
+            marker = id(field_obj)
+            if marker in seen:
+                continue
+            seen.add(marker)
+            _rebind_cached_field(schema, field_name, field_obj, _schemas_for)
+
+
+def _rebind_cached_field(
+    schema: "AutoSchema",
+    field_name: str,
+    field_obj: fields.Field,
+    schema_loader: "Callable[[type[Any]], tuple[Schema, Schema]]",
+) -> None:
+    metadata = getattr(field_obj, "metadata", None)
+    if not metadata:
+        return
+
+    relationship_meta = metadata.get("_fa_relationship")
+    if not relationship_meta:
+        return
+
+    related_model = relationship_meta.get("related_model")
+    if related_model is None:
+        return
+
+    attribute = relationship_meta.get("attribute") or field_name
+    kind = relationship_meta.get("kind")
+    input_schema, output_schema = schema_loader(related_model)
+
+    if kind == "url":
+        url_kind = relationship_meta.get("url_kind") or "single"
+        if url_kind == "many":
+            field_obj.serialize_func = (
+                lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_many_url(obj, attr, other_schema)
+            )
+        else:
+            field_obj.serialize_func = (
+                lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_url(obj, attr, other_schema)
+            )
+    elif kind == "nested":
+        role = relationship_meta.get("role") or "output"
+        target_schema = output_schema if role == "output" else input_schema
+
+        def _assign_nested_schema(nested_field: fields.Nested, bound_schema: Schema) -> None:
+            """
+            Ensure cached Nested fields reuse fresh schema instances without
+            triggering Marshmallow's read-only ``schema`` property setter.
+            """
+
+            # ``Nested.schema`` is a read-only property backed by ``_schema``.
+            nested_field._schema = bound_schema  # type: ignore[attr-defined]
+            # Keep ``nested`` aligned so future copies can reconstruct if needed.
+            nested_field.nested = bound_schema.__class__
+
+            if hasattr(nested_field, "parent"):
+                nested_field.parent = None
+            if hasattr(nested_field, "root"):
+                nested_field.root = None
+
+        if isinstance(field_obj, fields.List):
+            inner_field = field_obj.inner
+            if isinstance(inner_field, fields.Nested):
+                _assign_nested_schema(inner_field, target_schema)
+        elif isinstance(field_obj, fields.Nested):
+            _assign_nested_schema(field_obj, target_schema)

@@ -47,3 +47,17 @@ GET /api/books?groupby=author_id&id|book_count__count=1
 See grouping for more end-to-end examples, supported functions and
 response shapes.
 
+## Runtime discovery
+Call `GET /schema/discovery` (path configurable via `API_SCHEMA_DISCOVERY_ROUTE`) to inspect the
+fields, operators, join tokens, and aggregation options available for each model. Supply `?model=`
+to filter by model name, table name, or endpoint path, and `?depth=` to limit how deep
+relationship paths are enumerated. Authentication is required by default; toggle with
+`API_SCHEMA_DISCOVERY_AUTH` or assign `API_SCHEMA_DISCOVERY_ROLES` for role-based access.
+
+## Typed SSE helpers
+Use flarchitect.utils.sse to build Server-Sent Events endpoints without hand-crafting the
+wire format. `sse_message` serialises payloads (JSON by default), `model_event` dumps SQLAlchemy
+objects through their schemas, and `stream_model_events` returns a streaming `text/event-stream`
+`Response` suitable for `EventSource` subscribers. Combine with your own generators to surface
+live updates such as `/competitions/stream` or `/winners/stream` endpoints.
+

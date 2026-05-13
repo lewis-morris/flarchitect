@@ -432,6 +432,92 @@ Common roles
 If the authenticated user lacks any of the required roles—or if no user is
 authenticated—a ``403`` response is raised.
 
+Auth requirements
+-----------------
+
+Set ``API_AUTH_REQUIREMENTS`` to enable or disable authentication per HTTP
+method or route flavour while keeping a global strategy configured. Keys accept
+any HTTP verb, ``GET_ONE``, ``GET_MANY``, ``RELATION_GET_ONE``,
+``RELATION_GET_MANY``, ``RELATION_GET``, ``RELATION_<METHOD>``, ``ALL`` or
+``*``. Values accept booleans (and compatible strings). Missing keys fall back
+to the default behaviour where authentication runs whenever
+``API_AUTHENTICATE_METHOD`` resolves truthy.
+
+.. code-block:: python
+
+   app.config.update(
+       API_AUTHENTICATE_METHOD=["custom"],
+       API_AUTH_REQUIREMENTS={
+           "GET": False,      # list endpoints are public
+           "GET_ONE": True,   # detail endpoints still require auth
+           "POST": True,
+           "PATCH": True,
+           "DELETE": True,
+       },
+   )
+
+``schema_constructor`` honours the same map for manual routes, while
+``auth=False`` continues to provide an explicit opt-out for individual views.
+
+Access policies
+---------------
+
+Attach ``API_ACCESS_POLICY`` to enforce row-level permissions. The value may be
+an instance, class, or mapping exposing any subset of these optional hooks:
+
+* ``scope_query(query, *, action, user, request, model, many, relation_name)`` –
+  return a restricted SQLAlchemy query for GET operations.
+* ``can_read(obj, *, action, user, request, model, many, relation_name)`` –
+  control access to a single object after lookup.
+* ``can_create(data, *, action, user, request, model)`` – guard POST payloads.
+* ``can_update(obj, data, *, action, user, request, model)`` – guard PATCH payloads.
+* ``can_delete(obj, *, action, user, request, model)`` – guard DELETE requests.
+
+Missing hooks default to allow-all behaviour. Returning any falsy value raises a
+``403`` with a generic “Forbidden” response.
+
+.. code-block:: python
+
+   class OwnerPolicy:
+       def scope_query(self, query, *, user, model, **_):
+           if user is None:
+               return query.filter(False)
+           return query.filter(model.owner_id == user.id)
+
+       def can_create(self, data, *, user, **_):
+           return user is not None and data.get("owner_id") == user.id
+
+       def can_update(self, obj, data, *, user, **_):
+           return user is not None and getattr(obj, "owner_id", None) == user.id
+
+       def can_delete(self, obj, *, user, **_):
+           return user is not None and getattr(obj, "owner_id", None) == user.id
+
+
+   app.config.update(
+       API_AUTHENTICATE_METHOD=["custom"],
+       API_CUSTOM_AUTH=my_custom_auth,
+       API_ACCESS_POLICY=OwnerPolicy,
+   )
+
+Token providers
+---------------
+
+Configure ``API_AUTH_TOKEN_PROVIDERS`` to control how JWTs are discovered. The default list is
+``["header"]`` (``Authorization: Bearer …``). Add ``"cookie"`` (honouring ``API_AUTH_COOKIE_NAME`` –
+``"access_token"`` by default) or provide custom callables/dotted imports to try multiple credential
+sources in order for both auto-generated endpoints and the :func:`jwt_authentication` decorator.
+
+Cookie helpers
+--------------
+
+``flarchitect.authentication.helpers.load_user_from_cookie`` bridges cookie-based sessions to
+``current_user`` for bespoke middleware or blueprints. It reads the configured cookie, validates the
+token and calls ``set_current_user``. The helper returns ``True`` when a user was attached
+successfully. Pair it with :func:`flarchitect.utils.cookie_settings`, which merges the optional
+``API_COOKIE_DEFAULTS`` mapping with Flask's ``SESSION_COOKIE_*`` configuration to produce
+keyword arguments for ``Response.set_cookie``.
+
 Config-driven roles
 -------------------
 

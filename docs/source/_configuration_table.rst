@@ -349,6 +349,15 @@ Routing and Behaviour
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Function that generates endpoint names from models. Override to customise URL naming behaviour.
+    * - .. _REGISTER_CANONICAL_ROUTES:
+
+          ``API_REGISTER_CANONICAL_ROUTES``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Controls whether the canonical CRUD routes (``/api/<resource>`` and ``/api/<resource>/<id>``) are auto-registered. Set to ``False`` when you want to own those URLs manually while still generating alternate endpoints via ``Meta.endpoint`` or relation routes. Models can override the setting with ``Meta.register_canonical_routes``.
 
 Logging & Observability
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -635,6 +644,102 @@ Authentication Settings
           :bdg-secondary:`Optional` 
 
         - Name of the authentication method used, such as ``jwt`` or ``basic``. Determines which auth backend to apply. Example: `tests/test_authentication.py <https://github.com/lewis-morris/flarchitect/blob/master/tests/test_authentication.py>`_.
+    * - ``API_AUTH_REQUIREMENTS``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``bool | dict | str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Toggle authentication per HTTP method or route flavour. Recognised keys include ``GET``, ``POST``, ``PATCH``, ``DELETE``,
+          ``GET_ONE``, ``GET_MANY``, ``RELATION_GET``, ``RELATION_GET_ONE``, ``RELATION_GET_MANY``, ``RELATION_<METHOD>``, ``ALL`` and ``*``.
+          Values resolve to booleans (``True``, ``False``, or compatible strings). Missing keys fall back to the default behaviour.
+    * - ``API_AUTH_TOKEN_PROVIDERS``
+
+          :bdg:`default:` ``['header']``
+          :bdg:`type` ``list[str] | str | callable``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Ordered list of token extractors. Built-ins: ``"header"`` (Authorization bearer token) and ``"cookie"`` (named by
+          ``API_AUTH_COOKIE_NAME``). Accepts callables or dotted imports returning a token string.
+    * - ``API_AUTH_COOKIE_NAME``
+
+          :bdg:`default:` ``access_token``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Cookie name used by the built-in cookie token provider.
+    * - ``API_COOKIE_DEFAULTS``
+
+          :bdg:`default:` ``{}``
+          :bdg:`type` ``dict``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Baseline keyword arguments for cookies. Merged with Flask's ``SESSION_COOKIE_*`` settings by
+          :func:`flarchitect.utils.cookie_settings` so custom blueprints can call ``Response.set_cookie`` without duplicating
+          security options. Example: ``{"secure": True, "httponly": True, "samesite": "Strict"}``.
+    * - ``API_SCHEMA_DISCOVERY_ROUTE``
+
+          :bdg:`default:` ``/schema/discovery``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Path serving the runtime schema discovery payload that lists filters, operators, join paths, and endpoints per model.
+    * - ``API_SCHEMA_DISCOVERY_AUTH``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When ``True``, the discovery endpoint requires authentication. Set to ``False`` for development environments.
+    * - ``API_SCHEMA_DISCOVERY_ROLES``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str] | dict | str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Roles required to access the discovery endpoint. Supports the same shapes as ``roles`` on ``schema_constructor`` (list/str/dict with ``any_of``).
+    * - ``API_SCHEMA_DISCOVERY_ROLES_ANY_OF``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - When roles are specified, toggle any-of semantics for the discovery endpoint. Ignored if ``API_SCHEMA_DISCOVERY_ROLES`` is unset.
+    * - ``API_SCHEMA_DISCOVERY_MAX_DEPTH``
+
+          :bdg:`default:` ``2``
+          :bdg:`type` ``int``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Maximum relationship depth enumerated in the discovery payload. Clients can override per request with the ``depth`` query parameter.
+    * - ``API_DOCS_BUNDLE_ROUTE``
+
+          :bdg:`default:` ``/docs/bundle``
+          :bdg:`type` ``str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Path returning the merged documentation bundle covering auto-generated and manual routes.
+    * - ``API_DOCS_BUNDLE_AUTH``
+
+          :bdg:`default:` ``True``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Require authentication for the documentation bundle endpoint.
+    * - ``API_DOCS_BUNDLE_ROLES``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``list[str] | dict | str``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Roles authorised to access the documentation bundle. Accepts list/str/dict with ``any_of``.
+    * - ``API_DOCS_BUNDLE_ROLES_ANY_OF``
+
+          :bdg:`default:` ``False``
+          :bdg:`type` ``bool``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global`
+
+        - Toggle any-of semantics when ``API_DOCS_BUNDLE_ROLES`` is provided.
     * - ``API_ROLE_MAP``
 
           :bdg:`default:` ``None``
@@ -710,6 +815,15 @@ Authentication Settings
           :bdg-secondary:`Optional` :bdg-dark-line:`Global`
 
         - Callable invoked when ``API_AUTHENTICATE_METHOD`` includes ``"custom"``. It must return the authenticated user or ``None``.
+    * - ``API_ACCESS_POLICY``
+
+          :bdg:`default:` ``None``
+          :bdg:`type` ``callable | type | mapping``
+          :bdg-secondary:`Optional` :bdg-dark-line:`Global/Model`
+
+        - Attach row-level enforcement. Recognised hooks: ``scope_query``, ``can_read``, ``can_create``, ``can_update``, ``can_delete``.
+          Hooks receive the current user, model, request, and action (e.g. ``GET_ONE``, ``PATCH``) and should return truthy to allow the
+          operation; falsy values raise ``403``.
     * - .. _USER_MODEL:
 
           ``API_USER_MODEL``

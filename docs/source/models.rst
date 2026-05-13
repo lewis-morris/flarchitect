@@ -25,6 +25,14 @@ That's all that's required to make the model available through the generated API
 
    Models without a ``Meta`` inner class are not auto‑registered. They will be ignored by route generation and will not appear in the documentation. The ``tag`` and ``tag_group`` attributes are optional; add them if you want to control documentation grouping.
 
+.. note::
+
+   Add ``register_canonical_routes = False`` to a model's ``Meta`` when you need to
+   reserve the canonical URLs for bespoke handlers. Combine it with
+   ``Meta.endpoint`` to expose the auto-generated CRUD under an alternate prefix.
+   See :ref:`Reserving canonical paths <reserving-canonical-paths>` in the manual
+   routes guide for a complete example.
+
 Dump types
 ----------
 

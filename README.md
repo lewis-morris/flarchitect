@@ -220,6 +220,82 @@ app.config.update(
 )
 ```
 
+Fine-tune which routes demand authentication with `API_AUTH_REQUIREMENTS`. The value can be a
+single boolean, or a map keyed by HTTP method and/or route flavour (for example `GET_ONE`,
+`GET_MANY`, `RELATION_GET_MANY`). Any key omitted falls back to the default behaviour where
+authentication runs whenever a method is configured.
+
+```python
+app.config.update(
+    API_AUTHENTICATE_METHOD=["custom"],
+    API_AUTH_REQUIREMENTS={
+        "GET": False,  # list endpoints are public
+        "GET_ONE": True,  # individual records still require auth
+        "POST": True,
+        "PATCH": True,
+        "DELETE": True,
+    },
+)
+```
+
+Add `API_ACCESS_POLICY` when you need record-level enforcement. Policies may be classes,
+instances, or dictionaries exposing any subset of `scope_query`, `can_read`, `can_create`,
+`can_update`, and `can_delete`.
+
+```python
+class OwnerPolicy:
+    def scope_query(self, query, *, user, model, **_):
+        if user is None:
+            return query.filter(False)
+        return query.filter(model.owner_id == user.id)
+
+    def can_read(self, obj, *, user, **_):
+        return user is not None and getattr(obj, "owner_id", None) == user.id
+
+    def can_create(self, data, *, user, **_):
+        return user is not None and data.get("owner_id") == user.id
+
+    def can_update(self, obj, data, *, user, **_):
+        return user is not None and getattr(obj, "owner_id", None) == user.id
+
+    def can_delete(self, obj, *, user, **_):
+        return user is not None and getattr(obj, "owner_id", None) == user.id
+
+
+app.config.update(
+    API_AUTHENTICATE_METHOD=["custom"],
+    API_CUSTOM_AUTH=my_custom_auth,
+    API_ACCESS_POLICY=OwnerPolicy,
+)
+```
+
+`scope_query` runs before filtering/pagination to constrain the data set, while the other hooks
+return truthy to allow the operation or falsy to raise a `403` with a generic "Forbidden" response.
+
+Mixing authentication credentials is now easier with `API_AUTH_TOKEN_PROVIDERS`. Configure
+token sources such as headers and cookies (the default remains the `Authorization: Bearer …`
+header) and flarchitect automatically tries each provider for auto-generated and manual routes.
+When using cookies, set `API_AUTH_COOKIE_NAME` (default `access_token`) to align with your
+session name. Helper `flarchitect.authentication.helpers.load_user_from_cookie` bridges cookie
+tokens to `set_current_user` for bespoke middleware or blueprints and
+`flarchitect.utils.cookie_settings()` returns security-aligned keyword arguments (merging
+`API_COOKIE_DEFAULTS` with `SESSION_COOKIE_*` settings) for use with `Response.set_cookie`.
+
+Stream real-time updates using the SSE helpers in `flarchitect.utils.sse`. `sse_message()` emits
+standards-compliant event strings, while `stream_model_events()` serialises model instances through
+their schemas into `text/event-stream` responses so front-ends can subscribe via `EventSource`.
+
+Discover filterable fields, join tokens, and relationship paths at runtime via
+`GET /schema/discovery` (configurable through `API_SCHEMA_DISCOVERY_ROUTE`). The endpoint returns
+the operators, aggregation functions, and join paths available for each model—reduce guesswork in
+query builders by calling it from your CLI or frontend tooling. Set
+`API_SCHEMA_DISCOVERY_AUTH=False` or assign `API_SCHEMA_DISCOVERY_ROLES` during development when
+you need anonymous access.
+
+For mixed auto/manual deployments, `GET /docs/bundle` reports both generated and custom routes,
+highlighting path/method conflicts so teams can spot overrides early. Tweak access controls with
+`API_DOCS_BUNDLE_*` settings.
+
 See docs: Authentication → Role‑based access → Config‑driven roles.
 
 Enriched 403 responses on role mismatch:

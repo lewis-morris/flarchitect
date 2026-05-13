@@ -14,7 +14,10 @@ import werkzeug
 
 from . import authentication as authentication  # expose subpackage for monkeypatch
 from . import core as core  # makes "flarchitect.core" available as attribute
+from . import database as database  # expose for tests/monkeypatching
 from . import logging as logging  # expose module for monkeypatch
+from . import schemas as schemas  # allow dotted imports via top-level package
+from . import specs as specs  # expose specs helpers
 from . import utils as utils  # expose subpackage for monkeypatch
 
 # Re-export common entry points and ensure subpackages are accessible as
@@ -35,4 +38,14 @@ if not hasattr(werkzeug, "__version__"):
     except Exception:  # pragma: no cover - maintain minimal fallback
         werkzeug.__version__ = "0"
 
-__all__ = ["Architect", "__version__", "core", "authentication", "utils", "logging"]
+__all__ = [
+    "Architect",
+    "__version__",
+    "core",
+    "authentication",
+    "database",
+    "schemas",
+    "specs",
+    "utils",
+    "logging",
+]

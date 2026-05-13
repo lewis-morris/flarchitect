@@ -15,7 +15,9 @@ from flask import Flask, current_app
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.core_utils import convert_case, get_count
+from importlib import import_module
+
+from flarchitect.utils.core_utils import get_count
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
 DATE_FORMAT = "%Y-%m-%d"
@@ -398,7 +400,7 @@ def update_dict_if_flag_true(
     if callable(case_func):
         converted = case_func(key)
     else:
-        converted = convert_case(key, case_func) if case_func else key
+        converted = _convert_key_case(key, str(case_func)) if case_func else key
 
     output[converted] = value
 
@@ -433,6 +435,16 @@ def make_base_dict() -> dict[str, Any]:
         update_dict_if_flag_true(output, flag, key, value, field_case)
 
     return output
+
+
+def _convert_key_case(key: str, target_case: str) -> str:
+    """Resolve ``convert_case`` lazily to avoid stale stubs during testing."""
+
+    module = import_module("flarchitect.utils.core_utils")
+    converter = getattr(module, "convert_case", None)
+    if callable(converter):
+        return converter(key, target_case)
+    return key
 
 
 def pluralize_last_word(converted_name: str) -> str:

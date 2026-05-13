@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import contextlib
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -37,6 +38,7 @@ from flarchitect.utils.general import (
     search_all_keys,
 )
 from flarchitect.utils.response_helpers import create_response
+from flarchitect.utils.session import get_session
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type hints
     from flarchitect import Architect
@@ -307,11 +309,28 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
                 if auth_method and user_model and username and password:
                     lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user_model, default=None)
                     check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None)
-                    usr = user_model.query.filter(getattr(user_model, lookup_field) == username).first()
-                    if usr and getattr(usr, check_method)(password):
-                        session["docs_authenticated"] = True
-                        login_user(usr)
-                        return redirect(request.path)
+                    comparator = getattr(user_model, lookup_field, None) if lookup_field else None
+                    if comparator is not None and check_method:
+                        checker = getattr(user_model, check_method, None)
+                        if callable(checker):
+                            user_obj = None
+                            query_attr = getattr(user_model, "query", None)
+                            try:
+                                if query_attr is not None:
+                                    user_obj = query_attr.filter(comparator == username).first()
+                                else:
+                                    with get_session(user_model) as session_ctx:
+                                        user_obj = session_ctx.query(user_model).filter(comparator == username).first()
+                            except Exception:
+                                user_obj = None
+
+                            if user_obj and getattr(user_obj, check_method)(password):
+                                session["docs_authenticated"] = True
+                                import contextlib
+
+                                with contextlib.suppress(Exception):
+                                    login_user(user_obj)
+                                return redirect(request.path)
 
                 error = "Invalid credentials"
             else:

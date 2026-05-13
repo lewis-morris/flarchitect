@@ -10,6 +10,8 @@
 
 - Joins: Honor `dump=dynamic&join=...` when `API_ADD_RELATIONS=false` so explicitly requested relationships are included; add dictionary fallback when selecting joined-table fields to preserve those keys in responses. Docs updated and tests added.
 
+- Routing: Added `API_REGISTER_CANONICAL_ROUTES` (default `True`) plus per-model `Meta.register_canonical_routes` to opt out of canonical `/api/<resource>` routes while keeping alternate `Meta.endpoint` paths and relation helpers intact. Documentation and regression tests included.
+
 - API: Fix pagination with joins to apply DISTINCT on the base entity when no custom select/group/aggregation is requested so `limit` and `total_count` reflect base rows. Adds regression test for one‑to‑many join scenarios.
 - Schemas: Dynamic dump now recognises `join` tokens as either relationship keys (e.g., `author`) or endpoint-style plural names (e.g., `authors`), supports comma-separated multi-joins, and embeds multiple related resources accordingly. Regression tests added.
 
@@ -17,6 +19,28 @@
   - New config: `API_AUTO_AUTH_ROUTES` (default `True`) to disable built-in auth endpoints.
   - New config: `API_AUTH_REFRESH_ROUTE` (default `/auth/refresh`) to change the refresh path.
   - Behaviour unchanged by default; uses existing response wrapper and token rotation.
+
+- Auth: Introduce `API_AUTH_REQUIREMENTS` for per-method/per-endpoint authentication control and
+  `API_ACCESS_POLICY` for row-level query/mutation enforcement. Manual routes decorated with
+  `schema_constructor` honour the new map; CRUD services now consult policies when filtering reads or
+  performing writes. Documentation and tests updated.
+- Auth: Added `API_AUTH_TOKEN_PROVIDERS` (with built-in header/cookie providers) and
+  `API_AUTH_COOKIE_NAME` so JWTs can be loaded from multiple credential sources; exported helper
+  `load_user_from_cookie` to populate `current_user` in bespoke middleware. Documentation, llms.txt,
+  and tests updated.
+- Cookies: Introduced `cookie_settings()` utility and `API_COOKIE_DEFAULTS` to centralise hardened
+  cookie kwargs. The helper merges project defaults with Flask's `SESSION_COOKIE_*` settings so
+  custom blueprints can call `Response.set_cookie` without duplicating security configuration.
+- Discovery: Added `GET /schema/discovery` (tunable via `API_SCHEMA_DISCOVERY_ROUTE`) which lists
+  fields, operators, join paths, and endpoints per model. Authentication is enabled by default and
+  can be governed via `API_SCHEMA_DISCOVERY_AUTH` / `API_SCHEMA_DISCOVERY_ROLES`. Supports
+  relationship depth controls through the `depth` query parameter and `API_SCHEMA_DISCOVERY_MAX_DEPTH`.
+- SSE: New `flarchitect.utils.sse` helpers (`sse_message`, `stream_model_events`) turn models and
+  schemas into typed Server-Sent Events so front-ends can subscribe via `EventSource` without
+  hand-rolling payloads.
+- Docs: `GET /docs/bundle` (configurable via `API_DOCS_BUNDLE_ROUTE`) merges auto-generated and
+  custom routes, flagging missing/overridden endpoints. Access is controlled through
+  `API_DOCS_BUNDLE_AUTH` and the accompanying role settings.
 
 - Improve 403 role errors with required roles + context
   - Added helpers to normalise/resolve role specs from `API_ROLE_MAP`.

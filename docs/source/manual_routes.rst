@@ -11,6 +11,43 @@ should be treated. The decorator applies input/output Marshmallow schemas,
 honours auth/roles config, attaches rate limiting, and registers the route for
 documentation generation.
 
+Reserving canonical paths
+-------------------------
+
+By default *flarchitect* registers RESTful collection/detail routes for every
+model under the canonical prefix (for example ``/api/orders`` and
+``/api/orders/<id>``). Projects that need bespoke logic for those URLs can turn
+the automatic routes off while still relying on auto-generated schemas,
+relations and alternate endpoints.
+
+- Disable the feature globally with
+  ``API_REGISTER_CANONICAL_ROUTES = False``.
+- Override per model via ``Meta.register_canonical_routes = False``.
+- Supply alternate auto-generated endpoints with ``Meta.endpoint`` (string or
+  list) so CRUD handlers remain available under a different prefix.
+
+Example::
+
+    class Config:
+        API_REGISTER_CANONICAL_ROUTES = False  # keep /api/v1/orders for bespoke handlers
+
+    class Order(db.Model):
+        __tablename__ = "orders"
+
+        class Meta:
+            tag = "Order"
+            register_canonical_routes = False
+            endpoint = "orders/records"  # auto CRUD lives here instead
+
+    @app.get("/api/v1/orders")
+    def bespoke_orders():
+        """Your custom collection handler."""
+        ...
+
+The default remains ``True`` so existing projects keep their canonical routes
+until they opt out. Relation endpoints and discovery continue to work because
+the underlying services are still created.
+
 Basic usage
 -----------
 
@@ -137,6 +174,19 @@ To opt out of authentication for a specific manual route, set ``auth=False``:
    @architect.schema_constructor(output_schema=HelloOut, auth=False)
    def public_ping():
        return {"message": "pong"}
+
+Alternatively, configure ``API_AUTH_REQUIREMENTS`` to opt HTTP verbs or route
+flavours in/out of authentication at the config level. Manual routes decorated
+with ``schema_constructor`` honour the map—use it to make every ``GET`` route
+public, for instance, without adding ``auth=False`` repeatedly. Apply
+``API_ACCESS_POLICY`` when you need row-level checks so both generated and
+manual endpoints share the same access logic.
+When working with cookie-based credentials, combine ``API_AUTH_TOKEN_PROVIDERS``
+(for example ``['cookie', 'header']``) with the
+``load_user_from_cookie`` helper to populate ``current_user`` outside the
+standard auth flow. Use :func:`flarchitect.utils.cookie_settings` to retrieve
+project-aligned cookie keyword arguments (merged from ``API_COOKIE_DEFAULTS``
+and ``SESSION_COOKIE_*``) whenever you issue or clear cookies.
 
 Documentation metadata
 ----------------------

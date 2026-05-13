@@ -4,12 +4,12 @@ import importlib
 import importlib.resources
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
-from flask import Flask, Response, jsonify, redirect, request
+from flask import Flask, Response, g, has_request_context, jsonify, redirect, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
@@ -17,8 +17,17 @@ from sqlalchemy.orm import DeclarativeBase, Session
 
 if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
     from flask_caching import Cache
+    from flarchitect.authentication.jwt import get_user_from_token as _get_user_from_token
 
-from flarchitect.authentication.jwt import get_user_from_token
+
+def _get_user_from_token(*args: Any, **kwargs: Any):
+    """Resolve JWT helper lazily and avoid module import cycles at import-time."""
+
+    from flarchitect.authentication.jwt import get_user_from_token
+
+    return get_user_from_token(*args, **kwargs)
+
+from flarchitect.authentication.token_providers import extract_token_from_request
 from flarchitect.authentication.user import set_current_user
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
 from flarchitect.exceptions import CustomHTTPException
@@ -116,14 +125,10 @@ def jwt_authentication(func: F) -> F:
                 invalid, or the token fails verification.
         """
 
-        auth = request.headers.get("Authorization")
-        if not auth:
-            raise CustomHTTPException(status_code=401, reason="Authorization header missing")
-        parts = auth.split()
-        if parts[0].lower() != "bearer" or len(parts) != 2:
-            raise CustomHTTPException(status_code=401, reason="Invalid Authorization header")
-        token = parts[1]
-        usr = get_user_from_token(token, secret_key=None)
+        token, _ = extract_token_from_request(method=request.method)
+        if not token:
+            raise CustomHTTPException(status_code=401, reason="Authorization credentials missing")
+        usr = _get_user_from_token(token, secret_key=None)
         if not usr:
             raise CustomHTTPException(status_code=401, reason="Invalid token")
         set_current_user(usr)
@@ -365,7 +370,29 @@ class Architect(AttributeInitialiserMixin):
             try:
                 ctx = {"model": None, "method": request.method}
                 self.plugins.before_authenticate(ctx)
-                self._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
+                auth_context = {
+                    "many": None,
+                    "is_relation": False,
+                    "relation_name": None,
+                    "method_hint": request.method,
+                }
+                decision = self._should_enforce_auth(
+                    model=None,
+                    output_schema=None,
+                    input_schema=None,
+                    auth_flag=True,
+                    auth_context=auth_context,
+                )
+                if not decision:
+                    return
+                self._handle_auth(
+                    model=None,
+                    output_schema=None,
+                    input_schema=None,
+                    auth_flag=True,
+                    auth_context=auth_context,
+                    pre_resolved=decision,
+                )
                 self.plugins.after_authenticate(ctx, success=True, user=None)
             except CustomHTTPException as exc:  # pragma: no cover - integration behaviour
                 with contextlib.suppress(Exception):
@@ -526,6 +553,144 @@ class Architect(AttributeInitialiserMixin):
         if self.app:
             return self.app.config.get(key, default)
 
+    @staticmethod
+    def _coerce_auth_requirement(value: Any) -> bool | None:
+        """Normalise an auth requirement value to ``True``/``False``/``None``."""
+
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        if isinstance(value, str):
+            normalised = value.strip().lower()
+            if normalised in {"true", "1", "yes", "on", "require", "enforce"}:
+                return True
+            if normalised in {"false", "0", "no", "off", "skip", "disable"}:
+                return False
+            if normalised in {"inherit", "default", "auto"}:
+                return None
+        return None
+
+    def _resolve_auth_requirement(
+        self,
+        *,
+        model: DeclarativeBase | None,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+        http_method: str,
+        many: bool | None,
+        is_relation: bool,
+        relation_name: str | None,
+        context: dict[str, Any] | None,
+    ) -> bool | None:
+        """Resolve the configured auth requirement for the current request."""
+
+        spec = get_config_or_model_meta(
+            "API_AUTH_REQUIREMENTS",
+            model=model,
+            output_schema=output_schema,
+            input_schema=input_schema,
+            default=None,
+        )
+
+        if callable(spec) and not isinstance(spec, Mapping):
+            spec = spec(
+                model=model,
+                output_schema=output_schema,
+                input_schema=input_schema,
+                http_method=http_method,
+                many=many,
+                is_relation=is_relation,
+                relation_name=relation_name,
+                context=context or {},
+            )
+
+        if isinstance(spec, Mapping):
+            keys: list[str] = []
+            if is_relation:
+                keys.append(f"RELATION_{http_method}")
+                if http_method == "GET":
+                    if many is True:
+                        keys.append("RELATION_GET_MANY")
+                    elif many is False:
+                        keys.append("RELATION_GET_ONE")
+                    keys.append("RELATION_GET")
+                keys.extend(["RELATION_ALL", "RELATION"])
+
+            if http_method == "GET":
+                if many is True:
+                    keys.append("GET_MANY")
+                elif many is False:
+                    keys.append("GET_ONE")
+            keys.append(http_method)
+            keys.extend(["ALL", "*", "DEFAULT"])
+
+            for key in keys:
+                if key in spec:
+                    resolved = self._coerce_auth_requirement(spec[key])
+                    if resolved is not None:
+                        return resolved
+            return None
+
+        return self._coerce_auth_requirement(spec)
+
+    def _should_enforce_auth(
+        self,
+        *,
+        model: DeclarativeBase | None,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+        auth_flag: bool | None,
+        auth_context: dict[str, Any] | None,
+    ) -> bool:
+        """Determine whether authentication should run for this request."""
+
+        if auth_flag is False:
+            return False
+
+        many: bool | None = None
+        is_relation = False
+        relation_name: str | None = None
+        method_hint: str | None = None
+
+        if auth_context:
+            many = auth_context.get("many")
+            is_relation = bool(auth_context.get("is_relation"))
+            relation_name = auth_context.get("relation_name")
+            method_hint = auth_context.get("method_hint")
+
+        http_method = (method_hint or request.method or "GET").upper()
+
+        requirement = self._resolve_auth_requirement(
+            model=model,
+            output_schema=output_schema,
+            input_schema=input_schema,
+            http_method=http_method,
+            many=many,
+            is_relation=is_relation,
+            relation_name=relation_name,
+            context=auth_context,
+        )
+
+        if requirement is not None:
+            return requirement
+
+        if auth_flag is True:
+            return True
+
+        auth_method = get_config_or_model_meta(
+            "API_AUTHENTICATE_METHOD",
+            model=model,
+            output_schema=output_schema,
+            input_schema=input_schema,
+            method=http_method,
+            default=False,
+        )
+
+        return bool(auth_method)
+
     def _handle_auth(
         self,
         *,
@@ -533,6 +698,8 @@ class Architect(AttributeInitialiserMixin):
         output_schema: type[Schema] | None,
         input_schema: type[Schema] | None,
         auth_flag: bool | None,
+        auth_context: dict[str, Any] | None = None,
+        pre_resolved: bool | None = None,
     ) -> None:
         """Authenticate the current request based on configuration.
 
@@ -541,11 +708,27 @@ class Architect(AttributeInitialiserMixin):
             output_schema: Schema used to serialise responses.
             input_schema: Schema used to deserialise requests.
             auth_flag: Optional flag to disable authentication when ``False``.
+            auth_context: Additional routing context (e.g., many/relation).
 
         Raises:
             CustomHTTPException: If authentication is required but no method
                 succeeds.
         """
+
+        should_run = (
+            pre_resolved
+            if pre_resolved is not None
+            else self._should_enforce_auth(
+                model=model,
+                output_schema=output_schema,
+                input_schema=input_schema,
+                auth_flag=auth_flag,
+                auth_context=auth_context,
+            )
+        )
+
+        if not should_run:
+            return
 
         auth_method = get_config_or_model_meta(
             "API_AUTHENTICATE_METHOD",
@@ -556,7 +739,7 @@ class Architect(AttributeInitialiserMixin):
             default=False,
         )
 
-        if auth_method and auth_flag is not False:
+        if auth_method:
             if not isinstance(auth_method, list):
                 auth_method = [auth_method]
 
@@ -566,16 +749,30 @@ class Architect(AttributeInitialiserMixin):
                 "input_schema": input_schema,
                 "method": request.method,
             }
+            token_ctx = {
+                "model": model,
+                "output_schema": output_schema,
+                "input_schema": input_schema,
+                "method": request.method,
+            }
             import contextlib
             with contextlib.suppress(Exception):
                 self.plugins.before_authenticate(context)
 
-            for method_name in auth_method:
-                auth_func = getattr(self, f"_authenticate_{method_name}", None)
-                if callable(auth_func) and auth_func():
+            if has_request_context():
+                setattr(g, "_flarch_token_context", token_ctx)
+
+            try:
+                for method_name in auth_method:
+                    auth_func = getattr(self, f"_authenticate_{method_name}", None)
+                    if callable(auth_func) and auth_func():
+                        with contextlib.suppress(Exception):
+                            self.plugins.after_authenticate(context, success=True, user=None)
+                        return
+            finally:
+                if has_request_context():
                     with contextlib.suppress(Exception):
-                        self.plugins.after_authenticate(context, success=True, user=None)
-                    return
+                        delattr(g, "_flarch_token_context")
 
             raise CustomHTTPException(status_code=401)
 
@@ -640,13 +837,20 @@ class Architect(AttributeInitialiserMixin):
         """Authenticate the request using a JSON Web Token."""
 
         try:
-            auth = request.headers.get("Authorization")
-            if auth and auth.startswith("Bearer "):
-                token = auth.split(" ")[1]
-                usr = get_user_from_token(token, secret_key=None)
-                if usr:
-                    set_current_user(usr)
-                    return True
+            provider_kwargs: dict[str, Any] = {}
+            if has_request_context():
+                ctx = getattr(g, "_flarch_token_context", None)
+                if isinstance(ctx, dict):
+                    provider_kwargs = dict(ctx)
+            provider_kwargs.setdefault("method", request.method)
+
+            token, _ = extract_token_from_request(**provider_kwargs)
+            if not token:
+                return False
+            usr = _get_user_from_token(token, secret_key=None)
+            if usr:
+                set_current_user(usr)
+                return True
         except CustomHTTPException:
             pass
         return False
@@ -746,7 +950,7 @@ class Architect(AttributeInitialiserMixin):
         group_tag: str | None = None,
         many: bool | None = False,
         roles: bool | list[str] | tuple[str, ...] | dict | None = False,
-        **kwargs,
+        **route_kwargs,
     ) -> Callable:
         """Decorate an endpoint with schema, role, and OpenAPI metadata.
 
@@ -765,10 +969,10 @@ class Architect(AttributeInitialiserMixin):
             Callable: The decorated function.
         """
 
-        auth_flag = kwargs.get("auth")
+        auth_flag = route_kwargs.get("auth")
         # Support roles provided as list/tuple/str or dict({"roles": [...], "any_of": bool})
         roles_tuple: tuple[str, ...] = ()
-        roles_any_of_flag: bool = bool(kwargs.get("roles_any_of", False))
+        roles_any_of_flag: bool = bool(route_kwargs.get("roles_any_of", False))
         if roles and isinstance(roles, dict):
             declared = roles.get("roles", [])
             roles_tuple = tuple(declared) if isinstance(declared, list | tuple) else (str(declared),) if declared else ()
@@ -777,20 +981,32 @@ class Architect(AttributeInitialiserMixin):
             roles_tuple = tuple(roles) if isinstance(roles, list | tuple) else (str(roles),)
 
         def decorator(f: Callable) -> Callable:
-            local_roles_required = None
-            if roles and auth_flag is not False:
-                from flarchitect.authentication import (
-                    require_roles as local_roles_required,
-                )
-
             @wraps(f)
             def wrapped(*_args, **_kwargs):
-                self._handle_auth(
+                auth_context = {
+                    "many": many,
+                    "is_relation": bool(route_kwargs.get("relation_name")),
+                    "relation_name": route_kwargs.get("relation_name"),
+                    "method_hint": route_kwargs.get("method"),
+                }
+
+                should_auth = self._should_enforce_auth(
                     model=model,
                     output_schema=output_schema,
                     input_schema=input_schema,
                     auth_flag=auth_flag,
+                    auth_context=auth_context,
                 )
+
+                if should_auth:
+                    self._handle_auth(
+                        model=model,
+                        output_schema=output_schema,
+                        input_schema=input_schema,
+                        auth_flag=auth_flag,
+                        auth_context=auth_context,
+                        pre_resolved=should_auth,
+                    )
 
                 f_decorated = self._apply_schemas(f, output_schema, input_schema, bool(many))
                 f_decorated = self._apply_rate_limit(
@@ -800,8 +1016,10 @@ class Architect(AttributeInitialiserMixin):
                     input_schema=input_schema,
                 )
 
-                if roles and auth_flag is not False and local_roles_required:
-                    f_decorated = local_roles_required(*roles_tuple, any_of=roles_any_of_flag)(f_decorated)
+                if roles and auth_flag is not False:
+                    from flarchitect.authentication import require_roles as _require_roles
+
+                    f_decorated = _require_roles(*roles_tuple, any_of=roles_any_of_flag)(f_decorated)
 
                 return f_decorated(*_args, **_kwargs)
 
@@ -827,12 +1045,12 @@ class Architect(AttributeInitialiserMixin):
                 "input_schema": input_schema,
                 "model": model,
                 "group_tag": group_tag,
-                "tag": kwargs.get("tag"),
-                "summary": kwargs.get("summary"),
-                "error_responses": kwargs.get("error_responses"),
-                "many_to_many_model": kwargs.get("many_to_many_model"),
-                "multiple": many or kwargs.get("multiple"),
-                "parent": kwargs.get("parent_model"),
+                "tag": route_kwargs.get("tag"),
+                "summary": route_kwargs.get("summary"),
+                "error_responses": route_kwargs.get("error_responses"),
+                "many_to_many_model": route_kwargs.get("many_to_many_model"),
+                "multiple": many or route_kwargs.get("multiple"),
+                "parent": route_kwargs.get("parent_model"),
             }
 
             self.set_route(route_info)

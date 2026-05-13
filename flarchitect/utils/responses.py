@@ -18,6 +18,44 @@ from flarchitect.utils.core_utils import get_count
 from flarchitect.utils.general import HTTP_INTERNAL_SERVER_ERROR, HTTP_UNPROCESSABLE_ENTITY
 
 
+def _flatten_validation_messages(messages: Any) -> dict[str, list[str]]:
+    """Collapse nested Marshmallow error messages into a simple field mapping."""
+
+    flattened: dict[str, list[str]] = {}
+
+    if isinstance(messages, dict):
+        for key, value in messages.items():
+            if isinstance(value, dict):
+                nested = _flatten_validation_messages(value)
+                for nested_key, nested_list in nested.items():
+                    flattened.setdefault(nested_key, []).extend(nested_list)
+            elif isinstance(value, list):
+                for item in value:
+                    if isinstance(item, (dict, list)):
+                        nested = _flatten_validation_messages(item)
+                        for nested_key, nested_list in nested.items():
+                            flattened.setdefault(nested_key, []).extend(nested_list)
+                    else:
+                        flattened.setdefault(key, []).append(str(item))
+            else:
+                flattened.setdefault(key, []).append(str(value))
+        return flattened
+
+    if isinstance(messages, list):
+        for item in messages:
+            if isinstance(item, (dict, list)):
+                nested = _flatten_validation_messages(item)
+                for nested_key, nested_list in nested.items():
+                    flattened.setdefault(nested_key, []).extend(nested_list)
+            else:
+                flattened.setdefault("_schema", []).append(str(item))
+        return flattened
+
+    if messages is not None:
+        flattened.setdefault("_schema", []).append(str(messages))
+    return flattened
+
+
 @dataclass
 class CustomResponse:
     """Container for API response data and pagination metadata.
@@ -87,9 +125,24 @@ def serialise_output_with_mallow(output_schema: type[Schema], data: Any) -> dict
         }
 
     except ValidationError as err:
-        return {"errors": err.messages}, HTTP_UNPROCESSABLE_ENTITY
+        return {"errors": _flatten_validation_messages(err.messages)}, HTTP_UNPROCESSABLE_ENTITY
     except ValueError as err:
-        return {"errors": {"_schema": [str(err)]}}, HTTP_UNPROCESSABLE_ENTITY
+        try:
+            schema_instance = output_schema if isinstance(output_schema, Schema) else output_schema()
+            load_target = dump_data  # type: ignore[name-defined]
+            if isinstance(data, dict) and "query" in data:
+                load_target = data["query"]
+            try:
+                schema_instance.load(load_target, many=is_list)  # type: ignore[arg-type]
+            except ValidationError as load_err:
+                normalised = _flatten_validation_messages(load_err.messages)
+                if normalised:
+                    return {"errors": normalised}, HTTP_UNPROCESSABLE_ENTITY
+        except Exception:  # pragma: no cover - fallback handling
+            pass
+
+        message = "Not a valid integer." if "invalid literal for int()" in str(err) else str(err)
+        return {"errors": {"_schema": [message]}}, HTTP_UNPROCESSABLE_ENTITY
 
 
 def check_serialise_method_and_return(

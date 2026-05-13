@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from flask import request
@@ -16,6 +16,7 @@ from flarchitect.database.inspections import get_model_columns, get_model_relati
 # ``flarchitect.database.utils`` module. The recursive delete fixture replaces
 # the module with a lightweight stub, so we resolve attributes dynamically.
 from flarchitect.database import utils as _db_utils
+from flarchitect.authentication.user import get_current_user
 
 
 AGGREGATE_FUNCS = _db_utils.AGGREGATE_FUNCS
@@ -56,6 +57,92 @@ from flarchitect.exceptions import CustomHTTPException
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
 from flarchitect.utils.core_utils import convert_case
+
+_POLICY_UNSET = object()
+
+
+class AccessPolicyWrapper:
+    """Adapter that normalises access-policy call signatures."""
+
+    def __init__(self, policy: Any):
+        self.policy = policy
+
+    def _lookup_callable(self, name: str, action: str | None = None):
+        candidate = getattr(self.policy, name, None)
+        if callable(candidate):
+            return candidate
+
+        if isinstance(self.policy, Mapping):
+            cand = self.policy.get(name)
+            if callable(cand):
+                return cand
+            if action:
+                cand = self.policy.get(action)
+                if callable(cand):
+                    return cand
+
+        return None
+
+    def scope_query(self, query, **kwargs):
+        func = self._lookup_callable("scope_query", action=kwargs.get("action"))
+        if not func:
+            return query
+        result = func(query=query, **kwargs)
+        return query if result is None else result
+
+    def can_read(self, obj, **kwargs) -> bool:
+        func = self._lookup_callable("can_read", action=kwargs.get("action"))
+        if not func:
+            return True
+        result = func(obj=obj, **kwargs)
+        return True if result is None else bool(result)
+
+    def can_create(self, data, **kwargs) -> bool:
+        func = self._lookup_callable("can_create", action=kwargs.get("action"))
+        if not func:
+            return True
+        result = func(data=data, **kwargs)
+        return True if result is None else bool(result)
+
+    def can_update(self, obj, data, **kwargs) -> bool:
+        func = self._lookup_callable("can_update", action=kwargs.get("action"))
+        if not func:
+            return True
+        result = func(obj=obj, data=data, **kwargs)
+        return True if result is None else bool(result)
+
+    def can_delete(self, obj, **kwargs) -> bool:
+        func = self._lookup_callable("can_delete", action=kwargs.get("action"))
+        if not func:
+            return True
+        result = func(obj=obj, **kwargs)
+        return True if result is None else bool(result)
+
+
+def _wrap_access_policy(policy_spec: Any) -> AccessPolicyWrapper | None:
+    """Instantiate or adapt an access policy specification."""
+
+    if policy_spec is None:
+        return None
+
+    if isinstance(policy_spec, AccessPolicyWrapper):
+        return policy_spec
+
+    policy_obj = policy_spec
+
+    if isinstance(policy_spec, type):
+        policy_obj = policy_spec()
+    elif callable(policy_spec) and not isinstance(policy_spec, Mapping):
+        if not all(
+            hasattr(policy_spec, attr)
+            for attr in ("scope_query", "can_create", "can_update", "can_delete", "can_read")
+        ):
+            try:
+                policy_obj = policy_spec()
+            except TypeError as exc:  # pragma: no cover - defensive
+                raise TypeError("API_ACCESS_POLICY callable must be instantiable without arguments") from exc
+
+    return AccessPolicyWrapper(policy_obj)
 
 __all__ = [
     "paginate_query",
@@ -152,6 +239,135 @@ class CrudService:
         """
         self.model = model
         self.session = session
+        self._access_policy_cache: AccessPolicyWrapper | None | object = _POLICY_UNSET
+
+    def _get_access_policy(self) -> AccessPolicyWrapper | None:
+        """Fetch and cache the access policy wrapper for this model."""
+
+        if self._access_policy_cache is _POLICY_UNSET:
+            policy_spec = get_config_or_model_meta("API_ACCESS_POLICY", model=self.model, default=None)
+            self._access_policy_cache = _wrap_access_policy(policy_spec)
+        return self._access_policy_cache  # type: ignore[return-value]
+
+    @staticmethod
+    def _determine_action(http_method: str | None, *, many: bool | None, relation_name: str | None) -> str:
+        method = (http_method or "GET").upper()
+        if method == "GET":
+            base = "GET_MANY" if many else "GET_ONE"
+        else:
+            base = method
+
+        if relation_name:
+            if method == "GET":
+                base = f"RELATION_{'GET_MANY' if many else 'GET_ONE'}"
+            else:
+                base = f"RELATION_{base}"
+
+        return base
+
+    def _apply_policy_scope(
+        self,
+        query,
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+        many: bool | None,
+        relation_name: str | None,
+    ):
+        if not policy:
+            return query
+        scoped = policy.scope_query(
+            query,
+            action=action,
+            user=get_current_user(),
+            request=request,
+            model=self.model,
+            many=bool(many),
+            relation_name=relation_name,
+        )
+        return scoped if scoped is not None else query
+
+    def _ensure_can_read(
+        self,
+        obj,
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+        many: bool | None,
+        relation_name: str | None,
+    ) -> None:
+        if not policy:
+            return
+        allowed = policy.can_read(
+            obj,
+            action=action,
+            user=get_current_user(),
+            request=request,
+            model=self.model,
+            many=bool(many),
+            relation_name=relation_name,
+        )
+        if allowed is False:
+            raise CustomHTTPException(403, "Forbidden")
+
+    def _ensure_can_create(
+        self,
+        data: dict[str, Any],
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+    ) -> None:
+        if not policy:
+            return
+        allowed = policy.can_create(
+            data,
+            action=action,
+            user=get_current_user(),
+            request=request,
+            model=self.model,
+        )
+        if allowed is False:
+            raise CustomHTTPException(403, "Forbidden")
+
+    def _ensure_can_update(
+        self,
+        obj,
+        data: dict[str, Any],
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+    ) -> None:
+        if not policy:
+            return
+        allowed = policy.can_update(
+            obj,
+            data,
+            action=action,
+            user=get_current_user(),
+            request=request,
+            model=self.model,
+        )
+        if allowed is False:
+            raise CustomHTTPException(403, "Forbidden")
+
+    def _ensure_can_delete(
+        self,
+        obj,
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+    ) -> None:
+        if not policy:
+            return
+        allowed = policy.can_delete(
+            obj,
+            action=action,
+            user=get_current_user(),
+            request=request,
+            model=self.model,
+        )
+        if allowed is False:
+            raise CustomHTTPException(403, "Forbidden")
 
     def _process_nested_relationships(self, model: DeclarativeBase, data: dict[str, Any]) -> dict[str, Any]:
         """Recursively build related model instances from nested dictionaries.
@@ -390,6 +606,10 @@ class CrudService:
             Dict[str, Any]: Dictionary with the query result and metadata.
         """
         base_model = self.model if other_model is None else other_model
+        relation_name = kwargs.get("relation_name")
+        policy = self._get_access_policy()
+        http_method = kwargs.get("http_method", request.method)
+        action_name = self._determine_action(http_method, many=many, relation_name=relation_name)
 
         # Determine eager-loading preference based on configuration
         eager_depth = int(get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=0) or 0)
@@ -412,6 +632,14 @@ class CrudService:
 
                 query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
 
+            query = self._apply_policy_scope(
+                query,
+                policy=policy,
+                action=action_name,
+                many=False,
+                relation_name=relation_name,
+            )
+
             # Apply eager-loader options for single-object fetches
             if eager_enabled:
                 opts = _eager_options_for(base_model, eager_depth)
@@ -430,6 +658,14 @@ class CrudService:
             if result is None:
                 raise CustomHTTPException(404, "Resource not found.")
 
+            self._ensure_can_read(
+                result,
+                policy=policy,
+                action=action_name,
+                many=False,
+                relation_name=relation_name,
+            )
+
             return {"query": result}
 
         elif kwargs.get("join_model"):
@@ -438,6 +674,14 @@ class CrudService:
             lookup_val = kwargs.get(get_primary_key_info(kwargs.get("join_model"))[0])
 
             query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
+
+            query = self._apply_policy_scope(
+                query,
+                policy=policy,
+                action=action_name,
+                many=many,
+                relation_name=relation_name,
+            )
 
             # Apply eager options for related collection endpoints
             if eager_enabled:
@@ -453,6 +697,13 @@ class CrudService:
             query = self.filter_query_from_args(args_dict, query)
         else:
             query = self.filter_query_from_args(args_dict)
+            query = self._apply_policy_scope(
+                query,
+                policy=policy,
+                action=action_name,
+                many=many,
+                relation_name=relation_name,
+            )
 
         # Apply eager options for general collection queries
         if eager_enabled and 'query' in locals() and hasattr(query, 'options'):
@@ -499,6 +750,9 @@ class CrudService:
         try:
             allow_nested = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
             payload = self._process_nested_relationships(self.model, data_dict.copy()) if allow_nested else data_dict
+            policy = self._get_access_policy()
+            action = self._determine_action(kwargs.get("http_method", request.method), many=False, relation_name=None)
+            self._ensure_can_create(payload, policy=policy, action=action)
             obj = self.model(**payload)
 
             callback = get_config_or_model_meta("API_ADD_CALLBACK", model=self.model, default=None)
@@ -531,9 +785,14 @@ class CrudService:
             if obj is None:
                 raise CustomHTTPException(404, f"{self.model.__name__} not found.")
 
+            policy = self._get_access_policy()
+            action = self._determine_action(kwargs.get("http_method", request.method), many=False, relation_name=None)
+
             payload = data_dict or {}
             allow_nested = get_config_or_model_meta("ALLOW_NESTED_WRITES", model=self.model, default=False)
             update_payload = self._process_nested_relationships(self.model, payload.copy()) if allow_nested else payload
+
+            self._ensure_can_update(obj, update_payload, policy=policy, action=action)
 
             mapper = inspect(self.model)
             writable_keys = {column.key for column in mapper.columns}
@@ -570,6 +829,10 @@ class CrudService:
 
         if obj is None:
             raise CustomHTTPException(404, f"{self.model.__name__} not found.")
+
+        policy = self._get_access_policy()
+        action = self._determine_action(kwargs.get("http_method", request.method), many=False, relation_name=None)
+        self._ensure_can_delete(obj, policy=policy, action=action)
 
         callback = get_config_or_model_meta("API_REMOVE_CALLBACK", model=self.model, default=None)
         if callback:

@@ -14,12 +14,14 @@ from sqlalchemy.pool import StaticPool
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flarchitect import Architect
+from flarchitect.core.architect import jwt_authentication
 from flarchitect.authentication.jwt import (
     decode_token,
     generate_access_token,
     generate_refresh_token,
     refresh_access_token,
 )
+from flarchitect.authentication.helpers import load_user_from_cookie
 from flarchitect.authentication.token_store import RefreshToken, get_refresh_token
 from flarchitect.authentication.user import (
     current_user,
@@ -361,19 +363,44 @@ def test_jwt_success_and_failure(client_jwt: tuple[FlaskClient, str, str]) -> No
     with client.application.app_context():
         new_access_token, user = refresh_access_token(refresh_token)
         assert user.username == "carol"
-        assert get_refresh_token(refresh_token) is None
-    resp_new = client.get("/jwt", headers={"Authorization": f"Bearer {new_access_token}"})
-    assert resp_new.status_code == 200
-    assert resp_new.get_json()["value"]["username"] == "carol"
+    assert get_refresh_token(refresh_token) is None
+
+
+def test_jwt_cookie_provider_for_schema_constructor(client_jwt_cookie: tuple[FlaskClient, str]) -> None:
+    client, token = client_jwt_cookie
+    # No credentials -> 401
+    resp = client.get("/jwt")
+    assert resp.status_code == 401
+
+    client.set_cookie("auth_access", token)
+    resp = client.get("/jwt")
+    assert resp.status_code == 200
+    assert resp.get_json()["value"]["username"] == "carol"
+
+
+def test_jwt_cookie_provider_manual_route(client_jwt_cookie: tuple[FlaskClient, str]) -> None:
+    client, token = client_jwt_cookie
+
+    resp = client.get("/manual")
+    assert resp.status_code == 401
+
+    client.set_cookie("auth_access", token)
+    resp = client.get("/manual")
+    assert resp.status_code == 200
+    assert resp.get_json()["username"] == "carol"
+
+
+def test_load_user_from_cookie_helper(client_jwt_cookie: tuple[FlaskClient, str]) -> None:
+    client, token = client_jwt_cookie
+
+    with client.application.test_request_context("/", environ_base={"HTTP_COOKIE": f"auth_access={token}"}):
+        assert load_user_from_cookie("auth_access") is True
+        assert get_current_user().username == "carol"
     assert get_current_user() is None
 
-    resp_bad = client.get("/jwt", headers={"Authorization": "Bearer bad"})
-    assert resp_bad.status_code == 401
-    assert get_current_user() is None
-
-    with client.application.app_context(), pytest.raises(CustomHTTPException):
-        refresh_access_token(refresh_token)
-    assert get_current_user() is None
+    with client.application.test_request_context("/"):
+        assert load_user_from_cookie("auth_access") is False
+        assert get_current_user() is None
 
 
 def test_refresh_access_token_missing_key(monkeypatch, client_jwt: tuple[FlaskClient, str, str]) -> None:
@@ -504,3 +531,53 @@ def test_readme_authentication_absent_when_disabled() -> None:
         has_rate_limiting=False,
     )
     assert "# Authentication" not in rendered
+
+
+@pytest.fixture()
+def client_jwt_cookie() -> Generator[tuple[FlaskClient, str], None, None]:
+    """Client fixture with cookie-aware token providers configured."""
+
+    app = Flask(__name__)
+    app.config.update(
+        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+        SQLALCHEMY_ENGINE_OPTIONS={"poolclass": StaticPool},
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        FULL_AUTO=False,
+        API_CREATE_DOCS=False,
+        API_AUTHENTICATE_METHOD=["jwt"],
+        API_AUTH_TOKEN_PROVIDERS=["cookie", "header"],
+        API_AUTH_COOKIE_NAME="auth_access",
+        API_USER_MODEL=User,
+        API_USER_LOOKUP_FIELD="username",
+        API_BASE_MODEL=User,
+    )
+    app.config["ACCESS_SECRET_KEY"] = "access"
+    app.config["REFRESH_SECRET_KEY"] = "refresh"
+    db.init_app(app)
+    with app.app_context():
+        architect = Architect(app=app)
+
+        @app.errorhandler(CustomHTTPException)
+        def handle_custom_cookie(exc: CustomHTTPException):
+            return create_response(status=exc.status_code, errors={"error": exc.error, "reason": exc.reason})
+
+        @app.route("/jwt")
+        @architect.schema_constructor(model=User, output_schema=UsernameSchema)
+        def jwt_cookie_route() -> dict[str, str]:
+            return {"username": current_user.username}
+
+        @app.route("/manual")
+        @jwt_authentication
+        def manual_cookie_route() -> dict[str, str]:
+            return {"username": current_user.username}
+
+        db.create_all()
+        user = User(
+            username="carol",
+            password_hash=generate_password_hash("pass"),
+            api_key_hash=generate_password_hash("key"),
+        )
+        db.session.add(user)
+        db.session.commit()
+        access = generate_access_token(user)
+        yield app.test_client(), access

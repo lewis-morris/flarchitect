@@ -32,4 +32,16 @@ To opt out of authentication for a specific manual route, set `auth=False`:
 def public_ping():
     return {"message": "pong"}
 ```
+Alternatively, configure `API_AUTH_REQUIREMENTS` to opt HTTP verbs or route
+flavours in/out of authentication at the config level. Manual routes decorated
+with `schema_constructor` honour the map—use it to make every `GET` route
+public, for instance, without adding `auth=False` repeatedly. Apply
+`API_ACCESS_POLICY` when you need row-level checks so both generated and
+manual endpoints share the same access logic.
+When working with cookie-based credentials, combine `API_AUTH_TOKEN_PROVIDERS`
+(for example `['cookie', 'header']`) with the
+`load_user_from_cookie` helper to populate `current_user` outside the
+standard auth flow. Use flarchitect.utils.cookie_settings to retrieve
+project-aligned cookie keyword arguments (merged from `API_COOKIE_DEFAULTS`
+and `SESSION_COOKIE_*`) whenever you issue or clear cookies.
 

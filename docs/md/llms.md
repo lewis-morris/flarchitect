@@ -29,12 +29,15 @@
 
 - [Auth Cookbook](https://lewis-morris.github.io/flarchitect/auth_cookbook/index.md): This cookbook collects practical authentication patterns for flarchitect.
 - [Authentication](https://lewis-morris.github.io/flarchitect/authentication/index.md): flarchitect provides several helpers to secure your API quickly.
+- [Access policies](https://lewis-morris.github.io/flarchitect/authentication/access-policies.md): Attach `API_ACCESS_POLICY` to enforce row-level permissions.
 - [API key authentication](https://lewis-morris.github.io/flarchitect/authentication/api-key-authentication.md): API key auth associates a user with a single token.
 - [API key strategies](https://lewis-morris.github.io/flarchitect/auth_cookbook/api-key-strategies.md): Clients send `Authorization: Api-Key <token>`.
+- [Auth requirements](https://lewis-morris.github.io/flarchitect/authentication/auth-requirements.md): Set `API_AUTH_REQUIREMENTS` to enable or disable authentication per HTTP.
 - [Basic authentication](https://lewis-morris.github.io/flarchitect/auth_cookbook/basic-authentication.md): Send `Authorization: Basic <base64(username:password)>`.
 - [Basic authentication](https://lewis-morris.github.io/flarchitect/authentication/basic-authentication.md): HTTP Basic Auth is the most straightforward option.
 - [Config-driven roles](https://lewis-morris.github.io/flarchitect/authentication/config-driven-roles.md): You can assign roles to endpoints without decorating functions by setting a.
 - [Contents](https://lewis-morris.github.io/flarchitect/auth_cookbook/contents.md): Reference material.
+- [Cookie helpers](https://lewis-morris.github.io/flarchitect/authentication/cookie-helpers.md): token and calls `set_current_user`.
 - [Custom authentication](https://lewis-morris.github.io/flarchitect/authentication/custom-authentication.md): For complete control supply your own callable.
 - [Error responses](https://lewis-morris.github.io/flarchitect/authentication/error-responses.md): Authentication failures are serialised with create_response, so each.
 - [Further reading](https://lewis-morris.github.io/flarchitect/auth_cookbook/further-reading.md): Reference material.
@@ -43,6 +46,7 @@
 - [Multi‑tenant considerations](https://lewis-morris.github.io/flarchitect/auth_cookbook/multi-tenant-considerations.md): via a session/mapper event so all generated endpoints auto‑scope results.
 - [Role mapping examples](https://lewis-morris.github.io/flarchitect/auth_cookbook/role-mapping-examples.md): See roles-required and the reference authentication for details.
 - [Role-based access](https://lewis-morris.github.io/flarchitect/authentication/role-based-access.md): Use the `require_roles` decorator to restrict access based on user roles.
+- [Token providers](https://lewis-morris.github.io/flarchitect/authentication/token-providers.md): Configure `API_AUTH_TOKEN_PROVIDERS` to control how JWTs are discovered.
 - [Troubleshooting](https://lewis-morris.github.io/flarchitect/authentication/troubleshooting.md): Reference material.
 
 ## Configuration

@@ -15,12 +15,6 @@ from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase, Session
 from werkzeug.exceptions import default_exceptions
 
-from flarchitect.authentication.jwt import (
-    generate_access_token,
-    generate_refresh_token,
-    get_pk_and_lookups,
-    refresh_access_token,
-)
 from flarchitect.authentication.token_store import rotate_refresh_token
 from flarchitect.authentication.user import set_current_user
 from flarchitect.authentication.user import get_current_user
@@ -45,9 +39,36 @@ from flarchitect.utils.core_utils import convert_case
 from flarchitect.utils.general import AttributeInitialiserMixin
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.session import get_session
+from flarchitect.core.discovery import build_schema_discovery_payload
+from flarchitect.core.docbundle import build_docs_bundle
 
 if TYPE_CHECKING:
     from flarchitect import Architect
+    from flarchitect.authentication import jwt as _JwtModule
+
+
+def _import_jwt_module():
+    """Import the JWT helpers lazily to avoid circular dependencies."""
+
+    from flarchitect.authentication import jwt
+
+    return jwt
+
+
+def _generate_access_token(*args: Any, **kwargs: Any):
+    return _import_jwt_module().generate_access_token(*args, **kwargs)
+
+
+def _generate_refresh_token(*args: Any, **kwargs: Any):
+    return _import_jwt_module().generate_refresh_token(*args, **kwargs)
+
+
+def _get_pk_and_lookups(*args: Any, **kwargs: Any):
+    return _import_jwt_module().get_pk_and_lookups(*args, **kwargs)
+
+
+def _refresh_access_token(*args: Any, **kwargs: Any):
+    return _import_jwt_module().refresh_access_token(*args, **kwargs)
 
 
 def _global_pre_process(service: CrudService, global_pre_hook: Callable | None, **hook_kwargs: Any) -> dict[str, Any]:
@@ -170,6 +191,7 @@ def _route_function_factory(
         action_kwargs["id"] = hook_kwargs.get("id")
         action_kwargs["model"] = hook_kwargs.get("model")
         action_kwargs["relation_name"] = hook_kwargs.get("relation_name")
+        action_kwargs["http_method"] = http_method
 
         output = action(**action_kwargs) or abort(404)
         final_output = _post_process(service, post_hook, output, **hook_kwargs)
@@ -487,6 +509,8 @@ class RouteCreator(AttributeInitialiserMixin):
         self.make_auth_routes()
         self.create_api_blueprint()
         self.create_routes()
+        self._create_schema_discovery_route()
+        self._create_docs_bundle_route()
         self.make_exception_routes()
         self.architect.app.register_blueprint(self.blueprint)
 
@@ -505,6 +529,123 @@ class RouteCreator(AttributeInitialiserMixin):
                 f"Setting up custom error handler for blueprint |{self.blueprint.name}| with http code +{code}+.",
             )
             self.architect.app.register_error_handler(code, handle_http_exception)
+
+    def _create_schema_discovery_route(self) -> None:
+        """Expose a discovery endpoint enumerating filters and relationships."""
+
+        path = self.architect.get_config("API_SCHEMA_DISCOVERY_ROUTE", "/schema/discovery")
+        if not path:
+            return
+
+        for rule in self.architect.app.url_map.iter_rules():  # pragma: no cover - simple guard
+            if str(rule.rule) == path and "GET" in (rule.methods or set()):
+                return
+
+        require_auth = bool(self.architect.get_config("API_SCHEMA_DISCOVERY_AUTH", True))
+        max_depth_default = self.architect.get_config("API_SCHEMA_DISCOVERY_MAX_DEPTH", 2) or 2
+        try:
+            max_depth_default = int(max_depth_default)
+        except (TypeError, ValueError):
+            max_depth_default = 2
+
+        roles_spec = self.architect.get_config("API_SCHEMA_DISCOVERY_ROLES", None)
+        roles_any_of = bool(self.architect.get_config("API_SCHEMA_DISCOVERY_ROLES_ANY_OF", False))
+
+        decorator_kwargs: dict[str, Any] = {
+            "output_schema": None,
+            "auth": require_auth,
+            "many": False,
+            "group_tag": "Schema Discovery",
+            "tag": "Schema Discovery",
+            "summary": "List filters, operators, and relationships available for models.",
+        }
+
+        if roles_spec:
+            decorator_kwargs["roles"] = roles_spec
+        if roles_spec and roles_any_of:
+            decorator_kwargs["roles_any_of"] = True
+
+        @self.architect.app.route(path, methods=["GET"])
+        @self.architect.schema_constructor(**decorator_kwargs)
+        def schema_discovery() -> dict[str, Any]:
+            query = request.args
+            model_param = query.get("model")
+            depth_param = query.get("depth", type=int)
+
+            model_filter = None
+            if model_param:
+                tokens = {
+                    token.strip().lower()
+                    for token in model_param.split(",")
+                    if token and token.strip()
+                }
+                model_filter = tokens or None
+
+            depth = max_depth_default
+            if isinstance(depth_param, int) and depth_param > 0:
+                depth = depth_param
+
+            created_routes = getattr(self, "created_routes", {}) or {}
+            model_classes: set[type] = set()
+            for info in created_routes.values():
+                mdl = info.get("model")
+                if mdl is not None:
+                    model_classes.add(mdl)
+
+            base_models = self.api_base_model or []
+            if not isinstance(base_models, (list, tuple)):
+                base_models = [base_models]
+            for base in base_models:
+                if base is None:
+                    continue
+                model_classes.add(base)
+                model_classes.update(base.__subclasses__())
+
+            payload = build_schema_discovery_payload(
+                models=model_classes,
+                created_routes=created_routes,
+                model_filter=model_filter,
+                max_depth=depth,
+            )
+            return payload
+
+    def _create_docs_bundle_route(self) -> None:
+        """Expose a documentation bundle endpoint merging auto and manual routes."""
+
+        path = self.architect.get_config("API_DOCS_BUNDLE_ROUTE", "/docs/bundle")
+        if not path:
+            return
+
+        for rule in self.architect.app.url_map.iter_rules():  # pragma: no cover - simple guard
+            if str(rule.rule) == path and "GET" in (rule.methods or set()):
+                return
+
+        require_auth = bool(self.architect.get_config("API_DOCS_BUNDLE_AUTH", True))
+        roles_spec = self.architect.get_config("API_DOCS_BUNDLE_ROLES", None)
+        roles_any_of = bool(self.architect.get_config("API_DOCS_BUNDLE_ROLES_ANY_OF", False))
+
+        decorator_kwargs: dict[str, Any] = {
+            "output_schema": None,
+            "auth": require_auth,
+            "many": False,
+            "group_tag": "Documentation",
+            "tag": "Documentation",
+            "summary": "Merge auto-generated and custom route metadata.",
+        }
+
+        if roles_spec:
+            decorator_kwargs["roles"] = roles_spec
+        if roles_spec and roles_any_of:
+            decorator_kwargs["roles_any_of"] = True
+
+        @self.architect.app.route(path, methods=["GET"])
+        @self.architect.schema_constructor(**decorator_kwargs)
+        def docs_bundle() -> dict[str, Any]:
+            return build_docs_bundle(
+                app=self.architect.app,
+                route_spec=self.architect.route_spec,
+                created_routes=self.created_routes,
+            )
 
     def create_routes(self):
         """Create all the routes for the API."""
@@ -669,7 +810,7 @@ class RouteCreator(AttributeInitialiserMixin):
             usr = user.query.filter(getattr(user, lookup_field) == username).first()
 
             if usr and getattr(usr, check_method)(password):
-                pk, lookup = get_pk_and_lookups()
+                pk, lookup = _get_pk_and_lookups()
                 return create_response({"user_pk": getattr(usr, pk), lookup: getattr(usr, lookup)})
 
             return create_response(status=401, errors={"error": "Invalid credentials"})
@@ -719,7 +860,7 @@ class RouteCreator(AttributeInitialiserMixin):
                             break
 
             if usr:
-                pk, lookup = get_pk_and_lookups()
+                pk, lookup = _get_pk_and_lookups()
                 data: dict[str, Any] = {"user_pk": getattr(usr, pk)}
                 if lookup:
                     data[lookup] = getattr(usr, lookup)
@@ -813,10 +954,10 @@ class RouteCreator(AttributeInitialiserMixin):
             usr = user.query.filter(getattr(user, lookup_field) == username).first()
 
             if usr and getattr(usr, check_method)(password):
-                access_token = generate_access_token(usr)
-                refresh_token = generate_refresh_token(usr)
+                access_token = _generate_access_token(usr)
+                refresh_token = _generate_refresh_token(usr)
 
-                pk, lookup_field = get_pk_and_lookups()
+                pk, lookup_field = _get_pk_and_lookups()
 
                 return {
                     "access_token": access_token,
@@ -882,19 +1023,19 @@ class RouteCreator(AttributeInitialiserMixin):
 
             # Attempt to refresh the access token and retrieve the user
             try:
-                new_access_token, user = refresh_access_token(refresh_token)
+                new_access_token, user = _refresh_access_token(refresh_token)
             except CustomHTTPException as e:
                 # Let your application's error handlers manage the response
                 raise e
 
             # Generate a new refresh token and rotate the old one (single-use)
-            new_refresh_token = generate_refresh_token(user)
+            new_refresh_token = _generate_refresh_token(user)
             import contextlib
             with contextlib.suppress(Exception):
                 # Rotation is best-effort; failure should not expose the old token
                 rotate_refresh_token(refresh_token, new_refresh_token)
 
-            pk, lookup_field = get_pk_and_lookups()
+            pk, lookup_field = _get_pk_and_lookups()
             # Return the new tokens
             return {
                 "access_token": new_access_token,
@@ -954,6 +1095,45 @@ class RouteCreator(AttributeInitialiserMixin):
 
         read_only = get_config_or_model_meta("API_READ_ONLY", model=model, default=False)
 
+        register_canonical_val = get_config_or_model_meta(
+            "API_REGISTER_CANONICAL_ROUTES",
+            model=model,
+            default=True,
+        )
+        if isinstance(register_canonical_val, str):
+            register_canonical = register_canonical_val.strip().lower() not in {"0", "false", "no"}
+        else:
+            register_canonical = bool(register_canonical_val)
+
+        extra_endpoint_cfg = get_config_or_model_meta("endpoint", model=model, default=None)
+        extra_segments: list[str] = []
+        if isinstance(extra_endpoint_cfg, str):
+            extra_segments = [extra_endpoint_cfg]
+        elif isinstance(extra_endpoint_cfg, (list, tuple, set)):
+            extra_segments = [str(item) for item in extra_endpoint_cfg if item is not None]
+        elif extra_endpoint_cfg:
+            extra_segments = [str(extra_endpoint_cfg)]
+
+        input_schema_class, output_schema_class = get_input_output_from_model_or_make(model)
+        canonical_segment = self._get_url_naming_function(model, input_schema_class, output_schema_class).strip("/")
+
+        route_segments: list[str] = []
+        if register_canonical:
+            route_segments.append(canonical_segment)
+
+        for seg in extra_segments:
+            norm = str(seg).strip("/")
+            if not norm:
+                continue
+            if norm not in route_segments:
+                route_segments.append(norm)
+
+        # Ensure ``to_url`` helpers remain available even when canonical routes are skipped so
+        # relation serializers and manual handlers can continue to reference them. Prefer the
+        # first registered segment (canonical when enabled, otherwise the first alternate).
+        to_url_segment = canonical_segment if register_canonical else (route_segments[0] if route_segments else canonical_segment)
+        self._add_self_url_function_to_model(model, endpoint_segment=to_url_segment)
+
         allowed, allowed_from = get_config_or_model_meta("API_ALLOWED_METHODS", model=model, default=[], return_from_config=True)
         allowed_methods = [x.upper() for x in allowed]
 
@@ -965,6 +1145,9 @@ class RouteCreator(AttributeInitialiserMixin):
             return_from_config=True,
         )
         blocked_methods = [x.upper() for x in blocked_methods]
+
+        if not route_segments:
+            return
 
         for http_method in ["GETS", "GET", "POST", "PATCH", "DELETE"]:
             if read_only and http_method in ["POST", "PATCH", "DELETE"] and (http_method not in allowed_methods):
@@ -988,8 +1171,17 @@ class RouteCreator(AttributeInitialiserMixin):
             if allowed_methods and allowed_from == "model" and check_http_meth not in allowed_methods:
                 continue
 
-            route_data = self._prepare_route_data(model, session, http_method)
-            self.generate_route(**route_data)
+            for segment in route_segments:
+                route_data = self._prepare_route_data(
+                    model,
+                    session,
+                    http_method,
+                    endpoint=segment,
+                    input_schema_class=input_schema_class,
+                    output_schema_class=output_schema_class,
+                    canonical_segment=canonical_segment,
+                )
+                self.generate_route(**route_data)
 
     def _generate_relation_routes(self, model: Callable, session: Any) -> None:
         """Generate routes for model relationships if configured.
@@ -1028,7 +1220,17 @@ class RouteCreator(AttributeInitialiserMixin):
         )
         self.generate_route(**relation_data)
 
-    def _prepare_route_data(self, model: Callable, session: Any, http_method: str) -> dict[str, Any]:
+    def _prepare_route_data(
+        self,
+        model: Callable,
+        session: Any,
+        http_method: str,
+        *,
+        endpoint: str | None = None,
+        input_schema_class: type[Schema] | None = None,
+        output_schema_class: type[Schema] | None = None,
+        canonical_segment: str | None = None,
+    ) -> dict[str, Any]:
         """Prepare data for creating a route.
 
         Args:
@@ -1045,9 +1247,14 @@ class RouteCreator(AttributeInitialiserMixin):
             many = True
             http_method = "GET"
 
-        input_schema_class, output_schema_class = get_input_output_from_model_or_make(model)
+        if input_schema_class is None or output_schema_class is None:
+            input_schema_class, output_schema_class = get_input_output_from_model_or_make(model)
 
-        base_url = f"/{self._get_url_naming_function(model, input_schema_class, output_schema_class)}"
+        canonical_segment = (canonical_segment or self._get_url_naming_function(model, input_schema_class, output_schema_class)).strip("/")
+        segment = endpoint.strip("/") if isinstance(endpoint, str) else canonical_segment
+        segment = segment or canonical_segment
+
+        base_url = f"/{segment}"
         method = http_method
 
         if http_method == "GET" and not many or http_method in ["DELETE", "PATCH"]:
@@ -1067,12 +1274,18 @@ class RouteCreator(AttributeInitialiserMixin):
             is_relation=False,
         )
 
+        route_name = model.__name__.lower()
+        if segment != canonical_segment:
+            suffix = segment.replace("/", "_")
+            route_name = f"{route_name}__{suffix}" if suffix else route_name
+
         return {
             "model": model,
             "many": many,
             "method": method,
             "url": base_url,
-            "name": model.__name__.lower(),
+            "name": route_name,
+            "url_segment": segment,
             "output_schema": output_schema_class,
             "session": session,
             "input_schema": (input_schema_class if http_method in ["POST", "PATCH"] else None),
@@ -1248,7 +1461,8 @@ class RouteCreator(AttributeInitialiserMixin):
             kwargs["method"],
             self.architect.schema_constructor(**kwargs)(unique_route_function),
         )
-        (self._add_self_url_function_to_model(model) if not kwargs.get("join_key") else None)
+        if not kwargs.get("join_key") and not kwargs.get("url_segment"):
+            self._add_self_url_function_to_model(model)
         self._add_to_created_routes(**kwargs)
 
     def _is_route_blocked(self, http_method: str, model: Callable) -> bool:
@@ -1314,7 +1528,7 @@ class RouteCreator(AttributeInitialiserMixin):
         logger.log(1, f"|{method}|:`{self.blueprint.url_prefix}{url}` added to flask.")
         self.blueprint.add_url_rule(url, view_func=function, methods=[method])
 
-    def _add_self_url_function_to_model(self, model: Callable):
+    def _add_self_url_function_to_model(self, model: Callable, endpoint_segment: str | None = None):
         """Add a self URL method to the model class.
 
         Args:
@@ -1332,6 +1546,8 @@ class RouteCreator(AttributeInitialiserMixin):
 
         api_prefix = get_config_or_model_meta("API_PREFIX", default="/api")
         url_naming_function = get_config_or_model_meta("API_ENDPOINT_NAMER", model, default=endpoint_namer)
+        segment = endpoint_segment.strip("/") if isinstance(endpoint_segment, str) and endpoint_segment else url_naming_function(model)
+        segment = segment.strip("/")
 
         def to_url(self):
             try:
@@ -1341,7 +1557,7 @@ class RouteCreator(AttributeInitialiserMixin):
                 attr_name = None
             if not attr_name:
                 attr_name = getattr(pk_cols[0], "key", None) or getattr(pk_cols[0], "name", None)
-            return f"{api_prefix}/{url_naming_function(model)}/{getattr(self, attr_name)}"
+            return f"{api_prefix}/{segment}/{getattr(self, attr_name)}"
 
         logger.log(3, f"Adding method $to_url$ to model --{model.__name__}--")
         model.to_url = to_url
