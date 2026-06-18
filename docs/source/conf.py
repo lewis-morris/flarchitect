@@ -17,7 +17,7 @@ html_baseurl = "https://lewis-morris.github.io/flarchitect/"
 
 
 project = "flarchitect"
-copyright = f"{datetime.datetime.now().year}, arched.dev (Lewis Morris)"
+copyright = f"{datetime.datetime.now(datetime.UTC).year}, arched.dev (Lewis Morris)"
 author = "arched.dev (Lewis Morris)"
 release = _get_version("flarchitect")
 
@@ -107,7 +107,7 @@ ogp_description_length = 200
 ogp_type = "website"
 ogp_custom_meta_tags = [
     '<meta name="twitter:card" content="summary_large_image">',
-    '<meta name="twitter:site" content="@arched_dev">',  # or remove if you don’t want it
+    '<meta name="twitter:site" content="@arched_dev">',  # or remove if you do not want it
 ]
 
 extlinks = {

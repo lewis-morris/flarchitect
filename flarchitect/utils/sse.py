@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
-from typing import Any, Callable
+from collections.abc import Callable, Iterable
+from contextlib import suppress
+from typing import Any
 
 from flask import Response, current_app, stream_with_context
 
@@ -32,8 +33,7 @@ def sse_message(
     if retry is not None:
         lines.append(f"retry: {int(retry)}")
 
-    for chunk in payload.splitlines() or [""]:
-        lines.append(f"data: {chunk}")
+    lines.extend(f"data: {chunk}" for chunk in payload.splitlines() or [""])
 
     lines.append("")  # message terminator
     return "\n".join(lines)
@@ -88,18 +88,17 @@ def stream_model_events(
 
 def _json_default(value: Any) -> Any:
     if hasattr(value, "isoformat"):
-        try:
+        with suppress(Exception):
             return value.isoformat()
-        except Exception:  # pragma: no cover - defensive
-            return str(value)
+        return str(value)
     if hasattr(value, "__dict__"):
         return value.__dict__
     return str(value)
 
 
 __all__ = [
-    "sse_message",
     "model_event",
-    "stream_sse_response",
+    "sse_message",
     "stream_model_events",
+    "stream_sse_response",
 ]

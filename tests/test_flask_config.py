@@ -566,14 +566,12 @@ hooks = {
 
 def setup_hook(*args, **kwargs) -> dict:
     """Record execution of the global setup callback."""
-    global hooks
     hooks["setup_hook"] = True
     return kwargs
 
 
 def return_hook(*args, **kwargs) -> dict:
     """Record execution of the return callback."""
-    global hooks
     hooks["return_hook"] = True
     return kwargs
 
@@ -587,21 +585,18 @@ def postdump_hook(data: dict, **kwargs) -> dict:
 
 def patch_setup_hook(*args, **kwargs) -> dict:
     """Record execution of the PATCH setup callback."""
-    global hooks
     hooks["patch_setup_hook"] = True
     return kwargs
 
 
 def get_return_hook(*args, **kwargs) -> dict:
     """Record execution of the GET return callback."""
-    global hooks
     hooks["get_return_hook"] = True
     return kwargs
 
 
 def final_hook(data: dict) -> dict:
     """Attach a marker to the final response payload."""
-    global hooks
     hooks["final_hook"] = True
     data["finalized"] = True
     return data
@@ -609,7 +604,6 @@ def final_hook(data: dict) -> dict:
 
 def error_hook(error: str, status_code: int, value: object) -> None:
     """Record execution of the error callback."""
-    global hooks
     hooks["error_hook"] = True
 
 
@@ -705,7 +699,6 @@ def test_callbacks(client_two):
     client_two.post("/api/books", json=book_one).json["value"]
     client_two.get("/api/books/9999999")
     client_two.patch("/api/books/" + str(id_key), json=book_one).json["value"]
-    global hooks
     assert hooks.get("setup_hook")
     assert hooks.get("patch_setup_hook")
     assert hooks.get("get_return_hook")

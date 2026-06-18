@@ -13,8 +13,8 @@ from sqlalchemy.orm import DeclarativeBase
 from werkzeug.http import HTTP_STATUS_CODES
 from werkzeug.routing import IntegerConverter, UnicodeConverter
 
+from flarchitect.database.constants import AGGREGATE_FUNCS
 from flarchitect.database.inspections import get_model_columns, get_model_relationships
-from flarchitect.database.utils import AGGREGATE_FUNCS
 from flarchitect.logging import logger
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import convert_case
@@ -44,6 +44,74 @@ def schema_name_resolver(schema: Schema) -> str:
     return convert_case(schema_cls.__name__.replace("Schema", ""), case)
 
 
+def _missing_spec_fields(
+    model: Any,
+    output_schema: Any,
+    input_schema: Any,
+    method: str,
+    function: Any,
+) -> list[str]:
+    missing = []
+    if not model:
+        missing.append("model")
+    if not (output_schema or input_schema):
+        missing.append("schema")
+    if not method:
+        missing.append("method")
+    if not function:
+        missing.append("function")
+    return missing
+
+
+def _log_missing_spec_fields(missing: list[str]) -> None:
+    if missing:
+        logger.log(1, f"Missing data for documentation generation: {', '.join(missing)}")
+
+
+def _ensure_spec_tag(spec_data: dict[str, Any], model: Any, output_schema: Any, input_schema: Any) -> None:
+    if spec_data.get("tag") is not None:
+        spec_data["tag"] = spec_data.get("tag")
+        return
+
+    new_tag = get_config_or_model_meta("tag", model, output_schema, input_schema, "Unknown")
+    if new_tag:
+        spec_data["tag"] = new_tag
+
+
+def _apply_auto_summary(spec_data: dict[str, Any], method: str, summary: bool) -> None:
+    if summary or not get_config_or_model_meta("AUTO_NAME_ENDPOINTS", default=True):
+        spec_data["summary"] = summary
+        return
+
+    schema = spec_data.get("output_schema") or spec_data.get("input_schema")
+    if schema:
+        spec_data["summary"] = make_endpoint_description(schema, method, **spec_data)
+
+
+def _method_description_key(method: str, multiple: bool, description_type: str) -> str:
+    method_name = method.lower()
+    if method_name == "get":
+        cardinality = "many" if multiple else "single"
+        return f"{method_name}_{cardinality}_{description_type}"
+    return f"{method_name}_{description_type}"
+
+
+def _apply_configured_descriptions(
+    spec_data: dict[str, Any],
+    *,
+    method: str,
+    multiple: bool,
+    model: Any,
+    output_schema: Any,
+    input_schema: Any,
+) -> None:
+    for description_type in ["summary", "description"]:
+        config_key = _method_description_key(method, multiple, description_type)
+        new_desc = get_config_or_model_meta(config_key, model, output_schema, input_schema, None)
+        if new_desc:
+            spec_data[description_type] = new_desc
+
+
 def scrape_extra_info_from_spec_data(
     spec_data: dict[str, Any],
     method: str,
@@ -67,47 +135,22 @@ def scrape_extra_info_from_spec_data(
     input_schema = spec_data.get("input_schema")
     function = spec_data.get("function")
 
-    if not all([model, output_schema or input_schema, method, function]):
-        missing = []
-        if not model:
-            missing.append("model")
-        if not (output_schema or input_schema):
-            missing.append("schema")
-        if not method:
-            missing.append("method")
-        if not function:
-            missing.append("function")
-        logger.log(1, f"Missing data for documentation generation: {', '.join(missing)}")
-
-    if spec_data.get("tag") is None:
-        new_tag = get_config_or_model_meta("tag", model, output_schema, input_schema, "Unknown")
-        if new_tag:
-            spec_data["tag"] = new_tag
-    else:
-        spec_data["tag"] = spec_data.get("tag")
-
-    if not summary and get_config_or_model_meta("AUTO_NAME_ENDPOINTS", default=True):
-        schema = spec_data.get("output_schema") or spec_data.get("input_schema")
-        if schema:
-            spec_data["summary"] = make_endpoint_description(schema, method, **spec_data)
-    else:
-        spec_data["summary"] = summary
+    _log_missing_spec_fields(_missing_spec_fields(model, output_schema, input_schema, method, function))
+    _ensure_spec_tag(spec_data, model, output_schema, input_schema)
+    _apply_auto_summary(spec_data, method, summary)
 
     new_description = get_summary_description(function)
     if new_description:
         spec_data["description"] = new_description
 
-    for description_type in ["summary", "description"]:
-        if method.lower() == "get" and multiple:
-            config_val = f"{method.lower()}_many_" + description_type
-        elif method.lower() == "get" and not multiple:
-            config_val = f"{method.lower()}_single_" + description_type
-        else:
-            config_val = f"{method.lower()}_" + description_type
-
-        new_desc = get_config_or_model_meta(config_val, model, output_schema, input_schema, None)
-        if new_desc:
-            spec_data[description_type] = new_desc
+    _apply_configured_descriptions(
+        spec_data,
+        method=method,
+        multiple=multiple,
+        model=model,
+        output_schema=output_schema,
+        input_schema=input_schema,
+    )
 
     return spec_data
 
@@ -137,10 +180,9 @@ def get_param_schema(converter) -> dict[str, str]:
     """
     if isinstance(converter, IntegerConverter):
         return {"type": "integer"}
-    elif isinstance(converter, UnicodeConverter):
+    if isinstance(converter, UnicodeConverter):
         return {"type": "string"}
-    else:
-        return {"type": "string"}
+    return {"type": "string"}
 
 
 def generate_delete_query_params(schema: Schema, model: DeclarativeBase) -> list[dict[str, Any]]:
@@ -633,10 +675,7 @@ def _prepare_patch_schema(input_schema: Schema | None) -> Schema | None:
         class_fields,
     )
 
-    # Instantiate the new schema class
-    put_input_schema = PatchSchemaClass()
-
-    return put_input_schema
+    return PatchSchemaClass()
 
 
 def make_endpoint_description(schema: Schema, http_method: str, **kwargs) -> str:
@@ -667,20 +706,18 @@ def make_endpoint_description(schema: Schema, http_method: str, **kwargs) -> str
     if http_method == "GET":
         if parent and many:
             return f"Returns a list of `{name}` for a specific `{parent_name}`"
-        elif parent and not many:
+        if parent and not many:
             return f"Get a `{name}` by id for a specific `{parent_name}`."
-        elif many:
+        if many:
             return f"Returns a list of `{name}`"
-        else:
-            return f"Get a `{name}` by id."
-    elif http_method == "POST":
+        return f"Get a `{name}` by id."
+    if http_method == "POST":
         return f"Create a new `{name}`."
-    elif http_method in ["PUT", "PATCH"]:
+    if http_method in ["PUT", "PATCH"]:
         return f"Update an existing `{name}`."
-    elif http_method == "DELETE":
+    if http_method == "DELETE":
         return f"Delete a `{name}` by id."
-    else:
-        return "Endpoint description not available"
+    return "Endpoint description not available"
 
 
 def generate_fields_description(schema: Schema) -> str:
@@ -736,8 +773,7 @@ def generate_x_description(template_data: dict, path: str = "") -> str:
     if template_data:
         full_path = os.path.join(get_html_path(), path)
         return manual_render_absolute_template(full_path, **template_data)
-    else:
-        return "This endpoint does not have a database table (or is computed etc) and should not be filtered\n"
+    return "This endpoint does not have a database table (or is computed etc) and should not be filtered\n"
 
 
 def generate_filter_examples(schema: Schema) -> str:

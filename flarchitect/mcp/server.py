@@ -5,16 +5,16 @@ from __future__ import annotations
 import argparse
 import inspect
 import json
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional, Sequence
+from typing import Any
 
 from flarchitect import __version__ as PACKAGE_VERSION
 
 from .index import DocumentIndex, DocumentRecord, SearchHit
-
 
 PROTOCOL_VERSION = "2025-06-18"
 DOC_URI_PREFIX = "flarchitect-doc://"
@@ -194,8 +194,7 @@ def build_index(project_root: Path) -> DocumentIndex:
         if candidate.exists():
             _register_llms(root)
             return DocumentIndex(root, doc_path=candidate, extra_files=llms_paths)
-        else:
-            _register_llms(root)
+        _register_llms(root)
 
     raise FileNotFoundError(
         "No documentation roots discovered under project root or package. Provide --project-root pointing to the repository root or pass custom directories."
@@ -266,13 +265,18 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
     if add_resource is None or tool_decorator is None:
         return False
 
+    from typing import Annotated
+
     try:
-        from typing import Annotated
-
         from pydantic import Field
+    except ImportError:
 
+        def Field(**kwargs: Any) -> dict[str, Any]:  # type: ignore[no-redef]
+            return kwargs
+
+    try:
         resources_module = import_module("fastmcp.resources")
-        TextResource = getattr(resources_module, "TextResource")
+        TextResource = resources_module.TextResource
 
         tools_module = import_module("fastmcp.tools")
         ToolResultCls = getattr(tools_module, "ToolResult", None)
@@ -286,10 +290,6 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
 
     project_root = config.project_root
     for record in index.list_documents():
-        try:
-            description = str(record.path.relative_to(project_root))
-        except ValueError:
-            description = record.path.name
         resource = _build_resource_payload(TextResource, TextResource, record, project_root)
         add_resource(resource)
 
@@ -301,9 +301,11 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
         annotations=_READ_ONLY_ANNOTATIONS,
     )
     async def list_docs() -> Any:
-        items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
-        structured = {"result": items}
-        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
+        return _build_tool_result(
+            ToolResultCls,
+            from_standard.tool_result,
+            _list_docs_payload(index),
+        )
 
     @tool_decorator(
         name="search_docs",
@@ -323,9 +325,11 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
             ),
         ] = 10,
     ) -> Any:
-        hits = index.search(query, limit=int(limit))
-        structured = {"result": [_format_hit(index, hit) for hit in hits]}
-        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
+        return _build_tool_result(
+            ToolResultCls,
+            from_standard.tool_result,
+            _search_docs_payload(index, query, int(limit)),
+        )
 
     @tool_decorator(
         name="get_doc_section",
@@ -348,26 +352,11 @@ def _configure_fastmcp(app: Any, config: ServerConfig, index: DocumentIndex) -> 
             ),
         ] = None,
     ) -> Any:
-        if not doc_id:
-            raise ValueError("'doc_id' is required")
-        try:
-            resolved_id, record = _resolve_document_record(index, doc_id)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        try:
-            content = index.get_section(resolved_id, heading)
-        except KeyError as exc:
-            raise ValueError(str(exc)) from exc
-        structured = {
-            "result": {
-                "doc_id": resolved_id,
-                "title": record.title,
-                "heading": heading,
-                "content": content,
-                "url": _build_doc_url(resolved_id),
-            }
-        }
-        return _build_tool_result(ToolResultCls, from_standard.tool_result, structured)
+        return _build_tool_result(
+            ToolResultCls,
+            from_standard.tool_result,
+            _get_doc_section_payload(index, doc_id, heading),
+        )
 
     return True
 
@@ -457,109 +446,96 @@ def _build_initialize_payload(config: ServerConfig, models: _StandardModels) -> 
     )
 
 
-def _create_reference_server(config: ServerConfig, index: DocumentIndex):
-    from_standard = _load_standard_models()
-
+def _create_lowlevel_reference_server(config: ServerConfig, index: DocumentIndex):
     try:
-        from mcp.server.lowlevel import Server as MCPServer
-        from mcp.server import stdio as mcp_stdio
         from mcp import types as mcp_types
+        from mcp.server import stdio as mcp_stdio
+        from mcp.server.lowlevel import Server as MCPServer
     except ImportError:
-        MCPServer = None  # type: ignore[assignment]
+        return None
 
-    if MCPServer is not None:
-        server = MCPServer(config.name, config.version, instructions=config.description)
+    server = MCPServer(config.name, config.version, instructions=config.description)
 
-        @server.list_resources()
-        async def _list_resources() -> list[Any]:
-            return [
-                _build_resource_payload(
-                    mcp_types.Resource,
-                    None,
-                    record,
-                    config.project_root,
-                )
-                for record in index.list_documents()
-            ]
-
-        @server.read_resource()
-        async def _read_resource(uri: str) -> str:
-            doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
-            try:
-                _, record = _resolve_document_record(index, doc_id)
-            except KeyError as exc:
-                raise ValueError(f"No document with id '{doc_id}'") from exc
-            return record.content
-
-        tool_definitions = [
-            _build_tool_definition(mcp_types.Tool, **definition)
-            for definition in _TOOL_DEFINITIONS
+    @server.list_resources()
+    async def _list_resources() -> list[Any]:
+        return [
+            _build_resource_payload(
+                mcp_types.Resource,
+                None,
+                record,
+                config.project_root,
+            )
+            for record in index.list_documents()
         ]
 
-        @server.list_tools()
-        async def _list_tools() -> list[Any]:
-            return tool_definitions
+    @server.read_resource()
+    async def _read_resource(uri: str) -> str:
+        doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
+        try:
+            _, record = _resolve_document_record(index, doc_id)
+        except KeyError as exc:
+            raise ValueError(f"No document with id '{doc_id}'") from exc
+        return record.content
 
-        @server.call_tool()
-        async def _call_tool(name: str, arguments: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
-            if name == "list_docs":
-                items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
-                structured = {"result": items}
-                text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
-                return ([text], structured)
+    tool_definitions = [
+        _build_tool_definition(mcp_types.Tool, **definition)
+        for definition in _TOOL_DEFINITIONS
+    ]
 
-            if name == "search_docs":
-                hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
-                structured = {"result": [_format_hit(index, hit) for hit in hits]}
-                text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
-                return ([text], structured)
+    @server.list_tools()
+    async def _list_tools() -> list[Any]:
+        return tool_definitions
 
-            if name == "get_doc_section":
-                doc_id = arguments.get("doc_id")
-                if not doc_id:
-                    raise ValueError("'doc_id' is required")
-                try:
-                    resolved_id, record = _resolve_document_record(index, doc_id)
-                except KeyError as exc:
-                    raise ValueError(str(exc)) from exc
-                heading = arguments.get("heading")
-                try:
-                    content = index.get_section(resolved_id, heading)
-                except KeyError as exc:
-                    raise ValueError(str(exc)) from exc
-                structured = {
-                    "result": {
-                        "doc_id": resolved_id,
-                        "title": record.title,
-                        "heading": heading,
-                        "content": content,
-                        "url": _build_doc_url(resolved_id),
-                    }
-                }
-                text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
-                return ([text], structured)
+    @server.call_tool()
+    async def _call_tool(name: str, arguments: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
+        structured = _run_docs_tool(index, name, arguments)
+        text = mcp_types.TextContent(type="text", text=json.dumps(structured, indent=2))
+        return ([text], structured)
 
-            raise ValueError(f"Unknown tool '{name}'")
+    init_options = server.create_initialization_options()
 
-        init_options = server.create_initialization_options()
+    class _StdIOServer:
+        def __init__(self, srv: MCPServer, stdio_mod: Any, init_opts: Any) -> None:
+            self._server = srv
+            self._stdio = stdio_mod
+            self._init_options = init_opts
 
-        class _StdIOServer:
-            def __init__(self, srv: MCPServer, stdio_mod: Any, init_opts: Any) -> None:
-                self._server = srv
-                self._stdio = stdio_mod
-                self._init_options = init_opts
+        def serve(self) -> None:
+            import anyio
 
-            def serve(self) -> None:
-                import anyio
+            async def runner() -> None:
+                async with self._stdio.stdio_server() as (read_stream, write_stream):
+                    await self._server.run(read_stream, write_stream, self._init_options)
 
-                async def runner() -> None:
-                    async with self._stdio.stdio_server() as (read_stream, write_stream):
-                        await self._server.run(read_stream, write_stream, self._init_options)
+            anyio.run(runner)
 
-                anyio.run(runner)
+    return _StdIOServer(server, mcp_stdio, init_options)
 
-        return _StdIOServer(server, mcp_stdio, init_options)
 
+def _legacy_resource_list_payload(config: ServerConfig, index: DocumentIndex, from_standard: _StandardModels) -> Any:
+    resources = [
+        _build_resource_payload(from_standard.resource, None, record, config.project_root)
+        for record in index.list_documents()
+    ]
+    if from_standard.list_resources_result is not None:
+        return from_standard.list_resources_result(resources=resources)
+    return {"resources": resources}
+
+
+def _legacy_resource_read_payload(index: DocumentIndex, from_standard: _StandardModels, uri: str) -> Any:
+    doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
+    try:
+        _, record = _resolve_document_record(index, doc_id)
+    except KeyError as exc:
+        raise ValueError(f"No document with id '{doc_id}'") from exc
+    contents = _build_text_contents_payload(from_standard.text_contents, uri, record)
+    if from_standard.read_resource_result is not None:
+        return from_standard.read_resource_result(contents=[contents])
+    return {"contents": [contents]}
+
+
+def _create_legacy_reference_server(config: ServerConfig, index: DocumentIndex):
+    from_standard = _load_standard_models()
     try:
         from modelcontextprotocol.server import Server
         from modelcontextprotocol.types import (
@@ -579,28 +555,14 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
 
     @server.method("resources/list")
     async def _resources_list(_: ListResourcesRequest):  # type: ignore[name-defined]
-        resources = [
-            _build_resource_payload(from_standard.resource, None, record, config.project_root)
-            for record in index.list_documents()
-        ]
-        if from_standard.list_resources_result is not None:
-            return from_standard.list_resources_result(resources=resources)
-        return {"resources": resources}
+        return _legacy_resource_list_payload(config, index, from_standard)
 
     @server.method("resources/read")
     async def _resources_read(request: ReadResourceRequest):  # type: ignore[name-defined]
         uri = getattr(request, "uri", None) or getattr(request, "params", {}).get("uri")
         if not uri:
             raise ValueError("'uri' is required to read a resource")
-        doc_id = str(uri).replace(DOC_URI_PREFIX, "", 1)
-        try:
-            resolved_id, record = _resolve_document_record(index, doc_id)
-        except KeyError as exc:
-            raise ValueError(f"No document with id '{doc_id}'") from exc
-        contents = _build_text_contents_payload(from_standard.text_contents, uri, record)
-        if from_standard.read_resource_result is not None:
-            return from_standard.read_resource_result(contents=[contents])
-        return {"contents": [contents]}
+        return _legacy_resource_read_payload(index, from_standard, uri)
 
     tool_definitions: list[Any] = [
         _build_tool_definition(from_standard.tool, **definition)
@@ -615,40 +577,17 @@ def _create_reference_server(config: ServerConfig, index: DocumentIndex):
     async def _tools_call(request: CallToolRequest):  # type: ignore[name-defined]
         tool_name = getattr(request, "name", None) or getattr(request, "tool", None)
         arguments = _extract_arguments(request)
-        if tool_name == "list_docs":
-            items = [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
-            structured = {"result": items}
-            return _build_tool_result(None, from_standard.tool_result, structured)
-        if tool_name == "search_docs":
-            hits = index.search(str(arguments.get("query") or ""), limit=int(arguments.get("limit", 10)))
-            structured = {"result": [_format_hit(index, hit) for hit in hits]}
-            return _build_tool_result(None, from_standard.tool_result, structured)
-        if tool_name == "get_doc_section":
-            doc_id = arguments.get("doc_id")
-            if not doc_id:
-                raise ValueError("'doc_id' is required")
-            try:
-                resolved_id, record = _resolve_document_record(index, doc_id)
-            except KeyError as exc:
-                raise ValueError(str(exc)) from exc
-            heading = arguments.get("heading")
-            try:
-                content = index.get_section(resolved_id, heading)
-            except KeyError as exc:
-                raise ValueError(str(exc)) from exc
-            structured = {
-                "result": {
-                    "doc_id": resolved_id,
-                    "title": record.title,
-                    "heading": heading,
-                    "content": content,
-                    "url": _build_doc_url(resolved_id),
-                }
-            }
-            return _build_tool_result(None, from_standard.tool_result, structured)
-        raise ValueError(f"Unknown tool '{tool_name}'")
+        return _build_tool_result(
+            None,
+            from_standard.tool_result,
+            _run_docs_tool(index, str(tool_name), arguments),
+        )
 
     return server
+
+
+def _create_reference_server(config: ServerConfig, index: DocumentIndex):
+    return _create_lowlevel_reference_server(config, index) or _create_legacy_reference_server(config, index)
 
 
 class _CallableServer:
@@ -718,7 +657,7 @@ def _register_tool(
     )
 
 
-def _resolve_attr(obj: Any, names: Sequence[str]) -> Optional[Callable[..., Any]]:
+def _resolve_attr(obj: Any, names: Sequence[str]) -> Callable[..., Any] | None:
     for name in names:
         candidate = getattr(obj, name, None)
         if callable(candidate):
@@ -894,41 +833,95 @@ def _build_doc_url(doc_id: str) -> str:
     return f"{DOC_URI_PREFIX}{doc_id}"
 
 
+def _list_docs_payload(index: DocumentIndex) -> dict[str, Any]:
+    return _wrap_result(
+        [{"doc_id": record.doc_id, "title": record.title} for record in index.list_documents()]
+    )
+
+
+def _search_docs_payload(index: DocumentIndex, query: str, limit: int = 10) -> dict[str, Any]:
+    return _wrap_result([_format_hit(index, hit) for hit in index.search(query, limit=limit)])
+
+
+def _get_doc_section_payload(
+    index: DocumentIndex,
+    doc_id: str,
+    heading: str | None,
+) -> dict[str, Any]:
+    if not doc_id:
+        raise ValueError("'doc_id' is required")
+
+    try:
+        resolved_id, record = _resolve_document_record(index, doc_id)
+        content = index.get_section(resolved_id, heading)
+    except KeyError as exc:
+        raise ValueError(str(exc)) from exc
+
+    return _wrap_result(
+        {
+            "doc_id": resolved_id,
+            "title": record.title,
+            "heading": heading,
+            "content": content,
+            "url": _build_doc_url(resolved_id),
+        }
+    )
+
+
+def _run_docs_tool(index: DocumentIndex, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    if name == "list_docs":
+        return _list_docs_payload(index)
+    if name == "search_docs":
+        return _search_docs_payload(
+            index,
+            str(arguments.get("query") or ""),
+            int(arguments.get("limit", 10)),
+        )
+    if name == "get_doc_section":
+        return _get_doc_section_payload(
+            index,
+            str(arguments.get("doc_id") or ""),
+            arguments.get("heading"),
+        )
+    raise ValueError(f"Unknown tool '{name}'")
+
+
 def _resolve_document_record(index: DocumentIndex, doc_id: str) -> tuple[str, DocumentRecord]:
-    candidates: list[str] = []
-    base_candidates = [doc_id]
-    if doc_id:
-        lower = doc_id.lower()
-        if lower not in base_candidates:
-            base_candidates.append(lower)
-    for base in base_candidates:
-        if base and base not in candidates:
-            candidates.append(base)
-        if not base:
-            continue
-        for ext in (".md", ".rst"):
-            if base.lower().endswith(ext):
-                continue
-            extended = f"{base}{ext}"
-            if extended not in candidates:
-                candidates.append(extended)
-    for candidate in candidates:
-        try:
-            record = index.get(candidate)
+    for candidate in _document_id_candidates(doc_id):
+        record = _get_document_record_or_none(index, candidate)
+        if record is not None:
             return candidate, record
-        except KeyError:
-            continue
+
     lowered = doc_id.lower()
     for record in index.list_documents():
         candidate_id = record.doc_id
         candidate_lower = candidate_id.lower()
         if candidate_lower == lowered:
             return candidate_id, record
-        for suffix in ("", ".md", ".rst"):
-            target = f"/{lowered}{suffix}" if suffix else f"/{lowered}"
-            if candidate_lower.endswith(target):
-                return candidate_id, record
+        if any(candidate_lower.endswith(f"/{candidate}") for candidate in _document_id_candidates(lowered)):
+            return candidate_id, record
+
     raise KeyError(f"No document with id '{doc_id}'")
+
+
+def _get_document_record_or_none(index: DocumentIndex, doc_id: str) -> DocumentRecord | None:
+    """Return a document record when it exists in the index."""
+
+    try:
+        return index.get(doc_id)
+    except KeyError:
+        return None
+
+
+def _document_id_candidates(doc_id: str) -> tuple[str, ...]:
+    candidates: list[str] = []
+    for base in (doc_id, doc_id.lower()):
+        if not base:
+            continue
+        candidates.append(base)
+        if not base.endswith((".md", ".rst")):
+            candidates.extend((f"{base}.md", f"{base}.rst"))
+    return tuple(dict.fromkeys(candidates))
 
 
 def _instantiate(cls: Any, payload: dict[str, Any]) -> Any | None:
@@ -1019,7 +1012,7 @@ def _extract_arguments(request: Any) -> dict[str, Any]:
     return {}
 
 
-def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
+def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the flarchitect MCP documentation server")
     parser.add_argument(
         "--project-root",
@@ -1051,7 +1044,7 @@ def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Optional[Iterable[str]] = None) -> None:
+def main(argv: Iterable[str] | None = None) -> None:
     args = parse_args(argv)
     config = ServerConfig(
         project_root=args.project_root.resolve(),

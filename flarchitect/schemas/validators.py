@@ -9,6 +9,22 @@ from marshmallow import ValidationError
 from validators import ValidationError as VE
 
 
+def _matches_any_datetime_format(value: str, formats: Iterable[str]) -> bool:
+    """Return ``True`` when ``value`` parses with any supplied format."""
+
+    return any(_matches_datetime_format(value, fmt) for fmt in formats)
+
+
+def _matches_datetime_format(value: str, fmt: str) -> bool:
+    """Return whether ``value`` parses with a single datetime format."""
+
+    try:
+        datetime.strptime(value, fmt)
+        return True
+    except ValueError:
+        return False
+
+
 def validate_datetime(value: str, formats: Iterable[str] | None = None) -> bool:
     """Validate a datetime string against multiple accepted formats.
 
@@ -37,13 +53,8 @@ def validate_datetime(value: str, formats: Iterable[str] | None = None) -> bool:
         "%Y-%m-%dT%H:%M:%S.%fZ",  # ISO format with microseconds and UTC (Z)
     ]
 
-    for datetime_format in formats:
-        try:
-            # Try to parse the datetime string using each format
-            datetime.strptime(value, datetime_format)
-            return True  # If parsing succeeds, the validation passes
-        except ValueError:
-            continue  # If parsing fails, try the next format
+    if _matches_any_datetime_format(value, formats):
+        return True
 
     # If none of the formats worked, raise a ValidationError
     raise ValidationError(f"Invalid datetime format. Acceptable formats are: {', '.join(formats)}")
@@ -67,12 +78,8 @@ def validate_date(value: str, formats: Iterable[str] | None = None) -> bool:
         return True
 
     formats = formats or ["%Y-%m-%d"]  # Default format is YYYY-MM-DD
-    for date_format in formats:
-        try:
-            datetime.strptime(value, date_format)
-            return True  # If one format works, the validation succeeds
-        except ValueError:
-            continue
+    if _matches_any_datetime_format(value, formats):
+        return True
     raise ValidationError(f"Invalid date format. Acceptable formats are: {', '.join(formats)}")
 
 
@@ -102,13 +109,8 @@ def validate_time(value: str, formats: Iterable[str] | None = None) -> bool:
         "%H:%M:%S.%fZ",  # Time with microseconds and UTC
     ]
 
-    for time_format in formats:
-        try:
-            # Try to parse the time string using each format
-            datetime.strptime(value, time_format)
-            return True  # If parsing succeeds, the validation passes
-        except ValueError:
-            continue  # If parsing fails, try the next format
+    if _matches_any_datetime_format(value, formats):
+        return True
 
     # If none of the formats worked, raise a ValidationError
     raise ValidationError(f"Invalid time format. Acceptable formats are: {', '.join(formats)}")

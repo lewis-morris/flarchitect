@@ -1,13 +1,17 @@
 """Tests for the :class:`SimpleCache` fallback cache implementation."""
 
+import importlib.util
 import time
-from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 # Load ``SimpleCache`` directly from the source file so the tests work
 # regardless of the working directory.
 module_path = Path(__file__).resolve().parents[2] / "flarchitect" / "core" / "simple_cache.py"
-SimpleCache = SourceFileLoader("simple_cache", str(module_path)).load_module().SimpleCache
+spec = importlib.util.spec_from_file_location("simple_cache", module_path)
+simple_cache = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+spec.loader.exec_module(simple_cache)
+SimpleCache = simple_cache.SimpleCache
 
 
 def test_clear_removes_entries():

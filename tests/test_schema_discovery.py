@@ -5,11 +5,11 @@ from __future__ import annotations
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy.pool import StaticPool
 
 from flarchitect import Architect
-
 
 db = SQLAlchemy()
 
@@ -33,6 +33,23 @@ class Book(BaseModel):
     title = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey("authors.id"))
     author = relationship("Author", back_populates="books")
+
+
+class Category(BaseModel):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    label = Column(String, nullable=False)
+
+    class Meta:
+        allow_filters = False
+        allow_order_by = False
+        allow_groupby = True
+        allow_aggregation = True
+
+    @hybrid_property
+    def display_label(self):
+        return self.label.upper()
 
 
 def _create_app(**config):
@@ -107,3 +124,45 @@ def test_schema_discovery_model_filter_and_depth():
     author_paths = {p["path"] for p in resp_depth.get_json()["value"]["models"][0]["join_paths"]}
     assert "books" in author_paths
     assert "books.author" not in author_paths
+
+
+def test_schema_discovery_describes_configured_fields_endpoints_and_dedupes():
+    from flarchitect.core.discovery import build_schema_discovery_payload
+
+    routes = {
+        "category_get": {"model": Category, "method": "get", "url": "/api/categories"},
+        "category_get_dup": {"model": Category, "method": "GET", "url": "/api/categories"},
+        "missing_model": {"model": None, "method": "GET", "url": "/api/missing"},
+    }
+
+    app = Flask(__name__)
+    with app.app_context():
+        payload = build_schema_discovery_payload(
+            models=[object, Category],
+            created_routes=routes,
+            model_filter={"categories"},
+            max_depth=0,
+        )
+
+    assert len(payload["models"]) == 1
+    category = payload["models"][0]
+    assert category["name"] == "Category"
+    assert category["filters_enabled"] is False
+    assert category["ordering_enabled"] is False
+    assert category["grouping_enabled"] is True
+    assert category["aggregation_enabled"] is True
+    assert category["endpoints"] == [{"method": "GET", "url": "/api/categories"}]
+
+    fields = {field["name"]: field for field in category["fields"]}
+    assert fields["id"]["operators"] == []
+    assert fields["display_label"]["source"] == "hybrid"
+
+
+def test_schema_discovery_filter_matches_endpoint_segments_and_empty_tokens():
+    from flarchitect.core.discovery import _matches_model_filter
+
+    endpoints = [{"url": "/api/library/categories", "method": "GET"}]
+
+    assert _matches_model_filter(Category, endpoints, set()) is True
+    assert _matches_model_filter(Category, endpoints, {"library"}) is True
+    assert _matches_model_filter(Category, [{"url": "", "method": "GET"}], {"missing"}) is False

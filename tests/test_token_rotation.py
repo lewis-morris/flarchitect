@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
 from collections.abc import Generator
 
 import pytest
@@ -13,7 +12,6 @@ from sqlalchemy.pool import StaticPool
 
 from flarchitect import Architect
 from flarchitect.authentication.token_store import RefreshToken, get_session
-
 
 db = SQLAlchemy()
 

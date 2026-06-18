@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from flask import request
 
 from demo.authentication.app_base import BaseConfig, User, create_app, schema
@@ -20,7 +22,7 @@ def custom_auth() -> bool:
 
 
 class Config(BaseConfig):
-    API_AUTHENTICATE_METHOD = ["custom"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["custom"]
     API_CUSTOM_AUTH = staticmethod(custom_auth)
 
 

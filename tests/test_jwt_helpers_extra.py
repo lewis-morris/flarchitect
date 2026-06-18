@@ -8,9 +8,8 @@ from flarchitect.authentication.jwt import (
     _get_access_verifying_key,
     _get_refresh_signing_key,
     _get_refresh_verifying_key,
-    get_allowed_algorithms,
-    get_jwt_algorithm,
     create_jwt,
+    get_allowed_algorithms,
 )
 
 

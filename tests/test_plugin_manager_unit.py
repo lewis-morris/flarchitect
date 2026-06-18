@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
-import pytest
 from flask import Response
 
 from flarchitect.plugins import PluginBase, PluginManager

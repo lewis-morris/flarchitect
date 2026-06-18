@@ -18,6 +18,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sess
 from flarchitect.utils.session import _resolve_session
 
 
+def _utc_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 class Base(DeclarativeBase):
     """Base declarative class for refresh token models."""
 
@@ -31,7 +35,7 @@ class RefreshToken(Base):
     user_pk: Mapped[str] = mapped_column(String, nullable=False)
     user_lookup: Mapped[str] = mapped_column(String, nullable=False)
     expires_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.datetime.now(datetime.timezone.utc))
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=_utc_now)
     last_used_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     revoked_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -93,7 +97,7 @@ def store_refresh_token(token: str, user_pk: str, user_lookup: str, expires_at: 
                 user_pk=user_pk,
                 user_lookup=user_lookup,
                 expires_at=expires_at,
-                created_at=datetime.datetime.now(datetime.timezone.utc),
+                created_at=_utc_now(),
                 revoked=False,
             )
         )
@@ -141,7 +145,7 @@ def revoke_refresh_token(token: str) -> None:
 
     This function preserves the row for auditing instead of deleting it.
     """
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = _utc_now()
     with _lock, _managed_session() as session:
         _ensure_table(session)
         instance = session.get(RefreshToken, token)
@@ -160,7 +164,7 @@ def mark_refresh_token_used(token: str, *, replaced_by: str | None = None) -> No
         token: The refresh token being used.
         replaced_by: Optional new refresh token string created via rotation.
     """
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = _utc_now()
     with _lock, _managed_session() as session:
         _ensure_table(session)
         instance = session.get(RefreshToken, token)

@@ -1,20 +1,17 @@
 import datetime
 import uuid
+from collections.abc import Callable
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, TYPE_CHECKING, get_args, get_origin, get_type_hints
+from types import new_class
+from typing import Any, get_args, get_origin, get_type_hints
 
+import sqlalchemy_utils
 from flask import request
 from marshmallow import Schema, ValidationError, fields, post_dump, pre_dump
 from marshmallow.validate import Length, Range
-
-try:
-    from numpy.lib.function_base import iterable
-except Exception:
-    from numpy import iterable
-
-import sqlalchemy_utils
 from sqlalchemy import (
     TIMESTAMP,
     UUID,
@@ -35,14 +32,14 @@ from sqlalchemy import (
     Time,
 )
 from sqlalchemy.dialects.postgresql import JSON, JSONB
-from sqlalchemy.types import JSON as SQLAlchemyJSON, TypeDecorator
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import ColumnProperty, RelationshipProperty, class_mapper
 from sqlalchemy.orm import exc as orm_exc
+from sqlalchemy.types import JSON as SQLAlchemyJSON
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy_utils.types.email import EmailType
 
 from flarchitect.logging import logger
-from flarchitect.schemas.utils import get_input_output_from_model_or_make
 from flarchitect.schemas.validators import validate_by_type
 from flarchitect.specs.utils import endpoint_namer, get_openapi_meta_data
 from flarchitect.utils.config_helpers import get_config_or_model_meta
@@ -77,8 +74,7 @@ class EnumField(fields.Field):
         try:
             if self.by_value:
                 return self.enum(value)
-            else:
-                return self.enum[value]
+            return self.enum[value]
         except (KeyError, ValueError) as e:
             valid = [e.name if not self.by_value else e.value for e in self.enum]
             raise ValidationError(f"Invalid enum value. Expected one of: {valid}.") from e
@@ -145,13 +141,67 @@ def register_type_mapping(sqlalchemy_type: Any, marshmallow_field: type[fields.F
     type_mapping[sqlalchemy_type] = marshmallow_field
 
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-
-_SCHEMA_FIELD_CACHE: dict[tuple[type["AutoSchema"], bool, int, tuple[str, ...] | None], "_SchemaFieldCacheEntry"] = {}
+_FIELD_CACHE_CONFIG_KEYS = (
+    "API_ADD_RELATIONS",
+    "API_ALLOW_JOIN",
+    "API_DUMP_HYBRID_PROPERTIES",
+    "API_FIELD_CASE",
+    "API_IGNORE_UNDERSCORE_ATTRIBUTES",
+    "API_SCHEMA_CASE",
+    "API_SERIALIZATION_DEPTH",
+    "API_SERIALIZATION_TYPE",
+    "ALLOW_NESTED_WRITES",
+)
+_SchemaFieldCacheKey = tuple[type["AutoSchema"], bool, int, int, tuple[str, ...] | None, tuple[tuple[str, str], ...]]
+_SCHEMA_FIELD_CACHE: dict[_SchemaFieldCacheKey, "_SchemaFieldCacheEntry"] = {}
 _HYBRID_FIELD_CACHE: dict[tuple[type[Any], str], tuple[type[fields.Field], dict[str, Any]]] = {}
 _AUTO_SCHEMA_REGISTRY: dict[tuple[type[Any], bool | None], list[type["AutoSchema"]]] = {}
+_SCHEMA_SUBCLASS_CACHE: dict[tuple[type[Any], bool | None], Callable[..., Any] | None] = {}
+_DYNAMIC_SCHEMA_CACHE: dict[tuple[type[Any], type[Any]], type[Any]] = {}
+_JOIN_QUERY_KEYS = {"join", "join_models"}
+_RESERVED_JOIN_QUERY_KEYS = {
+    "join",
+    "join_models",
+    "join_type",
+    "fields",
+    "groupby",
+    "orderby",
+    "order_by",
+    "page",
+    "limit",
+    "dump",
+    "format",
+    "include_deleted",
+    "cascade_delete",
+}
+_DIRECT_FORMAT_VALIDATORS = {
+    "ipv4": "ipv4",
+    "ipv6": "ipv6",
+    "mac": "mac",
+    "hostname": "hostname",
+    "slug": "slug",
+    "card": "card",
+    "country_code": "country_code",
+    "iban": "iban",
+    "cron": "cron",
+    "base64": "base64",
+    "sha224": "sha224",
+    "sha384": "sha384",
+    "currency": "currency",
+}
+_URL_FORMATS = {"url", "uri", "url_path"}
+_PHONE_FORMATS = {"phone", "phone_number"}
+_POSTAL_FORMATS = {"postal_code", "zip", "zipcode"}
+_HYBRID_PRIMITIVE_TYPES: dict[str, Any] = {
+    "int": int,
+    "integer": int,
+    "float": float,
+    "bool": bool,
+    "boolean": bool,
+    "string": str,
+    "str": str,
+    "decimal": Decimal,
+}
 
 
 @dataclass(slots=True)
@@ -237,6 +287,168 @@ def lookup_auto_schema_subclass(model: type[Any], dump: bool | None, schema_base
             if issubclass(candidate, schema_base):
                 return candidate
     return None
+
+
+def get_schema_subclass(model: Callable[..., Any], dump: bool | None = False) -> Callable[..., Any] | None:
+    """Locate an ``AutoSchema`` subclass for a model and usage direction."""
+
+    if model is None:
+        return None
+
+    schema_base = get_config_or_model_meta("API_BASE_SCHEMA", model=model, default=AutoSchema) or AutoSchema
+
+    cache_key = (model, dump)
+    if cache_key in _SCHEMA_SUBCLASS_CACHE:
+        return _SCHEMA_SUBCLASS_CACHE[cache_key]
+
+    subclass = lookup_auto_schema_subclass(model, dump, schema_base)
+    _SCHEMA_SUBCLASS_CACHE[cache_key] = subclass
+    return subclass
+
+
+def create_dynamic_schema(base_class: Callable[..., Any], model_class: Callable[..., Any]) -> Callable[..., Any]:
+    """Create and cache a schema subclass for ``model_class`` at runtime."""
+
+    class Meta:
+        model = model_class
+
+    cache_key = (base_class, model_class)
+    if cache_key in _DYNAMIC_SCHEMA_CACHE:
+        return _DYNAMIC_SCHEMA_CACHE[cache_key]
+
+    dynamic_class = new_class(
+        f"{model_class.__name__}Schema",
+        (base_class,),
+        exec_body=lambda ns: ns.update(Meta=Meta),
+    )
+    _DYNAMIC_SCHEMA_CACHE[cache_key] = dynamic_class
+    return dynamic_class
+
+
+def get_input_output_from_model_or_make(model: Callable[..., Any], **kwargs) -> tuple[Callable[..., Any], Callable[..., Any]]:
+    """Return input/output schema instances for a model, creating them if needed."""
+
+    disable_relations = not get_config_or_model_meta("API_ADD_RELATIONS", model=model, default=True)
+    disable_hybrids = not get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=model, default=True)
+
+    if disable_relations or disable_hybrids:
+        input_schema_class = create_dynamic_schema(AutoSchema, model)
+        output_schema_class = create_dynamic_schema(AutoSchema, model)
+    else:
+        input_schema_class = get_schema_subclass(model, dump=False) or create_dynamic_schema(AutoSchema, model)
+        output_schema_class = get_schema_subclass(model, dump=True) or create_dynamic_schema(AutoSchema, model)
+
+    input_schema = input_schema_class(**kwargs)
+    output_schema = output_schema_class(**kwargs)
+
+    return input_schema, output_schema
+
+
+def _normalise_join_token(value: object) -> str:
+    return str(value or "").strip().lower().replace("-", "_")
+
+
+def _request_join_tokens() -> set[str]:
+    """Collect explicit relationship join tokens from the active request."""
+
+    try:
+        tokens: set[str] = set()
+        for key in _JOIN_QUERY_KEYS:
+            for value in request.args.getlist(key):
+                tokens.update(token for raw in str(value).split(",") if (token := _normalise_join_token(raw)))
+
+        for key in request.args:
+            if key not in _RESERVED_JOIN_QUERY_KEYS and "__" not in key and "." not in key and (token := _normalise_join_token(key)):
+                tokens.add(token)
+        return tokens
+    except Exception:
+        return set()
+
+
+def _relationship_join_candidates(original_attribute: str, related_model: type[Any]) -> set[str]:
+    endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
+    endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model)
+    return {
+        _normalise_join_token(endpoint_name),
+        _normalise_join_token(convert_case(original_attribute, endpoint_case)),
+        _normalise_join_token(original_attribute),
+    }
+
+
+def _safe_column_python_type(column: Column) -> type | None:
+    try:
+        return column.type.python_type
+    except Exception:
+        return None
+
+
+def _auto_validator_name(
+    *,
+    column_name: str,
+    format_name: str | None,
+    python_type: type | None,
+    column: Column,
+) -> str | None:
+    rules = (
+        ((("email" in column_name and python_type is str) or format_name == "email"), "email"),
+        ((("url" in column_name and python_type is str) or format_name in _URL_FORMATS), "url"),
+        ((("date" in column_name or python_type is datetime.date or format_name == "date")), "date"),
+        ((python_type is datetime.time or format_name == "time"), "time"),
+        ((("datetime" in column_name or python_type is datetime.datetime or format_name == "datetime")), "datetime"),
+        ((("boolean" in column_name or python_type is bool or format_name == "boolean")), "boolean"),
+        ((("domain" in column_name and python_type is str) or format_name == "domain"), "domain"),
+    )
+    for matched, validator_name in rules:
+        if matched:
+            return validator_name
+    if format_name in _DIRECT_FORMAT_VALIDATORS:
+        return _DIRECT_FORMAT_VALIDATORS[format_name]
+    if format_name == "uuid" or _safe_column_python_type(column) is uuid.UUID:
+        return "uuid"
+    if ("phone" in column_name and _safe_column_python_type(column) is str) or format_name in _PHONE_FORMATS:
+        return "phone"
+    if "postal" in column_name or "zip" in column_name or format_name in _POSTAL_FORMATS:
+        return "postal_code"
+    return None
+
+
+def _model_class_for_schema_model(model: Any) -> type[Any] | None:
+    if isinstance(model, type):
+        return model
+    if model is not None:
+        return type(model)
+    return None
+
+
+def _normalise_hybrid_field_type(field_type: Any | None) -> Any | None:
+    if isinstance(field_type, str):
+        return _HYBRID_PRIMITIVE_TYPES.get(field_type.lower())
+
+    origin = get_origin(field_type)
+    if origin is None:
+        return field_type
+
+    args = [arg for arg in get_args(field_type) if arg is not type(None)]
+    return args[0] if len(args) == 1 else origin
+
+
+def _hybrid_return_type(descriptor: Any) -> Any | None:
+    fget = getattr(descriptor, "fget", None)
+    if fget is None:
+        return None
+
+    try:
+        return get_type_hints(fget).get("return")
+    except Exception:
+        return getattr(fget, "__annotations__", {}).get("return")
+
+
+def _schema_field_class_for_type(field_type: Any | None) -> type[fields.Field]:
+    if isinstance(field_type, type) and issubclass(field_type, fields.Field):
+        return field_type
+
+    resolved = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
+    return resolved if isinstance(resolved, type) else fields.Str
 
 
 class Base(Schema):  # Inheriting from marshmallow's Schema
@@ -327,8 +539,33 @@ class AutoSchema(Base):
             return tuple(sorted(value))
         return (value,)
 
-    def _build_field_cache_key(self) -> tuple[type["AutoSchema"], bool, int, tuple[str, ...] | None]:
-        return (self.__class__, bool(self.render_nested), int(self.depth or 0), self._cache_only_key)
+    def _field_cache_config_fingerprint(self) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (key, repr(get_config_or_model_meta(key, self.model, default=None)))
+            for key in _FIELD_CACHE_CONFIG_KEYS
+        )
+
+    def _build_field_cache_key(self) -> _SchemaFieldCacheKey:
+        return (
+            self.__class__,
+            bool(self.render_nested),
+            int(self.depth or 0),
+            int(self.context.get("current_depth", 0) or 0),
+            self._cache_only_key,
+            self._field_cache_config_fingerprint(),
+        )
+
+    def _can_use_field_cache(self) -> bool:
+        """Field generation is request-sensitive when dump/join args are present."""
+
+        try:
+            if request.args:
+                return False
+        except RuntimeError:
+            pass
+
+        raw_dump = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
+        return str(raw_dump or "url").strip().lower() != "dynamic"
 
     @pre_dump
     def pre_dump(self, data, **kwargs):
@@ -354,47 +591,41 @@ class AutoSchema(Base):
         self.dump_fields = {key: self.dump_fields[key] for key in only_fields}
         self.load_fields = {key: self.load_fields[key] for key in only_fields}
 
+    def _generate_field_for_descriptor(self, original_attribute: str, mapper_property: Any) -> None:
+        if self._should_skip_attribute(original_attribute):
+            return
+
+        attribute = self._convert_case(original_attribute)
+        prop = getattr(mapper_property, "property", None)
+
+        if isinstance(prop, RelationshipProperty):
+            self._handle_relationship(attribute, original_attribute, mapper_property)
+        elif isinstance(prop, ColumnProperty):
+            self._handle_column(attribute, original_attribute, mapper_property)
+        elif isinstance(mapper_property, hybrid_property) and get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=self.model, default=True):
+            self._handle_hybrid_property(attribute, original_attribute, mapper_property)
+
     def generate_fields(self):
         """Automatically add fields for each column and relationship in the SQLAlchemy model."""
         if not self.model:
             logger.warning("self.Meta.model is None. Skipping field generation.")
             return
 
+        use_field_cache = self._can_use_field_cache()
         cache_key = self._build_field_cache_key()
-        cached_entry = _SCHEMA_FIELD_CACHE.get(cache_key)
-        if cached_entry is not None:
-            cached_entry.instantiate(self)
-            _rebind_cached_fields(self)
-            return
+        if use_field_cache:
+            cached_entry = _SCHEMA_FIELD_CACHE.get(cache_key)
+            if cached_entry is not None:
+                cached_entry.instantiate(self)
+                _rebind_cached_fields(self)
+                return
 
         mapper = class_mapper(self.model)
         for attribute, mapper_property in mapper.all_orm_descriptors.items():
-            original_attribute = attribute
-            # Determine if we should skip based on the original attribute
-            if self._should_skip_attribute(original_attribute):
-                continue
+            self._generate_field_for_descriptor(attribute, mapper_property)
 
-            # Convert case, preserving leading underscore when configured to show them
-            attribute = self._convert_case(original_attribute)
-
-            # Access the actual property from the InstrumentedAttribute
-            prop = getattr(mapper_property, "property", None)
-
-            if isinstance(prop, RelationshipProperty):
-                self._handle_relationship(attribute, original_attribute, mapper_property)
-            elif isinstance(prop, ColumnProperty):
-                self._handle_column(attribute, original_attribute, mapper_property)
-
-            elif isinstance(mapper_property, hybrid_property):
-                if get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=self.model, default=True):
-                    self._handle_hybrid_property(attribute, original_attribute, mapper_property)
-            else:
-                pass
-        # print("Final fields:", self.fields)
-        # print("Dump fields:", self.dump_fields)  # Should match self.fields
-        # print("Load fields:", self.load_fields)  # Should match self.fields
-
-        _SCHEMA_FIELD_CACHE[cache_key] = _SchemaFieldCacheEntry.capture(self)
+        if use_field_cache:
+            _SCHEMA_FIELD_CACHE[cache_key] = _SchemaFieldCacheEntry.capture(self)
 
     def _convert_case(self, attribute: str) -> str:
         """Convert the attribute name to the appropriate case.
@@ -425,6 +656,9 @@ class AutoSchema(Base):
         mapper_property: RelationshipProperty,
     ):
         """Handle adding a relationship field to the schema."""
+        if not self.render_nested:
+            return
+
         add_relations = get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True)
         allow_join = get_config_or_model_meta("API_ALLOW_JOIN", model=self.model, default=False)
 
@@ -442,43 +676,8 @@ class AutoSchema(Base):
         if not add_relations:
             if not allow_join:
                 return
-            def _collect_join_tokens() -> set[str]:
-                try:
-                    values = []
-                    # all values for join and legacy join_models
-                    values.extend(request.args.getlist("join"))
-                    values.extend(request.args.getlist("join_models"))
-                    tokens: set[str] = set()
-                    for v in values:
-                        for raw in str(v).split(","):
-                            tok = raw.strip().lower().replace("-", "_")
-                            if tok:
-                                tokens.add(tok)
-                    # also treat additional keys as join tokens (when names match)
-                    reserved = {"join", "join_models", "join_type", "fields", "groupby", "orderby", "order_by", "page", "limit", "dump", "format", "include_deleted", "cascade_delete"}
-                    for k in request.args.keys():
-                        if k not in reserved and "__" not in k and "." not in k:
-                            tokens.add(k.strip().lower().replace("-", "_"))
-                    return tokens
-                except Exception:
-                    return set()
-
-            tokens = _collect_join_tokens()
-
-            # Compute candidate tokens for this relationship
-            from flarchitect.specs.utils import endpoint_namer
-            from flarchitect.utils.core_utils import convert_case
-
-            endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
             related_model = mapper_property.property.mapper.class_
-            endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
-            rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
-            rel_key_raw = original_attribute.lower()
-            candidates = {endpoint_name, rel_key_endpoint_case, rel_key_raw}
-
-            requested = not tokens.isdisjoint(candidates)
-
-            if not requested:
+            if _request_join_tokens().isdisjoint(_relationship_join_candidates(original_attribute, related_model)):
                 return
 
         # Either relations are enabled or an explicit join requested this one
@@ -502,25 +701,8 @@ class AutoSchema(Base):
         if self._should_skip_attribute(attribute):
             return
 
-        if isinstance(field_type, str):
-            primitive_map: dict[str, Any] = {
-                "int": int,
-                "integer": int,
-                "float": float,
-                "bool": bool,
-                "boolean": bool,
-                "string": str,
-                "str": str,
-                "decimal": Decimal,
-            }
-            field_type = primitive_map.get(field_type.lower())
-
-        model_cls = None
-        if isinstance(self.model, type):
-            model_cls = self.model
-        elif self.model is not None:
-            model_cls = type(self.model)
-
+        field_type = _normalise_hybrid_field_type(field_type)
+        model_cls = _model_class_for_schema_model(self.model)
         cache_key = (model_cls, original_attribute) if model_cls is not None else None
         cached = _HYBRID_FIELD_CACHE.get(cache_key) if cache_key else None
 
@@ -531,32 +713,13 @@ class AutoSchema(Base):
             descriptor = getattr(model_cls, original_attribute, None) if model_cls is not None else None
 
             if field_type is None and descriptor is not None:
-                # SQLAlchemy hybrid properties expose annotations on ``fget``
-                fget = getattr(descriptor, "fget", None)
-                if fget is not None:
-                    try:
-                        field_type = get_type_hints(fget).get("return")
-                    except Exception:
-                        field_type = None
-                    if field_type is None:
-                        field_type = getattr(fget, "__annotations__", {}).get("return")
-
-            if isinstance(field_type, type) and issubclass(field_type, fields.Field):
-                schema_field_cls = field_type
-            else:
-                if field_type is not None:
-                    origin = get_origin(field_type)
-                    if origin is not None:
-                        args = [arg for arg in get_args(field_type) if arg is not type(None)]
-                        field_type = args[0] if len(args) == 1 else origin
-
-                resolved_field = type_mapping.get(field_type, fields.Str) if field_type else fields.Str
-                schema_field_cls = resolved_field if isinstance(resolved_field, type) else fields.Str
+                field_type = _normalise_hybrid_field_type(_hybrid_return_type(descriptor))
 
             # Check if the attribute has a setter method (properties/hybrids expose ``fset``)
             has_setter = descriptor is not None and getattr(descriptor, "fset", None) is not None
 
             # If there's no setter, mark it as dump_only
+            schema_field_cls = _schema_field_class_for_type(field_type)
             field_args = {"dump_only": not has_setter}
 
             if cache_key:
@@ -741,10 +904,8 @@ class AutoSchema(Base):
                 if impl is not None:
                     queue.append(impl)
                     if isinstance(impl, type):
-                        try:
+                        with suppress(Exception):
                             queue.append(impl())
-                        except Exception:
-                            pass
 
                 loaded_impl = self._load_dialect_impl(current)
                 if loaded_impl is not None:
@@ -807,14 +968,23 @@ class AutoSchema(Base):
                 sources.append(instance)
 
         for source in sources:
-            try:
-                return getattr(source, "python_type")
-            except NotImplementedError:
-                return None
-            except AttributeError:
+            if not hasattr(source, "python_type"):
                 continue
+            python_type = self._python_type_or_none(source)
+            if python_type is None:
+                return None
+            return python_type
 
         return None
+
+    @staticmethod
+    def _python_type_or_none(source: Any) -> type | None:
+        """Return SQLAlchemy ``python_type`` when available and implemented."""
+
+        try:
+            return source.python_type
+        except NotImplementedError:
+            return None
 
     def _add_validation(self, column: Column, field_args: dict, effective_type: Any | None = None):
         # custom validation by user
@@ -848,52 +1018,14 @@ class AutoSchema(Base):
             if python_type is None:
                 python_type = self._safe_python_type(column.type)
             try:
-                if ("email" in column_name and python_type is str) or (format_name == "email"):
-                    field_args["validate"].append(validate_by_type("email"))
-                elif ("url" in column_name and python_type is str) or (format_name in ["url", "uri", "url_path"]):
-                    field_args["validate"].append(validate_by_type("url"))
-                elif "date" in column_name or python_type is datetime.date or format_name == "date":
-                    field_args["validate"].append(validate_by_type("date"))
-                elif python_type is datetime.time or format_name == "time":
-                    field_args["validate"].append(validate_by_type("time"))
-                elif "datetime" in column_name or python_type is datetime.datetime or format_name == "datetime":
-                    field_args["validate"].append(validate_by_type("datetime"))
-                elif "boolean" in column_name or python_type is bool or format_name == "boolean":
-                    field_args["validate"].append(validate_by_type("boolean"))
-                elif ("domain" in column_name and python_type is str) or (format_name == "domain"):
-                    field_args["validate"].append(validate_by_type("domain"))
-                elif format_name == "ipv4":
-                    field_args["validate"].append(validate_by_type("ipv4"))
-                elif format_name == "ipv6":
-                    field_args["validate"].append(validate_by_type("ipv6"))
-                elif format_name == "mac":
-                    field_args["validate"].append(validate_by_type("mac"))
-                elif format_name == "hostname":
-                    field_args["validate"].append(validate_by_type("hostname"))
-                elif format_name == "slug":
-                    field_args["validate"].append(validate_by_type("slug"))
-                elif format_name == "uuid" or column.type.python_type == uuid.UUID:
-                    field_args["validate"].append(validate_by_type("uuid"))
-                elif format_name == "card":
-                    field_args["validate"].append(validate_by_type("card"))
-                elif format_name == "country_code":
-                    field_args["validate"].append(validate_by_type("country_code"))
-                elif format_name == "iban":
-                    field_args["validate"].append(validate_by_type("iban"))
-                elif format_name == "cron":
-                    field_args["validate"].append(validate_by_type("cron"))
-                elif format_name == "base64":
-                    field_args["validate"].append(validate_by_type("base64"))
-                elif format_name == "sha224":
-                    field_args["validate"].append(validate_by_type("sha224"))
-                elif format_name == "sha384":
-                    field_args["validate"].append(validate_by_type("sha384"))
-                elif format_name == "currency":
-                    field_args["validate"].append(validate_by_type("currency"))
-                elif ("phone" in column_name and column.type.python_type is str) or (format_name in ["phone", "phone_number"]):
-                    field_args["validate"].append(validate_by_type("phone"))
-                elif "postal" in column_name or "zip" in column_name or (format_name in ["postal_code", "zip", "zipcode"]):
-                    field_args["validate"].append(validate_by_type("postal_code"))
+                validator_name = _auto_validator_name(
+                    column_name=column_name,
+                    format_name=format_name,
+                    python_type=python_type,
+                    column=column,
+                )
+                if validator_name:
+                    field_args["validate"].append(validate_by_type(validator_name))
             except Exception:
                 pass
 
@@ -964,6 +1096,149 @@ class AutoSchema(Base):
                 return []
             raise
 
+    def _relationship_dump_type(self) -> str:
+        try:
+            dump_override = request.args.get("dump")
+        except RuntimeError:
+            dump_override = None
+        dump_override = (dump_override or "").strip().lower()
+        raw_dump = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
+        configured_dump = "json" if raw_dump is False else str(raw_dump or "url").strip().lower()
+        return dump_override if dump_override in {"url", "json", "dynamic", "hybrid"} else configured_dump
+
+    def _relationship_serialization_depth(self) -> int | None:
+        raw_depth = get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=None)
+        if raw_depth in (None, "") or raw_depth is False:
+            return None
+        try:
+            depth = int(raw_depth)
+        except (TypeError, ValueError):
+            return None
+        return depth if depth >= 0 else None
+
+    def _add_relationship_url_field(
+        self,
+        attribute: str,
+        original_attribute: str,
+        input_schema: Schema,
+        relationship_prop: Any,
+        related_model: type[Any],
+        field_args: dict[str, Any],
+    ) -> str:
+        if relationship_prop.uselist:
+            field = fields.Function(lambda obj: self.get_many_url(obj, original_attribute, input_schema), **field_args)
+            url_kind = "many"
+        else:
+            field = fields.Function(lambda obj: self.get_url(obj, original_attribute, input_schema), **field_args)
+            url_kind = "single"
+        field.metadata.setdefault("_fa_relationship", {}).update(
+            {
+                "kind": "url",
+                "url_kind": url_kind,
+                "attribute": original_attribute,
+                "related_model": related_model,
+            },
+        )
+        self.add_to_fields(attribute, field, load=False)
+        return attribute
+
+    def _add_relationship_nested_field(
+        self,
+        original_attribute: str,
+        output_schema: Schema,
+        relationship_prop: Any,
+        related_model: type[Any],
+        field_args: dict[str, Any],
+    ) -> str:
+        field = fields.List(fields.Nested(output_schema), **field_args) if relationship_prop.uselist else fields.Nested(output_schema, **field_args)
+        field.metadata.setdefault("_fa_relationship", {}).update(
+            {
+                "kind": "nested",
+                "role": "output",
+                "many": bool(relationship_prop.uselist),
+                "attribute": original_attribute,
+                "related_model": related_model,
+            },
+        )
+        self.add_to_fields(original_attribute, field, load=False)
+        return original_attribute
+
+    def _dynamic_relationship_requested(self, original_attribute: str, related_model: type[Any]) -> bool:
+        tokens = _request_join_tokens()
+        return bool(tokens) and not tokens.isdisjoint(_relationship_join_candidates(original_attribute, related_model))
+
+    def _add_relationship_load_field(
+        self,
+        field_name: str,
+        input_schema: Schema,
+        relationship_prop: Any,
+        original_attribute: str,
+        related_model: type[Any],
+    ) -> None:
+        load_field = fields.List(fields.Nested(input_schema), load_only=True) if relationship_prop.uselist else fields.Nested(input_schema, load_only=True)
+        load_field.metadata.setdefault("_fa_relationship", {}).update(
+            {
+                "kind": "nested",
+                "role": "input",
+                "many": bool(relationship_prop.uselist),
+                "attribute": original_attribute,
+                "related_model": related_model,
+            },
+        )
+        self.add_to_fields(field_name, load_field, dump=False)
+
+    def _add_relationship_output_field(
+        self,
+        *,
+        dump_type: str,
+        original_attribute: str,
+        related_model: type[Any],
+        relationship_prop: Any,
+        depth_exceeded: bool,
+        add_url_field: Callable[[], str],
+        add_nested_field: Callable[[], str],
+    ) -> str | None:
+        if dump_type == "url":
+            return add_url_field()
+        if dump_type == "json":
+            return add_url_field() if depth_exceeded else add_nested_field()
+        if dump_type == "dynamic":
+            return add_nested_field() if self._dynamic_relationship_requested(original_attribute, related_model) else None
+        if dump_type == "hybrid":
+            return add_url_field() if relationship_prop.uselist or depth_exceeded else add_nested_field()
+        return add_nested_field()
+
+    def _schema_field_for_metadata(self, field_key: str) -> fields.Field | None:
+        return (
+            self.fields.get(field_key)
+            or self.dump_fields.get(field_key)
+            or self.load_fields.get(field_key)
+        )
+
+    def _model_attribute_info(self, attribute: str) -> dict[str, Any] | None:
+        try:
+            mapper_property = class_mapper(self.model).get_property(attribute)
+        except Exception:
+            return None
+
+        columns = getattr(mapper_property, "columns", None)
+        if not columns:
+            return None
+
+        try:
+            column = columns[0]
+        except (IndexError, TypeError):
+            return None
+
+        return getattr(column, "info", None)
+
+    def _merge_column_info_metadata(self, field_meta: dict[str, Any], info: dict[str, Any] | None) -> None:
+        if not info:
+            return
+        for key in ("description", "example", "format"):
+            if value := info.get(key):
+                field_meta.setdefault(key, value)
+
     def add_relationship_field(
         self,
         attribute: str,
@@ -987,169 +1262,50 @@ class AutoSchema(Base):
         relationship_prop = relationship_property.property
         related_model = relationship_property.mapper.class_
         field_args = {"dump_only": not relationship_prop.viewonly}
-
-        try:
-            dump_override = request.args.get("dump")
-        except RuntimeError:
-            dump_override = None
-        dump_override = (dump_override or "").strip().lower()
-        raw_dump = get_config_or_model_meta("API_SERIALIZATION_TYPE", self.model, default="url")
-        if raw_dump is False:
-            configured_dump = "json"
-        else:
-            configured_dump = str(raw_dump or "url").strip().lower()
-        dump_type = dump_override if dump_override in {"url", "json", "dynamic", "hybrid"} else configured_dump
-
-        raw_depth = get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=None)
-
-        serialization_depth: int | None
-        if raw_depth in (None, "") or raw_depth is False:
-            serialization_depth = None
-        else:
-            try:
-                serialization_depth = int(raw_depth)
-            except (TypeError, ValueError):
-                serialization_depth = None
-
-        if serialization_depth is not None and serialization_depth < 0:
-            serialization_depth = None
+        dump_type = self._relationship_dump_type()
+        serialization_depth = self._relationship_serialization_depth()
 
         def add_url_field() -> str:
-            if relationship_prop.uselist:
-                field = fields.Function(lambda obj: self.get_many_url(obj, original_attribute, input_schema), **field_args)
-                rel_meta = field.metadata.setdefault("_fa_relationship", {})
-                rel_meta.update(
-                    {
-                        "kind": "url",
-                        "url_kind": "many",
-                        "attribute": original_attribute,
-                        "related_model": related_model,
-                    },
-                )
-                self.add_to_fields(attribute, field, load=False)
-            else:
-                field = fields.Function(lambda obj: self.get_url(obj, original_attribute, input_schema), **field_args)
-                rel_meta = field.metadata.setdefault("_fa_relationship", {})
-                rel_meta.update(
-                    {
-                        "kind": "url",
-                        "url_kind": "single",
-                        "attribute": original_attribute,
-                        "related_model": related_model,
-                    },
-                )
-                self.add_to_fields(attribute, field, load=False)
-            return attribute
+            return self._add_relationship_url_field(
+                attribute,
+                original_attribute,
+                input_schema,
+                relationship_prop,
+                related_model,
+                field_args,
+            )
 
         def add_nested_field() -> str:
-            if relationship_prop.uselist:
-                field = fields.List(fields.Nested(output_schema), **field_args)
-                rel_meta = field.metadata.setdefault("_fa_relationship", {})
-                rel_meta.update(
-                    {
-                        "kind": "nested",
-                        "role": "output",
-                        "many": True,
-                        "attribute": original_attribute,
-                        "related_model": related_model,
-                    },
-                )
-                self.add_to_fields(original_attribute, field, load=False)
-            else:
-                field = fields.Nested(output_schema, **field_args)
-                rel_meta = field.metadata.setdefault("_fa_relationship", {})
-                rel_meta.update(
-                    {
-                        "kind": "nested",
-                        "role": "output",
-                        "many": False,
-                        "attribute": original_attribute,
-                        "related_model": related_model,
-                    },
-                )
-                self.add_to_fields(original_attribute, field, load=False)
-            return original_attribute
+            return self._add_relationship_nested_field(
+                original_attribute,
+                output_schema,
+                relationship_prop,
+                related_model,
+                field_args,
+            )
 
-        def collect_join_tokens() -> set[str]:
-            try:
-                values: list[str] = []
-                values.extend(request.args.getlist("join"))
-                values.extend(request.args.getlist("join_models"))
-                tokens: set[str] = set()
-                for v in values:
-                    for raw in str(v).split(","):
-                        tok = raw.strip().lower().replace("-", "_")
-                        if tok:
-                            tokens.add(tok)
-                reserved = {
-                    "join",
-                    "join_models",
-                    "join_type",
-                    "fields",
-                    "groupby",
-                    "orderby",
-                    "order_by",
-                    "page",
-                    "limit",
-                    "dump",
-                    "format",
-                    "include_deleted",
-                    "cascade_delete",
-                }
-                for key in request.args.keys():
-                    if key not in reserved and "__" not in key and "." not in key:
-                        tokens.add(key.strip().lower().replace("-", "_"))
-                return tokens
-            except Exception:
-                return set()
-
-        def depth_exceeded() -> bool:
-            return serialization_depth is not None and current_depth >= serialization_depth
-
-        if dump_type == "url":
-            field_name = add_url_field()
-        elif dump_type == "json":
-            field_name = add_url_field() if depth_exceeded() else add_nested_field()
-        elif dump_type == "dynamic":
-            tokens = collect_join_tokens()
-            if not tokens:
-                return
-            related_model = relationship_property.mapper.class_
-            endpoint_case = get_config_or_model_meta("API_ENDPOINT_CASE", default="kebab") or "kebab"
-            endpoint_name = get_config_or_model_meta("API_ENDPOINT_NAMER", related_model, default=endpoint_namer)(related_model).lower()
-            rel_key_endpoint_case = convert_case(original_attribute, endpoint_case).lower()
-            rel_key_raw = original_attribute.lower()
-            requested = not tokens.isdisjoint({endpoint_name, rel_key_endpoint_case, rel_key_raw})
-            if not requested:
-                return
-
-            # An explicit join request should inline the related payload even when the
-            # configured depth would normally fall back to URLs. This keeps
-            # ``API_SERIALIZATION_TYPE="dynamic"`` consistent with ``?dump=dynamic``.
-            field_name = add_nested_field()
-        elif dump_type == "hybrid":
-            if relationship_prop.uselist:
-                field_name = add_url_field()
-            else:
-                field_name = add_url_field() if depth_exceeded() else add_nested_field()
-        else:
-            field_name = add_nested_field()
+        field_name = self._add_relationship_output_field(
+            dump_type=dump_type,
+            original_attribute=original_attribute,
+            related_model=related_model,
+            relationship_prop=relationship_prop,
+            depth_exceeded=serialization_depth is not None and current_depth >= serialization_depth,
+            add_url_field=add_url_field,
+            add_nested_field=add_nested_field,
+        )
+        if field_name is None:
+            return
 
         self._update_field_metadata(original_attribute, field_name)
 
         if allow_nested_writes and not relationship_prop.viewonly:
-            load_field = fields.List(fields.Nested(input_schema), load_only=True) if relationship_prop.uselist else fields.Nested(input_schema, load_only=True)
-            rel_meta = load_field.metadata.setdefault("_fa_relationship", {})
-            rel_meta.update(
-                {
-                    "kind": "nested",
-                    "role": "input",
-                    "many": bool(relationship_prop.uselist),
-                    "attribute": original_attribute,
-                    "related_model": related_model,
-                },
+            self._add_relationship_load_field(
+                field_name,
+                input_schema,
+                relationship_prop,
+                original_attribute,
+                related_model,
             )
-            self.add_to_fields(field_name, load_field, dump=False)
 
     def _update_field_metadata(self, attribute: str, schema_attribute: str | None = None) -> None:
         """Populate OpenAPI metadata for a field.
@@ -1166,46 +1322,12 @@ class AutoSchema(Base):
             Mutates the field's ``metadata`` dictionary in-place.
         """
         field_key = schema_attribute or attribute
-        field_obj = (
-            self.fields.get(field_key)
-            or self.dump_fields.get(field_key)
-            or self.load_fields.get(field_key)
-        )
+        field_obj = self._schema_field_for_metadata(field_key)
         if field_obj is None:
             return
 
         field_meta = field_obj.metadata  # Extract the existing metadata
-
-        # Populate metadata from SQLAlchemy column ``info`` if available.
-        info: dict[str, Any] | None = None
-        try:
-            mapper = class_mapper(self.model)
-        except Exception:
-            mapper = None
-
-        if mapper is not None:
-            try:
-                mapper_property = mapper.get_property(attribute)
-            except Exception:
-                mapper_property = None
-
-            if mapper_property is not None:
-                columns = getattr(mapper_property, "columns", None)
-                if columns:
-                    try:
-                        column = columns[0]
-                    except (IndexError, TypeError):
-                        column = None
-                    if column is not None and hasattr(column, "info"):
-                        info = column.info  # type: ignore[assignment]
-
-        if info:
-            if desc := info.get("description"):
-                field_meta.setdefault("description", desc)
-            if example := info.get("example"):
-                field_meta.setdefault("example", example)
-            if fmt := info.get("format"):
-                field_meta.setdefault("format", fmt)
+        self._merge_column_info_metadata(field_meta, self._model_attribute_info(attribute))
 
         # Merge additional OpenAPI-specific metadata derived from the field
         openapi_meta_data = get_openapi_meta_data(field_obj)
@@ -1214,23 +1336,22 @@ class AutoSchema(Base):
 
     def dump(self, obj, *args, **kwargs):
         # print("Data before super().dump:", obj)
-        result = super().dump(obj, *args, **kwargs) if self.fields else self.__class__(context=self.context).dump(obj, *args, **kwargs)
-        # print("Data after super().dump:", result)
-        return result
+        return super().dump(obj, *args, **kwargs) if self.fields else self.__class__(context=self.context).dump(obj, *args, **kwargs)
 
 
 def _rebind_cached_fields(schema: "AutoSchema") -> None:
-    related_schema_cache: dict[tuple[type[Any], int], tuple[Schema, Schema]] = {}
+    related_schema_cache: dict[tuple[type[Any], int, bool], tuple[Schema, Schema]] = {}
     seen: set[int] = set()
 
-    def _schemas_for(model_cls: type[Any]) -> tuple[Schema, Schema]:
+    def _schemas_for(model_cls: type[Any], *, render_nested: bool = False) -> tuple[Schema, Schema]:
         current_depth = schema.context.get("current_depth", 0)
-        cache_key = (model_cls, current_depth)
+        cache_key = (model_cls, current_depth, render_nested)
         cached = related_schema_cache.get(cache_key)
         if cached is None:
             cached = get_input_output_from_model_or_make(
                 model_cls,
                 context={"current_depth": current_depth + 1},
+                render_nested=render_nested,
             )
             related_schema_cache[cache_key] = cached
         return cached
@@ -1245,11 +1366,49 @@ def _rebind_cached_fields(schema: "AutoSchema") -> None:
             _rebind_cached_field(schema, field_name, field_obj, _schemas_for)
 
 
+def _assign_nested_schema(nested_field: fields.Nested, bound_schema: Schema) -> None:
+    """Bind a fresh schema instance into a cached Marshmallow Nested field."""
+
+    # ``Nested.schema`` is a read-only property backed by ``_schema``.
+    nested_field._schema = bound_schema  # type: ignore[attr-defined]
+    nested_field.nested = bound_schema.__class__
+
+    if hasattr(nested_field, "parent"):
+        nested_field.parent = None
+    if hasattr(nested_field, "root"):
+        nested_field.root = None
+
+
+def _rebind_url_field(
+    schema: "AutoSchema",
+    field_obj: fields.Field,
+    relationship_meta: dict[str, Any],
+    input_schema: Schema,
+    field_name: str,
+) -> None:
+    attribute = relationship_meta.get("attribute") or field_name
+    if (relationship_meta.get("url_kind") or "single") == "many":
+        field_obj.serialize_func = (
+            lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_many_url(obj, attr, other_schema)
+        )
+    else:
+        field_obj.serialize_func = (
+            lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_url(obj, attr, other_schema)
+        )
+
+
+def _rebind_nested_field(field_obj: fields.Field, target_schema: Schema) -> None:
+    if isinstance(field_obj, fields.List) and isinstance(field_obj.inner, fields.Nested):
+        _assign_nested_schema(field_obj.inner, target_schema)
+    elif isinstance(field_obj, fields.Nested):
+        _assign_nested_schema(field_obj, target_schema)
+
+
 def _rebind_cached_field(
     schema: "AutoSchema",
     field_name: str,
     field_obj: fields.Field,
-    schema_loader: "Callable[[type[Any]], tuple[Schema, Schema]]",
+    schema_loader: "Callable[..., tuple[Schema, Schema]]",
 ) -> None:
     metadata = getattr(field_obj, "metadata", None)
     if not metadata:
@@ -1263,43 +1422,14 @@ def _rebind_cached_field(
     if related_model is None:
         return
 
-    attribute = relationship_meta.get("attribute") or field_name
     kind = relationship_meta.get("kind")
     input_schema, output_schema = schema_loader(related_model)
 
     if kind == "url":
-        url_kind = relationship_meta.get("url_kind") or "single"
-        if url_kind == "many":
-            field_obj.serialize_func = (
-                lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_many_url(obj, attr, other_schema)
-            )
-        else:
-            field_obj.serialize_func = (
-                lambda obj, schema_self=schema, attr=attribute, other_schema=input_schema: schema_self.get_url(obj, attr, other_schema)
-            )
+        _rebind_url_field(schema, field_obj, relationship_meta, input_schema, field_name)
     elif kind == "nested":
         role = relationship_meta.get("role") or "output"
+        if role == "input":
+            input_schema, output_schema = schema_loader(related_model, render_nested=True)
         target_schema = output_schema if role == "output" else input_schema
-
-        def _assign_nested_schema(nested_field: fields.Nested, bound_schema: Schema) -> None:
-            """
-            Ensure cached Nested fields reuse fresh schema instances without
-            triggering Marshmallow's read-only ``schema`` property setter.
-            """
-
-            # ``Nested.schema`` is a read-only property backed by ``_schema``.
-            nested_field._schema = bound_schema  # type: ignore[attr-defined]
-            # Keep ``nested`` aligned so future copies can reconstruct if needed.
-            nested_field.nested = bound_schema.__class__
-
-            if hasattr(nested_field, "parent"):
-                nested_field.parent = None
-            if hasattr(nested_field, "root"):
-                nested_field.root = None
-
-        if isinstance(field_obj, fields.List):
-            inner_field = field_obj.inner
-            if isinstance(inner_field, fields.Nested):
-                _assign_nested_schema(inner_field, target_schema)
-        elif isinstance(field_obj, fields.Nested):
-            _assign_nested_schema(field_obj, target_schema)
+        _rebind_nested_field(field_obj, target_schema)

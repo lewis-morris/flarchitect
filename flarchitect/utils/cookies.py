@@ -20,6 +20,38 @@ _SESSION_CONFIG_KEY_MAP: dict[str, str] = {
 }
 
 
+def _configured_cookie_defaults() -> dict[str, Any]:
+    configured_defaults = get_config_or_model_meta("API_COOKIE_DEFAULTS", default=None)
+    if isinstance(configured_defaults, Mapping):
+        return dict(configured_defaults)
+    return {}
+
+
+def _session_cookie_settings(settings: Mapping[str, Any]) -> dict[str, Any]:
+    app = current_app._get_current_object()
+    session_settings: dict[str, Any] = {}
+
+    for config_key, target in _SESSION_CONFIG_KEY_MAP.items():
+        if target in settings:
+            continue
+        value = app.config.get(config_key)
+        if value is not None:
+            session_settings[target] = value
+
+    if "max_age" not in settings:
+        max_age = app.config.get("SESSION_COOKIE_MAX_AGE")
+        if max_age is not None:
+            session_settings["max_age"] = max_age
+
+    return session_settings
+
+
+def _app_cookie_settings() -> dict[str, Any]:
+    settings = _configured_cookie_defaults()
+    settings.update(_session_cookie_settings(settings))
+    return settings
+
+
 def cookie_settings(
     overrides: Mapping[str, Any] | None = None,
     **kwargs: Any,
@@ -42,29 +74,7 @@ def cookie_settings(
         dict[str, Any]: Keyword arguments suitable for ``Response.set_cookie``.
     """
 
-    settings: dict[str, Any] = {}
-
-    if has_app_context():
-        configured_defaults = get_config_or_model_meta("API_COOKIE_DEFAULTS", default=None)
-        if isinstance(configured_defaults, Mapping):
-            settings.update(configured_defaults)
-
-        app = current_app._get_current_object()
-        for config_key, target in _SESSION_CONFIG_KEY_MAP.items():
-            if target not in settings:
-                value = app.config.get(config_key)
-                if value is not None:
-                    settings[target] = value
-
-        if "max_age" not in settings:
-            max_age = app.config.get("SESSION_COOKIE_MAX_AGE")
-            if max_age is not None:
-                settings["max_age"] = max_age
-    elif overrides is None and not kwargs:
-        # No application context and no explicit overrides; return empty mapping.
-        pass
-    else:
-        configured_defaults = None
+    settings = _app_cookie_settings() if has_app_context() else {}
 
     if overrides:
         settings.update(dict(overrides))

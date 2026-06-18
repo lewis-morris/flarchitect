@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import contextlib
+import os
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -78,7 +78,6 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
         super().__init__(*args, **self._prepare_api_spec_data(**kwargs))
 
         # Reset MarshmallowPlugin schema refs to avoid cross-app/test bleed.
-        import contextlib
         with contextlib.suppress(Exception):
             plugin = next((p for p in self.plugins if isinstance(p, MarshmallowPlugin)), None)
             if plugin and getattr(getattr(plugin, "converter", None), "refs", None) is not None:
@@ -96,7 +95,6 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
             dict: The API specification as a dictionary.
         """
         # Notify plugins that spec build is starting/completing
-        import contextlib
         with contextlib.suppress(Exception):
             self.architect.plugins.spec_build_started(self)
         spec_dict = super().to_dict()
@@ -257,6 +255,109 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
                 return
         tag_groups.append({"name": group_name, "tags": [tag_name]})
 
+    @staticmethod
+    def _docs_session_authenticated() -> bool:
+        return bool(session.get("docs_authenticated") or getattr(current_user, "is_authenticated", False))
+
+    @staticmethod
+    def _docs_user_lookup(user_model: Any, username: str) -> Any | None:
+        lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user_model, default=None)
+        comparator = getattr(user_model, lookup_field, None) if lookup_field else None
+        if comparator is None:
+            return None
+
+        try:
+            query_attr = getattr(user_model, "query", None)
+            if query_attr is not None:
+                return query_attr.filter(comparator == username).first()
+            with get_session(user_model) as session_ctx:
+                return session_ctx.query(user_model).filter(comparator == username).first()
+        except Exception:
+            return None
+
+    def _authenticate_docs_user(self, user_model: Any, username: str, password: str) -> bool:
+        check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None)
+        if not check_method or not callable(getattr(user_model, check_method, None)):
+            return False
+
+        user_obj = self._docs_user_lookup(user_model, username)
+        if not (user_obj and getattr(user_obj, check_method)(password)):
+            return False
+
+        session["docs_authenticated"] = True
+        import contextlib
+
+        with contextlib.suppress(Exception):
+            login_user(user_obj)
+        return True
+
+    def _handle_docs_login_post(
+        self,
+        *,
+        docs_password: str | None,
+        auth_method: Any,
+        user_model: Any,
+    ) -> Response | None:
+        username = request.form.get("username")
+        password = request.form.get("password", "")
+
+        if docs_password and password == docs_password:
+            session["docs_authenticated"] = True
+            return redirect(request.path)
+
+        if auth_method and user_model and username and password and self._authenticate_docs_user(user_model, username, password):
+            return redirect(request.path)
+
+        return None
+
+    def _docs_login_response(self, *, auth_method: Any, user_model: Any, error: str | None) -> tuple[str, int]:
+        docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
+        html = manual_render_absolute_template(
+            os.path.join(self.architect.get_templates_path(), "docs_login.html"),
+            config=self.app.config,
+            docs_style=docs_style,
+            allow_username=bool(auth_method and user_model),
+            error=error,
+        )
+        return html, 200
+
+    def _ensure_docs_access(
+        self,
+        *,
+        docs_password: str | None,
+        docs_require_auth: bool,
+        auth_method: Any,
+        user_model: Any,
+        json_only: bool = False,
+    ) -> Response | tuple[str, int] | None:
+        if not (docs_password or docs_require_auth):
+            return None
+
+        if self._docs_session_authenticated():
+            return None
+
+        error = None
+        if request.method == "POST" and not json_only:
+            response = self._handle_docs_login_post(
+                docs_password=docs_password,
+                auth_method=auth_method,
+                user_model=user_model,
+            )
+            if response is not None:
+                return response
+            error = "Invalid credentials"
+
+        if json_only:
+            return create_response(status=401, errors="Unauthorized")
+
+        return self._docs_login_response(auth_method=auth_method, user_model=user_model, error=error)
+
+    def _documentation_full_url(self, *, documentation_url: str, prefix: str) -> str:
+        docs_url = documentation_url if documentation_url.startswith("/") else f"/{documentation_url}"
+        full_url = f"{prefix.rstrip('/')}{docs_url}"
+        server_name = self.app.config.get("SERVER_NAME")
+        return f"http://{server_name}{full_url}" if server_name else full_url
+
     def _create_specification_blueprint(self) -> None:
         """Sets up the blueprint to serve the API specification and documentation.
 
@@ -280,76 +381,6 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
         auth_method = get_config_or_model_meta("API_AUTHENTICATE_METHOD", default=None)
         user_model = get_config_or_model_meta("API_USER_MODEL", default=None)
 
-        def _ensure_docs_access(
-            json_only: bool = False,
-        ) -> Response | tuple[str, int] | None:
-            """Validate optional documentation authentication.
-
-            Args:
-                json_only (bool): When ``True`` return a JSON error response instead of HTML.
-
-            Returns:
-                Optional[Union[Response, tuple[str, int]]]: ``None`` if access is granted, otherwise a response prompting for login.
-            """
-
-            if not (docs_password or docs_require_auth):
-                return None
-
-            if session.get("docs_authenticated") or getattr(current_user, "is_authenticated", False):
-                return None
-
-            if request.method == "POST" and not json_only:
-                username = request.form.get("username")
-                password = request.form.get("password", "")
-
-                if docs_password and password == docs_password:
-                    session["docs_authenticated"] = True
-                    return redirect(request.path)
-
-                if auth_method and user_model and username and password:
-                    lookup_field = get_config_or_model_meta("API_USER_LOOKUP_FIELD", model=user_model, default=None)
-                    check_method = get_config_or_model_meta("API_CREDENTIAL_CHECK_METHOD", model=user_model, default=None)
-                    comparator = getattr(user_model, lookup_field, None) if lookup_field else None
-                    if comparator is not None and check_method:
-                        checker = getattr(user_model, check_method, None)
-                        if callable(checker):
-                            user_obj = None
-                            query_attr = getattr(user_model, "query", None)
-                            try:
-                                if query_attr is not None:
-                                    user_obj = query_attr.filter(comparator == username).first()
-                                else:
-                                    with get_session(user_model) as session_ctx:
-                                        user_obj = session_ctx.query(user_model).filter(comparator == username).first()
-                            except Exception:
-                                user_obj = None
-
-                            if user_obj and getattr(user_obj, check_method)(password):
-                                session["docs_authenticated"] = True
-                                import contextlib
-
-                                with contextlib.suppress(Exception):
-                                    login_user(user_obj)
-                                return redirect(request.path)
-
-                error = "Invalid credentials"
-            else:
-                error = None
-
-            if json_only:
-                return create_response(status=401, errors="Unauthorized")
-
-            docs_style = get_config_or_model_meta("API_DOCS_STYLE", default="redoc").lower()
-            allow_username = bool(auth_method and user_model)
-            html = manual_render_absolute_template(
-                os.path.join(self.architect.get_templates_path(), "docs_login.html"),
-                config=self.app.config,
-                docs_style=docs_style,
-                allow_username=allow_username,
-                error=error,
-            )
-            return html, 200
-
         # Determine the JSON spec route under the docs path
         docs_json_url = get_config_or_model_meta(
             "API_DOCS_SPEC_ROUTE",
@@ -364,7 +395,13 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
                 Union[dict, Response, tuple[str, int]]: The Swagger spec or an authentication response.
             """
 
-            unauthorized = _ensure_docs_access(json_only=True)
+            unauthorized = self._ensure_docs_access(
+                docs_password=docs_password,
+                docs_require_auth=docs_require_auth,
+                auth_method=auth_method,
+                user_model=user_model,
+                json_only=True,
+            )
             if unauthorized:
                 return unauthorized
             return self.architect.to_api_spec()
@@ -391,7 +428,12 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
                 Union[str, Response, tuple[str, int]]: HTML documentation or an authentication response.
             """
 
-            unauthorized = _ensure_docs_access()
+            unauthorized = self._ensure_docs_access(
+                docs_password=docs_password,
+                docs_require_auth=docs_require_auth,
+                auth_method=auth_method,
+                user_model=user_model,
+            )
             if unauthorized:
                 return unauthorized
 
@@ -410,12 +452,7 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
         self.architect.app.register_blueprint(specification)
 
         prefix = self.documentation_url_prefix or self._get_config("DOCUMENTATION_URL_PREFIX", "/")
-        docs_url = documentation_url if documentation_url.startswith("/") else f"/{documentation_url}"
-        full_url = f"{prefix.rstrip('/')}{docs_url}"
-        server_name = self.app.config.get("SERVER_NAME")
-        if server_name:
-            full_url = f"http://{server_name}{full_url}"
-        logger.log(1, f"API documentation available at |{full_url}|")
+        logger.log(1, f"API documentation available at |{self._documentation_full_url(documentation_url=documentation_url, prefix=prefix)}|")
 
 
 def generate_swagger_spec(
@@ -542,18 +579,18 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
                 methods = rule.methods - {"OPTIONS", "HEAD"}
                 for http_method in methods:
                     summary = route_info.get("summary")
-                    route_info = scrape_extra_info_from_spec_data(route_info, method=http_method, summary=summary)
+                    method_route_info = scrape_extra_info_from_spec_data(route_info, method=http_method, summary=summary)
                     path = rule.rule
 
-                    output_schema = route_info.get("output_schema")
-                    input_schema = route_info.get("input_schema")
-                    model = route_info.get("model")
-                    description = route_info.get("description")
-                    summary = route_info.get("summary")
-                    custom_query_params = route_info.get("query_params")
-                    tag = route_info.get("tag")
-                    many = route_info.get("multiple")
-                    error_responses = route_info.get("error_responses")
+                    output_schema = method_route_info.get("output_schema")
+                    input_schema = method_route_info.get("input_schema")
+                    model = method_route_info.get("model")
+                    description = method_route_info.get("description")
+                    summary = method_route_info.get("summary")
+                    custom_query_params = method_route_info.get("query_params")
+                    tag = method_route_info.get("tag")
+                    many = method_route_info.get("multiple")
+                    error_responses = method_route_info.get("error_responses")
 
                     path_params = create_params_from_rule(model, rule, output_schema)
                     final_query_params = create_query_params_from_rule(rule, methods, output_schema, many, model, custom_query_params)
@@ -574,8 +611,8 @@ def register_routes_with_spec(architect: Architect, route_spec: list[dict[str, A
                     if not any(t.get("name") == tag for t in architect.api_spec._tags):
                         architect.api_spec.tag({"name": tag})
 
-                    if route_info.get("group_tag"):
-                        architect.api_spec.set_xtags_group(tag, route_info["group_tag"])
+                    if method_route_info.get("group_tag"):
+                        architect.api_spec.set_xtags_group(tag, method_route_info["group_tag"])
 
                     if summary:
                         endpoint_spec["summary"] = summary

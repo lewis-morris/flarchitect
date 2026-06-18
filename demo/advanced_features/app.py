@@ -8,7 +8,7 @@ the ``curl`` commands in the repository ``README`` to exercise the API.
 from __future__ import annotations
 
 import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -18,16 +18,20 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from flarchitect import Architect
 
 
+def _utc_naive_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+
 class BaseModel(DeclarativeBase):
     """Base model with timestamp and soft delete columns."""
 
     # ``created`` and ``updated`` are automatically managed timestamps.
-    created: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utc_naive_now)
+    updated: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utc_naive_now, onupdate=_utc_naive_now)
     # ``deleted`` enables soft deletes when ``API_SOFT_DELETE`` is set.
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    def get_session(*args: Any, **kwargs: Any):  # noqa: D401 - simple passthrough
+    def get_session(*args: Any, **kwargs: Any):
         """Return the current database session."""
 
         return db.session
@@ -47,17 +51,17 @@ class Author(db.Model):
         tag = "Author"
         tag_group = "People"
         # Restrict HTTP methods to ``GET`` and ``POST`` only.
-        allowed_methods = ["GET", "POST"]
+        allowed_methods: ClassVar[list[str]] = ["GET", "POST"]
         # Apply a rate limit specifically to author creation.
         post_rate_limit = "5 per minute"
         # Provide custom descriptions for documentation per HTTP method.
-        description = {
+        description: ClassVar[dict[str, str]] = {
             "GET": "Retrieve authors, optionally including soft-deleted records.",
             "POST": "Create a new author record.",
         }
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    # Author's name – simple string field.
+    # Author's name - simple string field.
     name: Mapped[str] = mapped_column(String(80))
     # Optional contact email with validation and helpful docs metadata.
     email: Mapped[str | None] = mapped_column(
@@ -91,7 +95,7 @@ class Book(db.Model):
         # Capitalise titles before saving using ``_add_callback`` below.
         add_callback = staticmethod(lambda obj, model: _add_callback(obj))
         # Provide custom descriptions for generated documentation.
-        description = {
+        description: ClassVar[dict[str, str]] = {
             "GET": "Retrieve books with their associated authors.",
             "POST": "Create a book and, optionally, its author in one request.",
             "PATCH": "Update a book's details.",

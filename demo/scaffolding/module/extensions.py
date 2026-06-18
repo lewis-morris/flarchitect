@@ -12,11 +12,15 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from flarchitect import Architect
 
 
+def _utc_naive_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+
+
 class BaseModel(DeclarativeBase):
     """Base model with timestamp and soft delete support."""
 
-    created: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow)
-    updated: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utc_naive_now)
+    updated: Mapped[datetime.datetime] = mapped_column(DateTime, default=_utc_naive_now, onupdate=_utc_naive_now)
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     def get_session(*_args: Any, **_kwargs: Any):
@@ -29,4 +33,4 @@ class BaseModel(DeclarativeBase):
 db = SQLAlchemy(model_class=BaseModel)
 schema = Architect()
 
-__all__ = ["db", "schema", "BaseModel"]
+__all__ = ["BaseModel", "db", "schema"]

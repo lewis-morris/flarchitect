@@ -8,16 +8,19 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
+from flarchitect.authentication.user import get_current_user
 from flarchitect.core.utils import get_primary_key_info
-from flarchitect.database.inspections import get_model_columns, get_model_relationships
 
 # Import utility helpers with a graceful fallback for optional helpers such as
 # ``_eager_options_for`` which may not be present when tests monkeypatch the
 # ``flarchitect.database.utils`` module. The recursive delete fixture replaces
 # the module with a lightweight stub, so we resolve attributes dynamically.
 from flarchitect.database import utils as _db_utils
-from flarchitect.authentication.user import get_current_user
-
+from flarchitect.database.inspections import get_model_columns, get_model_relationships
+from flarchitect.exceptions import CustomHTTPException
+from flarchitect.utils.config_helpers import get_config_or_model_meta
+from flarchitect.utils.core_utils import convert_case
+from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
 
 AGGREGATE_FUNCS = _db_utils.AGGREGATE_FUNCS
 create_aggregate_conditions = _db_utils.create_aggregate_conditions
@@ -53,12 +56,23 @@ def _fallback_table_namer(model: DeclarativeBase | None = None) -> str:
 
 table_namer = getattr(_db_utils, "table_namer", _fallback_table_namer)
 _eager_options_for = getattr(_db_utils, "_eager_options_for", lambda *args, **kwargs: [])
-from flarchitect.exceptions import CustomHTTPException
-from flarchitect.utils.config_helpers import get_config_or_model_meta
-from flarchitect.utils.decorators import add_dict_to_query, add_page_totals_and_urls
-from flarchitect.utils.core_utils import convert_case
 
 _POLICY_UNSET = object()
+
+
+def _flatten_request_args(args_dict: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: value[0] if isinstance(value, (list, tuple)) else value
+        for key, value in args_dict.items()
+    }
+
+
+def _extract_paginated_items(paginated_query: Any) -> Any:
+    if hasattr(paginated_query, "all"):
+        return paginated_query.all()
+    if hasattr(paginated_query, "items"):
+        return paginated_query.items
+    return paginated_query
 
 
 class AccessPolicyWrapper:
@@ -132,28 +146,33 @@ def _wrap_access_policy(policy_spec: Any) -> AccessPolicyWrapper | None:
 
     if isinstance(policy_spec, type):
         policy_obj = policy_spec()
-    elif callable(policy_spec) and not isinstance(policy_spec, Mapping):
-        if not all(
-            hasattr(policy_spec, attr)
-            for attr in ("scope_query", "can_create", "can_update", "can_delete", "can_read")
-        ):
-            try:
-                policy_obj = policy_spec()
-            except TypeError as exc:  # pragma: no cover - defensive
-                raise TypeError("API_ACCESS_POLICY callable must be instantiable without arguments") from exc
+    elif callable(policy_spec) and not isinstance(policy_spec, Mapping) and not all(
+        hasattr(policy_spec, attr)
+        for attr in ("scope_query", "can_create", "can_update", "can_delete", "can_read")
+    ):
+        try:
+            policy_obj = policy_spec()
+        except TypeError as exc:  # pragma: no cover - defensive
+            raise TypeError("API_ACCESS_POLICY callable must be instantiable without arguments") from exc
 
     return AccessPolicyWrapper(policy_obj)
 
 __all__ = [
-    "paginate_query",
-    "apply_sorting_to_query",
     "CrudService",
+    "apply_sorting_to_query",
     "get_model_columns",
     "get_model_relationships",
+    "paginate_query",
 ]
 
 
-def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None = None) -> tuple[Query, int]:
+def paginate_query(
+    sql_query: Query,
+    page: int = 0,
+    items_per_page: int | None = None,
+    *,
+    count: bool = True,
+) -> tuple[Query, int]:
     """Applies pagination to a query.
 
     Args:
@@ -188,10 +207,13 @@ def paginate_query(sql_query: Query, page: int = 0, items_per_page: int | None =
 
     validate_pagination_params(page, items_per_page)
 
-    return (
-        sql_query.paginate(page=int(page), per_page=int(items_per_page), error_out=False),
-        default_pagination_size,
-    )
+    pagination_args = {"page": int(page), "per_page": int(items_per_page), "error_out": False}
+    try:
+        paginated = sql_query.paginate(**pagination_args, count=count)
+    except TypeError:
+        paginated = sql_query.paginate(**pagination_args)
+
+    return paginated, default_pagination_size
 
 
 def apply_sorting_to_query(args_dict: dict[str, str | int], query: Query, base_model: Callable) -> Query:
@@ -216,8 +238,8 @@ def apply_sorting_to_query(args_dict: dict[str, str | int], query: Query, base_m
 
     for order_key in order_by:
         descending = order_key.startswith("-")
-        order_key = order_key.lstrip("-")
-        table_name, column_name = get_table_and_column(order_key, base_model)
+        clean_order_key = order_key.lstrip("-")
+        _table_name, column_name = get_table_and_column(clean_order_key, base_model)
         column_attr = getattr(base_model, column_name, None)
 
         if column_attr:
@@ -252,16 +274,10 @@ class CrudService:
     @staticmethod
     def _determine_action(http_method: str | None, *, many: bool | None, relation_name: str | None) -> str:
         method = (http_method or "GET").upper()
-        if method == "GET":
-            base = "GET_MANY" if many else "GET_ONE"
-        else:
-            base = method
+        base = ("GET_MANY" if many else "GET_ONE") if method == "GET" else method
 
         if relation_name:
-            if method == "GET":
-                base = f"RELATION_{'GET_MANY' if many else 'GET_ONE'}"
-            else:
-                base = f"RELATION_{base}"
+            base = f"RELATION_{'GET_MANY' if many else 'GET_ONE'}" if method == "GET" else f"RELATION_{base}"
 
         return base
 
@@ -440,6 +456,66 @@ class CrudService:
             f"Field {field_name} does not represent a relationship in model {self.model.__name__}",
         )
 
+    def _query_aliases(
+        self,
+        join_models: dict[str, type[DeclarativeBase]],
+        schema_case: str,
+    ) -> dict[str, type[DeclarativeBase]]:
+        alias_to_model: dict[str, type[DeclarativeBase]] = {}
+
+        def register(model_cls: type[DeclarativeBase], *names: str) -> None:
+            for name in names:
+                if not name:
+                    continue
+                alias_to_model.setdefault(name, model_cls)
+                if normalised := normalise_join_token(name):
+                    alias_to_model.setdefault(normalised, model_cls)
+
+        register(self.model, convert_case(self.model.__name__, schema_case), table_namer(self.model))
+        for token, model in join_models.items():
+            register(model, token, convert_case(model.__name__, schema_case), table_namer(model))
+        return alias_to_model
+
+    def _aggregate_fields(
+        self,
+        flat_args: dict[str, Any],
+        all_columns: dict[str, Any],
+        alias_to_model: dict[str, type[DeclarativeBase]],
+    ) -> list[Any]:
+        if not get_config_or_model_meta("API_ALLOW_AGGREGATION", model=self.model, default=False):
+            return []
+
+        fields: list[Any] = []
+        for key, label in create_aggregate_conditions(flat_args).items():
+            column_name, table_name, func_name = parse_column_table_and_operator(key, self.model)
+            model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
+            agg_func = AGGREGATE_FUNCS.get(func_name)
+            if not agg_func:
+                continue
+            owning_model = alias_to_model.get(table_name) or alias_to_model.get(normalise_join_token(table_name)) or self.model
+            target_column = getattr(owning_model, column_name) if isinstance(model_column, hybrid_property) else model_column
+            fields.append(agg_func(target_column).label(label or f"{column_name}_{func_name}"))
+        return fields
+
+    def _apply_join_models(
+        self,
+        query: Query,
+        join_models: dict[str, type[DeclarativeBase]],
+        join_type: str,
+    ) -> Query:
+        if join_type not in {"inner", "left", "right", "outer"}:
+            raise CustomHTTPException(400, f"Invalid join_type: {join_type}. Supported: inner,left,right,outer")
+
+        for model in join_models.values():
+            if join_type in {"left", "outer"}:
+                query = query.outerjoin(model)
+            elif join_type == "right":
+                # SQLAlchemy ORM has no direct RIGHT JOIN; isouter=True is a best-effort fallback.
+                query = query.join(model, isouter=True)
+            else:
+                query = query.join(model)
+        return query
+
     def filter_query_from_args(self, args_dict: dict[str, Any], query=None) -> Query:
         """Build a query applying joins, filters, grouping and aggregation.
 
@@ -451,37 +527,15 @@ class CrudService:
             Query with all requested transformations applied.
         """
 
-        # Flatten values to simple scalars for general processing while preserving
-        # the full argument structure for join parsing.
-        def _flatten_values(d: dict[str, Any]) -> dict[str, Any]:
-            return {k: (v[0] if isinstance(v, (list, tuple)) else v) for k, v in d.items()}
-
         allow_join = get_config_or_model_meta("API_ALLOW_JOIN", model=self.model, default=False)
         join_models = get_models_for_join(args_dict, self.fetch_related_model_by_name) if allow_join else {}
         # Use flattened args for all non-join processing
-        flat_args = _flatten_values(args_dict)
+        flat_args = _flatten_request_args(args_dict)
 
         all_columns, all_models = get_all_columns_and_hybrids(self.model, join_models)
 
         schema_case = get_config_or_model_meta("API_SCHEMA_CASE", model=self.model, default="camel")
-
-        alias_to_model: dict[str, type[DeclarativeBase]] = {}
-
-        def _register_alias(model_cls: type[DeclarativeBase], *names: str) -> None:
-            for name in names:
-                if not name:
-                    continue
-                alias_to_model.setdefault(name, model_cls)
-                normalised = normalise_join_token(name)
-                if normalised:
-                    alias_to_model.setdefault(normalised, model_cls)
-
-        base_alias = convert_case(self.model.__name__, schema_case)
-        _register_alias(self.model, base_alias, table_namer(self.model))
-
-        for token, mdl in join_models.items():
-            canonical = convert_case(mdl.__name__, schema_case)
-            _register_alias(mdl, token, canonical, table_namer(mdl))
+        alias_to_model = self._query_aliases(join_models, schema_case)
 
         conditions = [condition for condition in generate_conditions_from_args(flat_args, self.model, all_columns, all_models, join_models) if condition is not None]
 
@@ -491,35 +545,13 @@ class CrudService:
         allow_group = get_config_or_model_meta("API_ALLOW_GROUPBY", model=self.model, default=False)
         group_by_fields = get_group_by_fields(flat_args, all_columns, self.model) if allow_group else []
 
-        allow_agg = get_config_or_model_meta("API_ALLOW_AGGREGATION", model=self.model, default=False)
-        aggregate_conditions = create_aggregate_conditions(flat_args) if allow_agg else {}
-        agg_fields = []
-        for key, label in aggregate_conditions.items():
-            column_name, table_name, func_name = parse_column_table_and_operator(key, self.model)
-            model_column, _ = validate_table_and_column(table_name, column_name, all_columns)
-            agg_func = AGGREGATE_FUNCS.get(func_name)
-            if agg_func:
-                agg_label = label or f"{column_name}_{func_name}"
-                owning_model = alias_to_model.get(table_name) or alias_to_model.get(normalise_join_token(table_name)) or self.model
-                target_column = getattr(owning_model, column_name) if isinstance(model_column, hybrid_property) else model_column
-                agg_fields.append(agg_func(target_column).label(agg_label))
+        agg_fields = self._aggregate_fields(flat_args, all_columns, alias_to_model)
 
         query = query or self.session.query(self.model)
 
         if allow_join and join_models:
             join_type = str(flat_args.get("join_type", "inner")).lower()
-            if join_type not in {"inner", "left", "right", "outer"}:
-                raise CustomHTTPException(400, f"Invalid join_type: {join_type}. Supported: inner,left,right,outer")
-
-            for mdl in join_models.values():
-                if join_type == "left" or join_type == "outer":
-                    query = query.outerjoin(mdl)
-                elif join_type == "right":
-                    # SQLAlchemy ORM has no direct RIGHT JOIN; `isouter=True` behaves as LEFT OUTER in most dialects.
-                    # Right join semantics require reversed join order; this is a best-effort fallback.
-                    query = query.join(mdl, isouter=True)
-                else:
-                    query = query.join(mdl)
+            query = self._apply_join_models(query, join_models, join_type)
 
             # When joining one-to-many relationships, the base entity rows can
             # be duplicated which breaks pagination semantics (limit applies to
@@ -582,6 +614,112 @@ class CrudService:
 
         return query
 
+    def _eager_loading_options(self, model: Any, eager_depth: int, eager_enabled: bool) -> list[Any]:
+        if not eager_enabled:
+            return []
+        return _eager_options_for(model, eager_depth)
+
+    def _apply_eager_loading(self, query: Query, model: Any, eager_depth: int, eager_enabled: bool) -> Query:
+        opts = self._eager_loading_options(model, eager_depth, eager_enabled)
+        return query.options(*opts) if opts else query
+
+    def _build_single_query(
+        self,
+        args_dict: dict[str, Any],
+        lookup_val: int | str,
+        alt_field: str | None,
+        base_model: Any,
+        join_model: Any = None,
+        relation_name: str | None = None,
+    ) -> Query:
+        if join_model and relation_name:
+            return get_related_b_query(join_model, self.model, lookup_val, self.session)
+
+        query = self.session.query(base_model).join(join_model) if join_model else self.session.query(base_model)
+        if not join_model:
+            callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
+            if callback:
+                query = callback(query, self.model, args_dict)
+
+        if alt_field:
+            return query.filter(getattr(base_model, alt_field) == lookup_val)
+        return query.filter_by(**get_primary_key_filters(base_model, lookup_val))
+
+    def _apply_single_soft_delete_filter(self, query: Query, base_model: Any) -> Query:
+        if not get_config_or_model_meta("API_SOFT_DELETE", model=base_model, default=False):
+            return query
+
+        show_deleted = request.args.get("include_deleted", None)
+        deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", model=base_model, default=None)
+        soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", model=base_model, default=None)
+        if not show_deleted and deleted_attr:
+            return query.filter(getattr(base_model, deleted_attr) == soft_delete_values[0])
+        return query
+
+    def _single_query_result(
+        self,
+        query: Query,
+        *,
+        policy: AccessPolicyWrapper | None,
+        action: str,
+        relation_name: str | None,
+    ) -> dict[str, Any]:
+        result = query.one_or_none()
+        if result is None:
+            raise CustomHTTPException(404, "Resource not found.")
+        self._ensure_can_read(
+            result,
+            policy=policy,
+            action=action,
+            many=False,
+            relation_name=relation_name,
+        )
+        return {"query": result}
+
+    def _relation_collection_query(
+        self,
+        args_dict: dict[str, Any],
+        lookup_val: int | str | None,
+        join_model: Any,
+        relation_name: str | None,
+        policy: AccessPolicyWrapper | None,
+        action_name: str,
+        many: bool,
+        eager_depth: int,
+        eager_enabled: bool,
+        other_model: Any = None,
+    ) -> Query:
+        query = get_related_b_query(join_model, self.model, lookup_val, self.session)
+        query = self._apply_policy_scope(
+            query,
+            policy=policy,
+            action=action_name,
+            many=many,
+            relation_name=relation_name,
+        )
+        eager_model = self.model if other_model is None else other_model
+        query = self._apply_eager_loading(query, eager_model, eager_depth, eager_enabled)
+        if query.first() is None:
+            raise CustomHTTPException(404, f"{join_model.__name__} not found.")
+        return self.filter_query_from_args(args_dict, query)
+
+    def _paginated_query_payload(self, query: Query, flat_args: dict[str, Any]) -> dict[str, Any]:
+        count = query.count()
+        order_query = self.order_query(flat_args, query)
+        filtered_query = self.apply_soft_delete_filter(order_query)
+        paginated_query, default_pagination_size = paginate_query(
+            filtered_query,
+            flat_args.get("page", 1),
+            flat_args.get("limit"),
+            count=False,
+        )
+        return {
+            "query": _extract_paginated_items(paginated_query),
+            "limit": (int(flat_args.get("limit")) if flat_args.get("limit") else default_pagination_size),
+            "page": int(flat_args.get("page")) if flat_args.get("page") else 1,
+            "total_count": count,
+        }
+
     @add_page_totals_and_urls
     @add_dict_to_query
     def get_query(
@@ -616,22 +754,14 @@ class CrudService:
         eager_enabled = bool(get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True)) and eager_depth > 0
 
         if not many and lookup_val:
-            # When resolving singular relation endpoints (e.g., /parents/<id>/child),
-            # prefer a relationship-aware join to avoid ambiguous FK joins.
-            if kwargs.get("join_model") and kwargs.get("relation_name"):
-                # Query the related B model via a relationship from A using the A PK lookup
-                query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
-            else:
-                if kwargs.get("join_model"):
-                    query = self.session.query(base_model).join(kwargs.get("join_model"))
-                else:
-                    query = self.session.query(base_model)
-                    callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
-                    if callback:
-                        query = callback(query, self.model, args_dict)
-
-                query = query.filter(getattr(base_model, alt_field) == lookup_val) if alt_field else query.filter_by(**get_primary_key_filters(base_model, lookup_val))
-
+            query = self._build_single_query(
+                args_dict,
+                lookup_val,
+                alt_field,
+                base_model,
+                join_model=kwargs.get("join_model"),
+                relation_name=relation_name,
+            )
             query = self._apply_policy_scope(
                 query,
                 policy=policy,
@@ -639,62 +769,29 @@ class CrudService:
                 many=False,
                 relation_name=relation_name,
             )
-
-            # Apply eager-loader options for single-object fetches
-            if eager_enabled:
-                opts = _eager_options_for(base_model, eager_depth)
-                if opts:
-                    query = query.options(*opts)
-
-            if get_config_or_model_meta("API_SOFT_DELETE", model=base_model, default=False):
-                show_deleted = request.args.get("include_deleted", None)
-                deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", model=base_model, default=None)
-                soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", model=base_model, default=None)
-                if not show_deleted and deleted_attr:
-                    query = query.filter(getattr(base_model, deleted_attr) == soft_delete_values[0])
-
-            result = query.one_or_none()
-
-            if result is None:
-                raise CustomHTTPException(404, "Resource not found.")
-
-            self._ensure_can_read(
-                result,
-                policy=policy,
-                action=action_name,
-                many=False,
-                relation_name=relation_name,
-            )
-
-            return {"query": result}
-
-        elif kwargs.get("join_model"):
-            # used for relationship endpoints.
-
-            lookup_val = kwargs.get(get_primary_key_info(kwargs.get("join_model"))[0])
-
-            query = get_related_b_query(kwargs.get("join_model"), self.model, lookup_val, self.session)
-
-            query = self._apply_policy_scope(
+            query = self._apply_eager_loading(query, base_model, eager_depth, eager_enabled)
+            query = self._apply_single_soft_delete_filter(query, base_model)
+            return self._single_query_result(
                 query,
                 policy=policy,
                 action=action_name,
+                relation_name=relation_name,
+            )
+
+        if kwargs.get("join_model"):
+            join_model = kwargs.get("join_model")
+            query = self._relation_collection_query(
+                args_dict,
+                kwargs.get(get_primary_key_info(join_model)[0]),
+                join_model,
+                relation_name,
+                policy,
+                action_name,
                 many=many,
-                relation_name=relation_name,
+                eager_depth=eager_depth,
+                eager_enabled=eager_enabled,
+                other_model=other_model,
             )
-
-            # Apply eager options for related collection endpoints
-            if eager_enabled:
-                opts = _eager_options_for(self.model if other_model is None else other_model, eager_depth)
-                if opts:
-                    query = query.options(*opts)
-
-            # relationships i.e /authors/1/books should 404 when the parent is missing or has no children
-            # Use a lightweight existence check to avoid complex join inference
-            if query.first() is None:
-                raise CustomHTTPException(404, f"{kwargs.get('join_model').__name__} not found.")
-
-            query = self.filter_query_from_args(args_dict, query)
         else:
             query = self.filter_query_from_args(args_dict)
             query = self._apply_policy_scope(
@@ -706,33 +803,15 @@ class CrudService:
             )
 
         # Apply eager options for general collection queries
-        if eager_enabled and 'query' in locals() and hasattr(query, 'options'):
-            opts = _eager_options_for(base_model, eager_depth)
-            if opts:
-                query = query.options(*opts)
+        if hasattr(query, "options"):
+            query = self._apply_eager_loading(query, base_model, eager_depth, eager_enabled)
 
         callback = get_config_or_model_meta("API_FILTER_CALLBACK", model=base_model, default=None)
         if callback:
             query = callback(query, self.model, args_dict)
 
-        # Flatten args for order/pagination values
-        flat_args = {k: (v[0] if isinstance(v, (list, tuple)) else v) for k, v in args_dict.items()}
-        count = query.count()
-        order_query = self.order_query(flat_args, query)
-
-        # Apply soft delete filtering before pagination to avoid operating on
-        # paginated objects, which lack SQLAlchemy query attributes such as
-        # ``column_descriptions``.
-        filtered_query = self.apply_soft_delete_filter(order_query)
-
-        paginated_query, default_pagination_size = paginate_query(filtered_query, flat_args.get("page", 1), flat_args.get("limit"))
-
-        return {
-            "query": (paginated_query.all() if hasattr(paginated_query, "all") else (paginated_query.items if hasattr(paginated_query, "items") else paginated_query)),
-            "limit": (int(flat_args.get("limit")) if flat_args.get("limit") else default_pagination_size),
-            "page": int(flat_args.get("page")) if flat_args.get("page") else 1,
-            "total_count": count,
-        }
+        flat_args = _flatten_request_args(args_dict)
+        return self._paginated_query_payload(query, flat_args)
 
     def add_object(self, data_dict: dict[str, Any], *args, **kwargs) -> Callable:
         """Adds a new object to the database.
@@ -874,13 +953,42 @@ class CrudService:
         return None, 200
 
 
+def _mapped_object_id(obj: Any) -> tuple[type[Any], tuple[Any, ...]]:
+    mapper = inspect(obj.__class__)
+    return obj.__class__, tuple(getattr(obj, col.name) for col in mapper.primary_key)
+
+
+def _related_delete_candidates(obj: Any, parent: Any, visited: set[tuple[type[Any], tuple[Any, ...]]]):
+    mapper = inspect(obj.__class__)
+    for relationship in mapper.relationships:
+        if parent and relationship.mapper.class_ == parent.__class__:
+            continue
+
+        related_objects = getattr(obj, relationship.key)
+        if related_objects is None:
+            continue
+
+        if relationship.uselist:
+            for related_obj in related_objects:
+                if _mapped_object_id(related_obj) not in visited:
+                    yield related_obj
+            continue
+
+        if relationship.direction.name == "MANYTOONE":
+            print(f"Skipping deletion of parent object {related_objects.__class__.__name__}")
+            continue
+
+        if _mapped_object_id(related_objects) not in visited:
+            yield related_objects
+
+
 def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=None, parent=None):
     """Recursively delete related objects following foreign key constraints.
 
     Why/How:
         Traverses relationships to remove dependent records when permitted.
         Tracks visited instances to avoid cycles and redundant operations,
-        reducing database round‑trips on complex graphs.
+        reducing database round-trips on complex graphs.
 
     Args:
         obj: The SQLAlchemy model instance to delete.
@@ -889,14 +997,6 @@ def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=Non
         objects_touched (list): Objects deleted during the recursion (for diagnostics).
         parent: Parent object of the current step to prevent backward traversal in cyclic relationships.
     """
-
-    def get_obj_id(obj):
-        mapper = inspect(obj.__class__)
-        return (
-            obj.__class__,
-            tuple(getattr(obj, col.name) for col in mapper.primary_key),
-        )
-
     if visited is None:
         visited = set()
     if objects_touched is None:
@@ -906,16 +1006,14 @@ def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=Non
         session = object_session(obj)
     except UnmappedInstanceError:
         # The object is not mapped, possibly already deleted
-        return
-
-    mapper = inspect(obj.__class__)
+        return None
 
     # Create a unique identifier for the object based on its class and primary key(s)
-    obj_identifier = get_obj_id(obj)
+    obj_identifier = _mapped_object_id(obj)
 
     # Skip if the object has already been visited
     if obj_identifier in visited:
-        return
+        return None
 
     # Mark this object as visited
     visited.add(obj_identifier)
@@ -924,36 +1022,8 @@ def recursive_delete(obj, cascade_delete=True, visited=None, objects_touched=Non
     objects_touched.append((obj.__class__.__name__, obj_identifier[1]))
     print(f"Processing deletion for object: {obj.__class__.__name__} with ID: {obj_identifier[1]}")
 
-    # Iterate through relationships of the object
-    for relationship in mapper.relationships:
-        # Avoid backtracking to the parent object
-        if parent and relationship.mapper.class_ == parent.__class__:
-            continue
-
-        # Get related objects for the current relationship
-        related_objects = getattr(obj, relationship.key)
-
-        if related_objects is None:
-            continue
-
-        # Determine if the relationship is a collection (one-to-many or many-to-many)
-        if relationship.uselist:
-            # It's a collection
-            for related_obj in related_objects:
-                related_obj_id = get_obj_id(related_obj)
-                if related_obj_id not in visited:
-                    recursive_delete(related_obj, cascade_delete, visited, objects_touched, obj)
-        else:
-            # It's a scalar relationship (one-to-one or many-to-one)
-            related_obj = related_objects
-            related_obj_id = get_obj_id(related_obj)
-            if related_obj_id not in visited:
-                # For many-to-one, we generally don't delete the parent object
-                if relationship.direction.name == "MANYTOONE":
-                    print(f"Skipping deletion of parent object {related_obj.__class__.__name__}")
-                    continue
-                else:
-                    recursive_delete(related_obj, cascade_delete, visited, objects_touched, obj)
+    for related_obj in _related_delete_candidates(obj, parent, visited):
+        recursive_delete(related_obj, cascade_delete, visited, objects_touched, obj)
 
     # Log the actual deletion of the source object
     print(f"Deleting object: {obj.__class__.__name__} with ID: {obj_identifier[1]}")

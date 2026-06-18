@@ -72,7 +72,7 @@ def test_wrapper_filters_unexpected_kwargs() -> None:
 def test_fields_noop_when_none() -> None:
     app = _make_app()
     with app.app_context():
-        arch = Architect(app)
+        Architect(app)
 
     # fields(None) should be a no-op and not inject a 'schema' kwarg
     @fields_decorator(None)

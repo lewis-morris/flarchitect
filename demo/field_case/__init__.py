@@ -2,4 +2,4 @@
 
 from .app import Person, create_app, db
 
-__all__ = ["create_app", "db", "Person"]
+__all__ = ["Person", "create_app", "db"]

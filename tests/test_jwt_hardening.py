@@ -14,7 +14,6 @@ from sqlalchemy.pool import StaticPool
 from flarchitect.authentication.jwt import decode_token, generate_access_token
 from flarchitect.exceptions import CustomHTTPException
 
-
 db = SQLAlchemy()
 
 

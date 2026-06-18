@@ -6,26 +6,22 @@ from __future__ import annotations
 import argparse
 import io
 import re
+import shutil
+import sys
 from collections import defaultdict
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Iterator, Sequence
-import shutil
 
 from docutils import nodes
 from docutils.core import publish_doctree
-from docutils.parsers.rst import Directive, directives, roles
-from docutils.utils import SystemMessage
 
-# Ensure project root is importable when executed directly.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-import sys
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from flarchitect.mcp.index import _prepare_rst_environment, _strip_sphinx_roles  # type: ignore
-
+from flarchitect.mcp.index import _prepare_rst_environment, _strip_sphinx_roles  # type: ignore  # noqa: E402
 
 _ADMONITION_DEFAULT_TITLES = {
     nodes.attention: "Attention",
@@ -39,7 +35,58 @@ _ADMONITION_DEFAULT_TITLES = {
     nodes.warning: "Warning",
 }
 
-_ADMONITION_NODE_TYPES = tuple(_ADMONITION_DEFAULT_TITLES.keys()) + (nodes.admonition,)
+_ADMONITION_NODE_TYPES = (*_ADMONITION_DEFAULT_TITLES.keys(), nodes.admonition)
+
+_LLMS_SUMMARY = (
+    "flarchitect automates RESTful APIs from SQLAlchemy models, exposing configuration-rich tooling, "
+    "authentication helpers, and documentation assets. It ships with an MCP server and composable hooks "
+    "for plugins, callbacks, and schema orchestration."
+)
+
+_LLMS_CATEGORY_OVERRIDES = {
+    "installation": "Getting Started",
+    "quickstart": "Getting Started",
+    "getting_started": "Getting Started",
+    "advanced_demo": "Getting Started",
+    "advanced_configuration": "Configuration",
+    "configuration": "Configuration",
+    "config_locations": "Configuration",
+    "manual_routes": "Guides",
+    "models": "Guides",
+    "validation": "Guides",
+    "extensions": "Guides",
+    "plugins": "Guides",
+    "authentication": "Security",
+    "auth_cookbook": "Security",
+    "websockets": "Guides",
+    "hooks_cheatsheet": "Guides",
+    "error_handling": "Guides",
+    "faq": "Optional",
+    "roadmap": "Optional",
+    "mcp_server": "Developer Tooling",
+    "llms": "Developer Tooling",
+    "graphql": "Developer Tooling",
+    "openapi": "Developer Tooling",
+    "_configuration_table": "Configuration",
+}
+
+_LLMS_ORDERED_CATEGORIES = [
+    "Getting Started",
+    "Security",
+    "Configuration",
+    "Guides",
+    "Developer Tooling",
+]
+
+_LLMS_PREFERRED_CATEGORY_POSITIONS = {
+    "Developer Tooling": {
+        "openapi/index.md": 0,
+        "llms.md": 1,
+        "mcp_server/index.md": 2,
+    }
+}
+
+_HOSTED_DOCS_BASE = "https://lewis-morris.github.io/flarchitect/"
 
 
 def _rewrite_refuri(refuri: str) -> str | None:
@@ -97,26 +144,66 @@ class MarkdownRenderer:
         if isinstance(node, nodes.title):
             return ""
         if isinstance(node, nodes.section):
-            title_node = node.next_node(nodes.title, include_self=False)
-            if title_node is None:
-                return ""
-            heading = self._heading(self._render_inline_children(title_node), level)
-            parts = [heading, ""]
-            for child in node.children:
-                if child is title_node:
-                    continue
-                if isinstance(child, nodes.section):
-                    parts.append(self._render_block(child, level + 1))
-                else:
-                    rendered = self._render_block(child, level)
-                    if rendered:
-                        parts.append(rendered)
-            return "\n".join(part for part in parts if part)
+            return self._render_section(node, level)
         if isinstance(node, nodes.paragraph):
             return self._render_inline_children(node)
-        if isinstance(node, nodes.literal_block):
-            text = node.astext()
-            return f"```\n{text}\n```"
+        if isinstance(node, _ADMONITION_NODE_TYPES):
+            return self._render_admonition(node, level)
+        if isinstance(node, (nodes.system_message, nodes.comment, nodes.substitution_definition)):
+            return ""
+        simple_rendered = self._render_simple_block(node, level)
+        if simple_rendered is not None:
+            return simple_rendered
+        return self._render_unknown_block(node, level)
+
+    def _render_section(self, node: nodes.section, level: int) -> str:
+        title_node = node.next_node(nodes.title, include_self=False)
+        if title_node is None:
+            return ""
+        parts = [self._heading(self._render_inline_children(title_node), level), ""]
+        for child in node.children:
+            if child is title_node:
+                continue
+            rendered = self._render_block(child, level + 1 if isinstance(child, nodes.section) else level)
+            if rendered:
+                parts.append(rendered)
+        return "\n".join(part for part in parts if part)
+
+    def _render_admonition(self, node: nodes.Node, level: int) -> str:
+        title_text = _ADMONITION_DEFAULT_TITLES.get(type(node), "Note")
+        children = list(node.children)
+        if isinstance(node, nodes.admonition) and children and isinstance(children[0], nodes.title):
+            title_text = self._render_inline_children(children[0]) or title_text
+            children = children[1:]
+
+        body_parts = [rendered for child in children if (rendered := self._render_block(child, level))]
+        lines = [f"> **{title_text}**"]
+        lines.extend(f"> {part}" if part.strip() else ">" for part in "\n".join(body_parts).splitlines())
+        return "\n".join(lines)
+
+    def _render_simple_block(self, node: nodes.Node, level: int) -> str | None:
+        if isinstance(node, (nodes.literal_block, nodes.doctest_block)):
+            return self._render_code_block(node)
+        list_rendered = self._render_list_block(node, level)
+        if list_rendered is not None:
+            return list_rendered
+        if isinstance(node, nodes.table):
+            return self._render_table(node)
+        if isinstance(node, nodes.definition_list):
+            return "\n\n".join(self._render_definition_item(item, level) for item in node.children)
+        if isinstance(node, nodes.transition):
+            return "\n---\n"
+        leaf_rendered = self._render_leaf_block(node)
+        if leaf_rendered is not None:
+            return leaf_rendered
+        return None
+
+    @staticmethod
+    def _render_code_block(node: nodes.Node) -> str:
+        text = node.astext()
+        return f"```\n{text}\n```"
+
+    def _render_list_block(self, node: nodes.Node, level: int) -> str | None:
         if isinstance(node, nodes.bullet_list):
             return "\n".join(self._render_list_item(child, level, False, idx + 1) for idx, child in enumerate(node.children))
         if isinstance(node, nodes.enumerated_list):
@@ -127,56 +214,30 @@ class MarkdownRenderer:
         if isinstance(node, nodes.list_item):
             return self._render_list_item(node, level, False, 1)
         if isinstance(node, nodes.block_quote):
-            inner = [self._render_block(child, level) for child in node.children]
-            inner_text = "\n".join(line for line in inner if line)
-            return "\n".join(f"> {line}" if line else ">" for line in inner_text.splitlines())
-        if isinstance(node, _ADMONITION_NODE_TYPES):
-            title_text = _ADMONITION_DEFAULT_TITLES.get(type(node), "Note")
-            children = list(node.children)
-            if isinstance(node, nodes.admonition) and children and isinstance(children[0], nodes.title):
-                title_text = self._render_inline_children(children[0]) or title_text
-                children = children[1:]
-            body_parts: list[str] = []
-            for child in children:
-                rendered = self._render_block(child, level)
-                if rendered:
-                    body_parts.append(rendered)
-            lines = [f"> **{title_text}**"]
-            if body_parts:
-                for part in "\n".join(body_parts).splitlines():
-                    if part.strip():
-                        lines.append(f"> {part}")
-                    else:
-                        lines.append(">")
-            return "\n".join(lines)
-        if isinstance(node, nodes.system_message):
-            return ""
-        if isinstance(node, nodes.comment):
-            return ""
-        if isinstance(node, nodes.table):
-            return self._render_table(node)
-        if isinstance(node, nodes.definition_list):
-            return "\n\n".join(self._render_definition_item(item, level) for item in node.children)
+            return self._render_block_quote(node, level)
+        return None
+
+    def _render_leaf_block(self, node: nodes.Node) -> str | None:
         if isinstance(node, nodes.line_block):
             return "\n".join(child.astext() for child in node.children)
         if isinstance(node, nodes.raw):
             return node.astext()
-        if isinstance(node, nodes.transition):
-            return "\n---\n"
-        if isinstance(node, nodes.substitution_definition):
-            return ""
         if isinstance(node, nodes.reference):
             return self._render_inline_children(node)
         if isinstance(node, nodes.title_reference):
             return self._render_inline_children(node)
-        if isinstance(node, nodes.doctest_block):
-            text = node.astext()
-            return f"```\n{text}\n```"
         if isinstance(node, nodes.image):
             uri = node.get("uri", "")
             alt = node.get("alt", uri)
             return f"![{alt}]({uri})"
-        # Fallback: attempt inline rendering
+        return None
+
+    def _render_block_quote(self, node: nodes.block_quote, level: int) -> str:
+        inner = [self._render_block(child, level) for child in node.children]
+        inner_text = "\n".join(line for line in inner if line)
+        return "\n".join(f"> {line}" if line else ">" for line in inner_text.splitlines())
+
+    def _render_unknown_block(self, node: nodes.Node, level: int) -> str:
         if hasattr(node, "children"):
             return "\n".join(self._render_block(child, level) for child in node.children)
         return node.astext() if hasattr(node, "astext") else ""
@@ -218,6 +279,18 @@ class MarkdownRenderer:
         return "\n".join([f"**{header}**", body]).strip()
 
     def _render_table(self, table: nodes.table) -> str:
+        header_rows, body_rows = self._table_rows(table)
+        header_rows = self._ensure_table_header(header_rows, body_rows)
+        lines: list[str] = []
+
+        if header_rows:
+            lines.extend(self._table_header_lines(header_rows[0]))
+
+        lines.extend(self._table_row_line(row, len(header_rows[0]) if header_rows else None) for row in body_rows)
+
+        return "\n".join(lines)
+
+    def _table_rows(self, table: nodes.table) -> tuple[list[list[str]], list[list[str]]]:
         body_rows: list[list[str]] = []
         header_rows: list[list[str]] = []
         for tgroup in table.traverse(nodes.tgroup, include_self=True):
@@ -226,30 +299,29 @@ class MarkdownRenderer:
                     header_rows.extend(self._extract_rows(child))
                 elif isinstance(child, nodes.tbody):
                     body_rows.extend(self._extract_rows(child))
+        return header_rows, body_rows
 
-        if not header_rows:
-            # Heuristic: when rows are two-column tuples (setting + details)
-            # add a meaningful header row to produce valid Markdown.
-            if body_rows and all(len(row) == 2 for row in body_rows):
-                header_rows = [["Setting", "Details"]]
-            elif body_rows:
-                header_rows = [[f"Column {i + 1}" for i in range(len(body_rows[0]))]]
+    @staticmethod
+    def _ensure_table_header(header_rows: list[list[str]], body_rows: list[list[str]]) -> list[list[str]]:
+        if header_rows or not body_rows:
+            return header_rows
+        if all(len(row) == 2 for row in body_rows):
+            return [["Setting", "Details"]]
+        return [[f"Column {i + 1}" for i in range(len(body_rows[0]))]]
 
-        lines: list[str] = []
+    @staticmethod
+    def _table_header_lines(header: list[str]) -> list[str]:
+        separator = ["---"] * len(header)
+        return [
+            "| " + " | ".join(header) + " |",
+            "| " + " | ".join(separator) + " |",
+        ]
 
-        if header_rows:
-            header = header_rows[0]
-            separator = ["---"] * len(header)
-            lines.append("| " + " | ".join(header) + " |")
-            lines.append("| " + " | ".join(separator) + " |")
-
-        for row in body_rows:
-            # Ensure row length matches header length by padding blanks.
-            if header_rows and len(row) < len(header_rows[0]):
-                row = row + [""] * (len(header_rows[0]) - len(row))
-            lines.append("| " + " | ".join(row) + " |")
-
-        return "\n".join(lines)
+    @staticmethod
+    def _table_row_line(row: list[str], width: int | None) -> str:
+        if width is not None and len(row) < width:
+            row = row + [""] * (width - len(row))
+        return "| " + " | ".join(row) + " |"
 
     def _extract_rows(self, node: nodes.Node) -> list[list[str]]:
         rows: list[list[str]] = []
@@ -268,21 +340,11 @@ class MarkdownRenderer:
 
         for child in entry.children:
             if isinstance(child, nodes.bullet_list):
-                for item in child.children:
-                    rendered = self._render_block(item, self.base_heading_level)
-                    if not rendered:
-                        continue
-                    item_text = self._strip_blockquote(rendered).strip()
-                    if item_text.startswith("- "):
-                        item_text = item_text[2:]
-                    description_parts.append(item_text.replace("\n", " "))
-            else:
-                rendered = self._render_block(child, self.base_heading_level)
-                if not rendered:
-                    continue
-                meta_text = self._strip_blockquote(rendered).replace("\n", "<br>").strip()
-                if meta_text:
-                    meta_parts.append(meta_text)
+                description_parts.extend(self._render_table_entry_descriptions(child))
+                continue
+            meta_text = self._render_table_entry_meta(child)
+            if meta_text:
+                meta_parts.append(meta_text)
 
         if meta_parts:
             segments.append("<br>".join(meta_parts))
@@ -295,11 +357,27 @@ class MarkdownRenderer:
 
         return [segment.strip() for segment in segments if segment.strip()]
 
+    def _render_table_entry_descriptions(self, child: nodes.bullet_list) -> list[str]:
+        descriptions: list[str] = []
+        for item in child.children:
+            rendered = self._render_block(item, self.base_heading_level)
+            if not rendered:
+                continue
+            item_text = self._strip_blockquote(rendered).strip()
+            if item_text.startswith("- "):
+                item_text = item_text[2:]
+            descriptions.append(item_text.replace("\n", " "))
+        return descriptions
+
+    def _render_table_entry_meta(self, child: nodes.Node) -> str:
+        rendered = self._render_block(child, self.base_heading_level)
+        if not rendered:
+            return ""
+        return self._strip_blockquote(rendered).replace("\n", "<br>").strip()
+
     @staticmethod
     def _strip_blockquote(text: str) -> str:
-        lines = []
-        for line in text.splitlines():
-            lines.append(line.lstrip("> "))
+        lines = [line.lstrip("> ") for line in text.splitlines()]
         return "\n".join(lines).strip()
 
     def _render_block_children(self, node: nodes.Node) -> str:
@@ -325,34 +403,13 @@ class MarkdownRenderer:
     def _render_inline(self, node: nodes.Node) -> str:
         if isinstance(node, nodes.Text):
             return node.astext()
-        if isinstance(node, nodes.literal):
-            return f"`{self._render_inline_children(node) or node.astext()}`"
-        if isinstance(node, nodes.emphasis):
-            return f"*{self._render_inline_children(node)}*"
-        if isinstance(node, nodes.strong):
-            return f"**{self._render_inline_children(node)}**"
+        decorated = self._render_decorated_inline(node)
+        if decorated is not None:
+            return decorated
         if isinstance(node, nodes.reference):
-            text = self._render_inline_children(node)
-            refuri = node.get("refuri")
-            if refuri:
-                cleaned = _rewrite_refuri(refuri)
-                if cleaned is None:
-                    return text
-                return f"[{text}]({cleaned})"
-            refid = node.get("refid")
-            if refid:
-                return f"[{text}](#{refid})"
-            return text
-        if isinstance(node, nodes.inline):
-            return self._render_inline_children(node)
-        if isinstance(node, nodes.subscript):
-            return f"~{self._render_inline_children(node)}"
-        if isinstance(node, nodes.superscript):
-            return f"^{self._render_inline_children(node)}"
+            return self._render_reference_inline(node)
         if isinstance(node, nodes.image):
-            uri = node.get("uri", "")
-            alt = node.get("alt", uri)
-            return f"![{alt}]({uri})"
+            return self._render_image_inline(node)
         if isinstance(node, nodes.math):
             return f"${node.astext()}$"
         if isinstance(node, nodes.problematic):
@@ -360,6 +417,36 @@ class MarkdownRenderer:
         if hasattr(node, "children"):
             return self._render_inline_children(node)
         return node.astext() if hasattr(node, "astext") else ""
+
+    def _render_decorated_inline(self, node: nodes.Node) -> str | None:
+        if isinstance(node, nodes.literal):
+            return f"`{self._render_inline_children(node) or node.astext()}`"
+        if isinstance(node, nodes.emphasis):
+            return f"*{self._render_inline_children(node)}*"
+        if isinstance(node, nodes.strong):
+            return f"**{self._render_inline_children(node)}**"
+        if isinstance(node, nodes.inline):
+            return self._render_inline_children(node)
+        if isinstance(node, nodes.subscript):
+            return f"~{self._render_inline_children(node)}"
+        if isinstance(node, nodes.superscript):
+            return f"^{self._render_inline_children(node)}"
+        return None
+
+    def _render_reference_inline(self, node: nodes.reference) -> str:
+        text = self._render_inline_children(node)
+        refuri = node.get("refuri")
+        if refuri:
+            cleaned = _rewrite_refuri(refuri)
+            return text if cleaned is None else f"[{text}]({cleaned})"
+        refid = node.get("refid")
+        return f"[{text}](#{refid})" if refid else text
+
+    @staticmethod
+    def _render_image_inline(node: nodes.image) -> str:
+        uri = node.get("uri", "")
+        alt = node.get("alt", uri)
+        return f"![{alt}]({uri})"
 
     # ------------------------------------------------------------------
     @staticmethod
@@ -521,116 +608,64 @@ def write_chunks(chunks: DocumentChunks, target_root: Path) -> None:
         output_path.write_text(chunk.content, encoding="utf-8")
 
 
-def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) -> str:
-    summary = (
-        "flarchitect automates RESTful APIs from SQLAlchemy models, exposing configuration-rich tooling, "
-        "authentication helpers, and documentation assets."\
-    )
-    summary += " It ships with an MCP server and composable hooks for plugins, callbacks, and schema orchestration."
+def _llms_category_for_chunk(chunk: SectionChunk) -> str:
+    parts = chunk.relative_path.parts
+    base = parts[0] if parts else chunk.relative_path.stem
+    return _LLMS_CATEGORY_OVERRIDES.get(base, "Guides")
 
-    category_overrides = {
-        "installation": "Getting Started",
-        "quickstart": "Getting Started",
-        "getting_started": "Getting Started",
-        "advanced_demo": "Getting Started",
-        "advanced_configuration": "Configuration",
-        "configuration": "Configuration",
-        "config_locations": "Configuration",
-        "manual_routes": "Guides",
-        "models": "Guides",
-        "validation": "Guides",
-        "extensions": "Guides",
-        "plugins": "Guides",
-        "authentication": "Security",
-        "auth_cookbook": "Security",
-        "websockets": "Guides",
-        "hooks_cheatsheet": "Guides",
-        "error_handling": "Guides",
-        "faq": "Optional",
-        "roadmap": "Optional",
-        "mcp_server": "Developer Tooling",
-        "llms": "Developer Tooling",
-        "graphql": "Developer Tooling",
-        "openapi": "Developer Tooling",
-        "_configuration_table": "Configuration",
-    }
 
+def _group_llms_chunks(doc_chunks: Iterable[DocumentChunks]) -> dict[str, list[SectionChunk]]:
     sections: dict[str, list[SectionChunk]] = defaultdict(list)
     for doc in doc_chunks:
         for chunk in doc.chunks:
-            parts = chunk.relative_path.parts
-            base = parts[0] if parts else chunk.relative_path.stem
-            category = category_overrides.get(base, "Guides")
-            sections[category].append(chunk)
+            sections[_llms_category_for_chunk(chunk)].append(chunk)
+    return sections
 
-    ordered_categories = [
-        "Getting Started",
-        "Security",
-        "Configuration",
-        "Guides",
-        "Developer Tooling",
-    ]
-    optional_chunks = sections.pop("Optional", [])
+
+def _ordered_llms_categories(sections: dict[str, list[SectionChunk]]) -> list[str]:
+    ordered_categories = list(_LLMS_ORDERED_CATEGORIES)
     for cat in list(sections.keys()):
         if cat not in ordered_categories:
             ordered_categories.append(cat)
-
-    lines = ["# flarchitect", "", f"> {summary}", "", "<!-- Generated by tools/convert_docs.py; do not edit manually. -->", ""]
-
-    hosted_docs_base = "https://lewis-morris.github.io/flarchitect/"
-
-    def _hosted_link(path: str) -> str:
-        return hosted_docs_base.rstrip("/") + "/" + path.lstrip("/")
+    return ordered_categories
 
 
-    preferred_category_positions = {
-        "Developer Tooling": {
-            "openapi/index.md": 0,
-            "llms.md": 1,
-            "mcp_server/index.md": 2,
-        }
-    }
+def _hosted_link(path: str) -> str:
+    return _HOSTED_DOCS_BASE.rstrip("/") + "/" + path.lstrip("/")
 
-    def _chunk_sort_key(chunk: SectionChunk, category: str) -> tuple[int, int, str]:
-        preferred = preferred_category_positions.get(category, {})
-        position = preferred.get(chunk.relative_path.as_posix())
-        if position is not None:
-            return (0, position, chunk.title.lower())
-        is_index = 0 if chunk.relative_path.name == "index.md" else 1
-        return (1, is_index, chunk.title.lower())
 
+def _chunk_sort_key(chunk: SectionChunk, category: str) -> tuple[int, int, str]:
+    preferred = _LLMS_PREFERRED_CATEGORY_POSITIONS.get(category, {})
+    position = preferred.get(chunk.relative_path.as_posix())
+    if position is not None:
+        return (0, position, chunk.title.lower())
+    is_index = 0 if chunk.relative_path.name == "index.md" else 1
+    return (1, is_index, chunk.title.lower())
+
+
+def _append_llms_section(lines: list[str], category: str, chunks: list[SectionChunk], seen_links: set[str]) -> None:
+    if not chunks:
+        return
+    lines.extend([f"## {category}", ""])
+    for chunk in sorted(chunks, key=lambda c: _chunk_sort_key(c, category)):
+        link_path = chunk.relative_path.as_posix()
+        if link_path in seen_links:
+            continue
+        seen_links.add(link_path)
+        description = chunk.summary.rstrip(".") + "."
+        lines.append(f"- [{chunk.title}]({_hosted_link(link_path)}): {description}")
+    lines.append("")
+
+
+def build_llms_index(doc_chunks: Iterable[DocumentChunks], target_path: Path) -> str:
+    sections = _group_llms_chunks(doc_chunks)
+    optional_chunks = sections.pop("Optional", [])
+    lines = ["# flarchitect", "", f"> {_LLMS_SUMMARY}", "", "<!-- Generated by tools/convert_docs.py; do not edit manually. -->", ""]
     seen_links: set[str] = set()
 
-    for category in ordered_categories:
-        chunks = sections.get(category)
-        if not chunks:
-            continue
-        lines.append(f"## {category}")
-        lines.append("")
-        for chunk in sorted(chunks, key=lambda c: _chunk_sort_key(c, category)):
-            link_path = chunk.relative_path.as_posix()
-            if link_path in seen_links:
-                continue
-            seen_links.add(link_path)
-            link = _hosted_link(link_path)
-
-            description = chunk.summary.rstrip(".") + "."
-            lines.append(f"- [{chunk.title}]({link}): {description}")
-        lines.append("")
-
-    if optional_chunks:
-        lines.append("## Optional")
-        lines.append("")
-        for chunk in sorted(optional_chunks, key=lambda c: _chunk_sort_key(c, "Optional")):
-            link_path = chunk.relative_path.as_posix()
-            if link_path in seen_links:
-                continue
-            seen_links.add(link_path)
-            link = _hosted_link(link_path)
-
-            description = chunk.summary.rstrip(".") + "."
-            lines.append(f"- [{chunk.title}]({link}): {description}")
-        lines.append("")
+    for category in _ordered_llms_categories(sections):
+        _append_llms_section(lines, category, sections.get(category, []), seen_links)
+    _append_llms_section(lines, "Optional", optional_chunks, seen_links)
 
     text = "\n".join(lines).rstrip() + "\n"
     target_path.write_text(text, encoding="utf-8")
@@ -658,9 +693,7 @@ def convert_all(source_dir: Path, target_dir: Path, llms_path: Path) -> None:
         shutil.rmtree(target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    doc_chunks: list[DocumentChunks] = []
-    for rst_file in sorted(source_dir.rglob("*.rst")):
-        doc_chunks.append(convert_rst_file(rst_file, target_dir))
+    doc_chunks = [convert_rst_file(rst_file, target_dir) for rst_file in sorted(source_dir.rglob("*.rst"))]
 
     llms_manifest = _create_llms_manifest_chunk(target_dir, llms_path)
     doc_chunks.append(llms_manifest)

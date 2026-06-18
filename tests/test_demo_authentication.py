@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from collections.abc import Callable
+from typing import ClassVar
 
 from flask.testing import FlaskClient
 from marshmallow import Schema, fields
@@ -43,7 +44,7 @@ def test_jwt_demo_login_and_profile() -> None:
     """JWT tokens grant access to the protected profile endpoint."""
 
     class JWTConfig(BaseConfig):
-        API_AUTHENTICATE_METHOD = ["jwt"]
+        API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["jwt"]
         ACCESS_SECRET_KEY = "access-secret"
         REFRESH_SECRET_KEY = "refresh-secret"
         API_USER_MODEL = User
@@ -79,7 +80,7 @@ def test_basic_demo_login_and_profile() -> None:
     """HTTP Basic credentials are required for login and profile."""
 
     class BasicConfig(BaseConfig):
-        API_AUTHENTICATE_METHOD = ["basic"]
+        API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["basic"]
         API_USER_MODEL = User
         API_USER_LOOKUP_FIELD = "username"
         API_CREDENTIAL_CHECK_METHOD = "check_password"
@@ -114,7 +115,7 @@ def test_api_key_demo_login_and_profile() -> None:
         return user
 
     class KeyConfig(BaseConfig):
-        API_AUTHENTICATE_METHOD = ["api_key"]
+        API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["api_key"]
         API_USER_MODEL = User
         API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
         API_USER_LOOKUP_FIELD = "username"

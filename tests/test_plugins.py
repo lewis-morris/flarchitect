@@ -8,7 +8,7 @@ from demo.model_extension.model import create_app as create_app_models
 from flarchitect.plugins import PluginBase
 
 
-class TestPlugin(PluginBase):
+class CountingPlugin(PluginBase):
     def __init__(self) -> None:
         self.request_started_count = 0
         self.request_finished_count = 0
@@ -57,7 +57,7 @@ class TestPlugin(PluginBase):
 
 
 def test_plugin_hooks_and_mutation():
-    plugin = TestPlugin()
+    plugin = CountingPlugin()
     app = create_app_models({"API_PLUGINS": [plugin]})
     client = app.test_client()
 

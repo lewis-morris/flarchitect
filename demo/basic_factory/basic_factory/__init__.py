@@ -5,7 +5,7 @@ from demo.basic_factory.basic_factory.extensions import db, schema
 from demo.utils.helpers import load_dummy_database
 
 
-def create_app(config: dict = None):
+def create_app(config: dict | None = None):
     """
     Creates the flask app.
     Args:

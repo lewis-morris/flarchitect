@@ -3,4 +3,4 @@
 from .load import load
 from .module.models import User
 
-__all__ = ["load", "User"]
+__all__ = ["User", "load"]

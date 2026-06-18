@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from demo.authentication.app_base import BaseConfig, User, create_app
 from flarchitect.authentication.user import get_current_user
 
@@ -17,7 +19,7 @@ class Config(BaseConfig):
             supplied password.
     """
 
-    API_AUTHENTICATE_METHOD = ["basic"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["basic"]
     API_USER_MODEL = User
     API_USER_LOOKUP_FIELD = "username"
     API_CREDENTIAL_CHECK_METHOD = "check_password"

@@ -8,4 +8,4 @@ unit tests and can be executed directly.
 
 from .app import User, create_app, db
 
-__all__ = ["create_app", "db", "User"]
+__all__ = ["User", "create_app", "db"]

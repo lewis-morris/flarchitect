@@ -138,6 +138,230 @@ def _model_to_object_type(
     return type(f"{model.__name__}Type", (graphene.ObjectType,), fields)
 
 
+def _build_object_types(
+    models: Iterable[type[DeclarativeBase]],
+    mapping: dict[type, type[graphene.Scalar]],
+) -> dict[type[DeclarativeBase], type[graphene.ObjectType]]:
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]] = {}
+    for model in models:
+        object_types[model] = _model_to_object_type(model, mapping, object_types)
+    return object_types
+
+
+def _relationship_options(model: type[DeclarativeBase]) -> list[Any]:
+    return [
+        joinedload(getattr(model, rel.key))
+        for rel in model.__mapper__.relationships  # type: ignore[attr-defined]
+    ]
+
+
+def _list_query_args(model: type[DeclarativeBase], mapping: dict[type, type[graphene.Scalar]]) -> dict[str, Any]:
+    list_args = {
+        column.name: _convert_sqla_type(column.type, mapping)()
+        for column in model.__table__.columns  # type: ignore[attr-defined]
+    }
+    list_args["limit"] = graphene.Int()
+    list_args["offset"] = graphene.Int()
+    return list_args
+
+
+def _apply_filters(query: Any, model: type[DeclarativeBase], filters: dict[str, Any]) -> Any:
+    for column, value in filters.items():
+        if value is not None:
+            query = query.filter(getattr(model, column) == value)
+    return query
+
+
+def _apply_pagination(query: Any, *, limit: int | None, offset: int | None) -> Any:
+    if offset is not None:
+        query = query.offset(offset)
+    if limit is not None:
+        query = query.limit(limit)
+    return query
+
+
+def _query_fields_for_model(
+    model: type[DeclarativeBase],
+    obj_type: type[graphene.ObjectType],
+    session: Session,
+    mapping: dict[type, type[graphene.Scalar]],
+) -> dict[str, Any]:
+    name = model.__tablename__
+    options = _relationship_options(model)
+
+    def _resolve_one(_root, _info, id: int, model=model, options=options):
+        """Resolver for fetching a single record by ID."""
+
+        return session.get(model, id, options=options)
+
+    def _resolve_all(_root, _info, model=model, options=options, **kwargs):
+        """Resolver for fetching records with optional filters and pagination."""
+
+        query = session.query(model).options(*options)
+        pk = next(iter(model.__table__.primary_key.columns))  # type: ignore[attr-defined]
+        query = query.order_by(pk)
+
+        limit = kwargs.pop("limit", None)
+        offset = kwargs.pop("offset", None)
+        query = _apply_filters(query, model, kwargs)
+        return _apply_pagination(query, limit=limit, offset=offset).all()
+
+    return {
+        name: graphene.Field(obj_type, id=graphene.Int(required=True)),
+        f"all_{name}s": graphene.List(obj_type, **_list_query_args(model, mapping)),
+        f"resolve_{name}": staticmethod(_resolve_one),
+        f"resolve_all_{name}s": staticmethod(_resolve_all),
+    }
+
+
+def _build_query_fields(
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]],
+    session: Session,
+    mapping: dict[type, type[graphene.Scalar]],
+) -> dict[str, Any]:
+    query_fields: dict[str, Any] = {}
+    for model, obj_type in object_types.items():
+        query_fields.update(_query_fields_for_model(model, obj_type, session, mapping))
+    return query_fields
+
+
+def _mutation_args(
+    model: type[DeclarativeBase],
+    mapping: dict[type, type[graphene.Scalar]],
+) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    pk_column: str | None = None
+    create_args: dict[str, Any] = {}
+    update_args: dict[str, Any] = {}
+
+    for column in model.__table__.columns:  # type: ignore[attr-defined]
+        gql_type = _convert_sqla_type(column.type, mapping)
+        if column.primary_key:
+            pk_column = column.name
+            update_args[column.name] = gql_type(required=True)
+            continue
+        create_args[column.name] = gql_type(required=not column.nullable)
+        update_args[column.name] = gql_type()
+
+    assert pk_column is not None
+    return pk_column, create_args, update_args
+
+
+def _create_mutation_field(
+    model: type[DeclarativeBase],
+    obj_type: type[graphene.ObjectType],
+    session: Session,
+    create_args: dict[str, Any],
+) -> Any:
+    def _create(_root, _info, model=model, **kwargs) -> Any:
+        """Resolver creating and persisting a new record."""
+
+        instance = model(**kwargs)
+        session.add(instance)
+        session.commit()
+        return instance
+
+    mutation = type(
+        f"Create{model.__name__}",
+        (graphene.Mutation,),
+        {
+            "Arguments": type("Arguments", (), create_args),
+            "Output": obj_type,
+            "mutate": staticmethod(_create),
+        },
+    )
+    return mutation.Field()
+
+
+def _update_mutation_field(
+    model: type[DeclarativeBase],
+    obj_type: type[graphene.ObjectType],
+    session: Session,
+    pk_column: str,
+    update_args: dict[str, Any],
+) -> Any:
+    def _update(_root, _info, model=model, pk_name=pk_column, **kwargs) -> Any:
+        """Resolver updating an existing record by primary key."""
+
+        pk_val = kwargs.pop(pk_name)
+        instance = session.get(model, pk_val)
+        if instance is None:
+            return None
+        for attr, value in kwargs.items():
+            if value is not None:
+                setattr(instance, attr, value)
+        session.commit()
+        return instance
+
+    mutation = type(
+        f"Update{model.__name__}",
+        (graphene.Mutation,),
+        {
+            "Arguments": type("Arguments", (), update_args),
+            "Output": obj_type,
+            "mutate": staticmethod(_update),
+        },
+    )
+    return mutation.Field()
+
+
+def _delete_mutation_field(
+    model: type[DeclarativeBase],
+    session: Session,
+    pk_column: str,
+    mapping: dict[type, type[graphene.Scalar]],
+) -> Any:
+    pk_type = _convert_sqla_type(getattr(model.__table__.c, pk_column).type, mapping)
+    delete_args = {pk_column: pk_type(required=True)}
+
+    def _delete(_root, _info, model=model, pk_name=pk_column, **kwargs) -> bool:
+        """Resolver deleting a record by primary key."""
+
+        pk_val = kwargs[pk_name]
+        instance = session.get(model, pk_val)
+        if instance is None:
+            return False
+        session.delete(instance)
+        session.commit()
+        return True
+
+    mutation = type(
+        f"Delete{model.__name__}",
+        (graphene.Mutation,),
+        {
+            "Arguments": type("Arguments", (), delete_args),
+            "Output": graphene.Boolean,
+            "mutate": staticmethod(_delete),
+        },
+    )
+    return mutation.Field()
+
+
+def _mutation_fields_for_model(
+    model: type[DeclarativeBase],
+    obj_type: type[graphene.ObjectType],
+    session: Session,
+    mapping: dict[type, type[graphene.Scalar]],
+) -> dict[str, Any]:
+    pk_column, create_args, update_args = _mutation_args(model, mapping)
+    table_name = model.__tablename__
+    return {
+        f"create_{table_name}": _create_mutation_field(model, obj_type, session, create_args),
+        f"update_{table_name}": _update_mutation_field(model, obj_type, session, pk_column, update_args),
+        f"delete_{table_name}": _delete_mutation_field(model, session, pk_column, mapping),
+    }
+
+
+def _build_mutation_fields(
+    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]],
+    session: Session,
+    mapping: dict[type, type[graphene.Scalar]],
+) -> dict[str, Any]:
+    mutation_fields: dict[str, Any] = {}
+    for model, obj_type in object_types.items():
+        mutation_fields.update(_mutation_fields_for_model(model, obj_type, session, mapping))
+    return mutation_fields
+
+
 def create_schema_from_models(
     models: Iterable[type[DeclarativeBase]],
     session: Session,
@@ -147,16 +371,16 @@ def create_schema_from_models(
 
     Each provided model receives two query fields:
 
-    * ``<table_name>(id: ID)`` – fetch a single row by primary key.
-    * ``all_<table_name>s`` – fetch every row in the table with optional
+    * ``<table_name>(id: ID)`` - fetch a single row by primary key.
+    * ``all_<table_name>s`` - fetch every row in the table with optional
       filtering and pagination arguments.
 
 
     And three mutation fields:
 
-    * ``create_<table_name>(**columns)`` – insert a new row.
-    * ``update_<table_name>(id: ID, **columns)`` – modify an existing row.
-    * ``delete_<table_name>(id: ID)`` – remove a row.
+    * ``create_<table_name>(**columns)`` - insert a new row.
+    * ``update_<table_name>(id: ID, **columns)`` - modify an existing row.
+    * ``delete_<table_name>(id: ID)`` - remove a row.
 
     Args:
         models: Iterable of SQLAlchemy models to expose.
@@ -176,154 +400,8 @@ def create_schema_from_models(
     """
 
     mapping = {**SQLA_TYPE_MAPPING, **(type_mapping or {})}
-    object_types: dict[type[DeclarativeBase], type[graphene.ObjectType]] = {}
-    for model in models:
-        object_types[model] = _model_to_object_type(model, mapping, object_types)
-
-    # Build query fields for single-record and list retrieval.
-    query_fields: dict[str, Any] = {}
-    for model, obj_type in object_types.items():
-        name = model.__tablename__
-        query_fields[name] = graphene.Field(obj_type, id=graphene.Int(required=True))
-
-        # Collect filterable columns for list queries and add pagination args.
-        list_args: dict[str, Any] = {}
-        for column in model.__table__.columns:  # type: ignore[attr-defined]
-            gql_type = _convert_sqla_type(column.type, mapping)
-            list_args[column.name] = gql_type()
-        list_args["limit"] = graphene.Int()
-        list_args["offset"] = graphene.Int()
-        query_fields[f"all_{name}s"] = graphene.List(obj_type, **list_args)
-
-        options = [
-            joinedload(getattr(model, rel.key))
-            for rel in model.__mapper__.relationships  # type: ignore[attr-defined]
-        ]
-
-        def _resolve_one(_root, _info, id: int, model=model, options=options):
-            """Resolver for fetching a single record by ID."""
-
-            return session.get(model, id, options=options)
-
-        def _resolve_all(_root, _info, model=model, options=options, **kwargs):
-            """Resolver for fetching records with optional filters and pagination."""
-
-            query = session.query(model).options(*options)
-            pk = list(model.__table__.primary_key.columns)[0]  # type: ignore[attr-defined]
-            query = query.order_by(pk)
-
-            limit = kwargs.pop("limit", None)
-            offset = kwargs.pop("offset", None)
-            for column, value in kwargs.items():
-                if value is not None:
-                    query = query.filter(getattr(model, column) == value)
-
-            if offset is not None:
-                query = query.offset(offset)
-            if limit is not None:
-                query = query.limit(limit)
-
-            return query.all()
-
-        query_fields[f"resolve_{name}"] = staticmethod(_resolve_one)
-        query_fields[f"resolve_all_{name}s"] = staticmethod(_resolve_all)
-
-    Query = type("Query", (graphene.ObjectType,), query_fields)
-
-    # Build mutation fields for create, update and delete operations.
-    mutation_fields: dict[str, Any] = {}
-    for model, obj_type in object_types.items():
-        pk_column: str | None = None
-        create_args: dict[str, Any] = {}
-        update_args: dict[str, Any] = {}
-
-        for column in model.__table__.columns:  # type: ignore[attr-defined]
-            gql_type = _convert_sqla_type(column.type, mapping)
-            if column.primary_key:
-                pk_column = column.name
-                update_args[column.name] = gql_type(required=True)
-                continue
-            create_args[column.name] = gql_type(required=not column.nullable)
-            update_args[column.name] = gql_type()
-
-        CreateArguments = type("Arguments", (), create_args)
-
-        def _create(_root, _info, model=model, **kwargs) -> Any:
-            """Resolver creating and persisting a new record."""
-
-            instance = model(**kwargs)
-            session.add(instance)
-            session.commit()
-            return instance
-
-        create_mutation = type(
-            f"Create{model.__name__}",
-            (graphene.Mutation,),
-            {
-                "Arguments": CreateArguments,
-                "Output": obj_type,
-                "mutate": staticmethod(_create),
-            },
-        )
-
-        mutation_fields[f"create_{model.__tablename__}"] = create_mutation.Field()
-
-        UpdateArguments = type("Arguments", (), update_args)
-
-        def _update(_root, _info, model=model, pk_name=pk_column, **kwargs) -> Any:
-            """Resolver updating an existing record by primary key."""
-
-            pk_val = kwargs.pop(pk_name)
-            instance = session.get(model, pk_val)
-            if instance is None:
-                return None
-            for attr, value in kwargs.items():
-                if value is not None:
-                    setattr(instance, attr, value)
-            session.commit()
-            return instance
-
-        update_mutation = type(
-            f"Update{model.__name__}",
-            (graphene.Mutation,),
-            {
-                "Arguments": UpdateArguments,
-                "Output": obj_type,
-                "mutate": staticmethod(_update),
-            },
-        )
-
-        mutation_fields[f"update_{model.__tablename__}"] = update_mutation.Field()
-
-        delete_args: dict[str, Any] = {}
-        assert pk_column is not None
-        pk_type = _convert_sqla_type(getattr(model.__table__.c, pk_column).type, mapping)
-        delete_args[pk_column] = pk_type(required=True)
-        DeleteArguments = type("Arguments", (), delete_args)
-
-        def _delete(_root, _info, model=model, pk_name=pk_column, **kwargs) -> bool:
-            """Resolver deleting a record by primary key."""
-
-            pk_val = kwargs[pk_name]
-            instance = session.get(model, pk_val)
-            if instance is None:
-                return False
-            session.delete(instance)
-            session.commit()
-            return True
-
-        delete_mutation = type(
-            f"Delete{model.__name__}",
-            (graphene.Mutation,),
-            {
-                "Arguments": DeleteArguments,
-                "Output": graphene.Boolean,
-                "mutate": staticmethod(_delete),
-            },
-        )
-
-        mutation_fields[f"delete_{model.__tablename__}"] = delete_mutation.Field()
-
-    Mutation = type("Mutation", (graphene.ObjectType,), mutation_fields)
+    object_types = _build_object_types(models, mapping)
+    Query = type("Query", (graphene.ObjectType,), _build_query_fields(object_types, session, mapping))
+    Mutation = type("Mutation", (graphene.ObjectType,), _build_mutation_fields(object_types, session, mapping))
 
     return graphene.Schema(query=Query, mutation=Mutation, auto_camelcase=False)

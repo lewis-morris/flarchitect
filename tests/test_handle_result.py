@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import types
 from pathlib import Path
+from typing import ClassVar
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -99,7 +100,7 @@ def test_handle_result_error_dict():
 
 def test_handle_result_with_custom_like_container():
     class DummyResponse:
-        value = {"id": 9}
+        value: ClassVar[dict[str, int]] = {"id": 9}
         next_url = "next"
         previous_url = "prev"
         count = None

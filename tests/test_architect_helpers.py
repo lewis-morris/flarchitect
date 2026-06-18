@@ -1,5 +1,6 @@
 """Unit tests for :class:`Architect` helper methods."""
 
+import warnings
 from types import SimpleNamespace
 
 import pytest
@@ -37,6 +38,28 @@ def test_handle_auth_custom(monkeypatch):
     app.config["API_CUSTOM_AUTH"] = lambda: False
     with app.test_request_context("/"), pytest.raises(CustomHTTPException):
         architect._handle_auth(model=None, output_schema=None, input_schema=None, auth_flag=True)
+
+
+def test_init_app_without_app_context_uses_bound_config() -> None:
+    """``Architect(app=app)`` should not require an existing app context."""
+
+    app = create_app(API_RATE_LIMIT_AUTODETECT=False)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        Architect(app=app)
+
+    assert "specification" not in app.blueprints
+    assert not any("Using the in-memory storage" in str(item.message) for item in caught)
+
+
+def test_get_config_without_app_returns_default() -> None:
+    """Config lookup should still honor defaults before an app is attached."""
+
+    architect = Architect()
+
+    assert architect.get_config("MISSING", "fallback") == "fallback"
+    assert architect.to_api_spec() is None
 
 
 def test_apply_schemas_uses_handle_one(monkeypatch):
@@ -152,7 +175,8 @@ def test_apply_rate_limit_invalid_logs(monkeypatch):
 
     messages = {}
 
-    def fake_error(msg):
+    def fake_error(level, msg):
+        messages["level"] = level
         messages["msg"] = msg
 
     monkeypatch.setattr("flarchitect.core.architect.logger.error", fake_error)
@@ -163,5 +187,6 @@ def test_apply_rate_limit_invalid_logs(monkeypatch):
     with app.app_context():
         result = architect._apply_rate_limit(dummy, model=None, output_schema=None, input_schema=None)
 
+    assert messages["level"] == 1
     assert messages["msg"].startswith("Rate limit definition not a string")
     assert result is dummy

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import RelationshipProperty
 
-from flarchitect.database.utils import AGGREGATE_FUNCS, OPERATORS, normalise_join_token
+from flarchitect.database.constants import AGGREGATE_FUNCS, OPERATORS
+from flarchitect.database.utils import normalise_join_token
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 
@@ -127,20 +128,18 @@ def _describe_model(
 
 def _collect_fields(*, model: type, allow_filters: bool) -> list[dict[str, Any]]:
     inspector = sa_inspect(model)
-    fields: list[dict[str, Any]] = []
-
-    for column in inspector.columns:
-        fields.append(
-            {
-                "name": column.key,
-                "type": type(column.type).__name__,
-                "nullable": bool(column.nullable),
-                "primary_key": bool(column.primary_key),
-                "filterable": allow_filters,
-                "operators": sorted(OPERATORS.keys()) if allow_filters else [],
-                "source": "column",
-            }
-        )
+    fields = [
+        {
+            "name": column.key,
+            "type": type(column.type).__name__,
+            "nullable": bool(column.nullable),
+            "primary_key": bool(column.primary_key),
+            "filterable": allow_filters,
+            "operators": sorted(OPERATORS.keys()) if allow_filters else [],
+            "source": "column",
+        }
+        for column in inspector.columns
+    ]
 
     # Include hybrid properties for reference
     for name, attr in vars(model).items():
@@ -162,19 +161,17 @@ def _collect_fields(*, model: type, allow_filters: bool) -> list[dict[str, Any]]
 
 def _collect_relationships(*, model: type) -> list[dict[str, Any]]:
     inspector = sa_inspect(model)
-    relationships: list[dict[str, Any]] = []
-
-    for rel in inspector.relationships:  # type: RelationshipProperty
-        relationships.append(
-            {
-                "name": rel.key,
-                "join_token": normalise_join_token(rel.key),
-                "target": rel.mapper.class_.__name__,
-                "direction": rel.direction.name.lower(),
-                "uselist": bool(rel.uselist),
-                "back_populates": rel.back_populates or getattr(rel.backref, "key", None) if rel.backref else None,
-            }
-        )
+    relationships = [
+        {
+            "name": rel.key,
+            "join_token": normalise_join_token(rel.key),
+            "target": rel.mapper.class_.__name__,
+            "direction": rel.direction.name.lower(),
+            "uselist": bool(rel.uselist),
+            "back_populates": rel.back_populates or getattr(rel.backref, "key", None) if rel.backref else None,
+        }
+        for rel in inspector.relationships
+    ]
 
     return sorted(relationships, key=lambda item: item["name"])
 
@@ -190,7 +187,7 @@ def _collect_join_paths(*, model: type, max_depth: int) -> list[dict[str, Any]]:
             token = normalise_join_token(rel.key)
             if not token:
                 continue
-            new_tokens = prefix_tokens + (token,)
+            new_tokens = (*prefix_tokens, token)
             result.append(
                 {
                     "path": ".".join(new_tokens),
@@ -203,7 +200,7 @@ def _collect_join_paths(*, model: type, max_depth: int) -> list[dict[str, Any]]:
             if related not in seen:
                 _walk(related, new_tokens, seen | {related}, depth - 1)
 
-    _walk(model, tuple(), frozenset({model}), max_depth)
+    _walk(model, (), frozenset({model}), max_depth)
 
     # Sort by depth then alphabetical path for stability
     return sorted(result, key=lambda item: (item["depth"], item["path"]))

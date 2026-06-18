@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
@@ -300,9 +300,7 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
-
-    return title
+    return pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
 
 
 # Words related to publishing and printing
@@ -378,7 +376,7 @@ def generate_random_year(start: int = 1860, end: int | None = None) -> int:
     """
 
     if end is None:
-        end = datetime.now().year
+        end = datetime.now(UTC).year
     return random.randint(start, end)
 
 
@@ -483,7 +481,7 @@ def create_books(db, authors, categories, publishers):
             categories = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
+            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now(UTC).year)
 
             publication_date = datetime(
                 year=publication_year,
@@ -599,7 +597,7 @@ def create_authors(db):
         first_name, last_name = get_name()
         website = "https://" + (first_name + last_name).lower() + ".co.uk"
         rand_nationality = random.choice(nationality)
-        year_born = datetime.now().year - 20
+        year_born = datetime.now(UTC).year - 20
         date_of_birth = generate_random_year(1940, year_born)
         biography = f"""{first_name} is a {rand_nationality} writer born in {year_born}. {random.choice(bios)}"""
 

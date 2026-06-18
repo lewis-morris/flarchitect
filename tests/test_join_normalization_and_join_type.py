@@ -3,8 +3,8 @@ import pytest
 from demo.basic_factory.basic_factory import create_app
 from demo.basic_factory.basic_factory.extensions import db
 from demo.basic_factory.basic_factory.models import Book
-from flarchitect.database.utils import get_models_for_join
 from flarchitect.database.operations import CrudService
+from flarchitect.database.utils import get_models_for_join
 
 
 @pytest.fixture

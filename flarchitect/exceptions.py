@@ -94,4 +94,4 @@ def _handle_exception(error: str, status_code: int, error_name: str | None = Non
     )
 
 
-__all__ = ["CustomHTTPException", "_print_exception", "handle_http_exception", "_handle_exception"]
+__all__ = ["CustomHTTPException", "_handle_exception", "_print_exception", "handle_http_exception"]

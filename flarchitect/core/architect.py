@@ -4,7 +4,7 @@ import importlib
 import importlib.resources
 import os
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
@@ -14,18 +14,6 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import Schema
 from sqlalchemy.orm import DeclarativeBase, Session
-
-if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
-    from flask_caching import Cache
-    from flarchitect.authentication.jwt import get_user_from_token as _get_user_from_token
-
-
-def _get_user_from_token(*args: Any, **kwargs: Any):
-    """Resolve JWT helper lazily and avoid module import cycles at import-time."""
-
-    from flarchitect.authentication.jwt import get_user_from_token
-
-    return get_user_from_token(*args, **kwargs)
 
 from flarchitect.authentication.token_providers import extract_token_from_request
 from flarchitect.authentication.user import set_current_user
@@ -43,6 +31,11 @@ from flarchitect.utils.general import (
 )
 from flarchitect.utils.response_helpers import create_response
 from flarchitect.utils.session import get_session
+
+if TYPE_CHECKING:  # pragma: no cover - used for type checkers only
+    from flask_caching import Cache
+
+    from flarchitect.authentication.jwt import get_user_from_token as _get_user_from_token
 
 FLASK_APP_NAME = "flarchitect"
 
@@ -86,11 +79,19 @@ DEFAULT_GRAPHIQL_HTML = """<!DOCTYPE html>
 """
 
 
+def _get_user_from_token(*args: Any, **kwargs: Any):
+    """Resolve JWT helper lazily and avoid module import cycles at import-time."""
+
+    from flarchitect.authentication.jwt import get_user_from_token
+
+    return get_user_from_token(*args, **kwargs)
+
+
 def jwt_authentication(func: F) -> F:
     """Enforce JSON Web Token (JWT) authentication for manual routes.
 
     Why/How:
-        Use this decorator on hand‑written Flask views to apply the same
+        Use this decorator on hand-written Flask views to apply the same
         request authentication used by automatically generated endpoints. The
         wrapper validates the ``Authorization: Bearer <token>`` header,
         resolves the current user and stores it in context for downstream
@@ -164,7 +165,7 @@ class Architect(AttributeInitialiserMixin):
             Accepts an optional ``app`` so you can either construct and bind in
             one step or configure the instance first and later call
             :meth:`init_app`. In development the Flask reloader imports the app
-            twice; to prevent duplicate set‑up we detect the parent process and
+            twice; to prevent duplicate set-up we detect the parent process and
             skip initialisation there.
 
         Args:
@@ -187,7 +188,7 @@ class Architect(AttributeInitialiserMixin):
         Why/How:
             The development reloader spawns a supervisor that imports the app
             before creating a child process to serve requests. We check
-            environment variables set by Werkzeug to avoid running one‑time
+            environment variables set by Werkzeug to avoid running one-time
             initialisation twice.
 
         Returns:
@@ -220,86 +221,107 @@ class Architect(AttributeInitialiserMixin):
         """
         super().__init__(app, *args, **kwargs)
         self._register_app(app)
+        self._configure_logging()
+        self.api_spec = None
+        self.plugins = self._load_plugins()
+        self._init_cache(app)
+        self._init_cors(app)
+        self._init_auto_api(app, **kwargs)
+        self._init_websockets()
+        self._init_rate_limiter(app)
+        self._register_request_hooks(app)
+
+    def _configure_logging(self) -> None:
         logger.verbosity_level = self.get_config("API_VERBOSITY_LEVEL", 0)
-        # Enable structured JSON logs if configured
         try:
             logger.json_mode = bool(self.get_config("API_JSON_LOGS", False))
         except Exception:
             logger.json_mode = False
-        self.api_spec = None
-        # Load plugins
-        try:
-            self.plugins = PluginManager.from_config(self.get_config("API_PLUGINS", []))
-        except Exception:
-            self.plugins = PluginManager()
 
+    def _load_plugins(self) -> PluginManager:
+        try:
+            return PluginManager.from_config(self.get_config("API_PLUGINS", []))
+        except Exception:
+            return PluginManager()
+
+    def _init_cache(self, app: Flask) -> None:
         self.cache = None
         cache_type = self.get_config("API_CACHE_TYPE")
-        if cache_type:
-            cache_timeout = self.get_config("API_CACHE_TIMEOUT", 300)
-            if importlib.util.find_spec("flask_caching") is not None:
-                from flask_caching import Cache
+        if not cache_type:
+            return
 
-                cache_config = {
-                    "CACHE_TYPE": cache_type,
-                    "CACHE_DEFAULT_TIMEOUT": cache_timeout,
-                }
-                self.cache = Cache(config=cache_config)
-                self.cache.init_app(app)
-            elif cache_type == "SimpleCache":
-                from flarchitect.core.simple_cache import SimpleCache
+        cache_timeout = self.get_config("API_CACHE_TIMEOUT", 300)
+        if importlib.util.find_spec("flask_caching") is not None:
+            from flask_caching import Cache
 
-                self.cache = SimpleCache(default_timeout=cache_timeout)
-                self.cache.init_app(app)
-            else:
-                raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set")
+            cache_config = {
+                "CACHE_TYPE": cache_type,
+                "CACHE_DEFAULT_TIMEOUT": cache_timeout,
+            }
+            self.cache = Cache(config=cache_config)
+        elif cache_type == "SimpleCache":
+            from flarchitect.core.simple_cache import SimpleCache
 
-        if self.get_config("API_ENABLE_CORS", False):
-            if importlib.util.find_spec("flask_cors") is not None:
-                from flask_cors import CORS
+            self.cache = SimpleCache(default_timeout=cache_timeout)
+        else:
+            raise RuntimeError("flask-caching is required when API_CACHE_TYPE is set")
 
-                CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
-            else:
-                resources = app.config.get("CORS_RESOURCES", {})
-                compiled = [(re.compile(pattern), opts.get("origins", "*")) for pattern, opts in resources.items()]
+        self.cache.init_app(app)
 
-                @app.after_request
-                def apply_cors_headers(response: Response) -> Response:
-                    """Apply CORS headers based on configured resource patterns.
+    @staticmethod
+    def _cors_allowed_origin(origins: Any, origin: str | None) -> str | None:
+        allowed = [origins] if isinstance(origins, str) else list(origins)
+        if "*" in allowed:
+            return "*"
+        if origin and origin in allowed:
+            return origin
+        return None
 
-                    Args:
-                        response: The outgoing Flask response.
+    def _init_cors(self, app: Flask) -> None:
+        if not self.get_config("API_ENABLE_CORS", False):
+            return
 
-                    Returns:
-                        The response with any relevant CORS headers added.
-                    """
+        if importlib.util.find_spec("flask_cors") is not None:
+            from flask_cors import CORS
 
-                    path = request.path
-                    origin = request.headers.get("Origin")
-                    for pattern, origins in compiled:
-                        if pattern.match(path):
-                            allowed = [origins] if isinstance(origins, str) else list(origins)
-                            if "*" in allowed or (origin and origin in allowed):
-                                response.headers["Access-Control-Allow-Origin"] = "*" if "*" in allowed else origin
-                            break
-                    return response
+            CORS(app, resources=app.config.get("CORS_RESOURCES", {}))
+            return
 
+        resources = app.config.get("CORS_RESOURCES", {})
+        compiled = [(re.compile(pattern), opts.get("origins", "*")) for pattern, opts in resources.items()]
+
+        @app.after_request
+        def apply_cors_headers(response: Response) -> Response:
+            """Apply CORS headers based on configured resource patterns."""
+
+            origin = request.headers.get("Origin")
+            for pattern, origins in compiled:
+                if pattern.match(request.path):
+                    allowed_origin = self._cors_allowed_origin(origins, origin)
+                    if allowed_origin:
+                        response.headers["Access-Control-Allow-Origin"] = allowed_origin
+                    break
+            return response
+
+    def _init_auto_api(self, app: Flask, **kwargs: Any) -> None:
         if self.get_config("FULL_AUTO", True):
             self.init_api(app=app, **kwargs)
-        if get_config_or_model_meta("API_CREATE_DOCS", default=True):
+        if self.get_config("API_CREATE_DOCS", True):
             self.init_apispec(app=app, **kwargs)
 
-        # Optional: enable built-in lightweight WebSocket endpoint if configured
-        if self.get_config("API_ENABLE_WEBSOCKETS", False):
-            try:
-                from flarchitect.core.websockets import init_websockets
+    def _init_websockets(self) -> None:
+        if not self.get_config("API_ENABLE_WEBSOCKETS", False):
+            return
 
-                path = self.get_config("API_WEBSOCKET_PATH", "/ws")
-                init_websockets(self, path=path)
-            except Exception:
-                # best-effort; do not fail app init if WS cannot be set up
-                pass
+        try:
+            from flarchitect.core.websockets import init_websockets
 
+            path = self.get_config("API_WEBSOCKET_PATH", "/ws")
+            init_websockets(self, path=path)
+        except Exception:
+            pass
+
+    def _init_rate_limiter(self, app: Flask) -> None:
         logger.log(2, "Creating rate limiter")
         storage_uri = check_rate_services()
         self.app.config["RATELIMIT_HEADERS_ENABLED"] = True
@@ -308,10 +330,15 @@ class Architect(AttributeInitialiserMixin):
         self.limiter = Limiter(
             app=app,
             key_func=get_remote_address,
-            storage_uri=storage_uri if storage_uri else None,
+            storage_uri=storage_uri or "memory://",
         )
 
-        # Correlation IDs and request timing
+    def _register_request_hooks(self, app: Flask) -> None:
+        self._register_request_lifecycle_hooks(app)
+        self._register_global_authentication_hook(app)
+        self._register_teardown_hooks(app)
+
+    def _register_request_lifecycle_hooks(self, app: Flask) -> None:
         @app.before_request
         def _assign_request_id_and_timer() -> None:  # pragma: no cover - Flask integration
             import contextlib
@@ -352,6 +379,7 @@ class Architect(AttributeInitialiserMixin):
                 return new_resp or response
             return response
 
+    def _register_global_authentication_hook(self, app: Flask) -> None:
         @app.before_request
         def _global_authentication() -> None:
             """Authenticate requests for routes without ``schema_constructor``.
@@ -365,7 +393,7 @@ class Architect(AttributeInitialiserMixin):
 
             view = app.view_functions.get(request.endpoint)
             if not view or getattr(view, "_auth_disabled", False) or getattr(view, "_has_schema_constructor", False):
-                return
+                return None
             import contextlib
             try:
                 ctx = {"model": None, "method": request.method}
@@ -384,7 +412,7 @@ class Architect(AttributeInitialiserMixin):
                     auth_context=auth_context,
                 )
                 if not decision:
-                    return
+                    return None
                 self._handle_auth(
                     model=None,
                     output_schema=None,
@@ -399,6 +427,8 @@ class Architect(AttributeInitialiserMixin):
                     self.plugins.after_authenticate({"model": None, "method": request.method}, success=False, user=None)
                 return create_response(status=exc.status_code, errors=exc.reason)
 
+    @staticmethod
+    def _register_teardown_hooks(app: Flask) -> None:
         @app.teardown_request
         def clear_current_user(exception: BaseException | None = None) -> None:
             """Remove the current user from context after each request.
@@ -416,7 +446,7 @@ class Architect(AttributeInitialiserMixin):
         """Attach this extension instance to the Flask app registry.
 
         Why/How:
-            Stores the instance under a well‑known key in ``app.extensions`` so
+            Stores the instance under a well-known key in ``app.extensions`` so
             other components can retrieve it later and to prevent duplicate
             registration.
 
@@ -538,6 +568,7 @@ class Architect(AttributeInitialiserMixin):
         """
         if self.api_spec:
             return self.api_spec.to_dict()
+        return None
 
     def get_config(self, key, default: Optional = None):
         """
@@ -550,8 +581,10 @@ class Architect(AttributeInitialiserMixin):
         Returns:
             Any: The config value.
         """
-        if self.app:
-            return self.app.config.get(key, default)
+        app = getattr(self, "app", None)
+        if app:
+            return app.config.get(key, default)
+        return default
 
     @staticmethod
     def _coerce_auth_requirement(value: Any) -> bool | None:
@@ -572,6 +605,61 @@ class Architect(AttributeInitialiserMixin):
             if normalised in {"inherit", "default", "auto"}:
                 return None
         return None
+
+    @staticmethod
+    def _relation_auth_keys(http_method: str, many: bool | None) -> list[str]:
+        keys = [f"RELATION_{http_method}"]
+        if http_method == "GET":
+            if many is True:
+                keys.append("RELATION_GET_MANY")
+            elif many is False:
+                keys.append("RELATION_GET_ONE")
+            keys.append("RELATION_GET")
+        keys.extend(["RELATION_ALL", "RELATION"])
+        return keys
+
+    @staticmethod
+    def _method_auth_keys(http_method: str, many: bool | None) -> list[str]:
+        keys: list[str] = []
+        if http_method == "GET":
+            if many is True:
+                keys.append("GET_MANY")
+            elif many is False:
+                keys.append("GET_ONE")
+        keys.append(http_method)
+        keys.extend(["ALL", "*", "DEFAULT"])
+        return keys
+
+    def _auth_requirement_keys(self, *, http_method: str, many: bool | None, is_relation: bool) -> list[str]:
+        keys = self._relation_auth_keys(http_method, many) if is_relation else []
+        keys.extend(self._method_auth_keys(http_method, many))
+        return keys
+
+    @staticmethod
+    def _resolve_auth_requirement_spec(
+        spec: Any,
+        *,
+        model: DeclarativeBase | None,
+        output_schema: type[Schema] | None,
+        input_schema: type[Schema] | None,
+        http_method: str,
+        many: bool | None,
+        is_relation: bool,
+        relation_name: str | None,
+        context: dict[str, Any] | None,
+    ) -> Any:
+        if callable(spec) and not isinstance(spec, Mapping):
+            return spec(
+                model=model,
+                output_schema=output_schema,
+                input_schema=input_schema,
+                http_method=http_method,
+                many=many,
+                is_relation=is_relation,
+                relation_name=relation_name,
+                context=context or {},
+            )
+        return spec
 
     def _resolve_auth_requirement(
         self,
@@ -595,39 +683,20 @@ class Architect(AttributeInitialiserMixin):
             default=None,
         )
 
-        if callable(spec) and not isinstance(spec, Mapping):
-            spec = spec(
-                model=model,
-                output_schema=output_schema,
-                input_schema=input_schema,
-                http_method=http_method,
-                many=many,
-                is_relation=is_relation,
-                relation_name=relation_name,
-                context=context or {},
-            )
+        spec = self._resolve_auth_requirement_spec(
+            spec,
+            model=model,
+            output_schema=output_schema,
+            input_schema=input_schema,
+            http_method=http_method,
+            many=many,
+            is_relation=is_relation,
+            relation_name=relation_name,
+            context=context,
+        )
 
         if isinstance(spec, Mapping):
-            keys: list[str] = []
-            if is_relation:
-                keys.append(f"RELATION_{http_method}")
-                if http_method == "GET":
-                    if many is True:
-                        keys.append("RELATION_GET_MANY")
-                    elif many is False:
-                        keys.append("RELATION_GET_ONE")
-                    keys.append("RELATION_GET")
-                keys.extend(["RELATION_ALL", "RELATION"])
-
-            if http_method == "GET":
-                if many is True:
-                    keys.append("GET_MANY")
-                elif many is False:
-                    keys.append("GET_ONE")
-            keys.append(http_method)
-            keys.extend(["ALL", "*", "DEFAULT"])
-
-            for key in keys:
+            for key in self._auth_requirement_keys(http_method=http_method, many=many, is_relation=is_relation):
                 if key in spec:
                     resolved = self._coerce_auth_requirement(spec[key])
                     if resolved is not None:
@@ -760,7 +829,7 @@ class Architect(AttributeInitialiserMixin):
                 self.plugins.before_authenticate(context)
 
             if has_request_context():
-                setattr(g, "_flarch_token_context", token_ctx)
+                g._flarch_token_context = token_ctx
 
             try:
                 for method_name in auth_method:
@@ -830,7 +899,7 @@ class Architect(AttributeInitialiserMixin):
             return self.limiter.limit(rl)(func)
         if rl:
             rule = find_rule_by_function(self, func).rule
-            logger.error(f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
+            logger.error(1, f"Rate limit definition not a string or not valid. Skipping for `{rule}` route.")
         return func
 
     def _authenticate_jwt(self) -> bool:
@@ -890,6 +959,49 @@ class Architect(AttributeInitialiserMixin):
 
         return False
 
+    @staticmethod
+    def _authenticate_user_with_token(users: Iterable[Any], *, token: str, hash_field: str, check_method: str) -> bool:
+        for usr in users:
+            stored = getattr(usr, hash_field, None)
+            if stored and getattr(usr, check_method)(token):
+                set_current_user(usr)
+                return True
+        return False
+
+    def _authenticate_api_key_with_session(
+        self,
+        *,
+        user_model: type[DeclarativeBase],
+        token: str,
+        hash_field: str,
+        check_method: str,
+    ) -> bool:
+        try:
+            with get_session(user_model) as session:
+                return self._authenticate_user_with_token(
+                    session.query(user_model).all(),
+                    token=token,
+                    hash_field=hash_field,
+                    check_method=check_method,
+                )
+        except Exception:
+            return False
+
+    def _authenticate_api_key_with_query(
+        self,
+        *,
+        query: Any,
+        token: str,
+        hash_field: str,
+        check_method: str,
+    ) -> bool:
+        return self._authenticate_user_with_token(
+            query.all(),
+            token=token,
+            hash_field=hash_field,
+            check_method=check_method,
+        )
+
     def _authenticate_api_key(self) -> bool:
         """Authenticate the request using an API key."""
 
@@ -915,24 +1027,19 @@ class Architect(AttributeInitialiserMixin):
 
         query = getattr(user_model, "query", None)
         if query is None:
-            try:
-                with get_session(user_model) as session:
-                    for usr in session.query(user_model).all():
-                        stored = getattr(usr, hash_field, None)
-                        if stored and getattr(usr, check_method)(token):
-                            set_current_user(usr)
-                            return True
-            except Exception:
-                return False
-            return False
+            return self._authenticate_api_key_with_session(
+                user_model=user_model,
+                token=token,
+                hash_field=hash_field,
+                check_method=check_method,
+            )
 
-        for usr in query.all():
-            stored = getattr(usr, hash_field, None)
-            if stored and getattr(usr, check_method)(token):
-                set_current_user(usr)
-                return True
-
-        return False
+        return self._authenticate_api_key_with_query(
+            query=query,
+            token=token,
+            hash_field=hash_field,
+            check_method=check_method,
+        )
 
     def _authenticate_custom(self) -> bool:
         """Authenticate the request using a custom method."""
@@ -1090,7 +1197,7 @@ class Architect(AttributeInitialiserMixin):
         """Record a route definition for OpenAPI generation.
 
         Why/How:
-            ``schema_constructor`` and auto‑generated endpoints call this to
+            ``schema_constructor`` and auto-generated endpoints call this to
             collect the metadata used by the spec generator. The function also
             annotates the wrapped view with a marker so downstream tooling can
             identify it as managed by flarchitect.

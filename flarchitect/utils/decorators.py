@@ -217,6 +217,62 @@ def _handle_decorator(
     return decorator
 
 
+def _response_from_result(result: Any) -> Response:
+    if isinstance(result, Response):
+        return result
+
+    if isinstance(result, tuple) and result and isinstance(result[0], Response):
+        response = result[0]
+        if len(result) > 1 and isinstance(result[1], int):
+            response.status_code = result[1]
+        return response
+
+    return create_response(result=result)
+
+
+def _response_payload(response: Response) -> dict[str, Any]:
+    payload = response.get_json(silent=True) or {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _response_error_state(response: Response) -> tuple[bool, Any | None, int | None, Any | None]:
+    status_code = response.status_code
+    payload = _response_payload(response)
+    error_payload = payload.get("errors")
+    value = payload.get("value")
+    return error_payload is not None or status_code >= 400, error_payload, status_code, value
+
+
+def _programming_error_text(error: ProgrammingError) -> str:
+    message = str(error)
+    _, separator, remainder = message.partition(")")
+    text = remainder if separator else message
+    return text.split("\n", 1)[0].strip().capitalize()
+
+
+def _exception_response(error: Exception) -> tuple[Response, Any | None, int | None]:
+    if isinstance(error, HTTPException):
+        status_code = error.code or HTTP_INTERNAL_SERVER_ERROR
+        response = _handle_exception(error.description, status_code, error.name, print_exc=True)
+    elif isinstance(error, ProgrammingError):
+        status_code = HTTP_BAD_REQUEST
+        response = _handle_exception(f"SQL Format Error: {_programming_error_text(error)}", status_code)
+    elif isinstance(error, CustomHTTPException):
+        status_code = error.status_code
+        response = _handle_exception(error.reason, status_code, error.error)
+    else:
+        status_code = HTTP_INTERNAL_SERVER_ERROR
+        response = _handle_exception(f"Internal Server Error: {error}", status_code)
+
+    return response, _response_payload(response).get("errors"), status_code
+
+
+def _trigger_error_callback(error_payload: Any | None, status_code: int | None, value: Any | None) -> None:
+    error_callback = get_config_or_model_meta("API_ERROR_CALLBACK")
+    if error_callback:
+        error_callback(error_payload, status_code, value)
+
+
 def standardise_response(func: Callable) -> Callable:
     """Standardise API responses and trigger error callbacks consistently.
 
@@ -239,68 +295,18 @@ def standardise_response(func: Callable) -> Callable:
         error_payload: Any | None = None
         status_code: int | None = None
         value: Any | None = None
-        payload: dict[str, Any] | None = None
 
         try:
-            result = func(*args, **kwargs)
-
-            # Preserve custom responses returned by the view so we do not
-            # double-wrap ``create_response`` results or discard status codes.
-            if isinstance(result, Response):
-                out_resp = result
-            elif isinstance(result, tuple) and result and isinstance(result[0], Response):
-                out_resp = result[0]
-                if len(result) > 1 and isinstance(result[1], int):
-                    out_resp.status_code = result[1]
-            else:
-                out_resp = create_response(result=result)
-
-            status_code = out_resp.status_code
-            payload = out_resp.get_json(silent=True) or {}
-            if isinstance(payload, dict):
-                value = payload.get("value")
-                error_payload = payload.get("errors")
-            if (error_payload is not None) or (status_code and status_code >= 400):
-                had_error = True
-
-        except HTTPException as e:
-            had_error = True
-            status_code = e.code or HTTP_INTERNAL_SERVER_ERROR
-            value = None
-            out_resp = _handle_exception(e.description, status_code, e.name, print_exc=True)
-            payload = out_resp.get_json(silent=True) or {}
-            error_payload = payload.get("errors") if isinstance(payload, dict) else None
-
-        except ProgrammingError as e:
-            had_error = True
-            text = str(e).split(")")[1].split("\n")[0].strip().capitalize()
-            status_code = HTTP_BAD_REQUEST
-            value = None
-            out_resp = _handle_exception(f"SQL Format Error: {text}", status_code)
-            payload = out_resp.get_json(silent=True) or {}
-            error_payload = payload.get("errors") if isinstance(payload, dict) else None
-
-        except CustomHTTPException as e:
-            had_error = True
-            status_code = e.status_code
-            value = None
-            out_resp = _handle_exception(e.reason, status_code, e.error)
-            payload = out_resp.get_json(silent=True) or {}
-            error_payload = payload.get("errors") if isinstance(payload, dict) else None
-
+            out_resp = _response_from_result(func(*args, **kwargs))
+            had_error, error_payload, status_code, value = _response_error_state(out_resp)
         except Exception as e:
             had_error = True
-            msg = str(e)
-            status_code = HTTP_INTERNAL_SERVER_ERROR
             value = None
-            out_resp = _handle_exception(f"Internal Server Error: {msg}", status_code)
-            payload = out_resp.get_json(silent=True) or {}
-            error_payload = payload.get("errors") if isinstance(payload, dict) else None
+            out_resp, error_payload, status_code = _exception_response(e)
 
         finally:
-            error_callback = get_config_or_model_meta("API_ERROR_CALLBACK")
-            if error_callback and had_error:
-                error_callback(error_payload, status_code, value)
+            if had_error:
+                _trigger_error_callback(error_payload, status_code, value)
 
         return out_resp
 
@@ -316,7 +322,7 @@ def fields(model_schema: type[AutoSchema] | None, many: bool = False) -> Callabl
     """Control which fields are serialised on the response.
 
     Why/How:
-        Reads an optional ``fields`` query parameter and re‑instantiates the
+        Reads an optional ``fields`` query parameter and re-instantiates the
         output schema with ``only`` to reduce payload size. Falls back to the
         full schema when the parameter is absent.
 

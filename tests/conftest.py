@@ -6,6 +6,7 @@ order.
 """
 
 import sys
+from contextlib import suppress
 from pathlib import Path
 
 # Resolve root directory of repository.
@@ -14,7 +15,5 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 # Re-export key fixtures used by multiple modules
-try:  # pragma: no cover - fixture re-export
+with suppress(Exception):  # pragma: no cover - fixture re-export
     from tests.test_authentication import client_jwt  # noqa: F401
-except Exception:
-    pass

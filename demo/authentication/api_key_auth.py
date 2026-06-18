@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from demo.authentication.app_base import BaseConfig, User, create_app
 from flarchitect.authentication.user import get_current_user, set_current_user
 
@@ -33,7 +35,7 @@ class Config(BaseConfig):
             user from an API key.
     """
 
-    API_AUTHENTICATE_METHOD = ["api_key"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["api_key"]
     API_KEY_AUTH_AND_RETURN_METHOD = staticmethod(lookup_user_by_token)
     API_USER_MODEL = User
 

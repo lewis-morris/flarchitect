@@ -13,7 +13,6 @@ from sqlalchemy.pool import StaticPool
 from flarchitect import Architect
 from flarchitect.authentication.jwt import generate_refresh_token
 
-
 db = SQLAlchemy()
 
 
@@ -27,16 +26,16 @@ class User(db.Model):  # type: ignore[misc]
 
 
 def _base_app_config() -> dict:
-    return dict(
-        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
-        SQLALCHEMY_ENGINE_OPTIONS={"poolclass": StaticPool},
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        FULL_AUTO=False,
-        API_CREATE_DOCS=False,
-        API_USER_MODEL=User,
-        API_USER_LOOKUP_FIELD="username",
-        API_CREDENTIAL_CHECK_METHOD="check_password",
-    )
+    return {
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SQLALCHEMY_ENGINE_OPTIONS": {"poolclass": StaticPool},
+        "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+        "FULL_AUTO": False,
+        "API_CREATE_DOCS": False,
+        "API_USER_MODEL": User,
+        "API_USER_LOOKUP_FIELD": "username",
+        "API_CREDENTIAL_CHECK_METHOD": "check_password",
+    }
 
 
 @pytest.fixture()
@@ -150,4 +149,3 @@ def test_configurable_refresh_path() -> None:
         # Default path absent
         missing = client.post("/auth/refresh", json={"refresh_token": refresh})
         assert missing.status_code == 404
-

@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import ClassVar
 
 from flask import session
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table, Text
@@ -32,7 +33,7 @@ class Author(db.Model):
         tag_group = "People/Companies"
         tag = "Author"
         # `block_methods` stop api calls via these methods.
-        block_methods = ["POST", "PATCH"]
+        block_methods: ClassVar[list[str]] = ["POST", "PATCH"]
         allow_orderby = False
         get_rate_limit = "1 per 5 seconds"
 
@@ -40,11 +41,11 @@ class Author(db.Model):
     # The `info` field is a dictionary with the following keys:
     # - description: The description of the field.
     # - format: The format of the field.Can be one of the following:
-    #       date – full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
-    #       date-time – the date-time notation as defined by RFC 3339, section 5.6, for example, 2017-07-21T17:32:28Z
-    #       password – a hint to UIs to mask the input
-    #       byte – base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
-    #       binary – binary data, used to describe files (see Files below)
+    #       date - full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
+    #       date-time - the date-time notation as defined by RFC 3339, section 5.6, for example, 2017-07-21T17:32:28Z
+    #       password - a hint to UIs to mask the input
+    #       byte - base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
+    #       binary - binary data, used to describe files (see Files below)
     #       email
     #       uuid
     #       uri

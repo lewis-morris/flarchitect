@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-import io
 import functools
+import io
 import re
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, List, Mapping, Optional, Sequence
+from typing import ClassVar
 
 from docutils import nodes
 from docutils.core import publish_parts
 from docutils.parsers.rst import Directive, directives, roles
 from docutils.utils import SystemMessage
-
 
 _HEADING_CHARS = r"=-`:'\"^_*+#~<>"
 _EXCLUDED_FILENAMES = {"README.md", "SUGGESTIONS.md"}
@@ -34,7 +34,7 @@ class DocumentSection:
     title: str
     anchor: str
     start_line: int
-    end_line: Optional[int]
+    end_line: int | None
 
 
 @dataclass(frozen=True)
@@ -55,7 +55,7 @@ class SearchHit:
     doc_id: str
     path: Path
     line_number: int
-    heading: Optional[str]
+    heading: str | None
     snippet: str
 
 
@@ -68,8 +68,8 @@ class DocumentIndex:
         *,
         doc_path: Path | None = None,
         include_extensions: Iterable[str] = (".md", ".rst", ".txt"),
-        aliases: Optional[Mapping[Path | str, str]] = None,
-        extra_files: Optional[Mapping[Path | str, str | None]] = None,
+        aliases: Mapping[Path | str, str] | None = None,
+        extra_files: Mapping[Path | str, str | None] | None = None,
     ) -> None:
         if isinstance(roots_or_project, Path):
             project_root = roots_or_project.resolve()
@@ -141,7 +141,7 @@ class DocumentIndex:
         except KeyError as exc:  # pragma: no cover - defensive guard
             raise KeyError(f"Unknown document id: {doc_id}") from exc
 
-    def get_section(self, doc_id: str, heading: Optional[str]) -> str:
+    def get_section(self, doc_id: str, heading: str | None) -> str:
         record = self.get(doc_id)
         if heading is None:
             return record.content
@@ -231,10 +231,7 @@ class DocumentIndex:
         except ValueError:  # pragma: no cover - defensive guard
             relative = path.name
         alias = self._aliases.get(root, "")
-        if alias:
-            doc_path = Path(alias) / relative
-        else:
-            doc_path = relative
+        doc_path = Path(alias) / relative if alias else relative
         return doc_path.as_posix()
 
 
@@ -262,7 +259,7 @@ def _build_record(doc_id: str, path: Path) -> DocumentRecord:
 def _extract_sections(content: str) -> Iterator[DocumentSection]:
     lines = content.splitlines()
     index = 0
-    last_section: Optional[DocumentSection] = None
+    last_section: DocumentSection | None = None
     while index < len(lines):
         header = _parse_heading(lines, index)
         if header is not None:
@@ -286,7 +283,7 @@ def _extract_sections(content: str) -> Iterator[DocumentSection]:
         object.__setattr__(last_section, "end_line", len(lines))
 
 
-def _parse_heading(lines: List[str], index: int) -> Optional[tuple[str, int]]:
+def _parse_heading(lines: list[str], index: int) -> tuple[str, int] | None:
     line = lines[index].rstrip()
     if not line.strip():
         return None
@@ -303,10 +300,9 @@ def _parse_heading(lines: List[str], index: int) -> Optional[tuple[str, int]]:
     if index + 1 < len(lines):
         underline = lines[index + 1]
         stripped = underline.strip()
-        if stripped and all(char == stripped[0] for char in stripped):
-            if len(stripped) >= len(line.strip()) and stripped[0] in _HEADING_CHARS:
-                title = line.strip()
-                return title, 2
+        if stripped and all(char == stripped[0] for char in stripped) and len(stripped) >= len(line.strip()) and stripped[0] in _HEADING_CHARS:
+            title = line.strip()
+            return title, 2
 
     return None
 
@@ -421,16 +417,15 @@ def _parse_rst_document(source: str, path: Path) -> tuple[str, str, list[Documen
             start_line=1,
             end_line=None,
         )
-        adjusted_sections: list[DocumentSection] = []
-        for sec in parsed_sections:
-            adjusted_sections.append(
-                DocumentSection(
-                    title=sec.title,
-                    anchor=sec.anchor,
-                    start_line=sec.start_line + 1,
-                    end_line=(sec.end_line + 1) if sec.end_line is not None else None,
-                )
+        adjusted_sections = [
+            DocumentSection(
+                title=sec.title,
+                anchor=sec.anchor,
+                start_line=sec.start_line + 1,
+                end_line=(sec.end_line + 1) if sec.end_line is not None else None,
             )
+            for sec in parsed_sections
+        ]
         if adjusted_sections:
             object.__setattr__(title_section, "end_line", adjusted_sections[0].start_line - 1)
             if adjusted_sections[-1].end_line is None:
@@ -462,8 +457,7 @@ def _strip_sphinx_roles(source: str) -> str:
     # Remove interpreted text roles such as ``:bdg:`value``` to leave only the payload.
     source = re.sub(r"\:([\w.+-]+)\:`([^`]+)`", r"\2", source)
     # Replace Sphinx-style references ``Foo`_``/``Foo`__`` with plain text.
-    source = re.sub(r"`([^`]+)`__?", r"\1", source)
-    return source
+    return re.sub(r"`([^`]+)`__?", r"\1", source)
 
 
 @functools.lru_cache(maxsize=1)
@@ -472,7 +466,7 @@ def _prepare_rst_environment() -> None:
         has_content = True
         optional_arguments = 1
         final_argument_whitespace = True
-        option_spec: dict[str, Callable[[str], str]] = {}
+        option_spec: ClassVar[dict[str, Callable[[str], str]]] = {}
 
         def run(self):
             container = nodes.container()
@@ -492,7 +486,7 @@ def _prepare_rst_environment() -> None:
         optional_arguments = 0
         final_argument_whitespace = False
         has_content = False
-        option_spec = {
+        option_spec: ClassVar[dict[str, Callable[[str], str]]] = {
             "language": directives.unchanged,
             "linenos": directives.flag,
         }
@@ -562,13 +556,12 @@ def _strip_heading(lines: list[str]) -> list[str]:
 
     if len(lines) >= 2:
         underline = lines[1].strip()
-        if underline and all(char == underline[0] for char in underline):
-            if underline[0] in _HEADING_CHARS:
-                return lines[2:]
+        if underline and all(char == underline[0] for char in underline) and underline[0] in _HEADING_CHARS:
+            return lines[2:]
     return lines
 
 
-def _heading_for_line(sections: Sequence[DocumentSection], line_number: int) -> Optional[str]:
+def _heading_for_line(sections: Sequence[DocumentSection], line_number: int) -> str | None:
     match = None
     for section in sections:
         if section.start_line <= line_number and (

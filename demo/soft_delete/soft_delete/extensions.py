@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Boolean, DateTime
@@ -7,10 +7,14 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from flarchitect import Architect
 
 
+def _utc_naive_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class BaseModel(DeclarativeBase):
     # you can optionally add fields that apply to all models.
-    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_naive_now)
+    updated: Mapped[datetime] = mapped_column(DateTime, default=_utc_naive_now, onupdate=_utc_naive_now)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def get_session(*args):

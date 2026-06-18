@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import ClassVar
 
 from sqlalchemy import Column, Date, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -23,17 +24,17 @@ class Author(db.Model):
         tag_group = "People/Companies"
         tag = "Author"
         # `block_methods` stop api calls via these methods.
-        block_methods = ["POST", "PATCH"]
+        block_methods: ClassVar[list[str]] = ["POST", "PATCH"]
 
     # column definitions with `info` field which is used to define the schema in redocly api docs.
     # The `info` field is a dictionary with the following keys:
     # - description: The description of the field.
     # - format: The format of the field.Can be one of the following:
-    #       date – full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
-    #       date-time – the date-time notation as defined by RFC 3339, section 5.6, for example, 2017-07-21T17:32:28Z
-    #       password – a hint to UIs to mask the input
-    #       byte – base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
-    #       binary – binary data, used to describe files
+    #       date - full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
+    #       date-time - the date-time notation as defined by RFC 3339, section 5.6, for example, 2017-07-21T17:32:28Z
+    #       password - a hint to UIs to mask the input
+    #       byte - base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
+    #       binary - binary data, used to describe files
     #       email
     #       uuid
     #       uri
@@ -175,7 +176,7 @@ class Publisher(db.Model):
         # references in redocly api docs.
         tag_group = "People/Companies"
         tag = "Publisher"
-        allowed_methods = ["GET", "POST", "PATCH"]
+        allowed_methods: ClassVar[list[str]] = ["GET", "POST", "PATCH"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String)
@@ -218,7 +219,7 @@ class Category(db.Model):
         # references in redocly api docs.
         tag_group = "Books"
         tag = "Categories"
-        allowed_methods = ["POST", "PATCH"]
+        allowed_methods: ClassVar[list[str]] = ["POST", "PATCH"]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String)

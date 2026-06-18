@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from flask import current_app
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from validators import email as validate_email
@@ -26,7 +28,7 @@ class Category(db.Model):
         tag_group = "Core"
         tag = "Categories"
         allow_nested_writes = True
-        description = {
+        description: ClassVar[dict[str, str]] = {
             "GET": "Retrieve categories and their items.",
             "POST": "Create a new category.",
         }
@@ -54,9 +56,9 @@ class User(db.Model):
         tag_group = "Core"
         tag = "Users"
         allow_nested_writes = False
-        allowed_methods = ["GET", "POST"]
+        allowed_methods: ClassVar[list[str]] = ["GET", "POST"]
         post_rate_limit = "5 per minute"
-        description = {
+        description: ClassVar[dict[str, str]] = {
             "GET": "Retrieve users.",
             "POST": "Create a new user.",
         }
@@ -117,7 +119,7 @@ class Item(db.Model):
         tag = "Items"
         allow_nested_writes = True
         add_callback = staticmethod(lambda obj, model: _titleize_name(obj))
-        description = {
+        description: ClassVar[dict[str, str]] = {
             "GET": "Retrieve items with their owners and categories.",
             "POST": "Create an item, optionally with its category.",
             "PATCH": "Update an item's details.",

@@ -32,4 +32,4 @@ def __dir__() -> list[str]:  # pragma: no cover - trivial
     return sorted(set(globals()) | _EXPORTED)
 
 
-__all__ = sorted(_EXPORTED)
+__all__ = tuple(sorted(_EXPORTED))

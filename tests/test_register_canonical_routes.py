@@ -29,7 +29,6 @@ def _make_app(config: dict | None = None) -> tuple[Flask, SQLAlchemy]:
     class BaseModel(DeclarativeBase):
         """Minimal base model providing session access for flarchitect."""
 
-        pass
 
     db = SQLAlchemy(model_class=BaseModel)
 

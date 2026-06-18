@@ -41,11 +41,11 @@ if not hasattr(werkzeug, "__version__"):
 __all__ = [
     "Architect",
     "__version__",
-    "core",
     "authentication",
+    "core",
     "database",
+    "logging",
     "schemas",
     "specs",
     "utils",
-    "logging",
 ]

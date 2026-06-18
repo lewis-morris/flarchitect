@@ -8,10 +8,11 @@ from typing import Any
 import pytest
 from flask import Flask
 from marshmallow import ValidationError, fields
-from sqlalchemy import Enum as SAEnum, ForeignKey, Integer, String, func
+from sqlalchemy import Enum as SAEnum
+from sqlalchemy import ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import TypeDecorator
 
 from flarchitect.schemas.bases import AutoSchema, EnumField
@@ -32,7 +33,7 @@ class Author(_Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50))
-    articles: Mapped[list["Article"]] = relationship(back_populates="author")
+    articles: Mapped[list[Article]] = relationship(back_populates="author")
 
 
 class Article(_Base):

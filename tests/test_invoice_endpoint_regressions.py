@@ -25,7 +25,7 @@ class Customer(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
 
-    invoices: Mapped[list["Invoice"]] = relationship("Invoice", back_populates="customer")
+    invoices: Mapped[list[Invoice]] = relationship("Invoice", back_populates="customer")
 
 
 class Payment(db.Model):
@@ -36,7 +36,7 @@ class Payment(db.Model):
     amount_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     paid_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="payments")
+    invoice: Mapped[Invoice] = relationship("Invoice", back_populates="payments")
 
 
 class Invoice(db.Model):
@@ -54,7 +54,7 @@ class Invoice(db.Model):
 
     customer: Mapped[Customer] = relationship(Customer, back_populates="invoices")
     payments: Mapped[list[Payment]] = relationship(Payment, back_populates="invoice", cascade="all, delete-orphan")
-    lines: Mapped[list["InvoiceLine"]] = relationship("InvoiceLine", back_populates="invoice", cascade="all, delete-orphan")
+    lines: Mapped[list[InvoiceLine]] = relationship("InvoiceLine", back_populates="invoice", cascade="all, delete-orphan")
 
     @hybrid_property
     def total_outstanding(self) -> int:

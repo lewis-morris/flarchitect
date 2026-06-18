@@ -74,93 +74,81 @@ class PluginManager:
         plugins: list[PluginBase] = []
         if isinstance(config_val, list):
             for entry in config_val:
-                try:
-                    plugins.append(cls._coerce(entry))
-                except Exception:
-                    # Skip invalid plugins rather than breaking app startup
-                    continue
+                plugin = cls._coerce_optional(entry)
+                if plugin is not None:
+                    plugins.append(plugin)
         elif config_val:
             with contextlib.suppress(Exception):
                 plugins.append(cls._coerce(config_val))
         return cls(plugins)
 
+    @classmethod
+    def _coerce_optional(cls, entry: Any) -> PluginBase | None:
+        """Best-effort plugin coercion for list-based config values."""
+
+        try:
+            return cls._coerce(entry)
+        except Exception:
+            # Skip invalid plugins rather than breaking app startup.
+            return None
+
     # Dispatch helpers
+    def _for_each(self, func: Callable[[PluginBase], Any]) -> None:
+        for plugin in self._plugins:
+            self._safe_call(func, plugin)
+
     def _first_non_none(self, func: Callable[[PluginBase], Any]) -> Any:
         for p in self._plugins:
-            result = func(p)
+            result = self._safe_call(func, p)
             if result is not None:
                 return result
         return None
 
-    def request_started(self, request: Request) -> None:
-        for p in self._plugins:
-            try:
-                p.request_started(request)
-            except Exception:
+    def _merge_context_updates(self, context: dict[str, Any], func: Callable[[PluginBase], Any]) -> dict[str, Any] | None:
+        updated = False
+        for plugin in self._plugins:
+            result = self._safe_call(func, plugin)
+            if isinstance(result, dict):
+                context.update(result)
+                updated = True
+        return context if updated else None
+
+    def _chain_first_arg(self, initial: Any, func: Callable[[PluginBase, Any], Any], *, require_dict: bool = False) -> Any | None:
+        value = initial
+        changed = False
+        for plugin in self._plugins:
+            result = self._safe_call(func, plugin, value)
+            if result is None:
                 continue
+            if require_dict and not isinstance(result, dict):
+                continue
+            value = result
+            changed = True
+        return value if changed else None
+
+    def request_started(self, request: Request) -> None:
+        self._for_each(lambda p: p.request_started(request))
 
     def request_finished(self, request: Request, response: Response) -> Response | None:
-        return self._first_non_none(lambda p: self._safe_call(p.request_finished, request, response))
+        return self._first_non_none(lambda p: p.request_finished(request, response))
 
     def before_authenticate(self, context: dict[str, Any]) -> dict[str, Any] | None:
-        updates: dict[str, Any] | None = None
-        for p in self._plugins:
-            try:
-                upd = p.before_authenticate(context)
-                if isinstance(upd, dict):
-                    context.update(upd)
-                    updates = context
-            except Exception:
-                continue
-        return updates
+        return self._merge_context_updates(context, lambda p: p.before_authenticate(context))
 
     def after_authenticate(self, context: dict[str, Any], success: bool, user: Any | None) -> None:
-        for p in self._plugins:
-            with contextlib.suppress(Exception):
-                p.after_authenticate(context, success, user)
+        self._for_each(lambda p: p.after_authenticate(context, success, user))
 
     def before_model_op(self, context: dict[str, Any]) -> dict[str, Any] | None:
-        updates: dict[str, Any] | None = None
-        for p in self._plugins:
-            try:
-                upd = p.before_model_op(context)
-                if isinstance(upd, dict):
-                    context.update(upd)
-                    updates = context
-            except Exception:
-                continue
-        return updates
+        return self._merge_context_updates(context, lambda p: p.before_model_op(context))
 
     def after_model_op(self, context: dict[str, Any], output: Any) -> Any | None:
-        out = output
-        changed = False
-        for p in self._plugins:
-            try:
-                maybe = p.after_model_op(context, out)
-                if maybe is not None:
-                    out = maybe
-                    changed = True
-            except Exception:
-                continue
-        return out if changed else None
+        return self._chain_first_arg(output, lambda p, out: p.after_model_op(context, out))
 
     def spec_build_started(self, spec: Any) -> None:
-        for p in self._plugins:
-            with contextlib.suppress(Exception):
-                p.spec_build_started(spec)
+        self._for_each(lambda p: p.spec_build_started(spec))
 
     def spec_build_completed(self, spec_dict: dict[str, Any]) -> dict[str, Any] | None:
-        out = spec_dict
-        changed = False
-        for p in self._plugins:
-            try:
-                maybe = p.spec_build_completed(out)
-                if isinstance(maybe, dict):
-                    out = maybe
-                    changed = True
-            except Exception:
-                continue
-        return out if changed else None
+        return self._chain_first_arg(spec_dict, lambda p, out: p.spec_build_completed(out), require_dict=True)
 
     @staticmethod
     def _safe_call(fn: Callable, *args: Any, **kwargs: Any) -> Any:

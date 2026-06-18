@@ -1,18 +1,18 @@
 import pytest
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, Integer, String
-
 from flask import Flask
+from sqlalchemy import Boolean, Date, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from flarchitect.database.utils import (
+    convert_value_to_type,
     create_pagination_defaults,
     extract_pagination_params,
-    get_models_for_join,
-    get_table_column,
-    convert_value_to_type,
-    get_primary_key_filters,
-    list_model_columns,
     find_matching_relations,
+    get_models_for_join,
+    get_primary_key_filters,
+    get_table_column,
+    list_model_columns,
+    parse_key_and_label,
 )
 from flarchitect.exceptions import CustomHTTPException
 
@@ -21,8 +21,8 @@ def test_extract_pagination_params_defaults_and_limit_error():
     app = Flask(__name__)
     with app.app_context():
         defaults, maxes = create_pagination_defaults()
-        p, l = extract_pagination_params({})
-        assert p == defaults["page"] and l == defaults["limit"]
+        page, limit = extract_pagination_params({})
+        assert page == defaults["page"] and limit == defaults["limit"]
 
         with pytest.raises(CustomHTTPException):
             extract_pagination_params({"limit": str(maxes["limit"] + 1)})
@@ -46,9 +46,13 @@ def test_get_table_column_parsing():
     assert op == ""
 
 
-def test_convert_value_to_type_branches():
-    from sqlalchemy import Boolean, Integer, Float, Date
+def test_parse_key_and_label_handles_operator_suffix_and_extra_separators():
+    assert parse_key_and_label("total") == ("total", None)
+    assert parse_key_and_label("total|Total__sum") == ("total__sum", "Total")
+    assert parse_key_and_label("total|Gross__Revenue__sum") == ("total__sum", "Gross__Revenue")
 
+
+def test_convert_value_to_type_branches():
     assert convert_value_to_type("true", Boolean()) is True
     assert convert_value_to_type("0", Boolean()) is False
     assert convert_value_to_type("10", Integer()) == 10

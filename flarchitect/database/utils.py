@@ -3,7 +3,8 @@ from contextlib import suppress
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, Column, Date, Float, Integer, func, inspect, or_
+from sqlalchemy import Boolean, Column, Date, Float, Integer, inspect, or_
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import StatementError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
@@ -11,40 +12,20 @@ from sqlalchemy.orm import (
     InstrumentedAttribute,
     RelationshipProperty,
     class_mapper,
+    joinedload,
+    selectinload,
 )
-from sqlalchemy import inspect as sa_inspect
-from sqlalchemy.orm import joinedload, selectinload
 
+from flarchitect.database import inspections as db_inspections
+from flarchitect.database.constants import AGGREGATE_FUNCS, OPERATORS, OTHER_FUNCTIONS
 from flarchitect.exceptions import CustomHTTPException
-from flarchitect.logging import logger
 from flarchitect.utils.config_helpers import get_config_or_model_meta
 from flarchitect.utils.core_utils import (
     convert_camel_to_snake,
     convert_case,
     convert_kebab_to_snake,
 )
-
-OPERATORS: dict[str, Callable[[Any, Any], Any]] = {
-    "lt": lambda f, a: f < a,
-    "le": lambda f, a: f <= a,
-    "gt": lambda f, a: f > a,
-    "eq": lambda f, a: f == a,
-    "neq": lambda f, a: f != a,
-    "ge": lambda f, a: f >= a,
-    "ne": lambda f, a: f != a,
-    "in": lambda f, a: f.in_(a),
-    "nin": lambda f, a: ~f.in_(a),
-    "like": lambda f, a: f.like(a),
-    "ilike": lambda f, a: f.ilike(a),  # case-insensitive LIKE operator
-}
-AGGREGATE_FUNCS = {
-    "sum": func.sum,
-    "count": func.count,
-    "avg": func.avg,
-    "min": func.min,
-    "max": func.max,
-}
-OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
+from flarchitect.utils.general import pluralize_last_word
 
 
 def normalise_join_token(token: str) -> str:
@@ -123,6 +104,38 @@ def _eager_options_for(model_cls: type[DeclarativeBase], depth: int = 1, _visite
     return opts
 
 
+def _model_columns_and_hybrids(
+    model: type[DeclarativeBase],
+    *,
+    ignore_underscore: bool,
+) -> dict[str, hybrid_property | InstrumentedAttribute]:
+    return {
+        attr: column
+        for attr, column in model.__dict__.items()
+        if isinstance(column, hybrid_property | InstrumentedAttribute)
+        and (not ignore_underscore or not attr.startswith("_"))
+    }
+
+
+def _expanded_column_aliases(*names: str) -> set[str]:
+    aliases: set[str] = set()
+    for name in names:
+        if not name:
+            continue
+        aliases.add(name)
+        if normalised := normalise_join_token(name):
+            aliases.add(normalised)
+    return aliases
+
+
+def _register_column_aliases(
+    all_columns: dict[str, dict[str, hybrid_property | InstrumentedAttribute]],
+    alias: str,
+    columns: dict[str, hybrid_property | InstrumentedAttribute],
+) -> None:
+    all_columns.setdefault(alias, columns)
+
+
 def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, DeclarativeBase]) -> tuple[dict[str, dict[str, hybrid_property | InstrumentedAttribute]], list[DeclarativeBase]]:
     """Gather columns and hybrid properties for the base and join models.
 
@@ -144,7 +157,7 @@ def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, D
     schema_case = get_config_or_model_meta(key="API_SCHEMA_CASE", model=model, default="camel")
 
     all_columns: dict[str, dict[str, hybrid_property | InstrumentedAttribute]] = {}
-    all_models = [model] + list(join_models.values())
+    all_models = [model, *join_models.values()]
 
     column_cache: dict[type[DeclarativeBase], dict[str, hybrid_property | InstrumentedAttribute]] = {}
 
@@ -153,30 +166,14 @@ def get_all_columns_and_hybrids(model: DeclarativeBase, join_models: dict[str, D
         if cached is not None:
             return cached
 
-        collected = {
-            attr: column
-            for attr, column in mdl.__dict__.items()
-            if isinstance(column, hybrid_property | InstrumentedAttribute) and (not ignore_underscore or not attr.startswith("_"))
-        }
+        collected = _model_columns_and_hybrids(mdl, ignore_underscore=ignore_underscore)
         column_cache[mdl] = collected
         return collected
 
-    def _expanded_aliases(*names: str) -> set[str]:
-        aliases: set[str] = set()
-        for name in names:
-            if not name:
-                continue
-            aliases.add(name)
-            normalised = normalise_join_token(name)
-            if normalised:
-                aliases.add(normalised)
-        return aliases
-
     def _register_aliases(mdl: type[DeclarativeBase], *names: str) -> None:
         columns = _columns_for(mdl)
-        for alias in _expanded_aliases(*names):
-            if alias not in all_columns:
-                all_columns[alias] = columns
+        for alias in _expanded_column_aliases(*names):
+            _register_column_aliases(all_columns, alias, columns)
 
     base_alias = convert_case(model.__name__, schema_case)
     _register_aliases(model, base_alias, table_namer(model))
@@ -267,6 +264,96 @@ def get_group_by_fields(
     return group_by_fields
 
 
+_JOIN_PARAM_KEYS = ("join", "join_models")
+_RESERVED_JOIN_KEYS = {
+    "join",
+    "join_models",
+    "join_type",
+    "fields",
+    "groupby",
+    "orderby",
+    "order_by",
+    "page",
+    "limit",
+    "dump",
+    "format",
+    "include_deleted",
+    "cascade_delete",
+}
+
+
+def _ensure_string_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list | tuple | set):
+        return [str(item) for item in value]
+    return [str(value)]
+
+
+def _join_token_candidates(token: str) -> tuple[str, ...]:
+    candidates = [token]
+    if "_" in token:
+        candidates.append(token.replace("_", "-"))
+
+    singular = token[:-1] if token.endswith("s") else token
+    if singular != token:
+        candidates.append(singular)
+        if "_" in singular:
+            candidates.append(singular.replace("_", "-"))
+
+    plural = pluralize_last_word(token)
+    if plural != token:
+        candidates.append(plural)
+        if "_" in plural:
+            candidates.append(plural.replace("_", "-"))
+
+    return tuple(dict.fromkeys(candidates))
+
+
+def _resolve_join_token(
+    token: str,
+    get_model_func: Callable[[str], DeclarativeBase],
+) -> DeclarativeBase | None:
+    for candidate in _join_token_candidates(token):
+        model = _try_resolve_join_candidate(candidate, get_model_func)
+        if model is not None:
+            return model
+    return None
+
+
+def _try_resolve_join_candidate(
+    candidate: str,
+    get_model_func: Callable[[str], DeclarativeBase],
+) -> DeclarativeBase | None:
+    """Return a resolved join model candidate, or ``None`` if invalid."""
+
+    try:
+        return get_model_func(candidate)
+    except CustomHTTPException:
+        return None
+
+
+def _normalised_join_values(args_dict: dict[str, Any]) -> list[str]:
+    join_values: list[str] = []
+    for key in _JOIN_PARAM_KEYS:
+        for value in _ensure_string_list(args_dict.get(key)):
+            join_values.extend(
+                token
+                for raw in str(value).split(",")
+                if (token := normalise_join_token(raw))
+            )
+    return join_values
+
+
+def _implicit_join_keys(args_dict: dict[str, Any]) -> list[str]:
+    return [
+        token
+        for key in args_dict
+        if key not in _RESERVED_JOIN_KEYS and "__" not in key and "." not in key
+        if (token := normalise_join_token(key))
+    ]
+
+
 def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str], DeclarativeBase]) -> dict[str, DeclarativeBase]:
     """Build a mapping of models to join from query parameters.
 
@@ -296,87 +383,8 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
         trying normalisation, singular, and plural variants.
     """
 
-    def _ensure_list(val: Any) -> list[str]:
-        if val is None:
-            return []
-        if isinstance(val, (list, tuple, set)):
-            # flatten nested one-level lists of scalars
-            return [str(v) for v in val]
-        return [str(val)]
-
-    def _resolve_token(token: str) -> DeclarativeBase | None:
-        def _attempt(name: str) -> DeclarativeBase | None:
-            try:
-                return get_model_func(name)
-            except CustomHTTPException:
-                return None
-
-        # Attempt the normalised token first
-        candidate = _attempt(token)
-        if candidate is not None:
-            return candidate
-
-        # Retry with hyphenated variant for endpoint-style matches
-        if "_" in token:
-            hyphenated = token.replace("_", "-")
-            candidate = _attempt(hyphenated)
-            if candidate is not None:
-                return candidate
-
-        # Singular: drop trailing 's'
-        singular = token[:-1] if token.endswith("s") else token
-        if singular != token:
-            candidate = _attempt(singular)
-            if candidate is not None:
-                return candidate
-
-            if "_" in singular:
-                hyphenated = singular.replace("_", "-")
-                candidate = _attempt(hyphenated)
-                if candidate is not None:
-                    return candidate
-
-        # Pluralise last word
-        from flarchitect.specs.utils import pluralize_last_word  # lazy import to avoid circular
-
-        plural = pluralize_last_word(token)
-        if plural != token:
-            candidate = _attempt(plural)
-            if candidate is not None:
-                return candidate
-
-            if "_" in plural:
-                hyphenated = plural.replace("_", "-")
-                candidate = _attempt(hyphenated)
-                if candidate is not None:
-                    return candidate
-
-        return None
-
     models: dict[str, DeclarativeBase] = {}
-
-    # 1) Collect tokens from join/join_models params (multiple allowed)
-    join_values: list[str] = []
-    for key in ("join", "join_models"):
-        if key in args_dict:
-            for v in _ensure_list(args_dict.get(key)):
-                # split on commas after normalisation preparation
-                for raw in str(v).split(","):
-                    norm = normalise_join_token(raw)
-                    if norm:
-                        join_values.append(norm)
-
-    # 2) Collect additional keys that may represent relationship names
-    reserved = {"join", "join_models", "join_type", "fields", "groupby", "orderby", "order_by", "page", "limit", "dump", "format", "include_deleted", "cascade_delete"}
-    candidate_keys = [k for k in args_dict.keys() if k not in reserved]
-
-    for key in candidate_keys:
-        # ignore keys that are obviously filter expressions (contain __ or .)
-        if "__" in key or "." in key:
-            continue
-        norm = normalise_join_token(key)
-        if norm:
-            join_values.append(norm)
+    join_values = [*_normalised_join_values(args_dict), *_implicit_join_keys(args_dict)]
 
     # 3) Resolve tokens with fallbacks; collect unique in insertion order
     seen: set[str] = set()
@@ -384,7 +392,7 @@ def get_models_for_join(args_dict: dict[str, Any], get_model_func: Callable[[str
         if token in seen:
             continue
         seen.add(token)
-        model = _resolve_token(token)
+        model = _resolve_join_token(token, get_model_func)
         if not model:
             # Use the original token in error message (pre-normalised best effort)
             raise CustomHTTPException(400, f"Invalid join model: {token}")
@@ -412,8 +420,9 @@ def get_table_column(key: str, all_columns: dict[str, dict[str, Any]]) -> tuple[
     column_name = keys_split[0]
     operator = keys_split[1] if len(keys_split) > 1 else ""
 
-    for table_name, columns in all_columns.items():
+    for candidate_table_name, columns in all_columns.items():
         current_column = column_name
+        table_name = candidate_table_name
 
         if "." in current_column:
             table_name, current_column = current_column.split(".", 1)
@@ -508,7 +517,7 @@ def generate_conditions_from_args(
     conditions = []
     or_conditions = []
 
-    PAGINATION_DEFAULTS, PAGINATION_MAX = create_pagination_defaults()
+    PAGINATION_DEFAULTS, _PAGINATION_MAX = create_pagination_defaults()
 
     for key, _value in args_dict.items():
         if any(op in key for op in OPERATORS) and not any(func in key for func in [*PAGINATION_DEFAULTS, *OTHER_FUNCTIONS]):
@@ -537,7 +546,7 @@ def generate_conditions_from_args(
     return conditions
 
 
-def parse_key_and_label(key):
+def parse_key_and_label(key: str) -> tuple[str, str | None]:
     """
         Get the key and label from the key
 
@@ -549,19 +558,19 @@ def parse_key_and_label(key):
 
     """
 
-    key_list = key.split("|")
+    key_list = key.split("|", 1)
     if len(key_list) == 1:
         return key, None
-    elif len(key_list) >= 2:
-        # was getting an error where the label and operator were combined, now we split them and recombine with the key
-        key, pre_label = key_list[0], key_list[1]
-        if "__" in pre_label:
-            label, operator = pre_label.split("__")
-            key = f"{key}__{operator}"
-        else:
-            label = pre_label
 
+    # The aggregation label can be followed by an operator suffix, e.g.
+    # ``total|Total__sum``. Split from the right so labels containing "__"
+    # do not crash or get truncated.
+    key, pre_label = key_list
+    if "__" in pre_label:
+        label, operator = pre_label.rsplit("__", 1)
+        key = f"{key}__{operator}"
         return key, label
+    return key, pre_label
 
 
 def create_aggregate_conditions(
@@ -578,10 +587,10 @@ def create_aggregate_conditions(
     """
     aggregate_conditions = {}
 
-    for key, _value in args_dict.items():
+    for raw_key in args_dict:
         for func_name in AGGREGATE_FUNCS:
-            if f"__{func_name}" in key:
-                key, label = parse_key_and_label(key)
+            if f"__{func_name}" in raw_key:
+                key, label = parse_key_and_label(raw_key)
                 aggregate_conditions[key] = label
 
     return aggregate_conditions
@@ -779,15 +788,13 @@ def find_matching_relations(model1: Callable, model2: Callable) -> list[tuple[st
     relationships1 = class_mapper(model1).relationships
     relationships2 = class_mapper(model2).relationships
 
-    matching_relations = [
+    return [
         (rel_name1, rel_name2)
         for rel_name1, rel_prop1 in relationships1.items()
         if rel_prop1.mapper.class_ == model2
         for rel_name2, rel_prop2 in relationships2.items()
         if rel_prop2.mapper.class_ == model1
     ]
-
-    return matching_relations
 
 
 def _get_relation_use_list_and_type(
@@ -826,63 +833,15 @@ def table_namer(model: type[DeclarativeBase] | None = None) -> str:
 
 
 def get_models_relationships(model: type[DeclarativeBase]) -> list[dict[str, Any]]:
-    """
-    Get the relationships of the model, including the join key and columns.
+    """Compatibility wrapper for detailed SQLAlchemy relationship metadata."""
 
-    Args:
-        model (Type[DeclarativeBase]): The model to check for relations.
-
-    Returns:
-        List[Dict[str, Any]]: A list of dictionaries containing relationship details.
-    """
-    if not model:
-        return []
-
-    relationships = []
-    mapper = inspect(model)
-
-    for rel in mapper.relationships:
-        relationship_info = extract_relationship_info(rel)
-        if relationship_info:
-            relationships.append(relationship_info)
-            logger.debug(
-                4,
-                f"Added |{model.__name__}| relationship with |{relationship_info['model'].__name__}| via columns {relationship_info['left_column']} to {relationship_info['right_column']}.",
-            )
-    return relationships
+    return db_inspections.get_models_relationships(model)
 
 
 def extract_relationship_info(rel: RelationshipProperty) -> dict[str, Any]:
-    """
-    Extract detailed information from a relationship property.
+    """Compatibility wrapper for detailed relationship metadata."""
 
-    Args:
-        rel (RelationshipProperty): The relationship property to extract information from.
-
-    Returns:
-        Dict[str, Any]: A dictionary with relationship details.
-    """
-    try:
-        # Use local_remote_pairs to get pairs of local and remote columns
-        left_columns = [local.name for local, _ in rel.local_remote_pairs]
-        right_columns = [remote.name for _, remote in rel.local_remote_pairs]
-
-        if len(left_columns) > 0:
-            left_columns = left_columns[0]
-        if len(right_columns) > 0:
-            right_columns = right_columns[0]
-
-        return {
-            "relationship": rel.key,
-            "join_type": str(rel.direction),
-            "left_column": left_columns,
-            "right_column": right_columns,
-            "model": rel.mapper.class_,
-            "parent": rel.parent.class_,
-        }
-    except Exception as e:
-        logger.error(f"Error extracting relationship info: {e}")
-        return {}
+    return db_inspections.extract_relationship_info(rel)
 
 
 def get_primary_keys(model: type[DeclarativeBase]) -> Column:
@@ -933,7 +892,7 @@ def list_model_columns(model: type[DeclarativeBase]) -> list[str]:
         List[str]: List of column names.
     """
     all_columns, _ = get_all_columns_and_hybrids(model, join_models={})
-    return list(all_columns.values())[0].keys()
+    return next(iter(all_columns.values())).keys()
 
 
 def _extract_model_attributes(model: type[DeclarativeBase]) -> tuple[set, set]:
@@ -946,10 +905,9 @@ def _extract_model_attributes(model: type[DeclarativeBase]) -> tuple[set, set]:
     Returns:
         Tuple[set, set]: A tuple containing sets of column keys and property keys.
     """
-    inspector = inspect(model)
-    model_keys = {column.key for column in inspector.columns}
-    model_properties = set(inspector.attrs.keys()).difference(model_keys)
-    return model_keys, model_properties
+    from flarchitect.database.inspections import extract_model_attributes
+
+    return extract_model_attributes(model)
 
 
 def get_related_b_query(model_a, model_b, a_pk_value, session):

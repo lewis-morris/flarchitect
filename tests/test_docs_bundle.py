@@ -10,7 +10,6 @@ from sqlalchemy.pool import StaticPool
 
 from flarchitect import Architect
 
-
 db = SQLAlchemy()
 
 

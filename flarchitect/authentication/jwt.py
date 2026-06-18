@@ -21,6 +21,10 @@ from flarchitect.utils.session import get_session
 # Secret keys (keep them secure)
 
 
+def _utc_now() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 def get_jwt_algorithm() -> str:
     """Retrieve the JWT signing algorithm from configuration.
 
@@ -53,6 +57,23 @@ def _is_rs_alg(alg: str) -> bool:
     return alg.upper().startswith("RS")
 
 
+def _resolve_access_secret_key(secret_key: str | None = None) -> str:
+    access_secret_key = (
+        secret_key
+        or os.environ.get("ACCESS_SECRET_KEY")
+        or current_app.config.get("ACCESS_SECRET_KEY")
+    )
+    if access_secret_key is not None:
+        return access_secret_key
+
+    alg = get_jwt_algorithm()
+    if _is_rs_alg(alg):
+        access_secret_key = os.environ.get("ACCESS_PUBLIC_KEY") or current_app.config.get("ACCESS_PUBLIC_KEY")
+    if access_secret_key is None:
+        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
+    return access_secret_key
+
+
 def _get_access_signing_key(algorithm: str) -> str:
     if _is_rs_alg(algorithm):
         key = os.environ.get("ACCESS_PRIVATE_KEY") or current_app.config.get("ACCESS_PRIVATE_KEY")
@@ -82,6 +103,58 @@ def _get_access_verifying_key(algorithm: str) -> str:
     if key is None:
         raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
     return key
+
+
+def _column_type_from_attr(attr: Any) -> Any | None:
+    columns = getattr(getattr(attr, "property", None), "columns", None)
+    if not columns:
+        return None
+    try:
+        return columns[0].type
+    except (AttributeError, IndexError):  # pragma: no cover - defensive
+        return None
+
+
+def _python_type_from_column(column_type: Any) -> type | None:
+    try:
+        return column_type.python_type  # type: ignore[attr-defined]
+    except (AttributeError, NotImplementedError):
+        pass
+
+    if isinstance(column_type, sqltypes.TypeDecorator):
+        try:
+            return column_type.impl.python_type  # type: ignore[attr-defined]
+        except (AttributeError, NotImplementedError):
+            return None
+    return None
+
+
+def _is_integer_column_type(column_type: Any) -> bool:
+    integer_types = (sqltypes.Integer, sqltypes.BigInteger, sqltypes.SmallInteger)
+    return isinstance(column_type, integer_types) or isinstance(getattr(column_type, "impl", None), integer_types)
+
+
+def _coerce_lookup_value(value: Any, attr: Any) -> Any:
+    """Attempt to coerce JWT lookup values to the mapped column type."""
+
+    if value is None:
+        return None
+
+    column_type = _column_type_from_attr(attr)
+    if column_type is None:
+        return value
+
+    should_parse_int = (
+        isinstance(value, str)
+        and (_python_type_from_column(column_type) is int or _is_integer_column_type(column_type))
+    )
+    if not should_parse_int:
+        return value
+
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return value
 
 
 def _get_refresh_signing_key(algorithm: str) -> str:
@@ -131,7 +204,7 @@ def create_jwt(
         ``exp`` and ``iat`` claims.
     """
 
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = _utc_now()
     # Optional claims from config
     issuer = get_config_or_model_meta("API_JWT_ISSUER", default=None)
     audience = get_config_or_model_meta("API_JWT_AUDIENCE", default=None)
@@ -192,8 +265,6 @@ def generate_access_token(usr_model: Any, expires_in_minutes: int | None = None)
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
-        "iat": datetime.datetime.now(datetime.timezone.utc),
     }
     token, _ = create_jwt(payload, ACCESS_SECRET_KEY, exp_minutes, algorithm)
     return token
@@ -222,8 +293,6 @@ def generate_refresh_token(usr_model: Any, expires_in_minutes: int | None = None
     payload = {
         lookup_field: str(getattr(usr_model, lookup_field)),  # Convert UUID to string
         pk: str(getattr(usr_model, pk)),  # Convert UUID to string
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=exp_minutes),
-        "iat": datetime.datetime.now(datetime.timezone.utc),
     }
 
     algorithm = get_jwt_algorithm()
@@ -281,7 +350,7 @@ def decode_token(
         raise CustomHTTPException(status_code=401, reason="Invalid token")
 
     try:
-        payload = jwt.decode(
+        return jwt.decode(
             token,
             secret_key,
             algorithms=allowed,
@@ -289,7 +358,6 @@ def decode_token(
             issuer=issuer if issuer else None,
             audience=audience if audience else None,
         )
-        return payload
     except jwt.ExpiredSignatureError as exc:
         raise CustomHTTPException(status_code=401, reason="Token has expired") from exc
     except jwt.InvalidIssuerError as exc:
@@ -339,7 +407,7 @@ def refresh_access_token(refresh_token: str) -> tuple[str, Any]:
     expires_at = stored_token.expires_at
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
-    if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+    if _utc_now() > expires_at:
         delete_refresh_token(refresh_token)
         raise CustomHTTPException(status_code=403, reason="Invalid or expired refresh token")
 
@@ -397,26 +465,7 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         CustomHTTPException: If ``ACCESS_SECRET_KEY`` is missing, the token is
         invalid, or the user is not found.
     """
-    # Determine secret key priority:
-    # 1. Explicit ``secret_key`` argument
-    # 2. ``ACCESS_SECRET_KEY`` environment variable
-    # 3. ``current_app.config['ACCESS_SECRET_KEY']``
-    # fmt: off
-    access_secret_key = (
-        secret_key
-        or os.environ.get("ACCESS_SECRET_KEY")
-        or current_app.config.get("ACCESS_SECRET_KEY")
-    )
-    # fmt: on
-    if access_secret_key is None:
-        # If using RS*, fall back to public key config
-        alg = get_jwt_algorithm()
-        if _is_rs_alg(alg):
-            access_secret_key = os.environ.get("ACCESS_PUBLIC_KEY") or current_app.config.get("ACCESS_PUBLIC_KEY")
-    if access_secret_key is None:
-        raise CustomHTTPException(status_code=500, reason="ACCESS_SECRET_KEY missing")
-
-    payload = decode_token(token, access_secret_key)
+    payload = decode_token(token, _resolve_access_secret_key(secret_key))
 
     # Get user lookup field and primary key
     pk, lookup_field = get_pk_and_lookups()
@@ -432,56 +481,8 @@ def get_user_from_token(token: str, secret_key: str | None = None) -> Any:
         pk_attr = getattr(usr_model_class, pk)
         lookup_attr = getattr(usr_model_class, lookup_field)
 
-        def _coerce_value(value: Any, attr: Any) -> Any:
-            """Attempt to coerce ``value`` to the column's python type."""
-
-            if value is None:
-                return None
-
-            column = getattr(getattr(attr, "property", None), "columns", None)
-            if not column:
-                return value
-
-            try:
-                col_type = column[0].type
-            except (AttributeError, IndexError):  # pragma: no cover - defensive
-                return value
-
-            python_type: type | None = None
-            try:
-                python_type = col_type.python_type  # type: ignore[attr-defined]
-            except (AttributeError, NotImplementedError):
-                python_type = None
-
-            if python_type is None and isinstance(col_type, sqltypes.TypeDecorator):
-                try:
-                    python_type = col_type.impl.python_type  # type: ignore[attr-defined]
-                except (AttributeError, NotImplementedError):
-                    python_type = None
-
-            if python_type is int and isinstance(value, str):
-                try:
-                    return int(value)
-                except (TypeError, ValueError):
-                    return value
-
-            impl = getattr(col_type, "impl", None)
-            if isinstance(col_type, (sqltypes.Integer, sqltypes.BigInteger, sqltypes.SmallInteger)) and isinstance(value, str):
-                try:
-                    return int(value)
-                except (TypeError, ValueError):
-                    return value
-
-            if isinstance(impl, (sqltypes.Integer, sqltypes.BigInteger, sqltypes.SmallInteger)) and isinstance(value, str):
-                try:
-                    return int(value)
-                except (TypeError, ValueError):
-                    return value
-
-            return value
-
-        pk_value = _coerce_value(payload.get(pk), pk_attr)
-        lookup_value = _coerce_value(payload.get(lookup_field), lookup_attr)
+        pk_value = _coerce_lookup_value(payload.get(pk), pk_attr)
+        lookup_value = _coerce_lookup_value(payload.get(lookup_field), lookup_attr)
 
         with get_session(usr_model_class) as session:
             user = (

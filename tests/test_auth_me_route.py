@@ -1,4 +1,5 @@
-import types
+
+from typing import ClassVar
 
 import pytest
 
@@ -7,7 +8,7 @@ from flarchitect.authentication.user import set_current_user
 
 
 class Config(BaseConfig):
-    API_AUTHENTICATE_METHOD = ["custom"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["custom"]
     API_USER_MODEL = User
     API_AUTH_ME_ROUTE = "/api/auth/me"
 
@@ -42,10 +43,10 @@ def test_me_route_uses_configured_path(client):
 
 def test_me_route_respects_api_expose_me_flag():
     # Build a separate app instance with API_EXPOSE_ME disabled
-    from demo.authentication.app_base import BaseConfig, create_app, db, User
+    from demo.authentication.app_base import BaseConfig, User, create_app, db
 
     class DisabledConfig(BaseConfig):
-        API_AUTHENTICATE_METHOD = ["custom"]
+        API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["custom"]
         API_USER_MODEL = User
         API_AUTH_ME_ROUTE = "/api/auth/me"
         API_EXPOSE_ME = False

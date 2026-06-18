@@ -5,7 +5,7 @@ from demo.callbacks.model.config import Config
 from demo.callbacks.model.extensions import db, schema
 
 
-def create_app(config: dict = None):
+def create_app(config: dict | None = None):
     """
     Creates the flask app.
     Args:

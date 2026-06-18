@@ -8,20 +8,22 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import fields
 from sqlalchemy import (
+    JSON,
     BigInteger,
     Boolean,
     Date,
     DateTime,
-    Enum as SAEnum,
     Float,
     Integer,
-    JSON,
     LargeBinary,
     Numeric,
     SmallInteger,
     String,
     Time,
     func,
+)
+from sqlalchemy import (
+    Enum as SAEnum,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column

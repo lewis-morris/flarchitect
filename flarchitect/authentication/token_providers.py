@@ -12,6 +12,9 @@ from flarchitect.utils.config_helpers import get_config_or_model_meta
 
 ProviderFunc = Callable[[Request], str | None]
 
+DEFAULT_TOKEN_PROVIDERS = ("header",)
+DEFAULT_AUTH_COOKIE_NAME = "access_token"
+
 
 def _header_provider(req: Request) -> str | None:
     """Extract a Bearer token from the ``Authorization`` header."""
@@ -22,7 +25,7 @@ def _header_provider(req: Request) -> str | None:
     parts = auth.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         return None
-    return parts[1]
+    return parts[1].strip() or None
 
 
 def _cookie_provider(req: Request, cookie_name: str) -> str | None:
@@ -30,6 +33,13 @@ def _cookie_provider(req: Request, cookie_name: str) -> str | None:
 
     token = req.cookies.get(cookie_name)
     return token.strip() if isinstance(token, str) and token.strip() else None
+
+
+def _named_provider(name: str, provider: ProviderFunc) -> ProviderFunc:
+    """Attach a useful name to dynamically-created providers."""
+
+    provider.__name__ = name
+    return provider
 
 
 def _normalise_provider(provider: Any, *, cookie_name: str) -> ProviderFunc:
@@ -43,7 +53,7 @@ def _normalise_provider(provider: Any, *, cookie_name: str) -> ProviderFunc:
         if key == "header":
             return _header_provider
         if key == "cookie":
-            return lambda req: _cookie_provider(req, cookie_name)
+            return _named_provider("cookie", lambda req: _cookie_provider(req, cookie_name))
 
         # Allow dotted import path
         try:
@@ -56,6 +66,48 @@ def _normalise_provider(provider: Any, *, cookie_name: str) -> ProviderFunc:
     raise ValueError(f"Unsupported auth token provider specification: {provider!r}")
 
 
+def _provider_config_context(
+    *,
+    model: Any | None = None,
+    output_schema: Any | None = None,
+    input_schema: Any | None = None,
+    method: str | None = None,
+) -> dict[str, Any]:
+    """Build the common config lookup context for token provider settings."""
+
+    return {
+        "model": model,
+        "output_schema": output_schema,
+        "input_schema": input_schema,
+        "method": method,
+    }
+
+
+def _coerce_provider_specs(config: Any) -> list[Any]:
+    """Return a list of provider specs from config."""
+
+    if config is None:
+        return list(DEFAULT_TOKEN_PROVIDERS)
+    if isinstance(config, (str, bytes)) or not isinstance(config, Iterable):
+        return [config]
+    return list(config)
+
+
+def _normalise_token(token: Any) -> str | None:
+    """Return a non-empty token string from provider output."""
+
+    if not isinstance(token, str):
+        return None
+    token = token.strip()
+    return token or None
+
+
+def _provider_name(provider: ProviderFunc) -> str:
+    """Return a stable provider identifier for diagnostics."""
+
+    return getattr(provider, "__name__", provider.__class__.__name__)
+
+
 def resolve_token_providers(
     *,
     model: Any | None = None,
@@ -65,36 +117,24 @@ def resolve_token_providers(
 ) -> list[ProviderFunc]:
     """Return configured token providers for the current context."""
 
+    context = _provider_config_context(
+        model=model,
+        output_schema=output_schema,
+        input_schema=input_schema,
+        method=method,
+    )
     config = get_config_or_model_meta(
         "API_AUTH_TOKEN_PROVIDERS",
-        model=model,
-        output_schema=output_schema,
-        input_schema=input_schema,
-        method=method,
+        **context,
         default=None,
     )
-
-    if config is None:
-        config = ["header"]
-    elif isinstance(config, (str, bytes)):
-        config = [config]
-    elif not isinstance(config, Iterable):
-        config = [config]
-
     cookie_name = get_config_or_model_meta(
         "API_AUTH_COOKIE_NAME",
-        model=model,
-        output_schema=output_schema,
-        input_schema=input_schema,
-        method=method,
-        default="access_token",
+        **context,
+        default=DEFAULT_AUTH_COOKIE_NAME,
     )
 
-    providers: list[ProviderFunc] = []
-    for item in config:
-        providers.append(_normalise_provider(item, cookie_name=str(cookie_name)))
-
-    return providers
+    return [_normalise_provider(item, cookie_name=str(cookie_name)) for item in _coerce_provider_specs(config)]
 
 
 def extract_token_from_request(
@@ -114,11 +154,11 @@ def extract_token_from_request(
         method=method,
     ):
         try:
-            token = provider(req)
+            token = _normalise_token(provider(req))
         except Exception:  # pragma: no cover - providers must be defensive
             continue
         if token:
-            return token, getattr(provider, "__name__", provider.__class__.__name__)
+            return token, _provider_name(provider)
     return None, None
 
 
@@ -126,12 +166,12 @@ def extract_token_from_cookie(cookie_name: str | None = None, req: Request | Non
     """Convenience helper to pull a token from a cookie on the current request."""
 
     req = req or request
-    name = cookie_name or get_config_or_model_meta("API_AUTH_COOKIE_NAME", default="access_token")
+    name = cookie_name or get_config_or_model_meta("API_AUTH_COOKIE_NAME", default=DEFAULT_AUTH_COOKIE_NAME)
     return _cookie_provider(req, str(name))
 
 
 __all__ = [
-    "resolve_token_providers",
-    "extract_token_from_request",
     "extract_token_from_cookie",
+    "extract_token_from_request",
+    "resolve_token_providers",
 ]

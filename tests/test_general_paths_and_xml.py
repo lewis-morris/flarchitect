@@ -4,8 +4,8 @@ import pytest
 from flask import Flask
 from jinja2 import TemplateNotFound
 
-from flarchitect.utils.config_helpers import is_xml
 from flarchitect.utils import general as general_utils
+from flarchitect.utils.config_helpers import is_xml
 
 
 def test_find_html_directory_handles_nested_levels(tmp_path: Path) -> None:

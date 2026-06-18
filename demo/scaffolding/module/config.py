@@ -3,9 +3,18 @@
 from __future__ import annotations
 
 import os
+from typing import ClassVar
 
 from .extensions import db
 from .models import User
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    """Read common environment flag values as booleans."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 class Config:
@@ -19,7 +28,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///:memory:")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG = os.getenv("DEBUG", False)
+    DEBUG = _env_flag("DEBUG")
 
     # flarchitect configuration
     API_BASE_MODEL = db.Model
@@ -37,7 +46,7 @@ class Config:
 
     # Authentication configuration
     API_AUTHENTICATE = True
-    API_AUTHENTICATE_METHOD = ["jwt"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["jwt"]
     API_USER_MODEL = User
     API_USER_LOOKUP_FIELD = "username"
     API_CREDENTIAL_CHECK_METHOD = "check_password"

@@ -12,7 +12,6 @@ from sqlalchemy.pool import StaticPool
 from flarchitect import Architect
 from flarchitect.authentication.user import set_current_user
 
-
 db = SQLAlchemy()
 
 

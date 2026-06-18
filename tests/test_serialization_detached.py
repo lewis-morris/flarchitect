@@ -2,13 +2,13 @@ import pytest
 
 from demo.basic_factory.basic_factory import create_app
 from demo.basic_factory.basic_factory.extensions import db
-from demo.basic_factory.basic_factory.models import Book, Author, Publisher
+from demo.basic_factory.basic_factory.models import Book
 from flarchitect.schemas.utils import get_input_output_from_model_or_make
 
 
 @pytest.fixture()
 def app_relations_depth1():
-    app = create_app(
+    return create_app(
         {
             # Ensure relations are enabled and a positive depth triggers eager loading
             "API_ADD_RELATIONS": True,
@@ -17,7 +17,6 @@ def app_relations_depth1():
             "API_SERIALIZATION_TYPE": "url",
         }
     )
-    return app
 
 
 def test_get_endpoints_with_relations_return_200(app_relations_depth1):

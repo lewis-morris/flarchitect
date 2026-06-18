@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from flask import Flask
@@ -15,11 +15,15 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from flarchitect import Architect
 
 
+def _utc_naive_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class BaseModel(DeclarativeBase):
     """Base model providing audit fields and session access."""
 
-    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_naive_now)
+    updated: Mapped[datetime] = mapped_column(DateTime, default=_utc_naive_now, onupdate=_utc_naive_now)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
@@ -51,7 +55,6 @@ class Gadget(db.Model):
     class Meta:
         """Placeholder meta required for automatic route generation."""
 
-        pass
 
 
 @pytest.fixture()

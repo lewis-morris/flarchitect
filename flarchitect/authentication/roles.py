@@ -6,8 +6,8 @@ from typing import Any, TypeVar, cast
 
 from flask import request
 
-from flarchitect.authorization.roles import _resolve_required_roles
 from flarchitect.authentication.user import get_current_user
+from flarchitect.authorization.roles import _resolve_required_roles
 from flarchitect.exceptions import CustomHTTPException
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -98,7 +98,7 @@ def roles_accepted(*roles: str) -> Callable[[F], F]:
     return require_roles(*roles, any_of=True)
 
 
-__all__ = ["require_roles", "roles_required", "roles_accepted"]
+__all__ = ["require_roles", "roles_accepted", "roles_required"]
 
 
 # ----- Local helpers -----
@@ -123,8 +123,9 @@ def _build_user_context() -> tuple[dict[str, Any] | None, dict[str, Any] | None]
     # If no user in context, optionally try to decode from Authorization header
     if user_obj is None:
         try:  # Optional import
-            from flarchitect.authentication.jwt import get_user_from_token
             from flask import request as _rq
+
+            from flarchitect.authentication.jwt import get_user_from_token
 
             auth = _rq.headers.get("Authorization")
             if auth and auth.lower().startswith("bearer "):
@@ -220,4 +221,4 @@ def _forbidden_with_context(
 
         return create_response(status=403, errors=payload)
     except Exception:  # pragma: no cover - fallback to existing behaviour
-        raise CustomHTTPException(status_code=403, reason="Insufficient role")
+        raise CustomHTTPException(status_code=403, reason="Insufficient role") from None

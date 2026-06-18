@@ -14,20 +14,21 @@ from sqlalchemy.pool import StaticPool
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flarchitect import Architect
-from flarchitect.core.architect import jwt_authentication
+from flarchitect.authentication.helpers import load_user_from_cookie
 from flarchitect.authentication.jwt import (
     decode_token,
     generate_access_token,
     generate_refresh_token,
     refresh_access_token,
 )
-from flarchitect.authentication.helpers import load_user_from_cookie
+from flarchitect.authentication.token_providers import extract_token_from_request, resolve_token_providers
 from flarchitect.authentication.token_store import RefreshToken, get_refresh_token
 from flarchitect.authentication.user import (
     current_user,
     get_current_user,
     set_current_user,
 )
+from flarchitect.core.architect import jwt_authentication
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.specs.generator import register_routes_with_spec
 from flarchitect.utils.general import generate_readme_html
@@ -388,6 +389,39 @@ def test_jwt_cookie_provider_manual_route(client_jwt_cookie: tuple[FlaskClient, 
     resp = client.get("/manual")
     assert resp.status_code == 200
     assert resp.get_json()["username"] == "carol"
+
+
+def test_token_provider_extraction_reports_named_cookie_provider(client_jwt_cookie: tuple[FlaskClient, str]) -> None:
+    client, token = client_jwt_cookie
+
+    with client.application.test_request_context("/", environ_base={"HTTP_COOKIE": f"auth_access={token}"}):
+        extracted, provider_name = extract_token_from_request()
+
+    assert extracted == token
+    assert provider_name == "cookie"
+
+
+def test_token_provider_extraction_skips_empty_and_failing_providers(client_jwt_cookie: tuple[FlaskClient, str]) -> None:
+    client, _ = client_jwt_cookie
+
+    def empty_provider(_request):
+        return "   "
+
+    def failing_provider(_request):
+        raise RuntimeError("provider failed")
+
+    def valid_provider(_request):
+        return " custom-token "
+
+    client.application.config["API_AUTH_TOKEN_PROVIDERS"] = [empty_provider, failing_provider, valid_provider]
+
+    with client.application.test_request_context("/"):
+        providers = resolve_token_providers()
+        extracted, provider_name = extract_token_from_request()
+
+    assert providers == [empty_provider, failing_provider, valid_provider]
+    assert extracted == "custom-token"
+    assert provider_name == "valid_provider"
 
 
 def test_load_user_from_cookie_helper(client_jwt_cookie: tuple[FlaskClient, str]) -> None:

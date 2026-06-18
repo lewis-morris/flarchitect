@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from types import SimpleNamespace
-from typing import Any, List
 
 import pytest
 
@@ -12,7 +11,7 @@ from flarchitect.utils.release import bump_version_if_needed
 class _RunRecorder:
     """Helper to emulate subprocess.run with programmable results."""
 
-    def __init__(self, responses: List[str]):
+    def __init__(self, responses: list[str]):
         self.calls: list[list[str]] = []
         self._responses = responses
 

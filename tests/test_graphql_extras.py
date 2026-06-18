@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import graphene
-from sqlalchemy import Integer
+from sqlalchemy import Integer, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.types import TypeDecorator
-from sqlalchemy import create_engine
 
 from flarchitect.graphql import _convert_sqla_type, create_schema_from_models
 

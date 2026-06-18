@@ -4,6 +4,7 @@ import pprint
 import re
 import socket
 from collections.abc import Callable
+from importlib import import_module
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
@@ -15,8 +16,6 @@ from flask import Flask, current_app
 from jinja2 import Environment, FileSystemLoader
 
 from flarchitect.utils.config_helpers import get_config_or_model_meta
-from importlib import import_module
-
 from flarchitect.utils.core_utils import get_count
 
 HTTP_METHODS = ["GET", "POST", "PATCH", "DELETE"]
@@ -84,7 +83,6 @@ class AttributeInitializerMixin:
 class AttributeInitialiserMixin(AttributeInitializerMixin):
     """UK spelling alias of :class:`AttributeInitializerMixin`."""
 
-    pass
 
 
 def find_html_directory(starting_directory: str | None = None) -> str | None:
@@ -396,11 +394,7 @@ def update_dict_if_flag_true(
     if not flag:
         return
 
-    converted: str
-    if callable(case_func):
-        converted = case_func(key)
-    else:
-        converted = _convert_key_case(key, str(case_func)) if case_func else key
+    converted = case_func(key) if callable(case_func) else _convert_key_case(key, str(case_func)) if case_func else key
 
     output[converted] = value
 
@@ -546,7 +540,7 @@ def handle_result(result: Any) -> tuple[int, Any, int, str | None, str | None]:
     elif _looks_like_response_container(result):
         # ``CustomResponse`` exposes ``value``/``next_url``/``previous_url``
         # so we extract them without importing the class to avoid cycles.
-        value = getattr(result, "value")
+        value = result.value
         next_url = getattr(result, "next_url", None)
         previous_url = getattr(result, "previous_url", None)
         count = getattr(result, "count", count)

@@ -1,10 +1,9 @@
-import pytest
-from marshmallow import Schema, fields, ValidationError
+from marshmallow import Schema, ValidationError, fields
 
 from flarchitect.utils.responses import (
+    check_serialise_method_and_return,
     serialise_output_with_mallow,
     serialize_output_with_mallow,
-    check_serialise_method_and_return,
 )
 
 

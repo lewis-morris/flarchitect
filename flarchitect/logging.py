@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from contextlib import suppress
 from typing import Any
 
 try:
@@ -26,6 +27,14 @@ from colorama import Fore, Style, init
 # Initialise Colorama
 init(autoreset=True)
 
+_COLOR_PATTERNS: dict[str, tuple[str, str]] = {
+    r"`(.*?)`": (Fore.YELLOW, Style.NORMAL),
+    r"\+(.*?)\+": (Fore.RED, Style.NORMAL),
+    r"--(.*?)--": (Fore.CYAN, Style.NORMAL),
+    r"\$(.*?)\$": (Fore.MAGENTA, Style.BRIGHT),
+    r"\|(.*?)\|": (Fore.GREEN, Style.BRIGHT),
+}
+
 
 def color_text_with_multiple_patterns(text: str) -> str:
     """Colour text wrapped in specific patterns with respective colours.
@@ -36,18 +45,10 @@ def color_text_with_multiple_patterns(text: str) -> str:
     Returns:
         The colourised text with patterns replaced.
     """
-    patterns: dict[str, tuple[str, str]] = {
-        r"`(.*?)`": (Fore.YELLOW, Style.NORMAL),  # Yellow for backticks
-        r"\+(.*?)\+": (Fore.RED, Style.NORMAL),  # Red for pluses
-        r"--(.*?)--": (Fore.CYAN, Style.NORMAL),  # Cyan for hyphens
-        r"\$(.*?)\$": (Fore.MAGENTA, Style.BRIGHT),  # Magenta for dollars
-        r"\|(.*?)\|": (Fore.GREEN, Style.BRIGHT),  # Green for pipes
-    }
-
     def replace_with_color(match: re.Match[str], color: str, style: str) -> str:
         return f"{color}{style}{match.group(1)}{Style.RESET_ALL}"
 
-    for pattern, (color, style) in patterns.items():
+    for pattern, (color, style) in _COLOR_PATTERNS.items():
         text = re.sub(
             pattern,
             lambda match, color=color, style=style: replace_with_color(match, color, style),
@@ -77,13 +78,11 @@ class CustomLogger:
                 "path": request.path,
             }
             # Best-effort request id and timing
-            try:
+            with suppress(Exception):
                 ctx["request_id"] = getattr(g, "request_id", None)
                 start = getattr(g, "_flarch_req_start", None)
                 if start is not None:
                     ctx["latency_ms"] = int((time.perf_counter() - start) * 1000)
-            except Exception:
-                pass
             return ctx
         return {}
 
@@ -118,6 +117,7 @@ class CustomLogger:
 
 
 logger = CustomLogger()
+
 
 def get_logger() -> CustomLogger:
     """Return the module-level logger instance."""

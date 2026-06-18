@@ -6,7 +6,7 @@ configuration and to expose the resolved policy to callers.
 
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import Any
 
 try:  # Flask optional import guard for typing/runtime access
     from flask import current_app

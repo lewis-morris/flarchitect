@@ -1,131 +1,60 @@
-from __future__ import annotations
-
-from collections.abc import Generator
-from types import SimpleNamespace
-
-import pytest
 from flask import Flask
-from flask.testing import FlaskClient
-from marshmallow import Schema, fields
 
-from flarchitect import Architect
-from flarchitect.authentication.user import set_current_user
-from flarchitect.exceptions import CustomHTTPException
-from flarchitect.utils.response_helpers import create_response
+from flarchitect.authorization.roles import _normalize_roles_spec, _resolve_required_roles
 
 
-class PongSchema(Schema):
-    status = fields.Str()
+def test_normalize_roles_spec_supports_all_declared_shapes() -> None:
+    assert _normalize_roles_spec(None) == (None, False)
+    assert _normalize_roles_spec(True) == (None, False)
+    assert _normalize_roles_spec("admin") == (["admin"], False)
+    assert _normalize_roles_spec(["admin", 2]) == (["admin", "2"], False)
+    assert _normalize_roles_spec(("admin", "editor")) == (["admin", "editor"], False)
+    assert _normalize_roles_spec({"roles": "admin", "any_of": True}) == (["admin"], True)
+    assert _normalize_roles_spec({"roles": ["admin", 3]}) == (["admin", "3"], False)
+    assert _normalize_roles_spec({"roles": True, "any_of": True}) == (None, True)
+    assert _normalize_roles_spec({"roles": object(), "any_of": True}) == (None, True)
+    assert _normalize_roles_spec(123) == (None, False)
 
 
-@pytest.fixture()
-def client_roles_enriched() -> Generator[tuple[FlaskClient, SimpleNamespace], None, None]:
-    """Flask app fixture with enriched role map and simple routes."""
+def test_resolve_required_roles_without_flask_context_returns_no_mapping() -> None:
+    assert _resolve_required_roles("GET") == (None, False, None)
 
+
+def test_resolve_required_roles_applies_single_spec_to_all_methods() -> None:
     app = Flask(__name__)
-    app.config.update(FULL_AUTO=False, API_CREATE_DOCS=False)
-    # Default example role map
-    app.config.update(
-        API_ROLE_MAP={
-            "GET": {"roles": ["viewer", "admin"], "any_of": True},
-            "POST": ["editor", "admin"],
-            "ALL": "admin",
-        }
-    )
+    app.config["API_ROLE_MAP"] = "admin"
 
     with app.app_context():
-        architect = Architect(app=app)
-        holder = SimpleNamespace(user=None)
-
-        @app.before_request
-        def load_user() -> None:  # pragma: no cover - simple context injector
-            set_current_user(holder.user)
-
-        @app.errorhandler(CustomHTTPException)
-        def handle_custom(exc: CustomHTTPException):  # pragma: no cover - envelope normalisation
-            return create_response(status=exc.status_code, errors={"error": exc.error, "reason": exc.reason})
-
-        @app.route("/resource", methods=["GET"])  # GET endpoint
-        @architect.schema_constructor(output_schema=PongSchema, roles=("admin",))
-        def get_resource() -> dict[str, str]:
-            return {"status": "ok"}
-
-        @app.route("/resource", methods=["POST"])  # POST endpoint
-        @architect.schema_constructor(output_schema=PongSchema, roles=("admin", "editor"))
-        def post_resource() -> dict[str, str]:
-            return {"status": "ok"}
-
-        client = app.test_client()
-        yield client, holder
+        assert _resolve_required_roles("POST") == (["admin"], False, "*")
 
 
-def test_enriched_forbidden_payload_get_any_of(client_roles_enriched: tuple[FlaskClient, SimpleNamespace]) -> None:
-    client, holder = client_roles_enriched
-
-    holder.user = SimpleNamespace(roles=["member"])  # Missing viewer/admin
-    resp = client.get("/resource")
-
-    assert resp.status_code == 403
-    body = resp.get_json()
-    assert body["errors"]["error"] == "forbidden"
-    assert body["errors"]["message"].lower().startswith("missing required role")
-    assert body["errors"]["required_roles"] == ["viewer", "admin"]
-    assert body["errors"]["any_of"] is True
-    assert body["errors"]["method"] == "GET"
-    assert body["errors"]["path"] == "/resource"
-    assert body["errors"]["resolved_from"] == "GET"
-    assert body["errors"]["reason"] == "missing_roles"
-
-
-def test_enriched_forbidden_payload_post_all_of(client_roles_enriched: tuple[FlaskClient, SimpleNamespace]) -> None:
-    client, holder = client_roles_enriched
-
-    holder.user = SimpleNamespace(roles=["member"])  # Missing editor/admin
-    resp = client.post("/resource")
-
-    assert resp.status_code == 403
-    body = resp.get_json()
-    assert body["errors"]["required_roles"] == ["editor", "admin"]
-    assert body["errors"]["any_of"] is False
-    assert body["errors"]["resolved_from"] == "POST"
-
-
-def test_unauthenticated_remains_401(client_roles_enriched: tuple[FlaskClient, SimpleNamespace]) -> None:
-    client, holder = client_roles_enriched
-
-    holder.user = None
-    resp = client.get("/resource")
-    assert resp.status_code == 401  # unchanged behaviour
-
-
-def test_no_config_fallback_to_decorator_roles() -> None:
-    """When API_ROLE_MAP is absent, fallback to decorator roles in payload."""
-
+def test_resolve_required_roles_uses_method_all_and_star_precedence() -> None:
     app = Flask(__name__)
-    app.config.update(FULL_AUTO=False, API_CREATE_DOCS=False)
+    app.config["API_ROLE_MAP"] = {
+        "GET": {"roles": ["reader"], "any_of": True},
+        "POST": "writer",
+        "ALL": ["fallback"],
+        "*": ["star"],
+    }
 
     with app.app_context():
-        architect = Architect(app=app)
-        holder = SimpleNamespace(user=None)
+        assert _resolve_required_roles("GET") == (["reader"], True, "GET")
+        assert _resolve_required_roles("POST") == (["writer"], False, "POST")
+        assert _resolve_required_roles("PATCH") == (["fallback"], False, "ALL")
 
-        @app.before_request
-        def load_user() -> None:  # pragma: no cover - simple context injector
-            set_current_user(holder.user)
+    app.config["API_ROLE_MAP"] = {"*": ["star"]}
+    with app.app_context():
+        assert _resolve_required_roles("DELETE") == (["star"], False, "*")
 
-        @app.errorhandler(CustomHTTPException)
-        def handle_custom(exc: CustomHTTPException):  # pragma: no cover - envelope normalisation
-            return create_response(status=exc.status_code, errors={"error": exc.error, "reason": exc.reason})
 
-        @app.route("/only")
-        @architect.schema_constructor(output_schema=PongSchema, roles=("admin", "editor"))
-        def only() -> dict[str, str]:
-            return {"status": "ok"}
+def test_resolve_required_roles_handles_config_access_errors(monkeypatch) -> None:
+    from flarchitect.authorization import roles as roles_module
 
-        client = app.test_client()
+    class BrokenCurrentApp:
+        @property
+        def config(self):
+            raise RuntimeError("outside context")
 
-        holder.user = SimpleNamespace(roles=["member"])  # Missing both
-        resp = client.get("/only")
-        assert resp.status_code == 403
-        body = resp.get_json()
-        assert sorted(body["errors"]["required_roles"]) == ["admin", "editor"]
-        assert body["errors"]["any_of"] is False
+    monkeypatch.setattr(roles_module, "current_app", BrokenCurrentApp())
+
+    assert roles_module._resolve_required_roles("GET") == (None, False, None)

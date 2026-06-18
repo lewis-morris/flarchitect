@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from flask import request
 
 from flarchitect.authentication.jwt import get_user_from_token

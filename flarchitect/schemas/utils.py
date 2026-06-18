@@ -1,114 +1,37 @@
 from collections.abc import Callable
-from types import new_class
 from typing import Any
 
 from flask import Response, request
 from marshmallow import Schema, ValidationError, fields
 from sqlalchemy.orm import DeclarativeBase
 
-from flarchitect.database.utils import _extract_model_attributes
+from flarchitect.database.inspections import extract_model_attributes
+from flarchitect.schemas import bases as _schema_bases
 from flarchitect.utils.config_helpers import get_config_or_model_meta, is_xml
 
-# Simple module-level caches to avoid repeated reflection per request
-_SCHEMA_SUBCLASS_CACHE: dict[tuple[type, bool | None], Callable | None] = {}
-_DYNAMIC_SCHEMA_CACHE: dict[tuple[type, type], type] = {}
+# Backwards-compatible cache names; tests and callers may monkeypatch these.
+_SCHEMA_SUBCLASS_CACHE = _schema_bases._SCHEMA_SUBCLASS_CACHE
+_DYNAMIC_SCHEMA_CACHE = _schema_bases._DYNAMIC_SCHEMA_CACHE
+
+
+def _sync_factory_caches() -> None:
+    _schema_bases._SCHEMA_SUBCLASS_CACHE = _SCHEMA_SUBCLASS_CACHE
+    _schema_bases._DYNAMIC_SCHEMA_CACHE = _DYNAMIC_SCHEMA_CACHE
 
 
 def get_schema_subclass(model: Callable, dump: bool | None = False) -> Callable | None:
-    """Locate an ``AutoSchema`` subclass for a model and usage (dump/load).
-
-    Why/How:
-        flarchitect lets you provide bespoke input/output schemas per model by
-        subclassing ``AutoSchema``. This helper scans known subclasses and
-        returns the one tied to ``model`` and the requested direction
-        (``dump`` for output, ``False`` for input).
-
-    Args:
-        model: The SQLAlchemy model to match.
-        dump: When True, search for an output (dump) schema; when False, for an
-            input (load) schema. ``None`` returns any match.
-
-    Returns:
-        The matching ``AutoSchema`` subclass if found, otherwise ``None``.
-    """
-    from flarchitect.schemas.bases import AutoSchema, lookup_auto_schema_subclass
-
-    if model is None:
-        return None
-
-    schema_base = get_config_or_model_meta("API_BASE_SCHEMA", model=model, default=AutoSchema) or AutoSchema
-
-    cache_key = (model, dump)
-    if cache_key in _SCHEMA_SUBCLASS_CACHE:
-        return _SCHEMA_SUBCLASS_CACHE[cache_key]
-
-    subclass = lookup_auto_schema_subclass(model, dump, schema_base)
-    _SCHEMA_SUBCLASS_CACHE[cache_key] = subclass
-    return subclass
+    _sync_factory_caches()
+    return _schema_bases.get_schema_subclass(model, dump=dump)
 
 
 def create_dynamic_schema(base_class: Callable, model_class: Callable) -> Callable:
-    """Create a schema subclass for ``model_class`` at runtime.
-
-    Why/How:
-        When no explicit schema is provided, we generate a lightweight class
-        deriving from ``base_class`` with a ``Meta.model`` binding so the rest
-        of the pipeline can introspect fields and produce OpenAPI metadata.
-
-    Args:
-        base_class: The base schema class (typically ``AutoSchema``).
-        model_class: The SQLAlchemy model to associate with.
-
-    Returns:
-        The dynamically created schema class.
-    """
-
-    class Meta:
-        model = model_class
-
-    cache_key = (base_class, model_class)
-    if cache_key in _DYNAMIC_SCHEMA_CACHE:
-        return _DYNAMIC_SCHEMA_CACHE[cache_key]
-
-    dynamic_class = new_class(
-        f"{model_class.__name__}Schema",
-        (base_class,),
-        exec_body=lambda ns: ns.update(Meta=Meta),
-    )
-    _DYNAMIC_SCHEMA_CACHE[cache_key] = dynamic_class
-    return dynamic_class
+    _sync_factory_caches()
+    return _schema_bases.create_dynamic_schema(base_class, model_class)
 
 
 def get_input_output_from_model_or_make(model: Callable, **kwargs) -> tuple[Callable, Callable]:
-    """Return input/output schema instances for a model, creating them if needed.
-
-    Why/How:
-        Prefers user-supplied ``AutoSchema`` subclasses when present; otherwise
-        falls back to dynamic classes. Flags like ``API_ADD_RELATIONS`` and
-        ``API_DUMP_HYBRID_PROPERTIES`` influence which base is used.
-
-    Args:
-        model: The model to derive schemas for.
-
-    Returns:
-        A tuple of ``(input_schema, output_schema)`` instances.
-    """
-    from flarchitect.schemas.bases import AutoSchema
-
-    disable_relations = not get_config_or_model_meta("API_ADD_RELATIONS", model=model, default=True)
-    disable_hybrids = not get_config_or_model_meta("API_DUMP_HYBRID_PROPERTIES", model=model, default=True)
-
-    if disable_relations or disable_hybrids:
-        input_schema_class = create_dynamic_schema(AutoSchema, model)
-        output_schema_class = create_dynamic_schema(AutoSchema, model)
-    else:
-        input_schema_class = get_schema_subclass(model, dump=False) or create_dynamic_schema(AutoSchema, model)
-        output_schema_class = get_schema_subclass(model, dump=True) or create_dynamic_schema(AutoSchema, model)
-
-    input_schema = input_schema_class(**kwargs)
-    output_schema = output_schema_class(**kwargs)
-
-    return input_schema, output_schema
+    _sync_factory_caches()
+    return _schema_bases.get_input_output_from_model_or_make(model, **kwargs)
 
 
 def deserialise_data(input_schema: type[Schema], response: Response) -> dict[str, Any] | tuple[dict[str, Any], int]:
@@ -136,7 +59,7 @@ def deserialise_data(input_schema: type[Schema], response: Response) -> dict[str
         if hook:
             data = hook(data)
 
-        input_schema = input_schema is not callable(input_schema) and input_schema or input_schema()
+        input_schema = (input_schema is not callable(input_schema) and input_schema) or input_schema()
 
         if hasattr(input_schema, "fields"):
             field_items = {k: v for k, v in input_schema.fields.items() if not v.dump_only}
@@ -184,7 +107,7 @@ def filter_keys(model: type[DeclarativeBase], schema: type[Schema], data_dict_li
 
     Why/How:
         Removes unknown keys before deserialisation to keep inputs aligned with
-        the model’s attributes and declared schema fields.
+        the model's attributes and declared schema fields.
 
     Args:
         model: The SQLAlchemy model class.
@@ -194,7 +117,7 @@ def filter_keys(model: type[DeclarativeBase], schema: type[Schema], data_dict_li
     Returns:
         Filtered list of dictionaries.
     """
-    model_keys, model_properties = _extract_model_attributes(model)
+    model_keys, model_properties = extract_model_attributes(model)
     schema_fields = set(schema._declared_fields.keys())
     all_model_keys = model_keys.union(model_properties)
 

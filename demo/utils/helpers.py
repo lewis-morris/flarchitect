@@ -1,7 +1,7 @@
 """Helper functions for generating demo data."""
 
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
@@ -116,9 +116,7 @@ def generate_title() -> str:
     theme = random.choice(themes)
 
     # Replace placeholders with actual words
-    title = pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
-
-    return title
+    return pattern.replace("[adj]", adj).replace("[noun]", noun).replace("[theme]", theme)
 
 
 # Words related to publishing and printing
@@ -178,9 +176,14 @@ def generate_company_name() -> str:
     return random.choice(patterns)
 
 
-def generate_random_year(start: int = 1860, to: int = datetime.now().year) -> int:
+def _current_year() -> int:
+    """Return the current UTC year for demo data generation."""
+    return datetime.now(UTC).year
+
+
+def generate_random_year(start: int = 1860, to: int | None = None) -> int:
     """Generate a random year between ``start`` and ``to``."""
-    return random.randint(start, to)
+    return random.randint(start, to if to is not None else _current_year())
 
 
 def random_ratings() -> list[int]:
@@ -242,17 +245,15 @@ def create_books(
     books: list[Book] = []
 
     for author in authors:
-        author_categories: list[Category] = []
         publisher = random.choice(publishers)
-        for _ in range(0, random.randint(1, 3)):
-            author_categories.append(random.choice(categories))
+        author_categories = [random.choice(categories) for _ in range(random.randint(1, 3))]
         author_categories = list(set(author_categories))
 
         for _ in range(3, 5):
             categories_for_book = random.choices(author_categories)
             isbn = make_isbn()
             title = generate_title()
-            publication_year = generate_random_year(author.date_of_birth.year + 20, datetime.now().year)
+            publication_year = generate_random_year(author.date_of_birth.year + 20, _current_year())
 
             publication_date = datetime(
                 year=publication_year,
@@ -303,7 +304,7 @@ def create_categories(db) -> list[Category]:
 def create_publishers(db) -> list[Publisher]:
     """Create publishers in the database."""
     publishers: list[Publisher] = []
-    for _ in range(0, 30):
+    for _ in range(30):
         name = generate_company_name()
         website = "https://" + name.replace(" ", "").replace("&", "and").lower() + ".co.uk"
         foundation_year = generate_random_year(1860, 1920)
@@ -327,11 +328,11 @@ def create_authors(db) -> list[Author]:
     """Create authors in the database."""
     authors: list[Author] = []
 
-    for _ in range(0, 60):
+    for _ in range(60):
         first_name, last_name = get_name()
         website = "https://" + (first_name + last_name).lower() + ".co.uk"
         rand_nationality = random.choice(nationality)
-        year_born = datetime.now().year - 20
+        year_born = _current_year() - 20
         date_of_birth = generate_random_year(1940, year_born)
         biography = f"""{first_name} is a {rand_nationality} writer born in {year_born}. {random.choice(bios)}"""
 

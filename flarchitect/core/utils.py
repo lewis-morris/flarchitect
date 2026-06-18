@@ -89,8 +89,7 @@ def get_foreign_key_to_parent(child_model: type[DeclarativeBase], parent_model: 
 
     if child_fk_column and parent_fk_column:
         return (child_fk_column, parent_fk_column)
-    else:
-        return None
+    return None
 
 
 def get_primary_key_info(model: type[DeclarativeBase]) -> tuple[str, str] | None:

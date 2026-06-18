@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table
+import pytest
+from sqlalchemy import Boolean, Column, ForeignKey, String, Table
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from flarchitect.core.utils import (
@@ -67,9 +68,6 @@ def test_primary_key_info_boolean_and_converter_mapping():
     # ensure converter mapping contains expected primitive fallbacks
     assert SQLALCHEMY_TO_FLASK_CONVERTER[int] == "int"
     assert SQLALCHEMY_TO_FLASK_CONVERTER[str] == "string"
-
-
-import pytest
 
 
 def test_get_pk_raises_for_composite_key():

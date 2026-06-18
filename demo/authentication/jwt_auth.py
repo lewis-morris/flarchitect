@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from flask import request
 
 from demo.authentication.app_base import BaseConfig, User, create_app
@@ -27,7 +29,7 @@ class Config(BaseConfig):
         API_JWT_REFRESH_EXPIRY_TIME (int): Minutes a refresh token remains valid.
     """
 
-    API_AUTHENTICATE_METHOD = ["jwt"]
+    API_AUTHENTICATE_METHOD: ClassVar[list[str]] = ["jwt"]
     ACCESS_SECRET_KEY = "access-secret"
     REFRESH_SECRET_KEY = "refresh-secret"
     API_USER_MODEL = User

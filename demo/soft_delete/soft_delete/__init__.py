@@ -5,7 +5,7 @@ from demo.soft_delete.soft_delete.config import Config
 from demo.soft_delete.soft_delete.extensions import db, schema
 
 
-def create_app(config: dict = None):
+def create_app(config: dict | None = None):
     """
     Creates the flask app.
     Args:
