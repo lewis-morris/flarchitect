@@ -307,7 +307,7 @@ up to two levels deep::
             "first_name": "John",
             "last_name": "Doe",
             "publisher": {
-                "name": "Acme Publishing"
+                "name": "Example Co Publishing"
             }
         }
     }

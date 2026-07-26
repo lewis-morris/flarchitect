@@ -50,7 +50,7 @@ Operator            Description / Example
 ``in``              In list. ``id__in=(1,2,3)``
 ``nin``             Not in list. ``status__nin=(archived,draft)``
 ``like``            Case‑sensitive substring. ``title__like=Python``
-``ilike``           Case‑insensitive substring. ``name__ilike=acme``
+``ilike``           Case‑insensitive substring. ``name__ilike=example``
 ==================  =========================================================
 
 OR conditions
@@ -75,10 +75,10 @@ related model’s columns.
 .. code:: text
 
     # Join customers and filter by customer name (case‑insensitive)
-    GET /api/invoices?join=customer&customer.name__ilike=acme
+    GET /api/invoices?join=customer&customer.name__ilike=example
 
     # Multiple filters still combine with AND
-    GET /api/invoices?join=customer&customer.name__ilike=acme&total__ge=100
+    GET /api/invoices?join=customer&customer.name__ilike=example&total__ge=100
 
 Tips and combinations
 ---------------------
@@ -99,8 +99,8 @@ Examples
     # Books with "python" in the title, published since 2020
     GET /api/books?title__ilike=python&publication_date__ge=2020-01-01
 
-    # Invoices whose customer name contains "Acme" and total >= 100
-    GET /api/invoices?join=customer&customer.name__ilike=acme&total__ge=100
+    # Invoices whose customer name contains "Example Co" and total >= 100
+    GET /api/invoices?join=customer&customer.name__ilike=example&total__ge=100
 
     # Authors with id 2 OR 3, newest first
     GET /api/authors?or[id__eq=2,id__eq=3]&order_by=-id

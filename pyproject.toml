@@ -42,6 +42,7 @@ dependencies = [
     "sqlalchemy-utils>=0.41.2",
     "validators>=0.20.0",
     "graphene>=3.3.0",
+    "coverage>=7.10.6",
 ]
 
 classifiers = [

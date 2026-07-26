@@ -7,10 +7,10 @@ related model’s columns.
 ```
 
 # Join customers and filter by customer name (case‑insensitive)
-GET /api/invoices?join=customer&customer.name__ilike=acme
+GET /api/invoices?join=customer&customer.name__ilike=example
 
 
 # Multiple filters still combine with AND
-GET /api/invoices?join=customer&customer.name__ilike=acme&total__ge=100
+GET /api/invoices?join=customer&customer.name__ilike=example&total__ge=100
 ```
 

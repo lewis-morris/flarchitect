@@ -41,7 +41,7 @@ GET /api/authors/1?dump=json
     "id": 1,
     "name": "Alice",
     "books": [
-        {"id": 10, "title": "Example", "publisher": {"id": 5, "name": "ACME"}}
+        {"id": 10, "title": "Example", "publisher": {"id": 5, "name": "Example Co"}}
     ]
 }
 ```
@@ -52,7 +52,7 @@ GET /api/authors/1?dump=hybrid
     "id": 1,
     "name": "Alice",
     "books": "/api/authors/1/books",
-    "publisher": {"id": 5, "name": "ACME"}
+    "publisher": {"id": 5, "name": "Example Co"}
 }
 ```
 

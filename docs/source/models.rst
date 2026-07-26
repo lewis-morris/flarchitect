@@ -101,7 +101,7 @@ JSON dump (depth ``2`` with `API_SERIALIZATION_DEPTH <configuration.html#SERIALI
         "id": 1,
         "name": "Alice",
         "books": [
-            {"id": 10, "title": "Example", "publisher": {"id": 5, "name": "ACME"}}
+            {"id": 10, "title": "Example", "publisher": {"id": 5, "name": "Example Co"}}
         ]
     }
 
@@ -112,5 +112,5 @@ Hybrid dump::
         "id": 1,
         "name": "Alice",
         "books": "/api/authors/1/books",
-        "publisher": {"id": 5, "name": "ACME"}
+        "publisher": {"id": 5, "name": "Example Co"}
     }

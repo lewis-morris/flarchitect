@@ -102,11 +102,11 @@ def app() -> Flask:
     with app.app_context():
         db.create_all()
 
-        acme = Customer(name="Acme Corp")
+        example = Customer(name="Example Co")
         globex = Customer(name="Globex")
 
         invoice_early = Invoice(
-            customer=acme,
+            customer=example,
             date=datetime(2024, 1, 15),
             paid=False,
             total_cents=12_000,
@@ -114,7 +114,7 @@ def app() -> Flask:
             payments=[Payment(amount_cents=2_000, paid_at=datetime(2024, 1, 20))],
         )
         invoice_mid = Invoice(
-            customer=acme,
+            customer=example,
             date=datetime(2024, 2, 10),
             paid=True,
             total_cents=5_000,
@@ -130,7 +130,7 @@ def app() -> Flask:
             payments=[Payment(amount_cents=3_000, paid_at=datetime(2024, 3, 7))],
         )
 
-        db.session.add_all([acme, globex, invoice_early, invoice_mid, invoice_latest])
+        db.session.add_all([example, globex, invoice_early, invoice_mid, invoice_latest])
         db.session.commit()
 
         Architect(app)

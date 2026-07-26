@@ -15,5 +15,5 @@ wrap the value with `%` for substring matching.
 | `in` | In list. `id__in=(1,2,3)` |
 | `nin` | Not in list. `status__nin=(archived,draft)` |
 | `like` | Case‑sensitive substring. `title__like=Python` |
-| `ilike` | Case‑insensitive substring. `name__ilike=acme` |
+| `ilike` | Case‑insensitive substring. `name__ilike=example` |
 

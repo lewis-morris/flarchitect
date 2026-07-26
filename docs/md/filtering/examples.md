@@ -7,8 +7,8 @@
 GET /api/books?title__ilike=python&publication_date__ge=2020-01-01
 
 
-# Invoices whose customer name contains "Acme" and total >= 100
-GET /api/invoices?join=customer&customer.name__ilike=acme&total__ge=100
+# Invoices whose customer name contains "Example Co" and total >= 100
+GET /api/invoices?join=customer&customer.name__ilike=example&total__ge=100
 
 
 # Authors with id 2 OR 3, newest first

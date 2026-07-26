@@ -20,7 +20,7 @@ remain URLs. Example shape:
       "payments": [
         {"id": 5, "amount": 29.98, "method": "card", "date": "2025-09-05"}
       ],
-      "customer": {"id": 7, "name": "Acme Ltd", "email": "billing@acme.test"}
+      "customer": {"id": 7, "name": "Example Co", "email": "billing@example.test"}
     }
   ]
 }
