@@ -1,6 +1,11 @@
 Manual Routes
 =========================================
 
+Before replacing a generated route, see :doc:`extending_routes`: hooks, actions
+and operation overrides preserve the generated API while adding business logic.
+For a new standalone endpoint, ``architect.route`` combines registration and the
+schema wrapper in one decorator.
+
 flarchitect can wrap your own Flask view functions with the same machinery it
 uses for generated endpoints. This is helpful when you hand‑craft a route but
 still want consistent authentication, schema validation/serialisation, rate

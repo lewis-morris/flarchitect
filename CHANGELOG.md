@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## 1.6.0 (2026-10-19)
+
+- Add `Architect.hook`, `action`, `override` and `route` so applications can extend generated APIs without rebuilding Flask endpoints.
+- Export request-local `OperationContext` with validated input, current user and database session.
+- Preserve model policies, authentication, roles, rate limits, schemas and OpenAPI for actions and overrides; reject duplicate and unavailable registrations during setup.
+- Keep collection sorting, counts and pagination around list overrides, reapplying access scope after query customisation.
+- Manage write-action and mutation-override transactions through response serialisation, rolling back errors.
+- Support standalone managed routes without an automatic model API and preserve response status codes when serialising Flask tuples.
+- Include an extension guide, generated Markdown documentation and a runnable application example.
+
+
 ## 1.5.9 (2026-10-19)
 
 - Preserve requested HTTP status codes for XML responses.

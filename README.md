@@ -13,6 +13,35 @@ flarchitect is a friendly Flask extension that turns your SQLAlchemy or Flask-SQ
 
 If you're new here, welcome! flarchitect gets you from data models to a fully fledged REST API in minutes, saving you time without sacrificing quality or customisation.
 
+## Extend the API without rebuilding routes
+
+Register extensions on `Architect()` before calling `init_app(app)`:
+
+```python
+architect = Architect()
+
+@architect.action(Order, "approve")
+def approve_order(order, context):
+    order.approved = True
+    return order
+
+with app.app_context():
+    architect.init_app(app)
+```
+
+This adds `POST /api/orders/<id>/approve`, with scoped record lookup, write
+permissions, serialisation, transaction handling and OpenAPI documentation.
+The normal CRUD endpoints remain available.
+
+- `@architect.hook(Order, "before_create")`: adjust a generated operation.
+- `@architect.action(Order, "approve")`: add a record business action.
+- `@architect.override(Order, "create")`: replace only one CRUD implementation.
+- `@architect.route("/health", auth=False)`: register a standalone managed route.
+
+See the [extension guide](docs/source/extending_routes.rst) for signatures,
+permissions, transaction rules and factory setup, and the
+[runnable example](demo/extensions/app.py).
+
 ## Features
 
 - **Automatic CRUD endpoints** – expose SQLAlchemy models as RESTful resources with a simple `Meta` class.

@@ -197,6 +197,12 @@ def _handle_decorator(
             filtered_kwargs = dict(kwargs) if accepts_var_kwargs else {k: v for k, v in kwargs.items() if k in accepted}
 
             result = func(*args, **filtered_kwargs)
+            if new_output_schema and isinstance(result, tuple) and len(result) in {2, 3} and isinstance(result[1], int):
+                # Preserve Flask status/headers while serialising only the payload.
+                payload = serialise_output_with_mallow(new_output_schema, result[0])
+                if isinstance(payload, tuple):  # Schema validation failed.
+                    return payload
+                return (payload, *result[1:])
             return serialise_output_with_mallow(new_output_schema, result) if new_output_schema else result
 
         # Assemble wrapper with or without the fields() decorator

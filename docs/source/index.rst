@@ -27,6 +27,7 @@ flarchitect
    extensions
    plugins
    websockets
+   extending_routes
    manual_routes
    openapi
    graphql

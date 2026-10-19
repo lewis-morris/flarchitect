@@ -1,7 +1,7 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from flask import request
+from flask import current_app, request
 from sqlalchemy import and_, inspect
 from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -9,6 +9,7 @@ from sqlalchemy.orm import DeclarativeBase, Query, Session, object_session
 from sqlalchemy.orm.exc import UnmappedInstanceError
 
 from flarchitect.authentication.user import get_current_user
+from flarchitect.core.extensions import OperationContext, has_hooks, run_hooks
 from flarchitect.core.utils import get_primary_key_info
 
 # Import utility helpers with a graceful fallback for optional helpers such as
@@ -751,7 +752,7 @@ class CrudService:
         eager_depth = int(get_config_or_model_meta("API_SERIALIZATION_DEPTH", model=self.model, default=0) or 0)
         eager_enabled = bool(get_config_or_model_meta("API_ADD_RELATIONS", model=self.model, default=True)) and eager_depth > 0
 
-        if not many and lookup_val:
+        if not many and lookup_val is not None:
             query = self._build_single_query(
                 args_dict,
                 lookup_val,
@@ -769,12 +770,16 @@ class CrudService:
             )
             query = self._apply_eager_loading(query, base_model, eager_depth, eager_enabled)
             query = self._apply_single_soft_delete_filter(query, base_model)
-            return self._single_query_result(
+            result = self._single_query_result(
                 query,
                 policy=policy,
                 action=action_name,
                 relation_name=relation_name,
             )
+            handler = kwargs.get("extension_override")
+            if handler is not None:
+                result["query"] = current_app.ensure_sync(handler)(result["query"], OperationContext(self.model, self.session, "retrieve"))
+            return result
 
         if kwargs.get("join_model"):
             join_model = kwargs.get("join_model")
@@ -808,6 +813,16 @@ class CrudService:
         if callback:
             query = callback(query, self.model, args_dict)
 
+        context = OperationContext(self.model, self.session, "list")
+        query = run_hooks("query", query, context)
+        handler = kwargs.get("extension_override")
+        if handler is not None:
+            query = current_app.ensure_sync(handler)(query, context)
+            if not isinstance(query, Query):
+                raise TypeError("A list override must return a SQLAlchemy Query; pagination is automatic")
+        # Reapply scope after user query extensions, before count and pagination.
+        if handler is not None or has_hooks(self.model, "query"):
+            query = self._apply_policy_scope(query, policy=policy, action=action_name, many=many, relation_name=relation_name)
         flat_args = _flatten_request_args(args_dict)
         return self._paginated_query_payload(query, flat_args)
 
@@ -836,12 +851,16 @@ class CrudService:
             if callback:
                 obj = callback(obj, self.model)
 
+            obj = run_hooks("before_create", obj, OperationContext(self.model, self.session, "create", payload))
             self.session.add(obj)
             self.session.commit()
             return obj
         except (IntegrityError, DataError) as e:
             self.session.rollback()
             raise CustomHTTPException(422, str(e.orig)) from e
+        except Exception:
+            self.session.rollback()
+            raise
 
     def update_object(self, lookup_val: int | str, data_dict: dict[str, Any], *args, **kwargs) -> Callable:
         """Updates an existing object in the database.
@@ -883,11 +902,15 @@ class CrudService:
             if callback:
                 obj = callback(obj, self.model)
 
+            obj = run_hooks("before_update", obj, OperationContext(self.model, self.session, "update", update_payload))
             self.session.commit()
             return obj
         except (IntegrityError, DataError) as e:
             self.session.rollback()
             raise CustomHTTPException(422, str(e.orig)) from e
+        except Exception:
+            self.session.rollback()
+            raise
 
     def delete_object(self, lookup_val: int | str, *args, **kwargs) -> None:
         """
@@ -914,6 +937,12 @@ class CrudService:
         callback = get_config_or_model_meta("API_REMOVE_CALLBACK", model=self.model, default=None)
         if callback:
             obj = callback(obj, self.model)
+
+        try:
+            obj = run_hooks("before_delete", obj, OperationContext(self.model, self.session, "delete"))
+        except Exception:
+            self.session.rollback()
+            raise
 
         # Handle soft deletes when configured.
         if get_config_or_model_meta("API_SOFT_DELETE", model=self.model, default=False) and not cascade_delete:

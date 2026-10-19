@@ -19,6 +19,7 @@ from flarchitect.authentication.token_store import rotate_refresh_token
 from flarchitect.authentication.user import get_current_user, set_current_user
 from flarchitect.core.discovery import build_schema_discovery_payload
 from flarchitect.core.docbundle import build_docs_bundle
+from flarchitect.core.extensions import OperationContext, execute_override, has_hooks, run_hooks, transactional
 from flarchitect.core.utils import get_primary_key_info, get_url_pk
 from flarchitect.database.operations import CrudService
 from flarchitect.database.utils import get_models_relationships, get_primary_keys
@@ -187,7 +188,7 @@ def _route_function_factory(
             **pre_kwargs,
         )
         hook_kwargs = _pre_process(service, pre_hook, **hook_kwargs)
-        action_kwargs: dict[str, Any] = {"lookup_val": id} if id else {}
+        action_kwargs: dict[str, Any] = {"lookup_val": id} if id is not None else {}
         action_kwargs.update(hook_kwargs)
         action_kwargs["many"] = many
         action_kwargs["data_dict"] = hook_kwargs.get("deserialized_data")
@@ -199,6 +200,14 @@ def _route_function_factory(
 
         output = action(**action_kwargs) or abort(404)
         final_output = _post_process(service, post_hook, output, **hook_kwargs)
+        if not join_model and has_hooks(service.model, "after_operation"):
+            operation = {"GET": "list" if many else "retrieve", "POST": "create", "PATCH": "update", "DELETE": "delete"}[http_method]
+            session = getattr(g, "_flarchitect_extension_session", None) or service.session
+            context = OperationContext(service.model, session, operation, hook_kwargs.get("deserialized_data") or {})
+            if isinstance(final_output, dict) and "query" in final_output:
+                final_output["query"] = run_hooks("after_operation", final_output["query"], context)
+            else:
+                final_output = run_hooks("after_operation", final_output, context)
 
         # Plugin post-hook
         if plugins:
@@ -251,7 +260,7 @@ def create_params_from_rule(model: DeclarativeBase, rule, schema: Schema) -> lis
     for argument in rule.arguments:
         name = get_config_or_model_meta("name", model=model, output_schema=schema, default=None)
         if not name:
-            name = (model or schema).__name__.replace("Schema", "").replace("schema", "")
+            name = getattr(model or schema, "__name__", argument).replace("Schema", "").replace("schema", "")
         name = convert_case(
             name,
             get_config_or_model_meta("API_SCHEMA_CASE", model=model, default="camel"),
@@ -357,6 +366,17 @@ def create_route_function(
     }
 
     action = action_map.get(method)
+    handler = kwargs.get("override_handler")
+    operation = kwargs.get("operation")
+    if handler is not None:
+        primary_key_name = sa_inspect(service.model).primary_key[0].key
+
+        def action(**action_kwargs):
+            if "lookup_val" not in action_kwargs and primary_key_name in action_kwargs:
+                action_kwargs["lookup_val"] = action_kwargs[primary_key_name]
+            if method == "GET":
+                return service.get_query(request.args.to_dict(flat=False), alt_field=get_field, extension_override=handler, **action_kwargs)
+            return execute_override(service, operation, handler, action_kwargs)
     return _route_function_factory(
         service,
         action,
@@ -1491,6 +1511,13 @@ class RouteCreator(AttributeInitialiserMixin):
         # if self._is_route_blocked(http_method, model):
         #     return
 
+        operation = {"GET": "list" if kwargs.get("many") else "retrieve", "POST": "create", "PATCH": "update", "DELETE": "delete"}.get(http_method)
+        override_handler = None
+        if not kwargs.get("parent_model") and not kwargs.get("join_key"):
+            override_handler = self.architect._extension_overrides.get((model, operation))
+            if override_handler is not None:
+                self.architect._used_overrides.add((model, operation))
+
         route_function = create_route_function(
             service,
             http_method,
@@ -1499,6 +1526,8 @@ class RouteCreator(AttributeInitialiserMixin):
             get_field=kwargs.get("join_key"),
             output_schema=kwargs.get("output_schema"),
             plugins=self.architect.plugins,
+            override_handler=override_handler,
+            operation=operation,
         )
 
         unique_route_function = self._create_unique_route_function(
@@ -1515,11 +1544,16 @@ class RouteCreator(AttributeInitialiserMixin):
 
         kwargs["function"] = unique_route_function
 
+        # Keep mutation overrides atomic through response serialisation.
+        view = self.architect.schema_constructor(**kwargs)(unique_route_function)
+        if override_handler is not None and http_method != "GET":
+            view = transactional(view, model)
+
         # Register the route with Flask
         self._add_route_to_flask(
             kwargs["url"],
             kwargs["method"],
-            self.architect.schema_constructor(**kwargs)(unique_route_function),
+            view,
         )
         if not kwargs.get("join_key") and not kwargs.get("url_segment"):
             self._add_self_url_function_to_model(model)

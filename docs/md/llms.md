@@ -85,6 +85,7 @@
 - [Config Models](https://lewis-morris.github.io/flarchitect/model/index.md): Model.
 - [Custom Serialisation](https://lewis-morris.github.io/flarchitect/custom_serialization/index.md): flarchitect controls how relationships are represented in responses through a.
 - [Error Handling](https://lewis-morris.github.io/flarchitect/error_handling/index.md): flarchitect standardises error reporting through a small set of helpers.
+- [Extend the generated API](https://lewis-morris.github.io/flarchitect/extending_routes/index.md): Keep the generated routes and change only the behaviour your application needs.
 - [Extensions](https://lewis-morris.github.io/flarchitect/extensions/index.md): Callbacks let you hook into the request lifecycle to run custom logic around.
 - [Feature Overview](https://lewis-morris.github.io/flarchitect/feature_overview/index.md): grouping/aggregation, pagination and response metadata.
 - [Filtering](https://lewis-morris.github.io/flarchitect/filtering/index.md): explains how to enable/disable filtering, the syntax for predicates, how to.
@@ -92,7 +93,7 @@
 - [Grouping & Aggregation](https://lewis-morris.github.io/flarchitect/grouping/index.md): functions when explicitly enabled.
 - [Hooks & Plugins Cheatsheet](https://lewis-morris.github.io/flarchitect/hooks_cheatsheet/index.md): Quick reference for callbacks and plugin hooks: when they run, what they.
 - [Joining Related Resources](https://lewis-morris.github.io/flarchitect/joining/index.md): relationships by joining tables at query time.
-- [Manual Routes](https://lewis-morris.github.io/flarchitect/manual_routes/index.md): flarchitect can wrap your own Flask view functions with the same machinery it.
+- [Manual Routes](https://lewis-morris.github.io/flarchitect/manual_routes/index.md): Before replacing a generated route, see extending_routes: hooks, actions.
 - [Plugins](https://lewis-morris.github.io/flarchitect/plugins/index.md): flarchitect supports a lightweight plugin system for observing and customising.
 - [Rate Limiting](https://lewis-morris.github.io/flarchitect/rate_limiting/index.md): Protect your API from abuse and manage throughput with flexible rate limits.
 - [Response Metadata](https://lewis-morris.github.io/flarchitect/response_metadata/index.md): flarchitect can attach metadata to each response.
@@ -102,6 +103,7 @@
 - [WebSockets](https://lewis-morris.github.io/flarchitect/websockets/index.md): WebSockets covers Overview, Enable The Endpoint, Subscription Model.
 - [Acceptable formats](https://lewis-morris.github.io/flarchitect/extensions/acceptable-formats.md): For comprehensive configuration details see configuration.
 - [Acceptable types](https://lewis-morris.github.io/flarchitect/extensions/acceptable-types.md): Reference material.
+- [Actions: add business logic](https://lewis-morris.github.io/flarchitect/extending_routes/actions-add-business-logic.md): This adds `POST /api/orders/<id>/approve` using the model's actual path and.
 - [Additional helpers](https://lewis-morris.github.io/flarchitect/manual_routes/additional-helpers.md): If you only need to protect a manual route with JWT and don’t require schema.
 - [Advanced Configuration](https://lewis-morris.github.io/flarchitect/index/advanced-configuration.md): Need finer control? The Advanced Configuration <advanced_configuration> guide covers features like rate limiting, CORS, and custom cache backends.
 - [Aggregate functions](https://lewis-morris.github.io/flarchitect/grouping/aggregate-functions.md): (`table.column`) when grouping across joins.
@@ -113,6 +115,7 @@
 - [Callback quick reference](https://lewis-morris.github.io/flarchitect/hooks_cheatsheet/callback-quick-reference.md): Reference material.
 - [Callback signatures](https://lewis-morris.github.io/flarchitect/extensions/callback-signatures.md): Setup‑style callbacks receive `model` and a set of keyword arguments.
 - [Callback types](https://lewis-morris.github.io/flarchitect/extensions/callback-types.md): flarchitect recognises a number of callback hooks that allow you to run custom.
+- [Choose the smallest extension](https://lewis-morris.github.io/flarchitect/extending_routes/choose-the-smallest-extension.md): corresponding `can_read`, `can_create`, `can_update` and `can_delete`.
 - [Choosing SQL join semantics](https://lewis-morris.github.io/flarchitect/joining/choosing-sql-join-semantics.md): Use `join_type` to control the SQL join operator applied to each related.
 - [Client Example](https://lewis-morris.github.io/flarchitect/websockets/client-example.md): Reference material.
 - [Combining with joins and filters](https://lewis-morris.github.io/flarchitect/grouping/combining-with-joins-and-filters.md): Grouping and aggregation work with joins, filters, `fields` selection and.
@@ -140,18 +143,22 @@
 - [Group results](https://lewis-morris.github.io/flarchitect/grouping/group-results.md): Once `API_ALLOW_GROUPBY` is active, clients can pass a comma-separated.
 - [handle_http_exception](https://lewis-morris.github.io/flarchitect/error_handling/handle-http-exception.md): Register `handle_http_exception` as the Flask error handler for.
 - [Hook reference](https://lewis-morris.github.io/flarchitect/plugins/hook-reference.md): Called at the beginning of each request.
+- [Hooks: keep the generated implementation](https://lewis-morris.github.io/flarchitect/extending_routes/hooks-keep-the-generated-implementation.md): All hooks take `(value, context)`.
 - [How It Works](https://lewis-morris.github.io/flarchitect/websockets/how-it-works.md): subscribers and broadcasts events.
 - [Input and output schemas](https://lewis-morris.github.io/flarchitect/manual_routes/input-and-output-schemas.md): You can validate request bodies and serialise responses with Marshmallow.
 - [Joins don’t work](https://lewis-morris.github.io/flarchitect/troubleshooting/joins-don-t-work.md): (singular), kebab‑ or snake‑case; tokens are normalised and singular/plural.
 - [Lifecycle at a glance](https://lewis-morris.github.io/flarchitect/hooks_cheatsheet/lifecycle-at-a-glance.md): Reference material.
 - [llms.txt Manifest](https://lewis-morris.github.io/flarchitect/llms.md): Canonical llms.txt manifest for the flarchitect documentation set.
+- [Managed routes: one decorator](https://lewis-morris.github.io/flarchitect/extending_routes/managed-routes-one-decorator.md): Paths are full Flask paths: `API_PREFIX` is not added to `route`.
 - [Message Format](https://lewis-morris.github.io/flarchitect/websockets/message-format.md): callbacks and serialisation.
 - [Nested objects don’t appear](https://lewis-morris.github.io/flarchitect/troubleshooting/nested-objects-don-t-appear.md): Reference material.
 - [Nested relationship dumping](https://lewis-morris.github.io/flarchitect/models/nested-relationship-dumping.md): API_ADD_RELATIONS <configuration.html#ADD_RELATIONS> controls whether relationship fields are included in the.
 - [Normalised join tokens](https://lewis-morris.github.io/flarchitect/joining/normalised-join-tokens.md): The `join` query parameter accepts a comma‑separated list of relationship.
 - [Notes](https://lewis-morris.github.io/flarchitect/plugins/notes.md): value wins (e.g., response replacement).
 - [Notes & Limitations](https://lewis-morris.github.io/flarchitect/websockets/notes-limitations.md): development or single‑process servers.
+- [One context everywhere](https://lewis-morris.github.io/flarchitect/extending_routes/one-context-everywhere.md): It provides `model`, `session`, `operation`, `data` (validated input),.
 - [OR conditions](https://lewis-morris.github.io/flarchitect/filtering/or-conditions.md): To express OR logic, wrap a comma‑separated list of full conditions inside a.
+- [Overrides: replace one operation](https://lewis-morris.github.io/flarchitect/extending_routes/overrides-replace-one-operation.md): Only the generated create implementation changes.
 - [Overview](https://lewis-morris.github.io/flarchitect/websockets/overview.md): flarchitect ships with a lightweight, optional WebSocket integration intended.
 - [Pagination counts look wrong with joins](https://lewis-morris.github.io/flarchitect/troubleshooting/pagination-counts-look-wrong-with-joins.md): join rows.
 - [Pagination with joins](https://lewis-morris.github.io/flarchitect/joining/pagination-with-joins.md): Joining one‑to‑many relationships multiplies result rows at the SQL level.
@@ -160,9 +167,12 @@
 - [Plugin hooks](https://lewis-morris.github.io/flarchitect/extensions/plugin-hooks.md): Plugins provide a structured way to observe and influence behaviour across the.
 - [Plugin hooks quick reference](https://lewis-morris.github.io/flarchitect/hooks_cheatsheet/plugin-hooks-quick-reference.md): Reference material.
 - [Quick start](https://lewis-morris.github.io/flarchitect/plugins/quick-start.md): Reference material.
+- [Register before initialisation](https://lewis-morris.github.io/flarchitect/extending_routes/register-before-initialisation.md): Create `Architect()` without an app, register your extensions, then call.
 - [Request lifecycle and hook order](https://lewis-morris.github.io/flarchitect/extensions/request-lifecycle-and-hook-order.md): This is the high‑level order in which flarchitect processes a request and where.
+- [Reserving canonical paths](https://lewis-morris.github.io/flarchitect/manual_routes/reserving-canonical-paths.md): By default *flarchitect* registers RESTful collection/detail routes for every.
 - [Roles and authentication](https://lewis-morris.github.io/flarchitect/manual_routes/roles-and-authentication.md): If your application uses role‑based access control, supply `roles` to require.
 - [Route handler signature](https://lewis-morris.github.io/flarchitect/manual_routes/route-handler-signature.md): Decorated handlers may optionally accept `deserialized_data` to receive the.
+- [Runnable example](https://lewis-morris.github.io/flarchitect/extending_routes/runnable-example.md): See `demo/extensions/app.py` for a complete in-memory application containing.
 - [Serialisation and joins](https://lewis-morris.github.io/flarchitect/joining/serialisation-and-joins.md): Joining models does not by itself inline related objects.
 - [Serialisation modes](https://lewis-morris.github.io/flarchitect/custom_serialization/serialisation-modes.md): all others remain URLs.
 - [Spec documentation](https://lewis-morris.github.io/flarchitect/grouping/spec-documentation.md): When either flag is enabled `flarchitect` adds explanatory cards to the.
@@ -170,6 +180,7 @@
 - [Subscription Model](https://lewis-morris.github.io/flarchitect/websockets/subscription-model.md): Subscribe to a topic by connecting to the endpoint with an optional `topic`.
 - [Supported operators](https://lewis-morris.github.io/flarchitect/filtering/supported-operators.md): The following operators are available.
 - [Tips and combinations](https://lewis-morris.github.io/flarchitect/filtering/tips-and-combinations.md): sorting (`order_by`), pagination (`page`/`limit`), and dynamic nesting.
+- [Transaction ownership](https://lewis-morris.github.io/flarchitect/extending_routes/transaction-ownership.md): For write actions and mutation overrides, flarchitect flushes changes before.
 - [Using _handle_exception](https://lewis-morris.github.io/flarchitect/error_handling/using-handle-exception.md): For ad-hoc exception handling you can call `_handle_exception` directly.
 - [Validation and errors](https://lewis-morris.github.io/flarchitect/joining/validation-and-errors.md): Join support is opt‑in.
 

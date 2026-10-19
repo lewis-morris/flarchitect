@@ -24,6 +24,7 @@ from . import utils as utils  # expose subpackage for monkeypatch
 # attributes on the top-level module for test-time monkeypatching via dotted
 # paths like "flarchitect.core.architect.handle_one".
 from .core.architect import Architect
+from .core.extensions import OperationContext
 
 try:
     __version__ = _get_version("flarchitect")
@@ -40,6 +41,7 @@ if not hasattr(werkzeug, "__version__"):
 
 __all__ = [
     "Architect",
+    "OperationContext",
     "__version__",
     "authentication",
     "core",

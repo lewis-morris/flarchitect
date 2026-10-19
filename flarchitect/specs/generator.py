@@ -153,8 +153,8 @@ class CustomSpec(APISpec, AttributeInitialiserMixin):
                 desc_path,
                 config=self.architect.app.config,
                 api_output_example=pretty_print_dict(make_base_dict()),
-                has_rate_limiting=search_all_keys(base_model, "API_RATE_LIMIT"),
-                has_auth=search_all_keys(base_model, "API_AUTHENTICATE_METHOD"),
+                has_rate_limiting=search_all_keys(base_model, "API_RATE_LIMIT") if base_model else bool(self.architect.get_config("API_RATE_LIMIT")),
+                has_auth=search_all_keys(base_model, "API_AUTHENTICATE_METHOD") if base_model else bool(self.architect.get_config("API_AUTHENTICATE_METHOD")),
             )
         return desc_path
 

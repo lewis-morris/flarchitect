@@ -17,6 +17,7 @@ from sqlalchemy.orm import DeclarativeBase, Session
 
 from flarchitect.authentication.token_providers import extract_token_from_request
 from flarchitect.authentication.user import set_current_user
+from flarchitect.core.extensions import ExtensionMixin
 from flarchitect.core.routes import RouteCreator, find_rule_by_function
 from flarchitect.exceptions import CustomHTTPException
 from flarchitect.logging import logger
@@ -138,7 +139,7 @@ def jwt_authentication(func: F) -> F:
     return cast(F, auth_wrapped)
 
 
-class Architect(AttributeInitialiserMixin):
+class Architect(ExtensionMixin, AttributeInitialiserMixin):
     """Orchestrate flarchitect services for a Flask app.
 
     Why/How:
@@ -174,6 +175,7 @@ class Architect(AttributeInitialiserMixin):
             **kwargs: Keyword arguments forwarded to :meth:`init_app`.
         """
         self.route_spec: list[dict[str, Any]] = []
+        self._init_extensions()
 
         if app is not None:
             if self._is_reloader_start():
@@ -219,6 +221,10 @@ class Architect(AttributeInitialiserMixin):
         Returns:
             None. The Flask app is modified in place.
         """
+        if self._extensions_bound and (self._extension_hooks or self._extension_overrides or self._extension_actions or self._extension_routes):
+            raise RuntimeError("Use a separate Architect instance for each Flask application")
+        self._extensions_bound = True
+        app.extensions["flarchitect_extensions"] = self
         super().__init__(app, *args, **kwargs)
         self._register_app(app)
         self._configure_logging()
@@ -306,6 +312,7 @@ class Architect(AttributeInitialiserMixin):
     def _init_auto_api(self, app: Flask, **kwargs: Any) -> None:
         if self.get_config("FULL_AUTO", True):
             self.init_api(app=app, **kwargs)
+        self._register_extensions()
         if self.get_config("API_CREATE_DOCS", True):
             self.init_apispec(app=app, **kwargs)
 
