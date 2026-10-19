@@ -83,7 +83,7 @@ def deserialise_data(input_schema: type[Schema], response: Response) -> dict[str
 
         data = cleaned
         if request.method == "PATCH":
-            from flarchitect.specs.utils import _prepare_patch_schema
+            from flarchitect.schemas.patch import _prepare_patch_schema
 
             input_schema = _prepare_patch_schema(input_schema)
 
