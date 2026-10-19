@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## 1.5.9 (2026-10-19)
+
+- Preserve requested HTTP status codes for XML responses.
+- Isolate configuration caches by request and metadata source identity.
+- Honor model soft-delete settings in collections, count only visible rows, and accept include_deleted alongside filters.
+- Separate PATCH schema preparation from specification utilities while preserving imports and behavior.
+
 ## 1.5.8 (2026-10-19)
 
 - Reduce redundant configuration lookups and unused schema-cache fingerprint work during serialization.

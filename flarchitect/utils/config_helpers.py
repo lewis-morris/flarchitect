@@ -56,19 +56,41 @@ def _flask_config_lookup(keys: list[str]) -> Any | None:
     return None
 
 
+class _SourceIdentity:
+    """Hash sources by identity and retain them for the cache's lifetime."""
+
+    __slots__ = ("source",)
+
+    def __init__(self, source: Any) -> None:
+        self.source = source
+
+    def __hash__(self) -> int:
+        return id(self.source)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, _SourceIdentity) and self.source is other.source
+
+
+def _request_cache() -> dict[tuple[Any, ...], Any]:
+    cache = getattr(request, "_flarch_cfg_cache", None)
+    if cache is None:
+        cache = {}
+        request._flarch_cfg_cache = cache
+    # Compatibility alias only: g can outlive (or be shared by) requests.
+    g._flarch_cfg_cache = cache
+    return cache
+
+
 def _request_cache_get(cache_key: tuple[Any, ...]) -> tuple[bool, Any]:
     if not has_request_context():
         return False, None
-    cache = getattr(g, "_flarch_cfg_cache", None)
-    if cache is None:
-        cache = {}
-        g._flarch_cfg_cache = cache
+    cache = _request_cache()
     return (True, cache[cache_key]) if cache_key in cache else (False, None)
 
 
 def _request_cache_set(cache_key: tuple[Any, ...], value: Any) -> None:
     if has_request_context():
-        g._flarch_cfg_cache[cache_key] = value
+        _request_cache()[cache_key] = value
 
 
 def _with_source(value: Any, source: str, return_from_config: bool) -> Any:
@@ -110,9 +132,9 @@ def get_config_or_model_meta(
     # Request-local memoization cache (only caches positive lookups)
     cache_key: tuple = (
         normalized_key,
-        getattr(model, "__name__", None) if model is not None else None,
-        getattr(type(output_schema), "__name__", None) if output_schema is not None else None,
-        getattr(type(input_schema), "__name__", None) if input_schema is not None else None,
+        _SourceIdentity(model) if model is not None else None,
+        _SourceIdentity(output_schema) if output_schema is not None else None,
+        _SourceIdentity(input_schema) if input_schema is not None else None,
         bool(allow_join),
         method.lower() if isinstance(method, str) else str(method),
         bool(return_from_config),

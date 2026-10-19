@@ -37,8 +37,8 @@ def test_response_case_and_content_negotiation(style, status_key, total_key, acc
             payload = ElementTree.fromstring(response.get_data(as_text=True))
             assert payload.find(status_key).text == "201"
             assert payload.find(total_key).text == "7"
-            # Preserve the existing XML transport status, even with a 201 envelope.
-            assert response.status_code == 200
+            # XML must carry the same transport status as its envelope.
+            assert response.status_code == 201
         assert response.mimetype == accept
 
 
@@ -71,7 +71,7 @@ def test_callback_receives_filtered_converted_errors(accept):
             payload = ElementTree.fromstring(response.get_data(as_text=True))
             assert payload.find("errors/reason").text == "bad"
             assert payload.find("callback_marker").text == "kept"
-            assert response.status_code == 200
+            assert response.status_code == 400
 
 
 def test_response_case_is_resolved_once_per_response_and_not_shared_between_requests(monkeypatch):

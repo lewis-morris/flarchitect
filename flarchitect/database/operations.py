@@ -597,18 +597,16 @@ class CrudService:
         Returns:
             Query: Query with soft delete filter applied.
         """
-        if not get_config_or_model_meta("API_SOFT_DELETE", default=False):
-            return query
-
         show_deleted = request.args.get("include_deleted", None)
-        deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", default=None)
-        soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", default=False)
-
-        if not show_deleted and deleted_attr:
+        if not show_deleted:
             models = {getattr(inspect(desc["entity"]).mapper, "class_", None) for desc in query.column_descriptions if desc["entity"]}
 
             for model in models:
-                if hasattr(model, deleted_attr):
+                if not get_config_or_model_meta("API_SOFT_DELETE", model=model, default=False):
+                    continue
+                deleted_attr = get_config_or_model_meta("API_SOFT_DELETE_ATTRIBUTE", model=model, default=None)
+                soft_delete_values = get_config_or_model_meta("API_SOFT_DELETE_VALUES", model=model, default=False)
+                if deleted_attr and hasattr(model, deleted_attr):
                     deleted_column = getattr(model, deleted_attr)
                     query = query.filter(deleted_column == soft_delete_values[0])
 
@@ -704,9 +702,9 @@ class CrudService:
         return self.filter_query_from_args(args_dict, query)
 
     def _paginated_query_payload(self, query: Query, flat_args: dict[str, Any]) -> dict[str, Any]:
-        count = query.count()
         order_query = self.order_query(flat_args, query)
         filtered_query = self.apply_soft_delete_filter(order_query)
+        count = filtered_query.count()
         paginated_query, default_pagination_size = paginate_query(
             filtered_query,
             flat_args.get("page", 1),

@@ -33,4 +33,4 @@ AGGREGATE_FUNCS = {
     "max": func.max,
 }
 
-OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby"]
+OTHER_FUNCTIONS = ["groupby", "fields", "join", "orderby", "include_deleted"]
