@@ -1,0 +1,234 @@
+{
+  "conversion_sha256": "832701217693c83f1b45830faba4565c1ebe393000b4c782927e61629b3c9cb9",
+  "responses_sha256": "d8274fa25905df071916bd6481c1dc35ae0818d2be7a579333ff3b7d5829c174",
+  "response_field_case_lookups": 1,
+  "repeated_name_us": 0.10559369693510234,
+  "mixed_names_7_cases_us": 152.2720995126292,
+  "response_us": 32.273518037982285,
+  "responses": [
+    [
+      "camel",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"apiVersion\":null,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"nextUrl\":\"/next\",\"previousUrl\":null,\"responseMs\":12.5,\"statusCode\":200,\"totalCount\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "camel",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"apiVersion\":null,\"callback_marker\":true,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"nextUrl\":\"/next\",\"previousUrl\":null,\"responseMs\":12.5,\"statusCode\":200,\"totalCount\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "camel",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><apiVersion></apiVersion><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><statusCode>200</statusCode><responseMs>12.5</responseMs><totalCount>2</totalCount><nextUrl>/next</nextUrl><previousUrl></previousUrl></root>"
+    ],
+    [
+      "camel",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><apiVersion></apiVersion><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><statusCode>200</statusCode><responseMs>12.5</responseMs><totalCount>2</totalCount><nextUrl>/next</nextUrl><previousUrl></previousUrl><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "pascal",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"ApiVersion\":null,\"Datetime\":\"2026-10-19T00:00:00+00:00\",\"NextUrl\":\"/next\",\"PreviousUrl\":null,\"ResponseMs\":12.5,\"StatusCode\":200,\"TotalCount\":2,\"Value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "pascal",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"ApiVersion\":null,\"Datetime\":\"2026-10-19T00:00:00+00:00\",\"NextUrl\":\"/next\",\"PreviousUrl\":null,\"ResponseMs\":12.5,\"StatusCode\":200,\"TotalCount\":2,\"Value\":{\"untouched_key\":[1,2]},\"callback_marker\":true}\n"
+    ],
+    [
+      "pascal",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><ApiVersion></ApiVersion><Datetime>2026-10-19T00:00:00+00:00</Datetime><Value><untouched_key><item>1</item><item>2</item></untouched_key></Value><StatusCode>200</StatusCode><ResponseMs>12.5</ResponseMs><TotalCount>2</TotalCount><NextUrl>/next</NextUrl><PreviousUrl></PreviousUrl></root>"
+    ],
+    [
+      "pascal",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><ApiVersion></ApiVersion><Datetime>2026-10-19T00:00:00+00:00</Datetime><Value><untouched_key><item>1</item><item>2</item></untouched_key></Value><StatusCode>200</StatusCode><ResponseMs>12.5</ResponseMs><TotalCount>2</TotalCount><NextUrl>/next</NextUrl><PreviousUrl></PreviousUrl><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "snake",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"api_version\":null,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next_url\":\"/next\",\"previous_url\":null,\"response_ms\":12.5,\"status_code\":200,\"total_count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "snake",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"api_version\":null,\"callback_marker\":true,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next_url\":\"/next\",\"previous_url\":null,\"response_ms\":12.5,\"status_code\":200,\"total_count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "snake",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api_version></api_version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status_code>200</status_code><response_ms>12.5</response_ms><total_count>2</total_count><next_url>/next</next_url><previous_url></previous_url></root>"
+    ],
+    [
+      "snake",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api_version></api_version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status_code>200</status_code><response_ms>12.5</response_ms><total_count>2</total_count><next_url>/next</next_url><previous_url></previous_url><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "screaming_snake",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"API_VERSION\":null,\"DATETIME\":\"2026-10-19T00:00:00+00:00\",\"NEXT_URL\":\"/next\",\"PREVIOUS_URL\":null,\"RESPONSE_MS\":12.5,\"STATUS_CODE\":200,\"TOTAL_COUNT\":2,\"VALUE\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "screaming_snake",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"API_VERSION\":null,\"DATETIME\":\"2026-10-19T00:00:00+00:00\",\"NEXT_URL\":\"/next\",\"PREVIOUS_URL\":null,\"RESPONSE_MS\":12.5,\"STATUS_CODE\":200,\"TOTAL_COUNT\":2,\"VALUE\":{\"untouched_key\":[1,2]},\"callback_marker\":true}\n"
+    ],
+    [
+      "screaming_snake",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><API_VERSION></API_VERSION><DATETIME>2026-10-19T00:00:00+00:00</DATETIME><VALUE><untouched_key><item>1</item><item>2</item></untouched_key></VALUE><STATUS_CODE>200</STATUS_CODE><RESPONSE_MS>12.5</RESPONSE_MS><TOTAL_COUNT>2</TOTAL_COUNT><NEXT_URL>/next</NEXT_URL><PREVIOUS_URL></PREVIOUS_URL></root>"
+    ],
+    [
+      "screaming_snake",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><API_VERSION></API_VERSION><DATETIME>2026-10-19T00:00:00+00:00</DATETIME><VALUE><untouched_key><item>1</item><item>2</item></untouched_key></VALUE><STATUS_CODE>200</STATUS_CODE><RESPONSE_MS>12.5</RESPONSE_MS><TOTAL_COUNT>2</TOTAL_COUNT><NEXT_URL>/next</NEXT_URL><PREVIOUS_URL></PREVIOUS_URL><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "kebab",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"api-version\":null,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next-url\":\"/next\",\"previous-url\":null,\"response-ms\":12.5,\"status-code\":200,\"total-count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "kebab",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"api-version\":null,\"callback_marker\":true,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next-url\":\"/next\",\"previous-url\":null,\"response-ms\":12.5,\"status-code\":200,\"total-count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "kebab",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api-version></api-version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status-code>200</status-code><response-ms>12.5</response-ms><total-count>2</total-count><next-url>/next</next-url><previous-url></previous-url></root>"
+    ],
+    [
+      "kebab",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api-version></api-version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status-code>200</status-code><response-ms>12.5</response-ms><total-count>2</total-count><next-url>/next</next-url><previous-url></previous-url><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "screaming_kebab",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"API-VERSION\":null,\"DATETIME\":\"2026-10-19T00:00:00+00:00\",\"NEXT-URL\":\"/next\",\"PREVIOUS-URL\":null,\"RESPONSE-MS\":12.5,\"STATUS-CODE\":200,\"TOTAL-COUNT\":2,\"VALUE\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "screaming_kebab",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"API-VERSION\":null,\"DATETIME\":\"2026-10-19T00:00:00+00:00\",\"NEXT-URL\":\"/next\",\"PREVIOUS-URL\":null,\"RESPONSE-MS\":12.5,\"STATUS-CODE\":200,\"TOTAL-COUNT\":2,\"VALUE\":{\"untouched_key\":[1,2]},\"callback_marker\":true}\n"
+    ],
+    [
+      "screaming_kebab",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><API-VERSION></API-VERSION><DATETIME>2026-10-19T00:00:00+00:00</DATETIME><VALUE><untouched_key><item>1</item><item>2</item></untouched_key></VALUE><STATUS-CODE>200</STATUS-CODE><RESPONSE-MS>12.5</RESPONSE-MS><TOTAL-COUNT>2</TOTAL-COUNT><NEXT-URL>/next</NEXT-URL><PREVIOUS-URL></PREVIOUS-URL></root>"
+    ],
+    [
+      "screaming_kebab",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><API-VERSION></API-VERSION><DATETIME>2026-10-19T00:00:00+00:00</DATETIME><VALUE><untouched_key><item>1</item><item>2</item></untouched_key></VALUE><STATUS-CODE>200</STATUS-CODE><RESPONSE-MS>12.5</RESPONSE-MS><TOTAL-COUNT>2</TOTAL-COUNT><NEXT-URL>/next</NEXT-URL><PREVIOUS-URL></PREVIOUS-URL><callback_marker>true</callback_marker></root>"
+    ],
+    [
+      "unknown",
+      "application/json",
+      false,
+      200,
+      "application/json",
+      "{\"api_version\":null,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next_url\":\"/next\",\"previous_url\":null,\"response_ms\":12.5,\"status_code\":200,\"total_count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "unknown",
+      "application/json",
+      true,
+      200,
+      "application/json",
+      "{\"api_version\":null,\"callback_marker\":true,\"datetime\":\"2026-10-19T00:00:00+00:00\",\"next_url\":\"/next\",\"previous_url\":null,\"response_ms\":12.5,\"status_code\":200,\"total_count\":2,\"value\":{\"untouched_key\":[1,2]}}\n"
+    ],
+    [
+      "unknown",
+      "application/xml",
+      false,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api_version></api_version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status_code>200</status_code><response_ms>12.5</response_ms><total_count>2</total_count><next_url>/next</next_url><previous_url></previous_url></root>"
+    ],
+    [
+      "unknown",
+      "application/xml",
+      true,
+      200,
+      "application/xml; charset=utf-8",
+      "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><root><api_version></api_version><datetime>2026-10-19T00:00:00+00:00</datetime><value><untouched_key><item>1</item><item>2</item></untouched_key></value><status_code>200</status_code><response_ms>12.5</response_ms><total_count>2</total_count><next_url>/next</next_url><previous_url></previous_url><callback_marker>true</callback_marker></root>"
+    ]
+  ]
+}

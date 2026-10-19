@@ -467,11 +467,10 @@ class Base(Schema):  # Inheriting from marshmallow's Schema
         missing/unloaded attributes resolve to the provided ``default`` rather
         than raising.
         """
-        ignore_detached = get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True)
         try:
             return super().get_attribute(obj, attr, default)
         except orm_exc.DetachedInstanceError:
-            if ignore_detached:
+            if get_config_or_model_meta("API_SERIALIZATION_IGNORE_DETACHED", default=True):
                 # Return a concrete null-ish value so the field serialises
                 # explicitly rather than being omitted as "missing".
                 return None
@@ -612,8 +611,8 @@ class AutoSchema(Base):
             return
 
         use_field_cache = self._can_use_field_cache()
-        cache_key = self._build_field_cache_key()
         if use_field_cache:
+            cache_key = self._build_field_cache_key()
             cached_entry = _SCHEMA_FIELD_CACHE.get(cache_key)
             if cached_entry is not None:
                 cached_entry.instantiate(self)

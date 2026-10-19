@@ -1,6 +1,7 @@
 """Core utility helpers for data manipulation."""
 
 import re
+from functools import lru_cache
 from typing import Any
 
 from dicttoxml import dicttoxml
@@ -19,6 +20,17 @@ def convert_case(s: str, target_case: str) -> str:
     Returns:
         str: The converted string.
     """
+    if type(s) is str and type(target_case) is str and len(s) <= 256 and len(target_case) <= 256:
+        return _convert_case_cached(s, target_case)
+    return _convert_case_uncached(s, target_case)
+
+
+@lru_cache(maxsize=4096)
+def _convert_case_cached(s: str, target_case: str) -> str:
+    return _convert_case_uncached(s, target_case)
+
+
+def _convert_case_uncached(s: str, target_case: str) -> str:
     # Handle empty strings
     if not s:
         return s

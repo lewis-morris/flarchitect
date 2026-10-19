@@ -1,0 +1,13 @@
+{
+  "dump_sha256": "59d579b11f2878e9fa1b839443e2e598cb1a454008c0e1666f42f568d4fac480",
+  "dump_config_calls": 0,
+  "dump_1000_rows_ms": 4.156804800732061,
+  "filtered_schema_fingerprints": 0,
+  "model_dump": {
+    "id": 1,
+    "name": "example"
+  },
+  "filtered_schema_ms": 0.037567460094578564,
+  "cached_lookup_key_builds_per_100": 0,
+  "cached_config_lookup_ms": 0.000624370900914073
+}

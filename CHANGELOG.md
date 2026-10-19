@@ -2,6 +2,13 @@
 
 <!-- version list -->
 
+## 1.5.8 (2026-10-19)
+
+- Reduce redundant configuration lookups and unused schema-cache fingerprint work during serialization.
+- Cache repeated field-name conversions with bounded storage and resolve response naming configuration once per response.
+- Avoid full fallback-cache scans before expiration, with synchronized expiry tracking and preserved timeout behavior.
+- Add regression coverage for response compatibility, cache bounds, concurrency, expiry boundaries and fallback endpoint behavior.
+
 ## Unreleased
 
 - Serialization: Default `dump=dynamic` configurations now inline explicitly joined relationships even when `API_ADD_RELATIONS=false` and `API_SERIALIZATION_DEPTH=0`, keeping config-driven behaviour aligned with per-request overrides.

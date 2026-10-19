@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from functools import wraps
+from threading import RLock
 from typing import Any
 
 from flask import request
@@ -28,11 +29,15 @@ class SimpleCache:
     def __init__(self, default_timeout: int = 300) -> None:
         self.default_timeout = default_timeout
         self._cache: dict[str, tuple[float, Any]] = {}
+        self._next_expiry = float("inf")
+        self._lock = RLock()
 
     def clear(self) -> None:
         """Clear all data from the cache."""
 
-        self._cache.clear()
+        with self._lock:
+            self._next_expiry = float("inf")
+            self._cache.clear()
 
     def init_app(self, app) -> None:  # type: ignore[no-untyped-def]
         """Initialise the cache for a Flask application.
@@ -57,10 +62,20 @@ class SimpleCache:
     def _purge(self) -> None:
         """Remove expired entries from the cache."""
 
-        now = time.time()
-        expired = [key for key, (expires, _value) in self._cache.items() if expires < now]
-        for key in expired:
-            self._cache.pop(key, None)
+        with self._lock:
+            now = time.time()
+            if now <= self._next_expiry:
+                return
+            expired = []
+            next_expiry = float("inf")
+            for key, (expires, _value) in self._cache.items():
+                if expires < now:
+                    expired.append(key)
+                elif expires < next_expiry:
+                    next_expiry = expires
+            self._next_expiry = next_expiry
+            for key in expired:
+                self._cache.pop(key, None)
 
     def get(self, key: str) -> Any | None:
         """Retrieve a cached value if present and not expired.
@@ -72,17 +87,22 @@ class SimpleCache:
             The cached value if found and valid; otherwise ``None``.
         """
 
-        self._purge()
-        record = self._cache.get(key)
-        if record is None:
-            return None
-        _expires, value = record
-        return value
+        with self._lock:
+            self._purge()
+            record = self._cache.get(key)
+            if record is None:
+                return None
+            _expires, value = record
+            return value
 
     def set(self, key: str, value: Any, timeout: int | None = None) -> None:
         """Store ``value`` in the cache with the given ``timeout``."""
 
-        self._cache[key] = (self._expires(timeout), value)
+        with self._lock:
+            expires = self._expires(timeout)
+            self._cache[key] = (expires, value)
+            # An overwrite may leave an earlier bound; it is safe to scan early.
+            self._next_expiry = min(self._next_expiry, expires)
 
     def cached(self, timeout: int | None = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator to cache view function responses.

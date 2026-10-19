@@ -107,18 +107,6 @@ def get_config_or_model_meta(
     """
 
     normalized_key = _normalise_config_key(key)
-    method_based_keys = _method_based_keys(normalized_key.replace("api_", ""), method)
-
-    sources = [model, output_schema, input_schema]
-    keys_for_sources = _unique_keys(
-        [
-            *method_based_keys,
-            normalized_key,
-            _normalise_config_key(key).replace("api_", ""),
-        ]
-    )
-    keys_for_config = [*method_based_keys, normalized_key]
-
     # Request-local memoization cache (only caches positive lookups)
     cache_key: tuple = (
         normalized_key,
@@ -133,6 +121,18 @@ def get_config_or_model_meta(
     found, cached_value = _request_cache_get(cache_key)
     if found:
         return cached_value
+
+    method_based_keys = _method_based_keys(normalized_key.replace("api_", ""), method)
+
+    sources = [model, output_schema, input_schema]
+    keys_for_sources = _unique_keys(
+        [
+            *method_based_keys,
+            normalized_key,
+            _normalise_config_key(key).replace("api_", ""),
+        ]
+    )
+    keys_for_config = [*method_based_keys, normalized_key]
 
     # Perform lookups
     model_result = _source_lookup(sources, keys_for_sources, allow_join=allow_join)

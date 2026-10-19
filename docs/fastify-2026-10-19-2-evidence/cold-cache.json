@@ -1,0 +1,7 @@
+{
+  "workload": "6000 distinct unique_attribute_{i} names converted to camel, cyclic traversal exceeding 4096 cache capacity",
+  "method": "median of five runs, ten traversals per run; original HEAD core_utils loaded separately for comparison",
+  "before_ms_per_traversal": 10.331877501448616,
+  "after_ms_per_traversal": 11.514111299766228,
+  "outputs_equal": true
+}

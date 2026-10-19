@@ -1,0 +1,15 @@
+{
+  "10": {
+    "scans_per_100_reads": 0,
+    "hit_us": 0.2251889673061669
+  },
+  "1000": {
+    "scans_per_100_reads": 0,
+    "hit_us": 0.21898798877373338
+  },
+  "10000": {
+    "scans_per_100_reads": 0,
+    "hit_us": 0.21684396779164672
+  },
+  "trace_sha256": "e6efd6cd7687a19ca4dbdec916dde3ad1e7ac3a3b6033c83d6179dfcdc3a4356"
+}

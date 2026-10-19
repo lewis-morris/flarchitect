@@ -132,7 +132,8 @@ def create_response(
 
     data = _filter_response_data(data)
     # Default to 'snake' to match supported case values
-    data = {convert_case(k, get_config_or_model_meta("API_FIELD_CASE", default="snake")): v for k, v in data.items()}
+    field_case = get_config_or_model_meta("API_FIELD_CASE", default="snake")
+    data = {convert_case(k, field_case): v for k, v in data.items()}
 
     # Optional hook allowing applications to post-process the outgoing payload.
     # ``API_FINAL_CALLBACK`` should be a callable that accepts the response

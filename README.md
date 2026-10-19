@@ -570,7 +570,7 @@ To publish a new release:
 1. Update the `version` field in `pyproject.toml` (for example with `hatch version patch`).
 2. Commit and push to `master`.
 
-Ensure the repository has a `PYPI_API_TOKEN` secret with an API token from PyPI.
+Publishing uses PyPI Trusted Publishing. Configure the PyPI publisher for owner `lewis-morris`, repository `flarchitect`, workflow `release.yml`, and GitHub environment `pypi`; no API token is required. The release workflow compares the version with the immediately preceding commit, so keep the version bump in the final commit pushed. Run tests before publishing: the publish workflow does not depend on the separate test workflow.
 
 ## UK English API Names
 
